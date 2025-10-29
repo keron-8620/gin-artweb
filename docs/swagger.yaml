@@ -1,0 +1,738 @@
+definitions:
+  database.Pag-menu_MenuOutBase:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/menu.MenuOutBase'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  database.Pag-permission_PermissionOutBase:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/permission.PermissionOutBase'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  exception.Reply-map_string_string:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/map_string_string'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  map_string_string:
+    additionalProperties:
+      type: string
+    type: object
+  menu.CreateMenuRequest:
+    properties:
+      arrange_order:
+        description: 排序字段，可选
+        type: integer
+      component:
+        description: |-
+          组件路径，必填，最大长度200
+          Required: true
+          Max length: 200
+        maxLength: 200
+        type: string
+      descr:
+        description: |-
+          菜单描述信息，可选，最大长度254
+          Max length: 254
+        maxLength: 254
+        type: string
+      id:
+        description: |-
+          菜单主键，必填，必须大于0
+          Required: true
+          Minimum: 1
+        type: integer
+      is_active:
+        description: 是否激活，可选
+        type: boolean
+      meta:
+        allOf:
+        - $ref: '#/definitions/menu.MetaSchemas'
+        description: 菜单元信息，必填
+      name:
+        description: |-
+          菜单名称，必填，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+      parent_id:
+        description: 父级菜单ID，可选
+        type: integer
+      path:
+        description: |-
+          前端路由路径，必填，最大长度100
+          Required: true
+          Max length: 100
+        maxLength: 100
+        type: string
+      permission_ids:
+        description: 关联权限ID列表，可选
+        items:
+          type: integer
+        type: array
+    required:
+    - component
+    - id
+    - meta
+    - name
+    - path
+    type: object
+  menu.MenuOut:
+    properties:
+      arrange_order:
+        description: 排列顺序
+        example: 1000
+        type: integer
+      create_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      descr:
+        description: 描述
+        example: 用户管理
+        type: string
+      id:
+        description: 权限ID
+        example: 1
+        type: integer
+      is_active:
+        description: 是否激活
+        example: true
+        type: boolean
+      meta:
+        allOf:
+        - $ref: '#/definitions/menu.MetaSchemas'
+        description: 菜单信息
+      name:
+        description: 名称
+        example: 用户管理
+        type: string
+      parent:
+        $ref: '#/definitions/menu.MenuOutBase'
+      path:
+        description: 前端路由
+        example: /api/v1/users
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/permission.PermissionOutBase'
+        type: array
+      update_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      xomponent:
+        description: 组件路径
+        example: GET
+        type: string
+    type: object
+  menu.MenuOutBase:
+    properties:
+      arrange_order:
+        description: 排列顺序
+        example: 1000
+        type: integer
+      create_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      descr:
+        description: 描述
+        example: 用户管理
+        type: string
+      id:
+        description: 权限ID
+        example: 1
+        type: integer
+      is_active:
+        description: 是否激活
+        example: true
+        type: boolean
+      meta:
+        allOf:
+        - $ref: '#/definitions/menu.MetaSchemas'
+        description: 菜单信息
+      name:
+        description: 名称
+        example: 用户管理
+        type: string
+      path:
+        description: 前端路由
+        example: /api/v1/users
+        type: string
+      update_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      xomponent:
+        description: 组件路径
+        example: GET
+        type: string
+    type: object
+  menu.MenuReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/menu.MenuOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  menu.MetaSchemas:
+    properties:
+      icon:
+        description: 图标
+        example: icon
+        type: string
+      title:
+        description: 标题
+        example: 用户管理
+        type: string
+    type: object
+  menu.PagMenuBaseReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/database.Pag-menu_MenuOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  menu.UpdateMenuRequest:
+    properties:
+      arrange_order:
+        description: 排序字段，可选
+        type: integer
+      component:
+        description: |-
+          组件路径，必填，最大长度200
+          Required: true
+          Max length: 200
+        maxLength: 200
+        type: string
+      descr:
+        description: |-
+          菜单描述信息，可选，最大长度254
+          Max length: 254
+        maxLength: 254
+        type: string
+      is_active:
+        description: 是否激活，可选
+        type: boolean
+      meta:
+        allOf:
+        - $ref: '#/definitions/menu.MetaSchemas'
+        description: 菜单元信息，必填
+      name:
+        description: |-
+          菜单名称，必填，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+      parent_id:
+        description: 父级菜单ID，可选
+        type: integer
+      path:
+        description: |-
+          前端路由路径，必填，最大长度100
+          Required: true
+          Max length: 100
+        maxLength: 100
+        type: string
+      permission_ids:
+        description: 关联权限ID列表，可选
+        items:
+          type: integer
+        type: array
+    required:
+    - component
+    - meta
+    - name
+    - path
+    type: object
+  permission.CreatePermissionRequest:
+    properties:
+      descr:
+        description: |-
+          权限描述信息，可选，最大长度254
+          Max length: 254
+        maxLength: 254
+        type: string
+      http_url:
+        description: |-
+          权限对应的HTTP URL，必填，最大长度150
+          Required: true
+          Max length: 150
+        maxLength: 150
+        type: string
+      id:
+        description: |-
+          权限主键，必填，必须大于0
+          Required: true
+          Minimum: 1
+        type: integer
+      method:
+        description: |-
+          HTTP请求方法，必填，枚举值验证
+          Required: true
+          Enum: GET,POST,PUT,DELETE,PATCH,WS
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - WS
+        type: string
+    required:
+    - http_url
+    - id
+    - method
+    type: object
+  permission.PagPermissionReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/database.Pag-permission_PermissionOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  permission.PermissionOutBase:
+    properties:
+      create_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      descr:
+        description: 描述
+        example: 用户管理权限
+        type: string
+      http_url:
+        description: HTTP路径
+        example: /api/v1/users
+        type: string
+      id:
+        description: 权限ID
+        example: 1
+        type: integer
+      method:
+        description: 请求方法
+        example: GET
+        type: string
+      update_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  permission.PermissionReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/permission.PermissionOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  permission.UpdatePermissionRequest:
+    properties:
+      descr:
+        description: |-
+          权限描述信息，可选，最大长度254
+          Max length: 254
+        maxLength: 254
+        type: string
+      http_url:
+        description: |-
+          权限对应的HTTP URL，必填，最大长度150
+          Required: true
+          Max length: 150
+        maxLength: 150
+        type: string
+      method:
+        description: |-
+          HTTP请求方法，必填，枚举值验证
+          Required: true
+          Enum: GET,POST,PUT,DELETE,PATCH,WS
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - WS
+        type: string
+    required:
+    - http_url
+    - method
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/customer/menu:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询菜单列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回菜单列表
+          schema:
+            $ref: '#/definitions/menu.PagMenuBaseReply'
+      summary: 查询菜单列表
+      tags:
+      - 菜单管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于新增菜单
+      parameters:
+      - description: 创建菜单请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.CreateMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回菜单信息
+          schema:
+            $ref: '#/definitions/menu.MenuReply'
+      summary: 新增菜单
+      tags:
+      - 菜单管理
+  /api/v1/customer/menu/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的菜单
+      parameters:
+      - description: 菜单编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/exception.Reply-map_string_string'
+      summary: 删除菜单
+      tags:
+      - 菜单管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询一个菜单
+      parameters:
+      - description: 菜单编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回用户信息
+          schema:
+            $ref: '#/definitions/menu.MenuReply'
+      summary: 查询单个菜单
+      tags:
+      - 菜单管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新菜单
+      parameters:
+      - description: 菜单编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新菜单请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.UpdateMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回菜单信息
+          schema:
+            $ref: '#/definitions/menu.MenuReply'
+      summary: 更新菜单
+      tags:
+      - 菜单管理
+  /api/v1/customer/permission:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询权限列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: size
+        type: integer
+      - description: 权限主键，可选参数，如果提供则必须大于0
+        in: query
+        name: pk
+        type: integer
+      - description: 权限主键列表，可选参数，多个用,隔开，如1,2,3
+        in: query
+        name: pks
+        type: string
+      - description: 创建时间之前的记录 (RFC3339格式)
+        in: query
+        name: before_create_at
+        type: string
+      - description: 创建时间之后的记录 (RFC3339格式)
+        in: query
+        name: after_create_at
+        type: string
+      - description: 更新时间之前的记录 (RFC3339格式)
+        in: query
+        name: before_update_at
+        type: string
+      - description: 更新时间之后的记录 (RFC3339格式)
+        in: query
+        name: after_update_at
+        type: string
+      - description: HTTP路径
+        in: query
+        name: http_url
+        type: string
+      - description: HTTP方法
+        in: query
+        name: method
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回权限列表
+          schema:
+            $ref: '#/definitions/permission.PagPermissionReply'
+      summary: 查询权限列表
+      tags:
+      - 权限管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于新增权限
+      parameters:
+      - description: 创建权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/permission.CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回权限信息
+          schema:
+            $ref: '#/definitions/permission.PermissionReply'
+      summary: 新增权限
+      tags:
+      - 权限管理
+  /api/v1/customer/permission/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的权限
+      parameters:
+      - description: 权限编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/exception.Reply-map_string_string'
+      summary: 删除权限
+      tags:
+      - 权限管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询一个权限
+      parameters:
+      - description: 权限编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回用户信息
+          schema:
+            $ref: '#/definitions/permission.PermissionReply'
+      summary: 查询单个权限
+      tags:
+      - 权限管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新权限
+      parameters:
+      - description: 权限编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/permission.UpdatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回权限信息
+          schema:
+            $ref: '#/definitions/permission.PermissionReply'
+      summary: 更新权限
+      tags:
+      - 权限管理
+swagger: "2.0"

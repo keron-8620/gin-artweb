@@ -1,0 +1,58 @@
+server:
+  host: "192.168.10.12"
+  port: 8620
+  ssl:
+    enable: true
+    key_path: "server.key"
+    crt_path: "server.crt"
+    password: ""
+  enable_swagger: false
+  
+
+database:
+  type: "opengauss"
+  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=pydango sslmode=disable"
+  max_open_conns: 10
+  max_idle_conns: 10
+  conn_max_lifetime: 60
+
+smtp:
+  host: "smtphz.qiye.163.com"
+  port: 25
+  user: "dqzhao@quant360.com"
+  password: "b6xU7hayEdrxzQ2M"
+  tls: false
+
+log:
+  level: "INFO"
+  max_size: 10
+  max_age: 7
+  max_bak: 5
+  compress: true
+  format: "json"
+
+cors:
+  allow_origins:
+    - "*"
+  allow_credentials: true
+  allow_methods:
+    - "*"
+  allow_headers:
+    - "*"
+
+password:
+  min_len: 8
+  max_len: 16
+  need_upp: true
+  need_low: true
+  need_num: true
+  need_spe: true
+
+security:
+  check_timestamp: true
+  timestamp_range: 600
+  token_expire_minutes: 180
+  login_fail_max_times: 5
+  login_fail_lock_minutes: 30
+  max_upload_file_size: 500
+  secret_key: "sPib_tF49Vpm3JK9Iio8b_uXlSo7mpRPPVrNCKkJ3F4="
