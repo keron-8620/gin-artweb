@@ -6,11 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pb "gitee.com/keion8620/go-dango-gin/api/customer/permission"
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	pb "gin-artweb/api/customer/permission"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
 )
 
 type PermissionService struct {
@@ -48,9 +48,9 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{Id: req.Id},
 		},
-		HttpUrl: req.HttpUrl,
-		Method:  req.Method,
-		Descr:   req.Descr,
+		Url:    req.Url,
+		Method: req.Method,
+		Descr:  req.Descr,
 	})
 	if err != nil {
 		ctx.JSON(err.Code, err.Reply())
@@ -88,9 +88,9 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 		return
 	}
 	if err := s.ucPerm.UpdatePermissionById(ctx, uri.Pk, map[string]any{
-		"HttpUrl": req.HttpUrl,
-		"Method":  req.Method,
-		"Descr":   req.Descr,
+		"Url":    req.Url,
+		"Method": req.Method,
+		"Descr":  req.Descr,
 	}); err != nil {
 		ctx.JSON(err.Code, err.Reply())
 		return
@@ -113,7 +113,6 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "权限编号"
-// @Success 200 {object} errors.Reply[map[string]string] "删除成功"
 // @Router /api/v1/customer/permission/{pk} [delete]
 func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 	var uri PkUri
@@ -208,12 +207,13 @@ func PermModelToOutBase(
 	m biz.PermissionModel,
 ) *pb.PermissionOutBase {
 	return &pb.PermissionOutBase{
-		Id:       m.Id,
+		Id:        m.Id,
 		CreatedAt: m.CreatedAt.String(),
 		UpdatedAt: m.UpdatedAt.String(),
-		HttpUrl:  m.HttpUrl,
-		Method:   m.Method,
-		Descr:    m.Descr,
+		Url:       m.Url,
+		Method:    m.Method,
+		Label:     m.Label,
+		Descr:     m.Descr,
 	}
 }
 

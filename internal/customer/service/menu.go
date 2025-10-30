@@ -6,11 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pb "gitee.com/keion8620/go-dango-gin/api/customer/menu"
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	pb "gin-artweb/api/customer/menu"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
 )
 
 type MenuService struct {
@@ -136,7 +136,6 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "菜单编号"
-// @Success 200 {object} errors.Reply[map[string]string] "删除成功"
 // @Router /api/v1/customer/menu/{pk} [delete]
 func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 	var uri PkUri
@@ -224,8 +223,8 @@ func MenuModelToOutBase(
 ) *pb.MenuOutBase {
 	return &pb.MenuOutBase{
 		Id:        m.Id,
-		CreatedAt:  m.CreatedAt.String(),
-		UpdatedAt:  m.UpdatedAt.String(),
+		CreatedAt: m.CreatedAt.String(),
+		UpdatedAt: m.UpdatedAt.String(),
 		Path:      m.Path,
 		Component: m.Component,
 		Name:      m.Name,
@@ -233,6 +232,7 @@ func MenuModelToOutBase(
 			Title: m.Meta.Title,
 			Icon:  m.Meta.Icon,
 		},
+		Label:        m.Label,
 		ArrangeOrder: m.ArrangeOrder,
 		IsActive:     m.IsActive,
 		Descr:        m.Descr,

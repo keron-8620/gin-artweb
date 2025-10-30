@@ -3,7 +3,7 @@ package record
 import (
 	"time"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/pkg/database"
 )
 
 // ListLoginRecordRequest 用于获取用户登陆记录的请求结构体

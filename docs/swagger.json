@@ -4,6 +4,169 @@
         "contact": {}
     },
     "paths": {
+        "/api/v1/customer/button": {
+            "get": {
+                "description": "本接口用于查询角色列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "查询角色列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回角色列表",
+                        "schema": {
+                            "$ref": "#/definitions/role.PagRoleBaseReply"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "本接口用于新增按钮",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "按钮管理"
+                ],
+                "summary": "新增按钮",
+                "parameters": [
+                    {
+                        "description": "创建按钮请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/button.CreateButtonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回按钮信息",
+                        "schema": {
+                            "$ref": "#/definitions/button.ButtonReply"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/button/{pk}": {
+            "get": {
+                "description": "本接口用于查询一个按钮",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "按钮管理"
+                ],
+                "summary": "查询单个按钮",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "按钮编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回按钮信息",
+                        "schema": {
+                            "$ref": "#/definitions/button.ButtonReply"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "本接口用于更新按钮",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "按钮管理"
+                ],
+                "summary": "更新按钮",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "按钮编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新按钮请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/button.UpdateButtonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回按钮信息",
+                        "schema": {
+                            "$ref": "#/definitions/button.ButtonReply"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "本接口用于删除指定ID的按钮",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "按钮管理"
+                ],
+                "summary": "删除按钮",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "按钮编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/v1/customer/menu": {
             "get": {
                 "description": "本接口用于查询菜单列表",
@@ -164,11 +327,139 @@
                         "required": true
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/api/v1/customer/own/login": {
+            "put": {
+                "description": "本接口用于登陆",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "登陆接口",
+                "parameters": [
+                    {
+                        "description": "登陆请求参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.LoginRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "删除成功",
+                        "description": "成功返回用户信息",
                         "schema": {
-                            "$ref": "#/definitions/exception.Reply-map_string_string"
+                            "$ref": "#/definitions/user.LoginReply"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/own/password": {
+            "put": {
+                "description": "本接口用于修改用户密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "修改用户密码",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "修改用户密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.PatchPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/customer/own/record/login": {
+            "get": {
+                "description": "本接口用于查询人登录记录列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "查询个人登录记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户主键，可选参数，如果提供则必须大于0",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户主键列表，可选参数，多个用,隔开，如1,2,3",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ip地址",
+                        "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录时间之前的记录 (RFC3339格式)",
+                        "name": "before_login_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录时间之后的记录 (RFC3339格式)",
+                        "name": "after_login_at",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户登录记录列表",
+                        "schema": {
+                            "$ref": "#/definitions/record.PagLoginRecordReply"
                         }
                     }
                 }
@@ -382,19 +673,718 @@
                         "required": true
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/api/v1/customer/role": {
+            "post": {
+                "description": "本接口用于新增角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "新增角色",
+                "parameters": [
+                    {
+                        "description": "创建角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/role.CreateRoleRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "删除成功",
+                        "description": "成功返回角色信息",
                         "schema": {
-                            "$ref": "#/definitions/exception.Reply-map_string_string"
+                            "$ref": "#/definitions/role.RoleReply"
                         }
                     }
                 }
             }
+        },
+        "/api/v1/customer/role/{pk}": {
+            "get": {
+                "description": "本接口用于查询一个角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "查询单个角色",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回角色信息",
+                        "schema": {
+                            "$ref": "#/definitions/role.RoleReply"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "本接口用于更新角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "更新角色",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/role.UpdateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回角色信息",
+                        "schema": {
+                            "$ref": "#/definitions/role.RoleReply"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "本接口用于删除指定ID的角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "删除角色",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/customer/user": {
+            "get": {
+                "description": "本接口用于查询用户列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "查询用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户主键，可选参数，如果提供则必须大于0",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户主键列表，可选参数，多个用,隔开，如1,2,3",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)",
+                        "name": "before_create_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)",
+                        "name": "after_create_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)",
+                        "name": "before_update_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)",
+                        "name": "after_update_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否激活",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否是工作人员",
+                        "name": "is_staff",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "role_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户列表",
+                        "schema": {
+                            "$ref": "#/definitions/user.PagUserReply"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "本接口用于新增用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "新增用户",
+                "parameters": [
+                    {
+                        "description": "创建用户请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/user.UserReply"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/user/password/{pk}": {
+            "put": {
+                "description": "本接口用于重置用户密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "重置用户密码",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "重置用户密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.ResetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/customer/user/record/login": {
+            "get": {
+                "description": "本接口用于查询用户登录记录列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "查询用户登录记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户主键，可选参数，如果提供则必须大于0",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户主键列表，可选参数，多个用,隔开，如1,2,3",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ip地址",
+                        "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录时间之前的记录 (RFC3339格式)",
+                        "name": "before_login_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录时间之后的记录 (RFC3339格式)",
+                        "name": "after_login_at",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户登录记录列表",
+                        "schema": {
+                            "$ref": "#/definitions/record.PagLoginRecordReply"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/user/{pk}": {
+            "get": {
+                "description": "本接口用于查询一个用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "查询单个用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/user.UserReply"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "本接口用于更新用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "更新用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新用户请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/user.UserReply"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "本接口用于删除指定ID的用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
         }
     },
     "definitions": {
-        "database.Pag-menu_MenuOutBase": {
+        "button.ButtonOut": {
+            "type": "object",
+            "properties": {
+                "arrange_order": {
+                    "description": "排列顺序",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "按钮ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "menu": {
+                    "$ref": "#/definitions/menu.MenuOutBase"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/permission.PermissionOutBase"
+                    }
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "button.ButtonOutBase": {
+            "type": "object",
+            "properties": {
+                "arrange_order": {
+                    "description": "排列顺序",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "按钮ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "button.ButtonReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/button.ButtonOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "button.CreateButtonRequest": {
+            "type": "object",
+            "required": [
+                "arrange_order",
+                "id",
+                "is_active",
+                "menu_id",
+                "name"
+            ],
+            "properties": {
+                "arrange_order": {
+                    "description": "排序字段，必填",
+                    "type": "integer"
+                },
+                "descr": {
+                    "description": "按钮描述信息，可选，最大长度254\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "id": {
+                    "description": "按钮主键，必填，必须大于0\nRequired: true\nMinimum: 1",
+                    "type": "integer"
+                },
+                "is_active": {
+                    "description": "是否激活，必填",
+                    "type": "boolean"
+                },
+                "menu_id": {
+                    "description": "菜单ID，必填",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "permission_ids": {
+                    "description": "关联权限ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "button.PagButtonBaseReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-button_ButtonOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "button.UpdateButtonRequest": {
+            "type": "object",
+            "required": [
+                "arrange_order",
+                "is_active",
+                "menu_id",
+                "name"
+            ],
+            "properties": {
+                "arrange_order": {
+                    "description": "排序字段，必填",
+                    "type": "integer"
+                },
+                "descr": {
+                    "description": "按钮描述信息，可选，最大长度254\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "is_active": {
+                    "description": "是否激活，必填",
+                    "type": "boolean"
+                },
+                "menu_id": {
+                    "description": "菜单ID，必填",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "permission_ids": {
+                    "description": "关联权限ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "common.Pag-button_ButtonOutBase": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/button.ButtonOutBase"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-menu_MenuOutBase": {
             "type": "object",
             "properties": {
                 "items": {
@@ -426,7 +1416,7 @@
                 }
             }
         },
-        "database.Pag-permission_PermissionOutBase": {
+        "common.Pag-permission_PermissionOutBase": {
             "type": "object",
             "properties": {
                 "items": {
@@ -458,45 +1448,116 @@
                 }
             }
         },
-        "exception.Reply-map_string_string": {
+        "common.Pag-record_LoginRecordOutBase": {
             "type": "object",
             "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/record.LoginRecordOutBase"
+                    }
                 },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/map_string_string"
-                        }
-                    ]
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
                 },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
-        "map_string_string": {
+        "common.Pag-role_RoleOutBase": {
             "type": "object",
-            "additionalProperties": {
-                "type": "string"
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/role.RoleOutBase"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-user_UserOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user.UserOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
             }
         },
         "menu.CreateMenuRequest": {
             "type": "object",
             "required": [
+                "arrange_order",
                 "component",
                 "id",
+                "is_active",
                 "meta",
                 "name",
                 "path"
             ],
             "properties": {
                 "arrange_order": {
-                    "description": "排序字段，可选",
+                    "description": "排序字段，必填",
                     "type": "integer"
                 },
                 "component": {
@@ -505,7 +1566,7 @@
                     "maxLength": 200
                 },
                 "descr": {
-                    "description": "菜单描述信息，可选，最大长度254\nMax length: 254",
+                    "description": "描述，必填，最大长度254\nMax length: 254",
                     "type": "string",
                     "maxLength": 254
                 },
@@ -514,7 +1575,7 @@
                     "type": "integer"
                 },
                 "is_active": {
-                    "description": "是否激活，可选",
+                    "description": "是否激活，必填",
                     "type": "boolean"
                 },
                 "meta": {
@@ -526,7 +1587,7 @@
                     ]
                 },
                 "name": {
-                    "description": "菜单名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -556,7 +1617,7 @@
                     "type": "integer",
                     "example": 1000
                 },
-                "create_at": {
+                "created_at": {
                     "description": "创建时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
@@ -567,7 +1628,7 @@
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "权限ID",
+                    "description": "菜单ID",
                     "type": "integer",
                     "example": 1
                 },
@@ -575,6 +1636,11 @@
                     "description": "是否激活",
                     "type": "boolean",
                     "example": true
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "customer"
                 },
                 "meta": {
                     "description": "菜单信息",
@@ -603,7 +1669,7 @@
                         "$ref": "#/definitions/permission.PermissionOutBase"
                     }
                 },
-                "update_at": {
+                "updated_at": {
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
@@ -623,7 +1689,7 @@
                     "type": "integer",
                     "example": 1000
                 },
-                "create_at": {
+                "created_at": {
                     "description": "创建时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
@@ -634,7 +1700,7 @@
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "权限ID",
+                    "description": "菜单ID",
                     "type": "integer",
                     "example": 1
                 },
@@ -642,6 +1708,11 @@
                     "description": "是否激活",
                     "type": "boolean",
                     "example": true
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "customer"
                 },
                 "meta": {
                     "description": "菜单信息",
@@ -661,7 +1732,7 @@
                     "type": "string",
                     "example": "/api/v1/users"
                 },
-                "update_at": {
+                "updated_at": {
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
@@ -720,7 +1791,7 @@
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/database.Pag-menu_MenuOutBase"
+                            "$ref": "#/definitions/common.Pag-menu_MenuOutBase"
                         }
                     ]
                 },
@@ -733,14 +1804,16 @@
         "menu.UpdateMenuRequest": {
             "type": "object",
             "required": [
+                "arrange_order",
                 "component",
+                "is_active",
                 "meta",
                 "name",
                 "path"
             ],
             "properties": {
                 "arrange_order": {
-                    "description": "排序字段，可选",
+                    "description": "排序字段，必填",
                     "type": "integer"
                 },
                 "component": {
@@ -754,7 +1827,7 @@
                     "maxLength": 254
                 },
                 "is_active": {
-                    "description": "是否激活，可选",
+                    "description": "是否激活，必填",
                     "type": "boolean"
                 },
                 "meta": {
@@ -766,7 +1839,7 @@
                     ]
                 },
                 "name": {
-                    "description": "菜单名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -791,20 +1864,15 @@
         "permission.CreatePermissionRequest": {
             "type": "object",
             "required": [
-                "http_url",
                 "id",
-                "method"
+                "method",
+                "url"
             ],
             "properties": {
                 "descr": {
                     "description": "权限描述信息，可选，最大长度254\nMax length: 254",
                     "type": "string",
                     "maxLength": 254
-                },
-                "http_url": {
-                    "description": "权限对应的HTTP URL，必填，最大长度150\nRequired: true\nMax length: 150",
-                    "type": "string",
-                    "maxLength": 150
                 },
                 "id": {
                     "description": "权限主键，必填，必须大于0\nRequired: true\nMinimum: 1",
@@ -821,6 +1889,11 @@
                         "PATCH",
                         "WS"
                     ]
+                },
+                "url": {
+                    "description": "权限对应的HTTP URL，必填，最大长度150\nRequired: true\nMax length: 150",
+                    "type": "string",
+                    "maxLength": 150
                 }
             }
         },
@@ -835,7 +1908,7 @@
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/database.Pag-permission_PermissionOutBase"
+                            "$ref": "#/definitions/common.Pag-permission_PermissionOutBase"
                         }
                     ]
                 },
@@ -848,7 +1921,12 @@
         "permission.PermissionOutBase": {
             "type": "object",
             "properties": {
-                "create_at": {
+                "Url": {
+                    "description": "HTTP路径",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                },
+                "created_at": {
                     "description": "创建时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
@@ -858,22 +1936,22 @@
                     "type": "string",
                     "example": "用户管理权限"
                 },
-                "http_url": {
-                    "description": "HTTP路径",
-                    "type": "string",
-                    "example": "/api/v1/users"
-                },
                 "id": {
                     "description": "权限ID",
                     "type": "integer",
                     "example": 1
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "customer"
                 },
                 "method": {
                     "description": "请求方法",
                     "type": "string",
                     "example": "GET"
                 },
-                "update_at": {
+                "updated_at": {
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
@@ -904,19 +1982,19 @@
         "permission.UpdatePermissionRequest": {
             "type": "object",
             "required": [
-                "http_url",
+                "Url",
                 "method"
             ],
             "properties": {
+                "Url": {
+                    "description": "权限对应的HTTP URL，必填，最大长度150\nRequired: true\nMax length: 150",
+                    "type": "string",
+                    "maxLength": 150
+                },
                 "descr": {
                     "description": "权限描述信息，可选，最大长度254\nMax length: 254",
                     "type": "string",
                     "maxLength": 254
-                },
-                "http_url": {
-                    "description": "权限对应的HTTP URL，必填，最大长度150\nRequired: true\nMax length: 150",
-                    "type": "string",
-                    "maxLength": 150
                 },
                 "method": {
                     "description": "HTTP请求方法，必填，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
@@ -929,6 +2007,492 @@
                         "PATCH",
                         "WS"
                     ]
+                }
+            }
+        },
+        "record.LoginRecordOutBase": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "用户ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "ip_address": {
+                    "description": "IP地址",
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "is_active": {
+                    "description": "登录状态",
+                    "type": "boolean",
+                    "example": true
+                },
+                "login_at": {
+                    "description": "登录时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "user_agent": {
+                    "description": "用户浏览器信息",
+                    "type": "string",
+                    "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
+                },
+                "username": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "judgement"
+                }
+            }
+        },
+        "record.PagLoginRecordReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-record_LoginRecordOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "role.CreateRoleRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "button_ids": {
+                    "description": "关联按钮ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "descr": {
+                    "description": "描述，可选，最大长度254\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "menu_ids": {
+                    "description": "关联菜单ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "permission_ids": {
+                    "description": "关联权限ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "role.PagRoleBaseReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-role_RoleOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "role.RoleOut": {
+            "type": "object",
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/button.ButtonOutBase"
+                    }
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "角色ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "menus": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/menu.MenuOutBase"
+                    }
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/permission.PermissionOutBase"
+                    }
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "role.RoleOutBase": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "角色ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "role.RoleReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/role.RoleOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "role.UpdateRoleRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "button_ids": {
+                    "description": "关联按钮ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "descr": {
+                    "description": "角色描述信息，可选，最大长度254\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "menu_ids": {
+                    "description": "关联菜单ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "permission_ids": {
+                    "description": "关联权限ID列表，可选",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "user.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "is_active",
+                "is_staff",
+                "name",
+                "password",
+                "role_id"
+            ],
+            "properties": {
+                "is_active": {
+                    "description": "是否激活，必填",
+                    "type": "boolean"
+                },
+                "is_staff": {
+                    "description": "是否是工作人员，必填",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "用户名，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "password": {
+                    "description": "密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "type": "string"
+                },
+                "role_id": {
+                    "description": "角色ID，必填",
+                    "type": "integer"
+                }
+            }
+        },
+        "user.LoginOut": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.LoginReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/user.LoginOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "user.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "username": {
+                    "description": "用户名，必填,\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "user.PagUserReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-user_UserOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "user.PatchPasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "description": "确认密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "new_password": {
+                    "description": "新密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "old_password": {
+                    "description": "原密码，必填,\nRequired: true\nMax length: 20",
+                    "type": "string"
+                }
+            }
+        },
+        "user.ResetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "description": "确认密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "new_password": {
+                    "description": "新密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "type": "string",
+                    "maxLength": 20
+                }
+            }
+        },
+        "user.UpdateUserRequest": {
+            "type": "object",
+            "required": [
+                "is_active",
+                "is_staff",
+                "name",
+                "role_id"
+            ],
+            "properties": {
+                "is_active": {
+                    "description": "是否激活，必填",
+                    "type": "boolean"
+                },
+                "is_staff": {
+                    "description": "是否是工作人员，必填",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "用户名，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "role_id": {
+                    "description": "角色ID，必填",
+                    "type": "integer"
+                }
+            }
+        },
+        "user.UserOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "id": {
+                    "description": "用户ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_staff": {
+                    "description": "是否是工作人员",
+                    "type": "boolean",
+                    "example": false
+                },
+                "role": {
+                    "$ref": "#/definitions/role.RoleOutBase"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "username": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "judgement"
+                }
+            }
+        },
+        "user.UserReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/user.UserOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
                 }
             }
         }

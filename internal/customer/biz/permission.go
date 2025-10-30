@@ -6,15 +6,16 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
 )
 
 type PermissionModel struct {
 	database.StandardModel
-	HttpUrl string `gorm:"column:http_url;type:varchar(150);index:idx_member;comment:HTTP的URL地址" json:"http_url"`
-	Method  string `gorm:"column:method;type:varchar(10);index:idx_member;comment:请求方法" json:"method"`
-	Descr   string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
+	Url    string `gorm:"column:url;type:varchar(150);index:idx_member;comment:HTTP的URL地址" json:"url"`
+	Method string `gorm:"column:method;type:varchar(10);index:idx_member;comment:请求方法" json:"method"`
+	Label  string `gorm:"column:label;type:varchar(50);index:idx_member;comment:标签" json:"label"`
+	Descr  string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
 }
 
 func (m *PermissionModel) TableName() string {
@@ -25,8 +26,9 @@ func (m *PermissionModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
-	enc.AddString("http_url", m.HttpUrl)
+	enc.AddString("url", m.Url)
 	enc.AddString("method", m.Method)
+	enc.AddString("label", m.Label)
 	enc.AddString("descr", m.Descr)
 	return nil
 }
@@ -38,7 +40,7 @@ type PermissionRepo interface {
 	FindModel(context.Context, []string, ...any) (*PermissionModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, []PermissionModel, error)
 	AddPolicy(context.Context, PermissionModel) error
-	RemovePolicy(context.Context, PermissionModel) error
+	RemovePolicy(context.Context, PermissionModel, bool) error
 }
 
 type PermissionUsecase struct {
@@ -61,75 +63,59 @@ func (uc *PermissionUsecase) CreatePermission(
 	m PermissionModel,
 ) (*PermissionModel, *errors.Error) {
 	if err := uc.permRepo.CreateModel(ctx, &m); err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	if err := uc.permRepo.AddPolicy(ctx, m); err != nil {
-		rErr := ErrAddPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, ErrAddPolicy.WithCause(err)
 	}
 	return &m, nil
 }
 
 func (uc *PermissionUsecase) UpdatePermissionById(
 	ctx context.Context,
-	permId uint,
+	permId uint32,
 	data map[string]any,
 ) *errors.Error {
 	if err := uc.permRepo.UpdateModel(ctx, data, "id = ?", permId); err != nil {
-		rErr := database.NewGormError(err, data)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, data)
 	}
 	m, rErr := uc.FindPermissionById(ctx, permId)
 	if rErr != nil {
 		return rErr
 	}
-	if err := uc.permRepo.RemovePolicy(ctx, *m); err != nil {
-		rErr := ErrRemovePolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+	if err := uc.permRepo.RemovePolicy(ctx, *m, false); err != nil {
+		return ErrRemovePolicy.WithCause(err)
 	}
 	if err := uc.permRepo.AddPolicy(ctx, *m); err != nil {
-		rErr := ErrAddPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return ErrAddPolicy.WithCause(err)
 	}
 	return nil
 }
 
 func (uc *PermissionUsecase) DeletePermissionById(
 	ctx context.Context,
-	permId uint,
+	permId uint32,
 ) *errors.Error {
 	m, rErr := uc.FindPermissionById(ctx, permId)
 	if rErr != nil {
 		return rErr
 	}
 	if err := uc.permRepo.DeleteModel(ctx, permId); err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": permId})
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, map[string]any{"id": permId})
 	}
-	if err := uc.permRepo.RemovePolicy(ctx, *m); err != nil {
-		rErr := ErrRemovePolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+	if err := uc.permRepo.RemovePolicy(ctx, *m, true); err != nil {
+		return ErrRemovePolicy.WithCause(err)
 	}
 	return nil
 }
 
 func (uc *PermissionUsecase) FindPermissionById(
 	ctx context.Context,
-	permId uint,
+	permId uint32,
 ) (*PermissionModel, *errors.Error) {
 	m, err := uc.permRepo.FindModel(ctx, nil, permId)
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": permId})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"id": permId})
 	}
 	return m, nil
 }
@@ -151,9 +137,7 @@ func (uc *PermissionUsecase) ListPermission(
 	}
 	count, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return 0, nil, rErr
+		return 0, nil, database.NewGormError(err, nil)
 	}
 	return count, ms, nil
 }
@@ -165,7 +149,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) error {
 	}
 	for _, pm := range pms {
 		if err := uc.permRepo.AddPolicy(ctx, pm); err != nil {
-			return err
+			return ErrAddPolicy.WithCause(err)
 		}
 	}
 	return nil

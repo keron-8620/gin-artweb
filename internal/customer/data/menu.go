@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/database"
 )
 
 type menuRepo struct {
@@ -37,7 +37,7 @@ func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
 	m.UpdatedAt = now
 	if err := database.DBCreate(ctx, r.gormDB, &biz.MenuModel{}, m); err != nil {
 		r.log.Error(
-			"failed to create menu model",
+			"新增菜单模型失败",
 			zap.Object("model", m),
 			zap.Error(err),
 		)
@@ -49,7 +49,7 @@ func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
 func (r *menuRepo) UpdateModel(ctx context.Context, data map[string]any, upmap map[string]any, conds ...any) error {
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.MenuModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
-			"failed to update menu model",
+			"更新菜单模型失败",
 			zap.Any("data", data),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -62,7 +62,7 @@ func (r *menuRepo) UpdateModel(ctx context.Context, data map[string]any, upmap m
 func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	if err := database.DBDelete(ctx, r.gormDB, &biz.MenuModel{}, conds...); err != nil {
 		r.log.Error(
-			"failed to delete menu model",
+			"删除菜单模型失败",
 			zap.Any("conditions", conds),
 			zap.Error(err),
 		)
@@ -79,7 +79,7 @@ func (r *menuRepo) FindModel(
 	var m biz.MenuModel
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
-			"failed to find menu model",
+			"查询菜单模型失败",
 			zap.Strings("preloads", preloads),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -97,7 +97,7 @@ func (r *menuRepo) ListModel(
 	count, err := database.DBList(ctx, r.gormDB, &biz.MenuModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
-			"failed to list menu model",
+			"查询菜单列表失败",
 			zap.Object("query_params", &qp),
 			zap.Error(err),
 		)
@@ -121,6 +121,14 @@ func (r *menuRepo) AddGroupPolicy(
 	if m.Parent != nil {
 		obj := menuModelToSub(*m.Parent)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
+			r.log.Error(
+				"添加菜单与父级菜单的继承关系策略失败",
+				zap.String(auth.SubKey, sub),
+				zap.String(auth.ObjKey, obj),
+				zap.Uint32("menu_id", m.Id),
+				zap.Uint32("parent_menu_id", *m.ParentId),
+				zap.Error(err),
+			)
 			return err
 		}
 	}
@@ -129,6 +137,14 @@ func (r *menuRepo) AddGroupPolicy(
 	for _, o := range m.Permissions {
 		obj := permissionModelToSub(o)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
+			r.log.Error(
+				"添加菜单与权限的关联策略失败",
+				zap.String(auth.SubKey, sub),
+				zap.String(auth.ObjKey, obj),
+				zap.Uint32("menu_id", m.Id),
+				zap.Uint32("permission_id", o.Id),
+				zap.Error(err),
+			)
 			return err
 		}
 	}
@@ -138,6 +154,7 @@ func (r *menuRepo) AddGroupPolicy(
 func (r *menuRepo) RemoveGroupPolicy(
 	ctx context.Context,
 	m biz.MenuModel,
+	removeInherited bool,
 ) error {
 	select {
 	case <-ctx.Done():
@@ -148,11 +165,23 @@ func (r *menuRepo) RemoveGroupPolicy(
 
 	// 删除该菜单作为父级的策略（被其他菜单或权限继承）
 	if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
+		r.log.Error(
+			"删除菜单作为子级策略失败(该策略继承自其他策略)",
+			zap.String("sub", sub),
+			zap.Error(err),
+		)
 		return err
 	}
 	// 删除该菜单作为子级的策略（从其他菜单或权限继承）
-	if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
-		return err
+	if removeInherited {
+		if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
+			r.log.Error(
+				"删除菜单作为父级策略失败(该策略被其他策略继承)",
+				zap.String(auth.ObjKey, sub),
+				zap.Error(err),
+			)
+			return err
+		}
 	}
 	return nil
 }

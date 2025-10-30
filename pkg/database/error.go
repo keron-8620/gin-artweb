@@ -5,175 +5,79 @@ import (
 
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	"gin-artweb/pkg/errors"
 )
 
 // 数据库相关错误码定义
 var (
-	RsonRecordNotFound = errors.ReasonEnum{
-		Reason: "GormRecordNotFound",
-		Msg:    "记录未找到",
-	}
-
-	RsonInvalidTransaction = errors.ReasonEnum{
-		Reason: "GormInvalidTransaction",
-		Msg:    "事务处理错误",
-	}
-
-	RsonNotImplemented = errors.ReasonEnum{
-		Reason: "GormNotImplemented",
-		Msg:    "功能未实现",
-	}
-
-	RsonMissingWhereClause = errors.ReasonEnum{
-		Reason: "GormMissingWhereClause",
-		Msg:    "缺少where条件",
-	}
-
-	RsonUnsupportedRelation = errors.ReasonEnum{
-		Reason: "GormUnsupportedRelation",
-		Msg:    "关联关系不支持",
-	}
-
-	RsonPrimaryKeyRequired = errors.ReasonEnum{
-		Reason: "GormPrimaryKeyRequired",
-		Msg:    "主键未设置",
-	}
-
-	RsonModelValueRequired = errors.ReasonEnum{
-		Reason: "GormModelValueRequired",
-		Msg:    "模型值未设置",
-	}
-
-	RsonModelAccessibleFieldsRequired = errors.ReasonEnum{
-		Reason: "GormModelAccessibleFieldsRequired",
-		Msg:    "模型字段不可访问",
-	}
-
-	RsonSubQueryRequired = errors.ReasonEnum{
-		Reason: "GormSubQueryRequired",
-		Msg:    "子查询未设置",
-	}
-
-	RsonInvalidData = errors.ReasonEnum{
-		Reason: "GormInvalidData",
-		Msg:    "无效的数据",
-	}
-
-	RsonUnsupportedDriver = errors.ReasonEnum{
-		Reason: "GormUnsupportedDriver",
-		Msg:    "不支持的数据库驱动",
-	}
-
-	RsonRegistered = errors.ReasonEnum{
-		Reason: "GormRegistered",
-		Msg:    "模型已注册",
-	}
-
-	RsonInvalidField = errors.ReasonEnum{
-		Reason: "GormInvalidField",
-		Msg:    "无效的字段",
-	}
-
-	RsonEmptySlice = errors.ReasonEnum{
-		Reason: "GormEmptySlice",
-		Msg:    "数组不能为空",
-	}
-
-	RsonDryRunModeUnsupported = errors.ReasonEnum{
-		Reason: "GormDryRunModeUnsupported",
-		Msg:    "不支持干运行模式",
-	}
-
-	RsonInvalidDB = errors.ReasonEnum{
-		Reason: "GormInvalidDB",
-		Msg:    "无效的数据库连接",
-	}
-
-	RsonInvalidValue = errors.ReasonEnum{
-		Reason: "GormInvalidValue",
-		Msg:    "无效的数据类型",
-	}
-
-	RsonInvalidValueOfLength = errors.ReasonEnum{
-		Reason: "GormInvalidValueOfLength",
-		Msg:    "关联值无效, 长度不匹配",
-	}
-
-	RsonPreloadNotAllowed = errors.ReasonEnum{
-		Reason: "GormPreloadNotAllowed",
-		Msg:    "使用计数时不允许预加载",
-	}
-
-	RsonDuplicatedKey = errors.ReasonEnum{
-		Reason: "GormDuplicatedKey",
-		Msg:    "唯一性约束冲突",
-	}
-
-	RsonForeignKeyViolated = errors.ReasonEnum{
-		Reason: "GormForeignKeyViolated",
-		Msg:    "外键约束冲突",
-	}
-
-	RsonCheckConstraintViolated = errors.ReasonEnum{
-		Reason: "GormCheckConstraintViolated",
-		Msg:    "检查约束冲突",
-	}
-	RsonModelIsNil = errors.ReasonEnum{
-		Reason: "GormModelIsNil",
-		Msg:    "数据库模型不能为空",
-	}
+	ErrRecordNotFound                = errors.New(http.StatusNotFound, "GormRecordNotFound", "记录未找到", nil)
+	ErrInvalidTransaction            = errors.New(http.StatusBadRequest, "GormInvalidTransaction", "事务处理错误", nil)
+	ErrNotImplemented                = errors.New(http.StatusNotImplemented, "GormNotImplemented", "功能未实现", nil)
+	ErrMissingWhereClause            = errors.New(http.StatusBadRequest, "GormMissingWhereClause", "缺少where条件", nil)
+	ErrUnsupportedRelation           = errors.New(http.StatusBadRequest, "GormUnsupportedRelation", "关联关系不支持", nil)
+	ErrPrimaryKeyRequired            = errors.New(http.StatusBadRequest, "GormPrimaryKeyRequired", "主键未设置", nil)
+	ErrModelValueRequired            = errors.New(http.StatusBadRequest, "GormModelValueRequired", "模型值未设置", nil)
+	ErrModelAccessibleFieldsRequired = errors.New(http.StatusBadRequest, "GormModelAccessibleFieldsRequired", "模型字段不可访问", nil)
+	ErrSubQueryRequired              = errors.New(http.StatusBadRequest, "GormSubQueryRequired", "子查询未设置", nil)
+	ErrInvalidData                   = errors.New(http.StatusBadRequest, "GormInvalidData", "无效的数据", nil)
+	ErrUnsupportedDriver             = errors.New(http.StatusInternalServerError, "GormUnsupportedDriver", "不支持的数据库驱动", nil)
+	ErrRegistered                    = errors.New(http.StatusBadRequest, "GormRegistered", "模型已注册", nil)
+	ErrInvalidField                  = errors.New(http.StatusBadRequest, "GormInvalidField", "无效的字段", nil)
+	ErrEmptySlice                    = errors.New(http.StatusBadRequest, "GormEmptySlice", "数组不能为空", nil)
+	ErrDryRunModeUnsupported         = errors.New(http.StatusBadRequest, "GormDryRunModeUnsupported", "不支持干运行模式", nil)
+	ErrInvalidDB                     = errors.New(http.StatusInternalServerError, "GormInvalidDB", "无效的数据库连接", nil)
+	ErrInvalidValue                  = errors.New(http.StatusBadRequest, "GormInvalidValue", "无效的数据类型", nil)
+	ErrInvalidValueOfLength          = errors.New(http.StatusBadRequest, "GormInvalidValueOfLength", "关联值无效, 长度不匹配", nil)
+	ErrPreloadNotAllowed             = errors.New(http.StatusBadRequest, "GormPreloadNotAllowed", "使用计数时不允许预加载", nil)
+	ErrDuplicatedKey                 = errors.New(http.StatusConflict, "GormDuplicatedKey", "唯一性约束冲突", nil)
+	ErrForeignKeyViolated            = errors.New(http.StatusConflict, "GormForeignKeyViolated", "外键约束冲突", nil)
+	ErrCheckConstraintViolated       = errors.New(http.StatusBadRequest, "GormCheckConstraintViolated", "检查约束冲突", nil)
+	ErrModelIsNil                    = errors.New(http.StatusBadRequest, "GormModelIsNil", "数据库模型不能为空", nil)
 )
 
-var gormErrorsMap = map[string]errors.ReasonEnum{
-	gorm.ErrRecordNotFound.Error():                RsonRecordNotFound,
-	gorm.ErrInvalidTransaction.Error():            RsonInvalidTransaction,
-	gorm.ErrNotImplemented.Error():                RsonNotImplemented,
-	gorm.ErrMissingWhereClause.Error():            RsonMissingWhereClause,
-	gorm.ErrUnsupportedRelation.Error():           RsonUnsupportedRelation,
-	gorm.ErrPrimaryKeyRequired.Error():            RsonPrimaryKeyRequired,
-	gorm.ErrModelValueRequired.Error():            RsonModelValueRequired,
-	gorm.ErrModelAccessibleFieldsRequired.Error(): RsonModelAccessibleFieldsRequired,
-	gorm.ErrSubQueryRequired.Error():              RsonSubQueryRequired,
-	gorm.ErrInvalidData.Error():                   RsonInvalidData,
-	gorm.ErrUnsupportedDriver.Error():             RsonUnsupportedDriver,
-	gorm.ErrRegistered.Error():                    RsonRegistered,
-	gorm.ErrInvalidField.Error():                  RsonInvalidField,
-	gorm.ErrEmptySlice.Error():                    RsonEmptySlice,
-	gorm.ErrDryRunModeUnsupported.Error():         RsonDryRunModeUnsupported,
-	gorm.ErrInvalidDB.Error():                     RsonInvalidDB,
-	gorm.ErrInvalidValue.Error():                  RsonInvalidValue,
-	gorm.ErrInvalidValueOfLength.Error():          RsonInvalidValueOfLength,
-	gorm.ErrPreloadNotAllowed.Error():             RsonPreloadNotAllowed,
-	gorm.ErrDuplicatedKey.Error():                 RsonDuplicatedKey,
-	gorm.ErrForeignKeyViolated.Error():            RsonForeignKeyViolated,
-	gorm.ErrCheckConstraintViolated.Error():       RsonCheckConstraintViolated,
+var gormErrorsMap = map[string]*errors.Error{
+	gorm.ErrRecordNotFound.Error():                ErrRecordNotFound,
+	gorm.ErrInvalidTransaction.Error():            ErrInvalidTransaction,
+	gorm.ErrNotImplemented.Error():                ErrNotImplemented,
+	gorm.ErrMissingWhereClause.Error():            ErrMissingWhereClause,
+	gorm.ErrUnsupportedRelation.Error():           ErrUnsupportedRelation,
+	gorm.ErrPrimaryKeyRequired.Error():            ErrPrimaryKeyRequired,
+	gorm.ErrModelValueRequired.Error():            ErrModelValueRequired,
+	gorm.ErrModelAccessibleFieldsRequired.Error(): ErrModelAccessibleFieldsRequired,
+	gorm.ErrSubQueryRequired.Error():              ErrSubQueryRequired,
+	gorm.ErrInvalidData.Error():                   ErrInvalidData,
+	gorm.ErrUnsupportedDriver.Error():             ErrUnsupportedDriver,
+	gorm.ErrRegistered.Error():                    ErrRegistered,
+	gorm.ErrInvalidField.Error():                  ErrInvalidField,
+	gorm.ErrEmptySlice.Error():                    ErrEmptySlice,
+	gorm.ErrDryRunModeUnsupported.Error():         ErrDryRunModeUnsupported,
+	gorm.ErrInvalidDB.Error():                     ErrInvalidDB,
+	gorm.ErrInvalidValue.Error():                  ErrInvalidValue,
+	gorm.ErrInvalidValueOfLength.Error():          ErrInvalidValueOfLength,
+	gorm.ErrPreloadNotAllowed.Error():             ErrPreloadNotAllowed,
+	gorm.ErrDuplicatedKey.Error():                 ErrDuplicatedKey,
+	gorm.ErrForeignKeyViolated.Error():            ErrForeignKeyViolated,
+	gorm.ErrCheckConstraintViolated.Error():       ErrCheckConstraintViolated,
 }
 
 func NewGormError(err error, tmpData map[string]any) *errors.Error {
-	errMsg := err.Error()
-	value, ok := gormErrorsMap[errMsg]
 	if tmpData == nil {
 		tmpData = make(map[string]any)
 	}
+	errMsg := err.Error()
+	value, ok := gormErrorsMap[errMsg]
 	if !ok {
-		eErr := errors.New(
-			http.StatusInternalServerError,
-			errors.RsonUnknown.Reason,
-			errors.RsonUnknown.Msg,
-			tmpData,
-		)
-		return eErr.WithCause(err)
+		rErr := errors.FromError(err)
+		return rErr.WithData(tmpData)
 	}
-	rErr := errors.New(http.StatusBadRequest, value.Reason, value.Msg, tmpData)
-	return rErr.WithCause(err)
+	return value.WithData(tmpData)
 }
 
 func GormModelIsNil(model string) *errors.Error {
 	return errors.New(
 		http.StatusBadRequest,
-		RsonModelIsNil.Reason,
-		RsonModelIsNil.Msg,
+		ErrModelIsNil.Reason,
+		ErrModelIsNil.Msg,
 		map[string]any{"model": model},
 	)
 }

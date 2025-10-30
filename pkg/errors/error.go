@@ -1,10 +1,14 @@
 package errors
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"maps"
+	"net/http"
 )
+
+const ErrKey = "error"
 
 type Error struct {
 	Code   int            `json:"code"`
@@ -88,10 +92,28 @@ func FromError(err error) *Error {
 	if se := new(Error); errors.As(err, &se) {
 		return se
 	}
+	if errors.Is(err, context.Canceled) {
+		return &Error{
+			Code:   http.StatusBadRequest,
+			Reason: "ctx_cancel",
+			Msg:    "请求取消",
+			Data:   nil,
+			cause:  err,
+		}
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return &Error{
+			Code:   http.StatusRequestTimeout,
+			Reason: "ctx_deadline",
+			Msg:    "请求超时",
+			Data:   nil,
+			cause:  err,
+		}
+	}
 	return &Error{
-		Code:   500,
-		Reason: RsonUnknown.Reason,
-		Msg:    RsonUnknown.Msg,
+		Code:   http.StatusInternalServerError,
+		Reason: "unknown",
+		Msg:    "未知错误",
 		Data:   nil,
 		cause:  err,
 	}

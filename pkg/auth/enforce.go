@@ -5,9 +5,14 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"go.uber.org/zap"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	"gin-artweb/pkg/errors"
+)
+
+const (
+	SubKey = "sub"
+	ObjKey = "obj"
+	ActKey = "act"
 )
 
 // AuthEnforcer 管理身份验证令牌和授权权限
@@ -17,19 +22,15 @@ type AuthEnforcer struct {
 	// enforcer 用于访问控制
 	Enforcer *casbin.Enforcer
 
-	// 日志记录器
-	log *zap.Logger
-
 	// jwt的密钥
 	key []byte
 }
 
 // NewAuthEnforcer 创建一个新的认证缓存实例
 // 返回初始化后的AuthCache指针
-func NewAuthEnforcer(enforcer *casbin.Enforcer, log *zap.Logger, key string) *AuthEnforcer {
+func NewAuthEnforcer(enforcer *casbin.Enforcer, key string) *AuthEnforcer {
 	return &AuthEnforcer{
 		Enforcer: enforcer,
-		log:      log,
 		key:      []byte(key),
 	}
 }
@@ -43,7 +44,6 @@ func (c *AuthEnforcer) Authentication(token string) (*UserClaims, *errors.Error)
 		return c.key, nil
 	})
 	if err != nil {
-		c.log.Error("failed to parse token", zap.Error(err))
 		if goerrors.Is(err, jwt.ErrTokenExpired) {
 			return nil, ErrTokenExpired.WithCause(err)
 		}
@@ -52,14 +52,12 @@ func (c *AuthEnforcer) Authentication(token string) (*UserClaims, *errors.Error)
 
 	// 验证token有效性
 	if !parsedToken.Valid {
-		c.log.Error("token invalid", zap.Error(err))
 		return nil, ErrInvalidToken
 	}
 
 	// 类型断言获取claims
 	claims, ok := parsedToken.Claims.(*UserClaims)
 	if !ok {
-		c.log.Error("claims invalid", zap.Error(err))
 		return nil, ErrInvalidToken
 	}
 	return claims, nil
@@ -73,7 +71,6 @@ func (c *AuthEnforcer) Authentication(token string) (*UserClaims, *errors.Error)
 func (c *AuthEnforcer) Authorization(role, url, method string) (bool, *errors.Error) {
 	ok, err := c.Enforcer.Enforce(role, url, method)
 	if err != nil {
-		c.log.Error("failed to enforce", zap.Error(err))
 		return false, errors.FromError(err)
 	}
 	return ok, nil
@@ -84,13 +81,6 @@ func (c *AuthEnforcer) Authorization(role, url, method string) (bool, *errors.Er
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func (c *AuthEnforcer) AddPolicy(sub, obj, act string) error {
 	if _, err := c.Enforcer.AddPolicy(sub, obj, act); err != nil {
-		c.log.Error(
-			ErrAddPolicyMSG,
-			zap.String("sub", sub),
-			zap.String("obj", obj),
-			zap.String("act", act),
-			zap.Error(err),
-		)
 		return err
 	}
 	return nil
@@ -101,13 +91,6 @@ func (c *AuthEnforcer) AddPolicy(sub, obj, act string) error {
 // // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func (c *AuthEnforcer) RemovePolicy(sub, obj, act string) error {
 	if _, err := c.Enforcer.RemovePolicy(sub, obj, act); err != nil {
-		c.log.Error(
-			ErrRemovePolicyMSG,
-			zap.String("sub", sub),
-			zap.String("obj", obj),
-			zap.String("act", act),
-			zap.Error(err),
-		)
 		return err
 	}
 	return nil
@@ -117,12 +100,6 @@ func (c *AuthEnforcer) RemovePolicy(sub, obj, act string) error {
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func (c *AuthEnforcer) AddGroupPolicy(sub, obj string) error {
 	if _, err := c.Enforcer.AddGroupingPolicy(sub, obj); err != nil {
-		c.log.Error(
-			ErrAddGroupPolicyMSG,
-			zap.String("sub", sub),
-			zap.String("obj", obj),
-			zap.Error(err),
-		)
 		return err
 	}
 	return nil
@@ -132,12 +109,6 @@ func (c *AuthEnforcer) AddGroupPolicy(sub, obj string) error {
 // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func (c *AuthEnforcer) RemoveGroupPolicy(index int, value string) error {
 	if _, err := c.Enforcer.RemoveFilteredGroupingPolicy(index, value); err != nil {
-		c.log.Error(
-			ErrRemoveGroupPolicyMSG,
-			zap.Uint("index", 1),
-			zap.String("value", value),
-			zap.Error(err),
-		)
 		return err
 	}
 	return nil

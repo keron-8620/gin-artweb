@@ -2,23 +2,13 @@ package biz
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
-)
-
-var (
-	ErrAccessLock = errors.New(
-		http.StatusUnauthorized,
-		"account_locked_too_many_attempts",
-		"因登录失败次数过多，账户已被锁定",
-		nil,
-	)
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
 )
 
 type LoginRecordModel struct {
@@ -73,9 +63,7 @@ func (uc *RecordUsecase) CreateLoginRecord(
 	m LoginRecordModel,
 ) (*LoginRecordModel, *errors.Error) {
 	if err := uc.recordRepo.CreateModel(ctx, &m); err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	return &m, nil
 }
@@ -95,9 +83,7 @@ func (uc *RecordUsecase) ListLoginRecord(
 	}
 	count, ms, err := uc.recordRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return 0, nil, rErr
+		return 0, nil, database.NewGormError(err, nil)
 	}
 	return count, ms, nil
 }

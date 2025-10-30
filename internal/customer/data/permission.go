@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/database"
 )
 
 type permissionRepo struct {
@@ -37,7 +37,7 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 	m.UpdatedAt = now
 	if err := database.DBCreate(ctx, r.gormDB, &biz.PermissionModel{}, m); err != nil {
 		r.log.Error(
-			"failed to create permission model",
+			"新增权限模型失败",
 			zap.Object("model", m),
 			zap.Error(err),
 		)
@@ -49,7 +49,7 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.PermissionModel{}, data, nil, conds...); err != nil {
 		r.log.Error(
-			"failed to update permission model",
+			"更新权限模型失败",
 			zap.Any("data", data),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -62,7 +62,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 func (r *permissionRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	if err := database.DBDelete(ctx, r.gormDB, &biz.PermissionModel{}, conds...); err != nil {
 		r.log.Error(
-			"failed to delete permission model",
+			"删除权限模型失败",
 			zap.Any("conditions", conds),
 			zap.Error(err),
 		)
@@ -79,7 +79,7 @@ func (r *permissionRepo) FindModel(
 	var m biz.PermissionModel
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
-			"failed to find permission model",
+			"查询权限模型失败",
 			zap.Strings("preloads", preloads),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -97,13 +97,25 @@ func (r *permissionRepo) ListModel(
 	count, err := database.DBList(ctx, r.gormDB, &biz.PermissionModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
-			"failed to list permission model",
+			"查询权限列表失败",
 			zap.Object("query_params", &qp),
 			zap.Error(err),
 		)
 		return 0, nil, err
 	}
 	return count, ms, nil
+}
+
+func (r *permissionRepo) ListModelByIds(
+	ctx context.Context,
+	ids []uint32,
+) ([]biz.PermissionModel, error) {
+	if len(ids) == 0 {
+		return []biz.PermissionModel{}, nil
+	}
+	qp := database.NewPksQueryParams(ids)
+	_, ms, err := r.ListModel(ctx, qp)
+	return ms, err
 }
 
 func (r *permissionRepo) AddPolicy(
@@ -116,12 +128,23 @@ func (r *permissionRepo) AddPolicy(
 	default:
 	}
 	sub := permissionModelToSub(m)
-	return r.cache.AddPolicy(sub, m.HttpUrl, m.Method)
+	if err := r.cache.AddPolicy(sub, m.Url, m.Method); err != nil {
+		r.log.Error(
+			"添加权限策略失败",
+			zap.String(auth.SubKey, sub),
+			zap.String(auth.ObjKey, m.Url),
+			zap.String(auth.ActKey, m.Method),
+			zap.Error(err),
+		)
+		return err
+	}
+	return nil
 }
 
 func (r *permissionRepo) RemovePolicy(
 	ctx context.Context,
 	m biz.PermissionModel,
+	removeInherited bool,
 ) error {
 	select {
 	case <-ctx.Done():
@@ -129,11 +152,25 @@ func (r *permissionRepo) RemovePolicy(
 	default:
 	}
 	sub := permissionModelToSub(m)
-	if err := r.cache.RemovePolicy(sub, m.HttpUrl, m.Method); err != nil {
+	if err := r.cache.RemovePolicy(sub, m.Url, m.Method); err != nil {
+		r.log.Error(
+			"删除权限策略失败",
+			zap.String(auth.SubKey, sub),
+			zap.String(auth.ObjKey, m.Url),
+			zap.String(auth.ActKey, m.Method),
+			zap.Error(err),
+		)
 		return err
 	}
-	if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
-		return err
+	if removeInherited {
+		if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
+			r.log.Error(
+				"删除权限作为父级策略失败(该策略被其他策略继承)",
+				zap.String(auth.ObjKey, sub),
+				zap.Error(err),
+			)
+			return err
+		}
 	}
 	return nil
 }

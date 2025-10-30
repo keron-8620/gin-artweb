@@ -1,4 +1,4 @@
-module gitee.com/keion8620/go-dango-gin
+module gin-artweb
 
 go 1.24.6
 

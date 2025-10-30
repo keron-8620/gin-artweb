@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/database"
 )
 
 type roleRepo struct {
@@ -37,7 +37,7 @@ func (r *roleRepo) CreateModel(ctx context.Context, m *biz.RoleModel) error {
 	m.UpdatedAt = now
 	if err := database.DBCreate(ctx, r.gormDB, &biz.RoleModel{}, m); err != nil {
 		r.log.Error(
-			"failed to create role model",
+			"新增角色模型失败",
 			zap.Object("model", m),
 			zap.Error(err),
 		)
@@ -49,7 +49,7 @@ func (r *roleRepo) CreateModel(ctx context.Context, m *biz.RoleModel) error {
 func (r *roleRepo) UpdateModel(ctx context.Context, data map[string]any, upmap map[string]any, conds ...any) error {
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.RoleModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
-			"failed to update role model",
+			"更新角色模型失败",
 			zap.Any("data", data),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -62,7 +62,7 @@ func (r *roleRepo) UpdateModel(ctx context.Context, data map[string]any, upmap m
 func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	if err := database.DBDelete(ctx, r.gormDB, &biz.RoleModel{}, conds...); err != nil {
 		r.log.Error(
-			"failed to delete role model",
+			"删除角色模型失败",
 			zap.Any("conditions", conds),
 			zap.Error(err),
 		)
@@ -79,7 +79,7 @@ func (r *roleRepo) FindModel(
 	var m biz.RoleModel
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
-			"failed to find role model",
+			"查询角色模型失败",
 			zap.Strings("preloads", preloads),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -97,7 +97,7 @@ func (r *roleRepo) ListModel(
 	count, err := database.DBList(ctx, r.gormDB, &biz.RoleModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
-			"failed to list role model",
+			"查询角色列表失败",
 			zap.Object("query_params", &qp),
 			zap.Error(err),
 		)
@@ -125,6 +125,14 @@ func (r *roleRepo) AddGroupPolicy(
 	for _, o := range m.Permissions {
 		obj := permissionModelToSub(o)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
+			r.log.Error(
+				"添加角色与权限的关联策略失败",
+				zap.String(auth.SubKey, sub),
+				zap.String(auth.ObjKey, obj),
+				zap.Uint32("role_id", m.Id),
+				zap.Uint32("permission_id", o.Id),
+				zap.Error(err),
+			)
 			return err
 		}
 	}
@@ -133,6 +141,14 @@ func (r *roleRepo) AddGroupPolicy(
 	for _, o := range m.Menus {
 		obj := menuModelToSub(o)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
+			r.log.Error(
+				"添加角色与菜单的关联策略失败",
+				zap.String(auth.SubKey, sub),
+				zap.String(auth.ObjKey, obj),
+				zap.Uint32("role_id", m.Id),
+				zap.Uint32("menu_id", o.Id),
+				zap.Error(err),
+			)
 			return err
 		}
 	}
@@ -141,6 +157,14 @@ func (r *roleRepo) AddGroupPolicy(
 	for _, o := range m.Buttons {
 		obj := buttonModelToSub(o)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
+			r.log.Error(
+				"添加角色与按钮的关联策略失败",
+				zap.String(auth.SubKey, sub),
+				zap.String(auth.ObjKey, obj),
+				zap.Uint32("role_id", m.Id),
+				zap.Uint32("button_id", o.Id),
+				zap.Error(err),
+			)
 			return err
 		}
 	}
@@ -158,12 +182,13 @@ func (r *roleRepo) RemoveGroupPolicy(
 	}
 	sub := r.RoleModelToSub(m)
 
-	// 删除该按钮作为父级的策略（被其他菜单或权限继承）
-	if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
-		return err
-	}
-	// 删除该按钮作为子级的策略（从其他菜单或权限继承）
+	// 删除角色作为子级的策略（从其他菜单或权限继承）
 	if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
+		r.log.Error(
+			"删除角色作为子级策略失败(该策略继承自其他策略)",
+			zap.String(auth.ObjKey, sub),
+			zap.Error(err),
+		)
 		return err
 	}
 	return nil

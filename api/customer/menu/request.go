@@ -1,7 +1,7 @@
 package menu
 
 import (
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/pkg/database"
 )
 
 // CreateMenuRequest 用于创建菜单的请求结构体
@@ -11,7 +11,7 @@ type CreateMenuRequest struct {
 	// 菜单主键，必填，必须大于0
 	// Required: true
 	// Minimum: 1
-	Id uint `json:"id" binding:"required,gt=0"`
+	Id uint32 `json:"id" binding:"required,gt=0"`
 
 	// 前端路由路径，必填，最大长度100
 	// Required: true
@@ -32,7 +32,7 @@ type CreateMenuRequest struct {
 	Meta MetaSchemas `json:"meta" binding:"required"`
 
 	// 排序字段，必填
-	ArrangeOrder uint `json:"arrange_order" binding:"required"`
+	ArrangeOrder uint32 `json:"arrange_order" binding:"required"`
 
 	// 是否激活，必填
 	IsActive bool `json:"is_active" binding:"required"`
@@ -42,10 +42,10 @@ type CreateMenuRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 父级菜单ID，可选
-	ParentId *uint `json:"parent_id" binding:"omitempty"`
+	ParentId *uint32 `json:"parent_id" binding:"omitempty"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint `json:"permission_ids" binding:"omitempty"`
+	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // UpdateMenuRequest 用于更新菜单的请求结构体
@@ -71,7 +71,7 @@ type UpdateMenuRequest struct {
 	Meta MetaSchemas `json:"meta" binding:"required"`
 
 	// 排序字段，必填
-	ArrangeOrder uint `json:"arrange_order" binding:"required"`
+	ArrangeOrder uint32 `json:"arrange_order" binding:"required"`
 
 	// 是否激活，必填
 	IsActive bool `json:"is_active" binding:"required"`
@@ -81,10 +81,10 @@ type UpdateMenuRequest struct {
 	Descr string `json:"descr" binding:"max=254"`
 
 	// 父级菜单ID，可选
-	ParentId *uint `json:"parent_id" binding:"omitempty"`
+	ParentId *uint32 `json:"parent_id" binding:"omitempty"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint `json:"permission_ids" binding:"omitempty"`
+	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // ListMenuRequest 用于获取菜单列表的请求结构体
@@ -114,7 +114,7 @@ type ListMenuRequest struct {
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
 	// 父级菜单ID筛选
-	ParentId *uint `form:"parent_id" binding:"omitempty"`
+	ParentId *uint32 `form:"parent_id" binding:"omitempty"`
 }
 
 func (req *ListMenuRequest) Query() (int, int, map[string]any) {

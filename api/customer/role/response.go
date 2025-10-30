@@ -1,16 +1,16 @@
 package role
 
 import (
-	"gitee.com/keion8620/go-dango-gin/api/customer/button"
-	"gitee.com/keion8620/go-dango-gin/api/customer/menu"
-	"gitee.com/keion8620/go-dango-gin/api/customer/permission"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
+	"gin-artweb/api/customer/button"
+	"gin-artweb/api/customer/menu"
+	"gin-artweb/api/customer/permission"
+	"gin-artweb/pkg/common"
 )
 
 // RoleOutBase 角色基础信息
 type RoleOutBase struct {
 	// 角色ID
-	Id uint `json:"id" example:"1"`
+	Id uint32 `json:"id" example:"1"`
 	// 创建时间
 	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
 	// 更新时间

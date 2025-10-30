@@ -6,8 +6,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
 )
 
 type RoleModel struct {
@@ -69,7 +69,7 @@ func NewRoleUsecase(
 
 func (uc *RoleUsecase) GetPermissions(
 	ctx context.Context,
-	permIds []uint,
+	permIds []uint32,
 ) ([]PermissionModel, *errors.Error) {
 	if len(permIds) == 0 {
 		return nil, nil
@@ -77,16 +77,14 @@ func (uc *RoleUsecase) GetPermissions(
 	qp := database.NewPksQueryParams(permIds)
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	return ms, nil
 }
 
 func (uc *RoleUsecase) GetMenus(
 	ctx context.Context,
-	menuIds []uint,
+	menuIds []uint32,
 ) ([]MenuModel, *errors.Error) {
 	if len(menuIds) == 0 {
 		return nil, nil
@@ -94,16 +92,14 @@ func (uc *RoleUsecase) GetMenus(
 	qp := database.NewPksQueryParams(menuIds)
 	_, ms, err := uc.menuRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	return ms, nil
 }
 
 func (uc *RoleUsecase) GetButtons(
 	ctx context.Context,
-	buttonIds []uint,
+	buttonIds []uint32,
 ) ([]ButtonModel, *errors.Error) {
 	if len(buttonIds) == 0 {
 		return nil, nil
@@ -111,18 +107,16 @@ func (uc *RoleUsecase) GetButtons(
 	qp := database.NewPksQueryParams(buttonIds)
 	_, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	return ms, nil
 }
 
 func (uc *RoleUsecase) CreateRole(
 	ctx context.Context,
-	permIds []uint,
-	menuIds []uint,
-	buttonIds []uint,
+	permIds []uint32,
+	menuIds []uint32,
+	buttonIds []uint32,
 	m RoleModel,
 ) (*RoleModel, *errors.Error) {
 	perms, err := uc.GetPermissions(ctx, permIds)
@@ -147,24 +141,20 @@ func (uc *RoleUsecase) CreateRole(
 		m.Buttons = buttons
 	}
 	if err := uc.roleRepo.CreateModel(ctx, &m); err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	if err := uc.roleRepo.AddGroupPolicy(ctx, m); err != nil {
-		rErr := ErrAddGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
 	return &m, nil
 }
 
 func (uc *RoleUsecase) UpdateRoleById(
 	ctx context.Context,
-	roleId uint,
-	permIds []uint,
-	menuIds []uint,
-	buttonIds []uint,
+	roleId uint32,
+	permIds []uint32,
+	menuIds []uint32,
+	buttonIds []uint32,
 	data map[string]any,
 ) *errors.Error {
 	ummap := make(map[string]any, 3)
@@ -191,41 +181,31 @@ func (uc *RoleUsecase) UpdateRoleById(
 	}
 	data["id"] = roleId
 	if err := uc.roleRepo.UpdateModel(ctx, data, ummap, "id = ?", roleId); err != nil {
-		rErr := database.NewGormError(err, data)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, data)
 	}
 	m, rErr := uc.FindRoleById(ctx, []string{"Buttons", "Menus", "Permissions"}, roleId)
 	if rErr != nil {
 		return rErr
 	}
 	if err := uc.roleRepo.RemoveGroupPolicy(ctx, *m); err != nil {
-		rErr := ErrRemoveGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return ErrRemoveGroupPolicy.WithCause(err)
 	}
 	if err := uc.roleRepo.AddGroupPolicy(ctx, *m); err != nil {
-		rErr := ErrAddGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return ErrAddGroupPolicy.WithCause(err)
 	}
 	return nil
 }
 
-func (uc *RoleUsecase) DeleteRoleById(ctx context.Context, roleId uint) *errors.Error {
+func (uc *RoleUsecase) DeleteRoleById(ctx context.Context, roleId uint32) *errors.Error {
 	m, rErr := uc.FindRoleById(ctx, []string{"Buttons", "Menus", "Permissions"}, roleId)
 	if rErr != nil {
 		return rErr
 	}
 	if err := uc.roleRepo.DeleteModel(ctx, roleId); err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": roleId})
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, map[string]any{"id": roleId})
 	}
 	if err := uc.roleRepo.RemoveGroupPolicy(ctx, *m); err != nil {
-		rErr := ErrRemoveGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return ErrRemoveGroupPolicy.WithCause(err)
 	}
 	return nil
 }
@@ -233,13 +213,11 @@ func (uc *RoleUsecase) DeleteRoleById(ctx context.Context, roleId uint) *errors.
 func (uc *RoleUsecase) FindRoleById(
 	ctx context.Context,
 	preloads []string,
-	roleId uint,
+	roleId uint32,
 ) (*RoleModel, *errors.Error) {
 	m, err := uc.roleRepo.FindModel(ctx, preloads, roleId)
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": roleId})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"id": roleId})
 	}
 	return m, nil
 }
@@ -262,9 +240,7 @@ func (uc *RoleUsecase) ListRole(
 	}
 	count, ms, err := uc.roleRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return 0, nil, rErr
+		return 0, nil, database.NewGormError(err, nil)
 	}
 	return count, ms, nil
 }
@@ -276,7 +252,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) error {
 	}
 	for _, rm := range rms {
 		if err := uc.roleRepo.AddGroupPolicy(ctx, rm); err != nil {
-			return err
+			return ErrAddGroupPolicy.WithCause(err)
 		}
 	}
 	return nil

@@ -7,8 +7,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/database"
 )
 
 type userRepo struct {

@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pb "gitee.com/keion8620/go-dango-gin/api/customer/role"
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	pb "gin-artweb/api/customer/role"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/errors"
 )
 
 type RoleService struct {
@@ -27,6 +27,14 @@ func NewRoleService(
 	}
 }
 
+// @Summary 新增角色
+// @Description 本接口用于新增角色
+// @Tags 角色管理
+// @Accept json
+// @Produce json
+// @Param request body pb.CreateRoleRequest true "创建角色请求"
+// @Success 200 {object} pb.RoleReply "成功返回角色信息"
+// @Router /api/v1/customer/role [post]
 func (s *RoleService) CreateRole(ctx *gin.Context) {
 	var req pb.CreateRoleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -55,6 +63,15 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 	})
 }
 
+// @Summary 更新角色
+// @Description 本接口用于更新角色
+// @Tags 角色管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "角色编号"
+// @Param request body pb.UpdateRoleRequest true "更新角色请求"
+// @Success 200 {object} pb.RoleReply "成功返回角色信息"
+// @Router /api/v1/customer/role/{pk} [put]
 func (s *RoleService) UpdateRole(ctx *gin.Context) {
 	var uri PkUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -94,6 +111,13 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 	})
 }
 
+// @Summary 删除角色
+// @Description 本接口用于删除指定ID的角色
+// @Tags 角色管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "角色编号"
+// @Router /api/v1/customer/role/{pk} [delete]
 func (s *RoleService) DeleteRole(ctx *gin.Context) {
 	var uri PkUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -109,6 +133,14 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, common.NoDataReply)
 }
 
+// @Summary 查询单个角色
+// @Description 本接口用于查询一个角色
+// @Tags 角色管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "角色编号"
+// @Success 200 {object} pb.RoleReply "成功返回角色信息"
+// @Router /api/v1/customer/role/{pk} [get]
 func (s *RoleService) GetRole(ctx *gin.Context) {
 	var uri PkUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -128,6 +160,15 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 	})
 }
 
+// @Summary 查询角色列表
+// @Description 本接口用于查询角色列表
+// @Tags 角色管理
+// @Accept json
+// @Produce json
+// @Param page query int false "页码"
+// @Param size query int false "每页数量"
+// @Success 200 {object} pb.PagRoleBaseReply "成功返回角色列表"
+// @Router /api/v1/customer/button [get]
 func (s *RoleService) ListRole(ctx *gin.Context) {
 	var req pb.ListRoleRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {

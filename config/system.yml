@@ -6,7 +6,7 @@ server:
     key_path: "server.key"
     crt_path: "server.crt"
     password: ""
-  enable_swagger: false
+  enable_swagger: true
   
 
 database:

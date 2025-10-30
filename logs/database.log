@@ -589,3 +589,59 @@
 [0.727ms] [rows:0] SELECT * FROM "customer_button"
  2025/10/23 10:09:37 /home/quant/Document/project/go-dango-gin/pkg/database/curd.go:302
 [0.939ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:11:04 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[13.351ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:11:04 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[7.378ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:11:04 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.052ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:11:04 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[4.928ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:15:23 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[7.306ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:15:23 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[3.892ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:15:23 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[3.967ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:15:23 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[4.086ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:16:21 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[12.200ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:16:21 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[7.342ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:16:21 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.335ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:16:21 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.867ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:35:19 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[9.853ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:35:19 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[5.778ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:35:19 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[5.909ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:35:19 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.020ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:37:16 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[11.645ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:37:16 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.704ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:37:16 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.649ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:37:16 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[7.231ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:37:45 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[11.445ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:37:45 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.251ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:37:45 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.292ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:37:45 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.441ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/10/30 14:40:27 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[6.882ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/10/30 14:40:27 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[4.192ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/10/30 14:40:27 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[3.963ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/10/30 14:40:27 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
+[4.130ms] [rows:2] SELECT * FROM "customer_role"

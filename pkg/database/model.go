@@ -7,11 +7,11 @@ import (
 )
 
 type BaseModel struct {
-	Id uint `gorm:"column:id;primary_key;AUTO_INCREMENT;comment:编号" json:"id"`
+	Id uint32 `gorm:"column:id;primary_key;AUTO_INCREMENT;comment:编号" json:"id"`
 }
 
 func (m *BaseModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint("id", m.Id)
+	enc.AddUint32("id", m.Id)
 	return nil
 }
 

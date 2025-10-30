@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pb "gitee.com/keion8620/go-dango-gin/api/customer/user"
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	pb "gin-artweb/api/customer/user"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/errors"
 )
 
 type UserService struct {
@@ -71,7 +71,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Param request body pb.UpdateUser true "更新用户请求"
+// @Param request body pb.UpdateUserRequest true "更新用户请求"
 // @Success 200 {object} pb.UserReply "成功返回用户信息"
 // @Router /api/v1/customer/user/{pk} [put]
 func (s *UserService) UpdateUser(ctx *gin.Context) {
@@ -116,7 +116,6 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Success 200 {object} errors.Reply[map[string]string] "删除成功"
 // @Router /api/v1/customer/user/{pk} [delete]
 func (s *UserService) DeleteUser(ctx *gin.Context) {
 	var uri PkUri
@@ -200,14 +199,13 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 	})
 }
 
-// @Summary 修改用户密码
-// @Description 本接口用于修改用户密码
+// @Summary 重置用户密码
+// @Description 本接口用于重置用户密码
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Param request body pb.ResetPasswordRequest true "修改用户密码请求"
-// @Success 200 {object} pb.APIReply "成功是否修改成功"
+// @Param request body pb.ResetPasswordRequest true "重置用户密码请求"
 // @Router /api/v1/customer/user/password/{pk} [put]
 func (s *UserService) ResetPassword(ctx *gin.Context) {
 	var uri PkUri
@@ -238,6 +236,54 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
 }
 
+// @Summary 修改用户密码
+// @Description 本接口用于修改用户密码
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "用户编号"
+// @Param request body pb.PatchPasswordRequest true "修改用户密码请求"
+// @Router /api/v1/customer/own/password [put]
+func (s *UserService) PatchPassword(ctx *gin.Context) {
+	var req pb.PatchPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		rErr := errors.ValidateError.WithCause(err)
+		s.log.Error(rErr.Error())
+		ctx.JSON(rErr.Code, rErr.Reply())
+		return
+	}
+	if req.NewPassword != req.ConfirmPassword {
+		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
+		return
+	}
+	claims := auth.GetGinUserClaims(ctx)
+	if claims == nil {
+		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
+		return
+	}
+	m, rErr := s.ucUser.FindUserById(ctx, []string{"Role"}, claims.UserId)
+	if rErr != nil {
+		ctx.JSON(rErr.Code, rErr.Reply())
+		return
+	}
+	ok, rErr := s.ucUser.VerifyPassword(req.OldPassword, m.Password)
+	if rErr != nil {
+		ctx.JSON(rErr.Code, rErr.Reply())
+		return
+	}
+	if !ok {
+		ctx.JSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.Reply())
+	}
+	if err := s.ucUser.UpdateUserById(ctx, claims.UserId, map[string]any{
+		"password": req.NewPassword,
+	}); err != nil {
+		s.log.Error(err.Error())
+		ctx.JSON(err.Code, err.Reply())
+		return
+	}
+	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+}
+
 // @Summary 登陆接口
 // @Description 本接口用于登陆
 // @Tags 用户管理
@@ -245,7 +291,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 // @Produce json
 // @Param request body pb.LoginRequest true "登陆请求参数"
 // @Success 200 {object} pb.LoginReply "成功返回用户信息"
-// @Router /api/v1/customer/user/{pk} [put]
+// @Router /api/v1/customer/own/login [put]
 func (s *UserService) Login(ctx *gin.Context) {
 	var req pb.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -275,46 +321,6 @@ func (s *UserService) Login(ctx *gin.Context) {
 	s.ucRecord.CreateLoginRecord(ctx, lrm)
 }
 
-func (s *UserService) PatchPassword(ctx *gin.Context) {
-	var req pb.PatchPasswordRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
-		ctx.JSON(rErr.Code, rErr.Reply())
-		return
-	}
-	if req.NewPassword != req.ConfirmPassword {
-		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
-		return
-	}
-	claims := auth.GetGinUserClaims(ctx)
-	if claims == nil {
-		ctx.JSON(auth.ErrCtxUserNotFound.Code, auth.ErrCtxUserNotFound.Reply())
-		return
-	}
-	m, rErr := s.ucUser.FindUserById(ctx, []string{"Role"}, claims.UserId)
-	if rErr != nil {
-		ctx.JSON(rErr.Code, rErr.Reply())
-		return
-	}
-	ok, rErr := s.ucUser.VerifyPassword(req.OldPassword, m.Password)
-	if rErr != nil {
-		ctx.JSON(rErr.Code, rErr.Reply())
-		return
-	}
-	if !ok {
-		ctx.JSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.Reply())
-	}
-	if err := s.ucUser.UpdateUserById(ctx, claims.UserId, map[string]any{
-		"password": req.NewPassword,
-	}); err != nil {
-		s.log.Error(err.Error())
-		ctx.JSON(err.Code, err.Reply())
-		return
-	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
-}
-
 func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/user", s.CreateUser)
 	r.PUT("/user/:pk", s.UpdateUser)
@@ -322,8 +328,8 @@ func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/user/:pk", s.GetUser)
 	r.GET("/user", s.ListUser)
 	r.PATCH("/user/password/:pk", s.ResetPassword)
-	r.POST("/own/login", s.Login)
 	r.PATCH("/own/password", s.PatchPassword)
+	r.POST("/own/login", s.Login)
 }
 
 func UserModelToOutBase(

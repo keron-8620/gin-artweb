@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/config"
+	"gin-artweb/pkg/config"
 )
 
 // CorsMiddleware 跨域中间件

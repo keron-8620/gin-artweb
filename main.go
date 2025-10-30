@@ -17,14 +17,14 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	customer "gitee.com/keion8620/go-dango-gin/internal/customer/server"
+	customer "gin-artweb/internal/customer/server"
 
-	_ "gitee.com/keion8620/go-dango-gin/docs"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
-	"gitee.com/keion8620/go-dango-gin/pkg/config"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/log"
-	"gitee.com/keion8620/go-dango-gin/pkg/middleware"
+	_ "gin-artweb/docs"
+	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/config"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/log"
+	"gin-artweb/pkg/middleware"
 )
 
 const (

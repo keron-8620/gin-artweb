@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/database"
 )
 
 type buttonRepo struct {
@@ -37,7 +37,7 @@ func (r *buttonRepo) CreateModel(ctx context.Context, m *biz.ButtonModel) error 
 	m.UpdatedAt = now
 	if err := database.DBCreate(ctx, r.gormDB, &biz.ButtonModel{}, m); err != nil {
 		r.log.Error(
-			"failed to create button model",
+			"新增按钮模型失败",
 			zap.Object("model", m),
 			zap.Error(err),
 		)
@@ -49,7 +49,7 @@ func (r *buttonRepo) CreateModel(ctx context.Context, m *biz.ButtonModel) error 
 func (r *buttonRepo) UpdateModel(ctx context.Context, data map[string]any, upmap map[string]any, conds ...any) error {
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.ButtonModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
-			"failed to update button model",
+			"更新按钮模型失败",
 			zap.Any("data", data),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -62,7 +62,7 @@ func (r *buttonRepo) UpdateModel(ctx context.Context, data map[string]any, upmap
 func (r *buttonRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	if err := database.DBDelete(ctx, r.gormDB, &biz.ButtonModel{}, conds...); err != nil {
 		r.log.Error(
-			"failed to delete button model",
+			"删除按钮模型失败",
 			zap.Any("conditions", conds),
 			zap.Error(err),
 		)
@@ -79,7 +79,7 @@ func (r *buttonRepo) FindModel(
 	var m biz.ButtonModel
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
-			"failed to find button model",
+			"查询按钮模型失败",
 			zap.Strings("preloads", preloads),
 			zap.Any("conditions", conds),
 			zap.Error(err),
@@ -97,7 +97,7 @@ func (r *buttonRepo) ListModel(
 	count, err := database.DBList(ctx, r.gormDB, &biz.ButtonModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
-			"failed to list button model",
+			"查询按钮列表失败",
 			zap.Object("query_params", &qp),
 			zap.Error(err),
 		)
@@ -118,6 +118,14 @@ func (r *buttonRepo) AddGroupPolicy(
 	sub := buttonModelToSub(m)
 	menuObj := menuModelToSub(m.Menu)
 	if err := r.cache.AddGroupPolicy(sub, menuObj); err != nil {
+		r.log.Error(
+			"添加按钮权限失败",
+			zap.String(auth.SubKey, sub),
+			zap.String(auth.ObjKey, menuObj),
+			zap.Uint32("button_id", m.Id),
+			zap.Uint32("menu_id", m.MenuId),
+			zap.Error(err),
+		)
 		return err
 	}
 
@@ -125,6 +133,14 @@ func (r *buttonRepo) AddGroupPolicy(
 	for _, o := range m.Permissions {
 		obj := permissionModelToSub(o)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
+			r.log.Error(
+				"添加按钮与菜单的继承关系策略失败",
+				zap.String(auth.SubKey, sub),
+				zap.String(auth.ObjKey, obj),
+				zap.Uint32("menu_id", m.Id),
+				zap.Uint32("permission_id", o.Id),
+				zap.Error(err),
+			)
 			return err
 		}
 	}
@@ -134,6 +150,7 @@ func (r *buttonRepo) AddGroupPolicy(
 func (r *buttonRepo) RemoveGroupPolicy(
 	ctx context.Context,
 	m biz.ButtonModel,
+	removeInherited bool,
 ) error {
 	select {
 	case <-ctx.Done():
@@ -144,11 +161,23 @@ func (r *buttonRepo) RemoveGroupPolicy(
 
 	// 删除该按钮作为父级的策略（被其他菜单或权限继承）
 	if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
+		r.log.Error(
+			"删除按钮作为子级策略失败(该策略继承自其他策略)",
+			zap.String("sub", sub),
+			zap.Error(err),
+		)
 		return err
 	}
 	// 删除该按钮作为子级的策略（从其他菜单或权限继承）
-	if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
-		return err
+	if removeInherited {
+		if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
+			r.log.Error(
+				"删除按钮作为子级策略失败(该策略被其他策略继承)",
+				zap.String(auth.ObjKey, sub),
+				zap.Error(err),
+			)
+			return err
+		}
 	}
 	return nil
 }

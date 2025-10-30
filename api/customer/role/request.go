@@ -1,7 +1,7 @@
 package role
 
 import (
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/pkg/database"
 )
 
 // CreateRoleRequest 用于创建角色的请求结构体
@@ -18,13 +18,13 @@ type CreateRoleRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint `json:"permission_ids" binding:"omitempty"`
+	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
 
 	// 关联菜单ID列表，可选
-	MenuIds []uint `json:"menu_ids" binding:"omitempty"`
+	MenuIds []uint32 `json:"menu_ids" binding:"omitempty"`
 
 	// 关联按钮ID列表，可选
-	ButtonIds []uint `json:"button_ids" binding:"omitempty"`
+	ButtonIds []uint32 `json:"button_ids" binding:"omitempty"`
 }
 
 // UpdateRoleRequest 用于更新角色的请求结构体
@@ -41,13 +41,13 @@ type UpdateRoleRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint `json:"permission_ids" binding:"omitempty"`
+	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
 
 	// 关联菜单ID列表，可选
-	MenuIds []uint `json:"menu_ids" binding:"omitempty"`
+	MenuIds []uint32 `json:"menu_ids" binding:"omitempty"`
 
 	// 关联按钮ID列表，可选
-	ButtonIds []uint `json:"button_ids" binding:"omitempty"`
+	ButtonIds []uint32 `json:"button_ids" binding:"omitempty"`
 }
 
 // ListRoleRequest 用于获取角色列表的请求结构体

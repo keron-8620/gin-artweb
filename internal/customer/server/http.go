@@ -11,13 +11,13 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gitee.com/keion8620/go-dango-gin/internal/customer/biz"
-	"gitee.com/keion8620/go-dango-gin/internal/customer/data"
-	"gitee.com/keion8620/go-dango-gin/internal/customer/service"
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/common"
-	"gitee.com/keion8620/go-dango-gin/pkg/config"
-	"gitee.com/keion8620/go-dango-gin/pkg/crypto"
+	"gin-artweb/internal/customer/biz"
+	"gin-artweb/internal/customer/data"
+	"gin-artweb/internal/customer/service"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/config"
+	"gin-artweb/pkg/crypto"
 )
 
 func NewServer(
@@ -33,7 +33,7 @@ func NewServer(
 	if err != nil {
 		panic(err)
 	}
-	enforcer := auth.NewAuthEnforcer(enf, logger, conf.Security.SecretKey)
+	enforcer := auth.NewAuthEnforcer(enf, conf.Security.SecretKey)
 	hasher := crypto.NewBcryptHasher(12)
 
 	permissionRepo := data.NewPermissionRepo(logger, db, enforcer)
@@ -59,6 +59,7 @@ func NewServer(
 	buttonService := service.NewButtonService(logger, buttonUsecase)
 	roleService := service.NewRoleService(logger, roleUsecase)
 	userService := service.NewUserService(logger, userUsecase, recordUsecase)
+	recordService := service.NewRecordService(logger, recordUsecase)
 
 	appRouter := router.Group("/v1/customer")
 	permissionService.LoadRouter(appRouter)
@@ -66,6 +67,7 @@ func NewServer(
 	buttonService.LoadRouter(appRouter)
 	roleService.LoadRouter(appRouter)
 	userService.LoadRouter(appRouter)
+	recordService.LoadRouter(appRouter)
 
 	permissionUsecase.LoadPermissionPolicy(ctx)
 	menuUsecase.LoadMenuPolicy(ctx)

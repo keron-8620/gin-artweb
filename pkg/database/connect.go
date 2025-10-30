@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/database/driver/opengauss"
+	"gin-artweb/pkg/database/driver/opengauss"
 )
 
 // NewGormConfig 创建 gorm 配置

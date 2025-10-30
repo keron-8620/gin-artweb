@@ -3,11 +3,12 @@ package middleware
 import (
 	"fmt"
 	"runtime/debug"
+	goerrors "errors"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	"gin-artweb/pkg/errors"
 )
 
 // ErrorMiddleware 异常处理中间件
@@ -38,7 +39,8 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					zap.String("user_agent", c.Request.UserAgent()),
 					zap.String("stack", string(stack)),
 				)
-				c.JSON(errors.UnknowError.Code, errors.UnknowError.Reply())
+				err := errors.FromError(goerrors.New(errMsg))
+				c.JSON(err.Code, err.Reply())
 				// 中止请求处理
 				c.Abort()
 			}
@@ -53,9 +55,9 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 			if err != nil {
 				customErr := errors.FromError(err)
 				logger.Error("server error",
-					zap.String("error", customErr.Error()),
 					zap.String("method", c.Request.Method),
 					zap.String("url", c.Request.URL.String()),
+					zap.Error(err),
 				)
 				c.JSON(customErr.Code, customErr.Reply())
 				c.Abort()

@@ -218,7 +218,7 @@ type QueryParams struct {
 	IsCount  bool           // 是否只查询总数
 }
 
-func NewPksQueryParams(pks []uint) QueryParams {
+func NewPksQueryParams(pks []uint32) QueryParams {
 	return QueryParams{
 		Preloads: []string{},
 		Query:    map[string]any{"id in ?": pks},

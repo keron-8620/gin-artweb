@@ -8,7 +8,7 @@ import (
 type UserClaims struct {
 	jwt.RegisteredClaims
 	IsStaff bool   `json:"isf"`  // 是否是工作人员
-	UserId  uint   `json:"uid"`  // 用户ID
+	UserId  uint32 `json:"uid"`  // 用户ID
 	Role    string `json:"role"` // 角色
 }
 

@@ -6,17 +6,17 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
 )
 
 type ButtonModel struct {
 	database.StandardModel
 	Name         string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	ArrangeOrder uint              `gorm:"column:arrange_order;type:integer;comment:排序" json:"arrange_order"`
+	ArrangeOrder uint32            `gorm:"column:arrange_order;type:integer;comment:排序" json:"arrange_order"`
 	IsActive     bool              `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
 	Descr        string            `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	MenuId       uint              `gorm:"column:menu_id;foreignKey:MenuId;references:Id;not null;constraint:OnDelete:CASCADE;comment:菜单" json:"menu"`
+	MenuId       uint32            `gorm:"column:menu_id;foreignKey:MenuId;references:Id;not null;constraint:OnDelete:CASCADE;comment:菜单" json:"menu"`
 	Menu         MenuModel         `gorm:"foreignKey:MenuId;constraint:OnDelete:CASCADE"`
 	Permissions  []PermissionModel `gorm:"many2many:customer_button_permission;joinForeignKey:button_id;joinReferences:permission_id;constraint:OnDelete:CASCADE"`
 }
@@ -30,10 +30,10 @@ func (m *ButtonModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 		return err
 	}
 	enc.AddString("name", m.Name)
-	enc.AddUint("arrange_order", m.ArrangeOrder)
+	enc.AddUint32("arrange_order", m.ArrangeOrder)
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddString("descr", m.Descr)
-	enc.AddUint("menu_id", m.MenuId)
+	enc.AddUint32("menu_id", m.MenuId)
 	return nil
 }
 
@@ -51,7 +51,7 @@ type ButtonRepo interface {
 	FindModel(context.Context, []string, ...any) (*ButtonModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, []ButtonModel, error)
 	AddGroupPolicy(context.Context, ButtonModel) error
-	RemoveGroupPolicy(context.Context, ButtonModel) error
+	RemoveGroupPolicy(context.Context, ButtonModel, bool) error
 }
 
 func NewButtonUsecase(
@@ -70,20 +70,18 @@ func NewButtonUsecase(
 
 func (uc *ButtonUsecase) GetMenu(
 	ctx context.Context,
-	menuId uint,
+	menuId uint32,
 ) (*MenuModel, *errors.Error) {
 	m, err := uc.menuRepo.FindModel(ctx, nil, menuId)
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"menu_id": menuId})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"menu_id": menuId})
 	}
 	return m, nil
 }
 
 func (uc *ButtonUsecase) GetPermissions(
 	ctx context.Context,
-	permIds []uint,
+	permIds []uint32,
 ) ([]PermissionModel, *errors.Error) {
 	if len(permIds) == 0 {
 		return nil, nil
@@ -91,16 +89,14 @@ func (uc *ButtonUsecase) GetPermissions(
 	qp := database.NewPksQueryParams(permIds)
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	return ms, nil
 }
 
 func (uc *ButtonUsecase) CreateButton(
 	ctx context.Context,
-	permIds []uint,
+	permIds []uint32,
 	m ButtonModel,
 ) (*ButtonModel, *errors.Error) {
 	menu, err := uc.GetMenu(ctx, m.MenuId)
@@ -116,22 +112,18 @@ func (uc *ButtonUsecase) CreateButton(
 		m.Permissions = perms
 	}
 	if err := uc.buttonRepo.CreateModel(ctx, &m); err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	if err := uc.buttonRepo.AddGroupPolicy(ctx, m); err != nil {
-		rErr := ErrRemoveGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, ErrRemoveGroupPolicy.WithCause(err)
 	}
 	return &m, nil
 }
 
 func (uc *ButtonUsecase) UpdateButtonById(
 	ctx context.Context,
-	buttonId uint,
-	permIds []uint,
+	buttonId uint32,
+	permIds []uint32,
 	data map[string]any,
 ) *errors.Error {
 	ummap := make(map[string]any, 1)
@@ -144,44 +136,34 @@ func (uc *ButtonUsecase) UpdateButtonById(
 	}
 	data["id"] = buttonId
 	if err := uc.buttonRepo.UpdateModel(ctx, data, ummap, "id = ?", buttonId); err != nil {
-		rErr := database.NewGormError(err, data)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, data)
 	}
 	m, rErr := uc.FindButtonById(ctx, []string{"Menu", "Permissions"}, buttonId)
 	if rErr != nil {
 		return rErr
 	}
-	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, *m); err != nil {
-		rErr = ErrRemoveGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, *m, false); err != nil {
+		return ErrRemoveGroupPolicy.WithCause(err)
 	}
 	if err := uc.buttonRepo.AddGroupPolicy(ctx, *m); err != nil {
-		rErr := ErrAddGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return ErrAddGroupPolicy.WithCause(err)
 	}
 	return nil
 }
 
 func (uc *ButtonUsecase) DeleteButtonById(
 	ctx context.Context,
-	buttonId uint,
+	buttonId uint32,
 ) *errors.Error {
 	m, rErr := uc.FindButtonById(ctx, []string{"Menu", "Permissions"}, buttonId)
 	if rErr != nil {
 		return rErr
 	}
 	if err := uc.buttonRepo.DeleteModel(ctx, buttonId); err != nil {
-		rErr = database.NewGormError(err, map[string]any{"id": buttonId})
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, map[string]any{"id": buttonId})
 	}
-	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, *m); err != nil {
-		rErr = ErrRemoveGroupPolicy.WithCause(err)
-		uc.log.Error(rErr.Error())
-		return rErr
+	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, *m, true); err != nil {
+		return ErrRemoveGroupPolicy.WithCause(err)
 	}
 	return nil
 }
@@ -189,13 +171,11 @@ func (uc *ButtonUsecase) DeleteButtonById(
 func (uc *ButtonUsecase) FindButtonById(
 	ctx context.Context,
 	preloads []string,
-	buttonId uint,
+	buttonId uint32,
 ) (*ButtonModel, *errors.Error) {
 	m, err := uc.buttonRepo.FindModel(ctx, preloads, buttonId)
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": buttonId})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"id": buttonId})
 	}
 	return m, nil
 }
@@ -218,9 +198,7 @@ func (uc *ButtonUsecase) ListButton(
 	}
 	count, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return 0, nil, rErr
+		return 0, nil, database.NewGormError(err, nil)
 	}
 	return count, ms, nil
 }
@@ -232,7 +210,7 @@ func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) error {
 	}
 	for _, bm := range bms {
 		if err := uc.buttonRepo.AddGroupPolicy(ctx, bm); err != nil {
-			return err
+			return ErrAddGroupPolicy.WithCause(err)
 		}
 	}
 	return nil

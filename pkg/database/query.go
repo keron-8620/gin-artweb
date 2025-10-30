@@ -26,7 +26,7 @@ type BaseModelQuery struct {
 
 	// 权限主键，可选参数，如果提供则必须大于0
 	// Minimum: 1
-	Pk uint `form:"pk" binding:"omitempty,gt=0"`
+	Pk uint32 `form:"pk" binding:"omitempty,gt=0"`
 
 	// "权限主键列表，可选参数，多个用,隔开，如1,2,3"
 	// Max length: 100
@@ -49,7 +49,7 @@ func (q *BaseModelQuery) QueryMap(l int) (int, int, map[string]any) {
 		query["id = ?"] = q.Pk
 	}
 	if q.Pks != "" {
-		pks := StringToListUint(q.Pks)
+		pks := StringToListUint32(q.Pks)
 		if len(pks) > 1 {
 			query["id in ?"] = pks
 		}
@@ -106,13 +106,13 @@ func (q *StandardModelQuery) QueryMap(l int) (int, int, map[string]any) {
 	return page, size, query
 }
 
-func StringToListUint(pks string) []uint {
+func StringToListUint32(pks string) []uint32 {
 	pks = strings.TrimSpace(pks)
 	if pks == "" {
-		return make([]uint, 0)
+		return make([]uint32, 0)
 	}
 	pkList := strings.Split(pks, ",")
-	var ids []uint
+	var ids []uint32
 	for _, pk := range pkList {
 		pk = strings.TrimSpace(pk)
 		if pk == "" {
@@ -122,7 +122,7 @@ func StringToListUint(pks string) []uint {
 		if err != nil {
 			continue
 		}
-		ids = append(ids, uint(value))
+		ids = append(ids, uint32(value))
 	}
 	return ids
 }

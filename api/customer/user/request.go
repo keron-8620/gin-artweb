@@ -1,7 +1,7 @@
 package user
 
 import (
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/pkg/database"
 )
 
 // CreateUserRequest 用于创建用户的请求结构体
@@ -25,7 +25,7 @@ type CreateUserRequest struct {
 	IsStaff bool `json:"is_staff" binding:"required"`
 
 	// 角色ID，必填
-	RoleId uint `json:"role_id" binding:"required"`
+	RoleId uint32 `json:"role_id" binding:"required"`
 }
 
 // UpdateUserRequest 用于更新用户的请求结构体
@@ -45,7 +45,7 @@ type UpdateUserRequest struct {
 	IsStaff bool `json:"is_staff" binding:"required"`
 
 	// 角色ID，必填
-	RoleId uint `json:"role_id" binding:"required"`
+	RoleId uint32 `json:"role_id" binding:"required"`
 }
 
 // ListUserRequest 用于获取用户列表的请求结构体
@@ -66,7 +66,7 @@ type ListUserRequest struct {
 	IsStaff *bool `json:"is_staff" binding:"omitempty"`
 
 	// 角色ID
-	RoleId uint `json:"role_id" binding:"omitempty"`
+	RoleId uint32 `json:"role_id" binding:"omitempty"`
 }
 
 func (req *ListUserRequest) Query() (int, int, map[string]any) {

@@ -1,7 +1,7 @@
 package button
 
 import (
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/pkg/database"
 )
 
 // CreateButtonRequest 用于创建按钮的请求结构体
@@ -11,7 +11,7 @@ type CreateButtonRequest struct {
 	// 按钮主键，必填，必须大于0
 	// Required: true
 	// Minimum: 1
-	Id uint `json:"id" binding:"required,gt=0"`
+	Id uint32 `json:"id" binding:"required,gt=0"`
 
 	// 名称，必填，最大长度50
 	// Required: true
@@ -19,7 +19,7 @@ type CreateButtonRequest struct {
 	Name string `json:"name" binding:"required,max=50"`
 
 	// 排序字段，必填
-	ArrangeOrder uint `json:"arrange_order" binding:"required"`
+	ArrangeOrder uint32 `json:"arrange_order" binding:"required"`
 
 	// 是否激活，必填
 	IsActive bool `json:"is_active" binding:"required"`
@@ -29,10 +29,10 @@ type CreateButtonRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuId uint `json:"menu_id" binding:"required"`
+	MenuId uint32 `json:"menu_id" binding:"required"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint `json:"permission_ids" binding:"omitempty"`
+	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // UpdateButtonRequest 用于更新按钮的请求结构体
@@ -45,7 +45,7 @@ type UpdateButtonRequest struct {
 	Name string `json:"name" binding:"required,max=50"`
 
 	// 排序字段，必填
-	ArrangeOrder uint `json:"arrange_order" binding:"required"`
+	ArrangeOrder uint32 `json:"arrange_order" binding:"required"`
 
 	// 是否激活，必填
 	IsActive bool `json:"is_active" binding:"required"`
@@ -55,10 +55,10 @@ type UpdateButtonRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuId uint `json:"menu_id" binding:"required"`
+	MenuId uint32 `json:"menu_id" binding:"required"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint `json:"permission_ids" binding:"omitempty"`
+	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // ListButtonRequest 用于获取按钮列表的请求结构体
@@ -80,7 +80,7 @@ type ListButtonRequest struct {
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuId uint `json:"menu_id" binding:"omitempty"`
+	MenuId uint32 `json:"menu_id" binding:"omitempty"`
 }
 
 func (req *ListButtonRequest) Query() (int, int, map[string]any) {

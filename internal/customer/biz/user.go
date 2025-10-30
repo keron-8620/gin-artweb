@@ -8,12 +8,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gitee.com/keion8620/go-dango-gin/pkg/auth"
-	"gitee.com/keion8620/go-dango-gin/pkg/config"
-	"gitee.com/keion8620/go-dango-gin/pkg/crypto"
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
-	"gitee.com/keion8620/go-dango-gin/pkg/errors"
-	"gitee.com/keion8620/go-dango-gin/pkg/utils"
+	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/config"
+	"gin-artweb/pkg/crypto"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
+	"gin-artweb/pkg/utils"
 )
 
 type UserModel struct {
@@ -22,7 +22,7 @@ type UserModel struct {
 	Password string    `gorm:"column:password;type:varchar(150);not null;comment:密码" json:"password"`
 	IsActive bool      `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
 	IsStaff  bool      `gorm:"column:is_staff;type:boolean;comment:是否是工作人员" json:"is_staff"`
-	RoleId   uint      `gorm:"column:role_id;foreignKey:RoleId;references:Id;not null;constraint:OnDelete:CASCADE;comment:角色" json:"role"`
+	RoleId   uint32    `gorm:"column:role_id;foreignKey:RoleId;references:Id;not null;constraint:OnDelete:CASCADE;comment:角色" json:"role"`
 	Role     RoleModel `gorm:"foreignKey:RoleId;constraint:OnDelete:CASCADE"`
 }
 
@@ -37,7 +37,7 @@ func (m *UserModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("username", m.Username)
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddBool("is_staff", m.IsStaff)
-	enc.AddUint("role_id", m.RoleId)
+	enc.AddUint32("role_id", m.RoleId)
 	return nil
 }
 
@@ -78,13 +78,11 @@ func NewUserUsecase(
 
 func (uc *UserUsecase) GetRole(
 	ctx context.Context,
-	roleId uint,
+	roleId uint32,
 ) (*RoleModel, *errors.Error) {
 	m, err := uc.roleRepo.FindModel(ctx, nil, roleId)
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"role_id": roleId})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"role_id": roleId})
 	}
 	return m, nil
 }
@@ -107,16 +105,14 @@ func (uc *UserUsecase) CreateUser(
 	}
 	m.Role = *rm
 	if err := uc.userRepo.CreateModel(ctx, &m); err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, nil)
 	}
 	return &m, nil
 }
 
 func (uc *UserUsecase) UpdateUserById(
 	ctx context.Context,
-	userId uint,
+	userId uint32,
 	data map[string]any,
 ) *errors.Error {
 	if password, exists := data["password"]; exists {
@@ -134,21 +130,17 @@ func (uc *UserUsecase) UpdateUserById(
 		}
 	}
 	if err := uc.userRepo.UpdateModel(ctx, data, "id = ?", userId); err != nil {
-		rErr := database.NewGormError(err, data)
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, data)
 	}
 	return nil
 }
 
 func (uc *UserUsecase) DeleteUserById(
 	ctx context.Context,
-	userId uint,
+	userId uint32,
 ) *errors.Error {
 	if err := uc.userRepo.DeleteModel(ctx, userId); err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": userId})
-		uc.log.Error(rErr.Error())
-		return rErr
+		return database.NewGormError(err, map[string]any{"id": userId})
 	}
 	return nil
 }
@@ -156,13 +148,11 @@ func (uc *UserUsecase) DeleteUserById(
 func (uc *UserUsecase) FindUserById(
 	ctx context.Context,
 	preloads []string,
-	userId uint,
+	userId uint32,
 ) (*UserModel, *errors.Error) {
 	m, err := uc.userRepo.FindModel(ctx, preloads, userId)
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"id": userId})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"id": userId})
 	}
 	return m, nil
 }
@@ -174,9 +164,7 @@ func (uc *UserUsecase) FindUserByName(
 ) (*UserModel, *errors.Error) {
 	m, err := uc.userRepo.FindModel(ctx, preloads, map[string]any{"username": username})
 	if err != nil {
-		rErr := database.NewGormError(err, map[string]any{"username": username})
-		uc.log.Error(rErr.Error())
-		return nil, rErr
+		return nil, database.NewGormError(err, map[string]any{"username": username})
 	}
 	return m, nil
 }
@@ -199,9 +187,7 @@ func (uc *UserUsecase) ListUser(
 	}
 	count, ms, err := uc.userRepo.ListModel(ctx, qp)
 	if err != nil {
-		rErr := database.NewGormError(err, nil)
-		uc.log.Error(rErr.Error())
-		return 0, nil, rErr
+		return 0, nil, database.NewGormError(err, nil)
 	}
 	return count, ms, nil
 }
@@ -216,9 +202,8 @@ func (uc *UserUsecase) CheckPasswordStrength(pwd string) *errors.Error {
 func (uc *UserUsecase) HashPassword(pwd string) (string, *errors.Error) {
 	verified, err := uc.hasher.Hash(pwd)
 	if err != nil {
-		rErr := errors.FromError(err)
-		uc.log.Error(rErr.Error())
-		return "", rErr
+		uc.log.Error("密码hash失败", zap.Error(err))
+		return "", errors.FromError(err)
 	}
 	return verified, nil
 }
@@ -231,9 +216,7 @@ func (uc *UserUsecase) Login(
 ) (string, *errors.Error) {
 	num, err := uc.recordRepo.GetLoginFailNum(ctx, ipAddress)
 	if err != nil {
-		nErr := errors.FromCtxError(err)
-		uc.log.Error(nErr.Error())
-		return "", nErr
+		return "", errors.FromError(err)
 	}
 	if num <= 0 {
 		return "", ErrAccessLock
@@ -259,11 +242,8 @@ func (uc *UserUsecase) Login(
 func (uc *UserUsecase) VerifyPassword(pwd, hash string) (bool, *errors.Error) {
 	verified, err := uc.hasher.Verify(pwd, hash)
 	if err != nil {
-		uc.log.Error(
-			"password verification error",
-			zap.Error(err),
-		)
-		return false, errors.FromError(err)
+		uc.log.Error("密码验证失败", zap.Error(err))
+		return false, ErrPasswordMismatch
 	}
 	return verified, nil
 }
@@ -283,9 +263,8 @@ func (uc *UserUsecase) NewUserClaims(m UserModel) *auth.UserClaims {
 func (uc *UserUsecase) UserClaimsToToken(claims auth.UserClaims) (string, *errors.Error) {
 	token, err := auth.NewJWT([]byte(uc.conf.SecretKey), claims)
 	if err != nil {
-		rErr := errors.FromError(err)
-		uc.log.Error(rErr.Error())
-		return "", rErr
+		uc.log.Error("生成jwt失败", zap.Error(err))
+		return "", errors.FromError(err)
 	}
 	return token, nil
 }

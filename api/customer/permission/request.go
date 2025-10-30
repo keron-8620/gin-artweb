@@ -1,7 +1,7 @@
 package permission
 
 import (
-	"gitee.com/keion8620/go-dango-gin/pkg/database"
+	"gin-artweb/pkg/database"
 )
 
 // CreatePermissionRequest 用于创建权限的请求结构体
@@ -11,12 +11,12 @@ type CreatePermissionRequest struct {
 	// 权限主键，必填，必须大于0
 	// Required: true
 	// Minimum: 1
-	Id uint `json:"id" binding:"required,gt=0"`
+	Id uint32 `json:"id" binding:"required,gt=0"`
 
 	// 权限对应的HTTP URL，必填，最大长度150
 	// Required: true
 	// Max length: 150
-	HttpUrl string `json:"http_url" binding:"required,max=150"`
+	Url string `json:"url" binding:"required,max=150"`
 
 	// HTTP请求方法，必填，枚举值验证
 	// Required: true
@@ -36,7 +36,7 @@ type UpdatePermissionRequest struct {
 	// 权限对应的HTTP URL，必填，最大长度150
 	// Required: true
 	// Max length: 150
-	HttpUrl string `json:"http_url" binding:"required,max=150"`
+	Url string `json:"Url" binding:"required,max=150"`
 
 	// HTTP请求方法，必填，枚举值验证
 	// Required: true
