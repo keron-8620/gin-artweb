@@ -19,13 +19,15 @@ import (
 
 	customer "gin-artweb/internal/customer/server"
 
-	_ "gin-artweb/docs"
+	"gin-artweb/docs"
 	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/config"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/log"
 	"gin-artweb/pkg/middleware"
 )
+
+const version = "v0.17.6.3.1"
 
 const (
 	serverLogName   = "server.log"
@@ -185,6 +187,13 @@ func newRouter(init *initialize) *gin.Engine {
 		c.File(filepath.Join(common.BaseDir, "html", "index.html"))
 	})
 	r.Static("/static", filepath.Join(common.BaseDir, "html", "static"))
+
+	// 设置 Swagger 文档信息
+	docs.SwaggerInfo.Title = "gin-art-web"
+	docs.SwaggerInfo.Description = "art-web自动化运维平台"
+	docs.SwaggerInfo.Version = version
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 注册访问日志中间件

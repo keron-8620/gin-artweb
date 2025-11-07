@@ -39,7 +39,7 @@ func NewRecordRepo(
 func (r *recordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) error {
 	if err := database.DBCreate(ctx, r.gormDB, &biz.LoginRecordModel{}, m); err != nil {
 		r.log.Error(
-			"failed to create login record model",
+			"新增登陆记录模型失败",
 			zap.Object("model", m),
 			zap.Error(err),
 		)
@@ -56,7 +56,7 @@ func (r *recordRepo) ListModel(
 	count, err := database.DBList(ctx, r.gormDB, &biz.LoginRecordModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
-			"failed to list login record model",
+			"查询登陆记录列表失败",
 			zap.Object("query_params", &qp),
 			zap.Error(err),
 		)

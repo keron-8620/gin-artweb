@@ -645,3 +645,19 @@
 [3.963ms] [rows:0] SELECT * FROM "customer_button"
  2025/10/30 14:40:27 /home/quant/Document/project/gin-artweb/pkg/database/curd.go:302
 [4.130ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/11/07 16:39:33 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[1.377ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/11/07 16:39:33 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[1.012ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/11/07 16:39:33 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[0.765ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/11/07 16:39:33 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[0.941ms] [rows:2] SELECT * FROM "customer_role"
+ 2025/11/07 16:44:48 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[1.416ms] [rows:112] SELECT * FROM "customer_permission"
+ 2025/11/07 16:44:48 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[1.041ms] [rows:2] SELECT * FROM "customer_menu"
+ 2025/11/07 16:44:48 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[0.809ms] [rows:0] SELECT * FROM "customer_button"
+ 2025/11/07 16:44:48 /home/zdq/Documents/project/gin-artweb/pkg/database/curd.go:302
+[1.001ms] [rows:2] SELECT * FROM "customer_role"

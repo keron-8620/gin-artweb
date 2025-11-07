@@ -139,3 +139,4 @@
 [GIN] 2025/10/23 - 10:02:47 | 401 |       69.38µs |   192.168.10.12 | GET      "/api/v1/customer/permission/8"
 [GIN] 2025/10/23 - 10:05:00 | 401 |     109.237µs |   192.168.10.12 | GET      "/api/v1/customer/permission/8"
 [GIN] 2025/10/23 - 10:09:42 | 401 |     127.486µs |   192.168.10.12 | GET      "/api/v1/customer/permission/8"
+[GIN] 2025/11/07 - 16:40:18 | 404 |         763ns |   192.168.10.12 | GET      "/favicon.ico"

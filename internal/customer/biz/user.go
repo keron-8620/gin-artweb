@@ -13,7 +13,6 @@ import (
 	"gin-artweb/pkg/crypto"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
-	"gin-artweb/pkg/utils"
 )
 
 type UserModel struct {
@@ -193,7 +192,7 @@ func (uc *UserUsecase) ListUser(
 }
 
 func (uc *UserUsecase) CheckPasswordStrength(pwd string) *errors.Error {
-	if t := utils.GetPasswordStrength(pwd); t < utils.StrengthStrong {
+	if t := GetPasswordStrength(pwd); t < StrengthStrong {
 		return ErrPasswordStrengthFailed
 	}
 	return nil

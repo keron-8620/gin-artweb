@@ -264,3 +264,13 @@
 {"level":"error","time":"2025-10-30T14:41:43.247+0800","caller":"gin-artweb/main.go:172","msg":"服务器强制关闭","error":"context deadline exceeded"}
 {"level":"info","time":"2025-10-30T14:41:43.247+0800","caller":"gin-artweb/main.go:176","msg":"服务器已退出"}
 {"level":"info","time":"2025-10-30T14:41:43.247+0800","caller":"gin-artweb/main.go:81","msg":"资源释放成功"}
+{"level":"info","time":"2025-11-07T16:39:33.378+0800","caller":"gin-artweb/main.go:154","msg":"服务器启动ing ...","host":"192.168.10.12","port":8620,"ssl":true}
+{"level":"info","time":"2025-11-07T16:39:33.378+0800","caller":"gin-artweb/main.go:135","msg":"正在启动 HTTPS 服务器...","addr":"192.168.10.12:8620","crt":"/home/zdq/Documents/project/gin-artweb/config/server.crt","key":"/home/zdq/Documents/project/gin-artweb/config/server.key"}
+{"level":"info","time":"2025-11-07T16:44:40.479+0800","caller":"gin-artweb/main.go:165","msg":"正在关闭服务器..."}
+{"level":"info","time":"2025-11-07T16:44:40.479+0800","caller":"gin-artweb/main.go:178","msg":"服务器已退出"}
+{"level":"info","time":"2025-11-07T16:44:40.480+0800","caller":"gin-artweb/main.go:83","msg":"资源释放成功"}
+{"level":"info","time":"2025-11-07T16:44:48.571+0800","caller":"gin-artweb/main.go:154","msg":"服务器启动ing ...","host":"192.168.10.12","port":8620,"ssl":true}
+{"level":"info","time":"2025-11-07T16:44:48.571+0800","caller":"gin-artweb/main.go:135","msg":"正在启动 HTTPS 服务器...","addr":"192.168.10.12:8620","crt":"/home/zdq/Documents/project/gin-artweb/config/server.crt","key":"/home/zdq/Documents/project/gin-artweb/config/server.key"}
+{"level":"info","time":"2025-11-07T17:19:18.579+0800","caller":"gin-artweb/main.go:165","msg":"正在关闭服务器..."}
+{"level":"info","time":"2025-11-07T17:19:18.579+0800","caller":"gin-artweb/main.go:178","msg":"服务器已退出"}
+{"level":"info","time":"2025-11-07T17:19:18.579+0800","caller":"gin-artweb/main.go:83","msg":"资源释放成功"}
