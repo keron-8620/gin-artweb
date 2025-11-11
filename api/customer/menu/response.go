@@ -8,7 +8,7 @@ import (
 // MenuOutBase 菜单基础信息
 type MenuOutBase struct {
 	// 菜单ID
-	Id uint32 `json:"id" example:"1"`
+	ID uint32 `json:"id" example:"1"`
 	// 创建时间
 	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
 	// 更新时间
@@ -21,8 +21,6 @@ type MenuOutBase struct {
 	Name string `json:"name" example:"用户管理"`
 	//菜单信息
 	Meta MetaSchemas `json:"meta"`
-	// 标签
-	Label string `json:"label" example:"customer"`
 	// 排列顺序
 	ArrangeOrder uint32 `json:"arrange_order" example:"1000"`
 	// 是否激活

@@ -21,8 +21,8 @@ type UserModel struct {
 	Password string    `gorm:"column:password;type:varchar(150);not null;comment:密码" json:"password"`
 	IsActive bool      `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
 	IsStaff  bool      `gorm:"column:is_staff;type:boolean;comment:是否是工作人员" json:"is_staff"`
-	RoleId   uint32    `gorm:"column:role_id;foreignKey:RoleId;references:Id;not null;constraint:OnDelete:CASCADE;comment:角色" json:"role"`
-	Role     RoleModel `gorm:"foreignKey:RoleId;constraint:OnDelete:CASCADE"`
+	RoleID   uint32    `gorm:"column:role_id;not null;comment:角色ID" json:"role_id"`
+	Role     RoleModel `gorm:"foreignKey:RoleID;references:ID;constraint:OnDelete:CASCADE" json:"role"`
 }
 
 func (m *UserModel) TableName() string {
@@ -36,7 +36,7 @@ func (m *UserModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("username", m.Username)
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddBool("is_staff", m.IsStaff)
-	enc.AddUint32("role_id", m.RoleId)
+	enc.AddUint32("role_id", m.RoleID)
 	return nil
 }
 
@@ -77,11 +77,11 @@ func NewUserUsecase(
 
 func (uc *UserUsecase) GetRole(
 	ctx context.Context,
-	roleId uint32,
+	roleID uint32,
 ) (*RoleModel, *errors.Error) {
-	m, err := uc.roleRepo.FindModel(ctx, nil, roleId)
+	m, err := uc.roleRepo.FindModel(ctx, nil, roleID)
 	if err != nil {
-		return nil, database.NewGormError(err, map[string]any{"role_id": roleId})
+		return nil, database.NewGormError(err, map[string]any{"role_id": roleID})
 	}
 	return m, nil
 }
@@ -98,7 +98,7 @@ func (uc *UserUsecase) CreateUser(
 		return nil, err
 	}
 	m.Password = password
-	rm, err := uc.GetRole(ctx, m.RoleId)
+	rm, err := uc.GetRole(ctx, m.RoleID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,9 +109,9 @@ func (uc *UserUsecase) CreateUser(
 	return &m, nil
 }
 
-func (uc *UserUsecase) UpdateUserById(
+func (uc *UserUsecase) UpdateUserByID(
 	ctx context.Context,
-	userId uint32,
+	userID uint32,
 	data map[string]any,
 ) *errors.Error {
 	if password, exists := data["password"]; exists {
@@ -128,30 +128,30 @@ func (uc *UserUsecase) UpdateUserById(
 			return ErrPasswordStrengthFailed
 		}
 	}
-	if err := uc.userRepo.UpdateModel(ctx, data, "id = ?", userId); err != nil {
+	if err := uc.userRepo.UpdateModel(ctx, data, "id = ?", userID); err != nil {
 		return database.NewGormError(err, data)
 	}
 	return nil
 }
 
-func (uc *UserUsecase) DeleteUserById(
+func (uc *UserUsecase) DeleteUserByID(
 	ctx context.Context,
-	userId uint32,
+	userID uint32,
 ) *errors.Error {
-	if err := uc.userRepo.DeleteModel(ctx, userId); err != nil {
-		return database.NewGormError(err, map[string]any{"id": userId})
+	if err := uc.userRepo.DeleteModel(ctx, userID); err != nil {
+		return database.NewGormError(err, map[string]any{"id": userID})
 	}
 	return nil
 }
 
-func (uc *UserUsecase) FindUserById(
+func (uc *UserUsecase) FindUserByID(
 	ctx context.Context,
 	preloads []string,
-	userId uint32,
+	userID uint32,
 ) (*UserModel, *errors.Error) {
-	m, err := uc.userRepo.FindModel(ctx, preloads, userId)
+	m, err := uc.userRepo.FindModel(ctx, preloads, userID)
 	if err != nil {
-		return nil, database.NewGormError(err, map[string]any{"id": userId})
+		return nil, database.NewGormError(err, map[string]any{"id": userID})
 	}
 	return m, nil
 }
@@ -222,6 +222,7 @@ func (uc *UserUsecase) Login(
 	}
 	m, rErr := uc.FindUserByName(ctx, []string{"Role"}, username)
 	if rErr != nil {
+		uc.recordRepo.SetLoginFailNum(ctx, ipAddress, num-1)
 		return "", ErrInvalidCredentials
 	}
 	if !m.IsActive {
@@ -234,6 +235,7 @@ func (uc *UserUsecase) Login(
 	if !verified {
 		return "", ErrInvalidCredentials
 	}
+	uc.recordRepo.SetLoginFailNum(ctx, ipAddress, uc.conf.LoginFailMaxTimes)
 	claims := uc.NewUserClaims(*m)
 	return uc.UserClaimsToToken(*claims)
 }
@@ -254,8 +256,8 @@ func (uc *UserUsecase) NewUserClaims(m UserModel) *auth.UserClaims {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(uc.conf.TokenExpireMinutes) * time.Minute)),
 		},
 		IsStaff: m.IsStaff,
-		UserId:  m.Id,
-		Role:    uc.roleRepo.RoleModelToSub(m.Role),
+		UserID:  m.ID,
+		RoleID:  m.RoleID,
 	}
 }
 

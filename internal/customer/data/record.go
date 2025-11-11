@@ -40,7 +40,7 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) e
 	if err := database.DBCreate(ctx, r.gormDB, &biz.LoginRecordModel{}, m); err != nil {
 		r.log.Error(
 			"新增登陆记录模型失败",
-			zap.Object("model", m),
+			zap.Object(database.ModelKey, m),
 			zap.Error(err),
 		)
 		return err
@@ -57,7 +57,7 @@ func (r *recordRepo) ListModel(
 	if err != nil {
 		r.log.Error(
 			"查询登陆记录列表失败",
-			zap.Object("query_params", &qp),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.Error(err),
 		)
 		return 0, nil, err

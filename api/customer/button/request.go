@@ -8,12 +8,12 @@ import (
 //
 // swagger:model CreateButtonRequest
 type CreateButtonRequest struct {
-	// 按钮主键，必填，必须大于0
+	// 按钮主键，必须大于0
 	// Required: true
 	// Minimum: 1
-	Id uint32 `json:"id" binding:"required,gt=0"`
+	ID uint32 `json:"id" binding:"required,gt=0"`
 
-	// 名称，必填，最大长度50
+	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"required,max=50"`
@@ -29,17 +29,17 @@ type CreateButtonRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuId uint32 `json:"menu_id" binding:"required"`
+	MenuID uint32 `json:"menu_id" binding:"required"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // UpdateButtonRequest 用于更新按钮的请求结构体
 //
 // swagger:model UpdateButtonRequest
 type UpdateButtonRequest struct {
-	// 名称，必填，最大长度50
+	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"required,max=50"`
@@ -55,10 +55,10 @@ type UpdateButtonRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuId uint32 `json:"menu_id" binding:"required"`
+	MenuID uint32 `json:"menu_id" binding:"required"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // ListButtonRequest 用于获取按钮列表的请求结构体
@@ -80,7 +80,7 @@ type ListButtonRequest struct {
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuId uint32 `json:"menu_id" binding:"omitempty"`
+	MenuID uint32 `json:"menu_id" binding:"omitempty"`
 }
 
 func (req *ListButtonRequest) Query() (int, int, map[string]any) {
@@ -94,8 +94,8 @@ func (req *ListButtonRequest) Query() (int, int, map[string]any) {
 	if req.Descr != "" {
 		query["descr like ?"] = "%" + req.Descr + "%"
 	}
-	if req.MenuId != 0 {
-		query["menu_id = ?"] = req.MenuId
+	if req.MenuID != 0 {
+		query["menu_id = ?"] = req.MenuID
 	}
 	return page, size, query
 }

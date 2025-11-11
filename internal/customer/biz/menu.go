@@ -26,16 +26,15 @@ func (m *Meta) Json() string {
 
 type MenuModel struct {
 	database.StandardModel
-	Path         string            `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"url"`
-	Component    string            `gorm:"column:component;type:varchar(200);not null;comment:请求方式" json:"method"`
+	Path         string            `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"path"`
+	Component    string            `gorm:"column:component;type:varchar(200);not null;comment:前端组件" json:"component"`
 	Name         string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
 	Meta         Meta              `gorm:"column:meta;serializer:json;comment:菜单信息" json:"meta"`
-	Label        string            `gorm:"column:label;type:varchar(50);index:idx_member;comment:标签" json:"label"`
 	ArrangeOrder uint32            `gorm:"column:arrange_order;type:integer;comment:排序" json:"arrange_order"`
 	IsActive     bool              `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
 	Descr        string            `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	ParentId     *uint32           `gorm:"column:parent_id;foreignKey:ParentId;references:Id;constraint:OnDelete:CASCADE;comment:菜单" json:"parent"`
-	Parent       *MenuModel        `gorm:"foreignKey:ParentId;constraint:OnDelete:CASCADE"`
+	ParentID     *uint32           `gorm:"column:parent_id;comment:父菜单ID" json:"parent_id"`
+	Parent       *MenuModel        `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE" json:"parent"`
 	Permissions  []PermissionModel `gorm:"many2many:customer_menu_permission;joinForeignKey:menu_id;joinReferences:permission_id;constraint:OnDelete:CASCADE"`
 }
 
@@ -51,19 +50,18 @@ func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("component", m.Component)
 	enc.AddString("meta", m.Meta.Json())
 	enc.AddString("name", m.Name)
-	enc.AddString("label", m.Label)
 	enc.AddUint32("arrange_order", m.ArrangeOrder)
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddString("descr", m.Descr)
-	if m.ParentId != nil {
-		enc.AddUint32("parent_id", *m.ParentId)
+	if m.ParentID != nil {
+		enc.AddUint32("parent_id", *m.ParentID)
 	}
 	return nil
 }
 
 type MenuRepo interface {
 	CreateModel(context.Context, *MenuModel) error
-	UpdateModel(context.Context, map[string]any, map[string]any, ...any) error
+	UpdateModel(context.Context, map[string]any, []PermissionModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*MenuModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, []MenuModel, error)
@@ -89,28 +87,28 @@ func NewMenuUsecase(
 	}
 }
 
-func (uc *MenuUsecase) GetParemtMenu(
+func (uc *MenuUsecase) GetParentMenu(
 	ctx context.Context,
-	parentId *uint32,
+	parentID *uint32,
 ) (*MenuModel, *errors.Error) {
-	if parentId == nil || *parentId == 0 {
+	if parentID == nil || *parentID == 0 {
 		return nil, nil
 	}
-	m, err := uc.menuRepo.FindModel(ctx, nil, *parentId)
+	m, err := uc.menuRepo.FindModel(ctx, nil, *parentID)
 	if err != nil {
-		return nil, database.NewGormError(err, map[string]any{"parent_id": *parentId})
+		return nil, database.NewGormError(err, map[string]any{"parent_id": *parentID})
 	}
 	return m, nil
 }
 
 func (uc *MenuUsecase) GetPermissions(
 	ctx context.Context,
-	permIds []uint32,
+	permIDs []uint32,
 ) ([]PermissionModel, *errors.Error) {
-	if len(permIds) == 0 {
+	if len(permIDs) == 0 {
 		return nil, nil
 	}
-	qp := database.NewPksQueryParams(permIds)
+	qp := database.NewPksQueryParams(permIDs)
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
 		return nil, database.NewGormError(err, nil)
@@ -120,17 +118,17 @@ func (uc *MenuUsecase) GetPermissions(
 
 func (uc *MenuUsecase) CreateMenu(
 	ctx context.Context,
-	permIds []uint32,
+	permIDs []uint32,
 	m MenuModel,
 ) (*MenuModel, *errors.Error) {
-	menu, err := uc.GetParemtMenu(ctx, m.ParentId)
+	menu, err := uc.GetParentMenu(ctx, m.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	if menu != nil {
 		m.Parent = menu
 	}
-	perms, err := uc.GetPermissions(ctx, permIds)
+	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -146,25 +144,21 @@ func (uc *MenuUsecase) CreateMenu(
 	return &m, nil
 }
 
-func (uc *MenuUsecase) UpdateMenuById(
+func (uc *MenuUsecase) UpdateMenuByID(
 	ctx context.Context,
-	menuId uint32,
-	permIds []uint32,
+	menuID uint32,
+	permIDs []uint32,
 	data map[string]any,
 ) *errors.Error {
-	perms, err := uc.GetPermissions(ctx, permIds)
+	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
 		return err
 	}
-	upmap := make(map[string]any, 1)
-	if len(perms) > 0 {
-		upmap["Permissions"] = perms
-	}
-	data["id"] = menuId
-	if err := uc.menuRepo.UpdateModel(ctx, data, upmap, "id = ?", menuId); err != nil {
+	data["id"] = menuID
+	if err := uc.menuRepo.UpdateModel(ctx, data, perms, "id = ?", menuID); err != nil {
 		return database.NewGormError(err, data)
 	}
-	m, rErr := uc.FindMenuById(ctx, []string{"Parent", "Permissions"}, menuId)
+	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
 	if rErr != nil {
 		return rErr
 	}
@@ -177,16 +171,16 @@ func (uc *MenuUsecase) UpdateMenuById(
 	return nil
 }
 
-func (uc *MenuUsecase) DeleteMenuById(
+func (uc *MenuUsecase) DeleteMenuByID(
 	ctx context.Context,
-	menuId uint32,
+	menuID uint32,
 ) *errors.Error {
-	m, rErr := uc.FindMenuById(ctx, []string{"Parent", "Permissions"}, menuId)
+	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
 	if rErr != nil {
 		return rErr
 	}
-	if err := uc.menuRepo.DeleteModel(ctx, menuId); err != nil {
-		return database.NewGormError(err, map[string]any{"id": menuId})
+	if err := uc.menuRepo.DeleteModel(ctx, menuID); err != nil {
+		return database.NewGormError(err, map[string]any{"id": menuID})
 	}
 	if err := uc.menuRepo.RemoveGroupPolicy(ctx, *m, true); err != nil {
 		return ErrRemoveGroupPolicy.WithCause(err)
@@ -194,14 +188,14 @@ func (uc *MenuUsecase) DeleteMenuById(
 	return nil
 }
 
-func (uc *MenuUsecase) FindMenuById(
+func (uc *MenuUsecase) FindMenuByID(
 	ctx context.Context,
 	preloads []string,
-	menuId uint32,
+	menuID uint32,
 ) (*MenuModel, *errors.Error) {
-	m, err := uc.menuRepo.FindModel(ctx, preloads, menuId)
+	m, err := uc.menuRepo.FindModel(ctx, preloads, menuID)
 	if err != nil {
-		return nil, database.NewGormError(err, map[string]any{"id": menuId})
+		return nil, database.NewGormError(err, map[string]any{"id": menuID})
 	}
 	return m, nil
 }

@@ -33,7 +33,7 @@ func (r *userRepo) CreateModel(ctx context.Context, m *biz.UserModel) error {
 	if err := database.DBCreate(ctx, r.gormDB, &biz.UserModel{}, m); err != nil {
 		r.log.Error(
 			"新增用户模型失败",
-			zap.Object("model", m),
+			zap.Object(database.ModelKey, m),
 			zap.Error(err),
 		)
 		return err
@@ -45,8 +45,8 @@ func (r *userRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.UserModel{}, data, nil, conds...); err != nil {
 		r.log.Error(
 			"更新用户模型失败",
-			zap.Any("data", data),
-			zap.Any("conditions", conds),
+			zap.Any(database.UpdateDataKey, data),
+			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
 		)
 		return err
@@ -58,7 +58,7 @@ func (r *userRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	if err := database.DBDelete(ctx, r.gormDB, &biz.UserModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除用户模型失败",
-			zap.Any("conditions", conds),
+			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
 		)
 		return err
@@ -75,7 +75,8 @@ func (r *userRepo) FindModel(
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询用户模型失败",
-			zap.Any("conditions", conds),
+			zap.Strings(database.PreloadKey, preloads),
+			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
 		)
 		return nil, err
@@ -92,7 +93,7 @@ func (r *userRepo) ListModel(
 	if err != nil {
 		r.log.Error(
 			"查询用户列表失败",
-			zap.Object("query_params", &qp),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.Error(err),
 		)
 		return 0, nil, err

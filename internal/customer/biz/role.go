@@ -32,9 +32,15 @@ func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+type MenuTreeNode struct {
+	MenuModel MenuModel
+	Children  []*MenuTreeNode
+	Buttons   []ButtonModel
+}
+
 type RoleRepo interface {
 	CreateModel(context.Context, *RoleModel) error
-	UpdateModel(context.Context, map[string]any, map[string]any, ...any) error
+	UpdateModel(context.Context, map[string]any, []PermissionModel, []MenuModel, []ButtonModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*RoleModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, []RoleModel, error)
@@ -69,12 +75,12 @@ func NewRoleUsecase(
 
 func (uc *RoleUsecase) GetPermissions(
 	ctx context.Context,
-	permIds []uint32,
+	permIDs []uint32,
 ) ([]PermissionModel, *errors.Error) {
-	if len(permIds) == 0 {
+	if len(permIDs) == 0 {
 		return nil, nil
 	}
-	qp := database.NewPksQueryParams(permIds)
+	qp := database.NewPksQueryParams(permIDs)
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
 		return nil, database.NewGormError(err, nil)
@@ -84,12 +90,12 @@ func (uc *RoleUsecase) GetPermissions(
 
 func (uc *RoleUsecase) GetMenus(
 	ctx context.Context,
-	menuIds []uint32,
+	menuIDs []uint32,
 ) ([]MenuModel, *errors.Error) {
-	if len(menuIds) == 0 {
+	if len(menuIDs) == 0 {
 		return nil, nil
 	}
-	qp := database.NewPksQueryParams(menuIds)
+	qp := database.NewPksQueryParams(menuIDs)
 	_, ms, err := uc.menuRepo.ListModel(ctx, qp)
 	if err != nil {
 		return nil, database.NewGormError(err, nil)
@@ -99,12 +105,12 @@ func (uc *RoleUsecase) GetMenus(
 
 func (uc *RoleUsecase) GetButtons(
 	ctx context.Context,
-	buttonIds []uint32,
+	buttonIDs []uint32,
 ) ([]ButtonModel, *errors.Error) {
-	if len(buttonIds) == 0 {
+	if len(buttonIDs) == 0 {
 		return nil, nil
 	}
-	qp := database.NewPksQueryParams(buttonIds)
+	qp := database.NewPksQueryParams(buttonIDs)
 	_, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
 		return nil, database.NewGormError(err, nil)
@@ -114,26 +120,26 @@ func (uc *RoleUsecase) GetButtons(
 
 func (uc *RoleUsecase) CreateRole(
 	ctx context.Context,
-	permIds []uint32,
-	menuIds []uint32,
-	buttonIds []uint32,
+	permIDs []uint32,
+	menuIDs []uint32,
+	buttonIDs []uint32,
 	m RoleModel,
 ) (*RoleModel, *errors.Error) {
-	perms, err := uc.GetPermissions(ctx, permIds)
+	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
 		return nil, err
 	}
 	if len(perms) > 0 {
 		m.Permissions = perms
 	}
-	menus, err := uc.GetMenus(ctx, menuIds)
+	menus, err := uc.GetMenus(ctx, menuIDs)
 	if err != nil {
 		return nil, err
 	}
 	if len(menus) > 0 {
 		m.Menus = menus
 	}
-	buttons, err := uc.GetButtons(ctx, buttonIds)
+	buttons, err := uc.GetButtons(ctx, buttonIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -149,41 +155,31 @@ func (uc *RoleUsecase) CreateRole(
 	return &m, nil
 }
 
-func (uc *RoleUsecase) UpdateRoleById(
+func (uc *RoleUsecase) UpdateRoleByID(
 	ctx context.Context,
-	roleId uint32,
-	permIds []uint32,
-	menuIds []uint32,
-	buttonIds []uint32,
+	roleID uint32,
+	permIDs []uint32,
+	menuIDs []uint32,
+	buttonIDs []uint32,
 	data map[string]any,
 ) *errors.Error {
-	ummap := make(map[string]any, 3)
-	perms, err := uc.GetPermissions(ctx, permIds)
+	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
 		return err
 	}
-	if len(perms) > 0 {
-		ummap["Permissions"] = perms
-	}
-	menus, err := uc.GetMenus(ctx, menuIds)
+	menus, err := uc.GetMenus(ctx, menuIDs)
 	if err != nil {
 		return err
 	}
-	if len(menus) > 0 {
-		ummap["Menus"] = menus
-	}
-	buttons, err := uc.GetButtons(ctx, buttonIds)
+	buttons, err := uc.GetButtons(ctx, buttonIDs)
 	if err != nil {
 		return err
 	}
-	if len(buttons) > 0 {
-		ummap["Buttons"] = buttons
-	}
-	data["id"] = roleId
-	if err := uc.roleRepo.UpdateModel(ctx, data, ummap, "id = ?", roleId); err != nil {
+	data["id"] = roleID
+	if err := uc.roleRepo.UpdateModel(ctx, data, perms, menus, buttons, "id = ?", roleID); err != nil {
 		return database.NewGormError(err, data)
 	}
-	m, rErr := uc.FindRoleById(ctx, []string{"Buttons", "Menus", "Permissions"}, roleId)
+	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		return rErr
 	}
@@ -196,13 +192,16 @@ func (uc *RoleUsecase) UpdateRoleById(
 	return nil
 }
 
-func (uc *RoleUsecase) DeleteRoleById(ctx context.Context, roleId uint32) *errors.Error {
-	m, rErr := uc.FindRoleById(ctx, []string{"Buttons", "Menus", "Permissions"}, roleId)
+func (uc *RoleUsecase) DeleteRoleByID(
+	ctx context.Context,
+	roleID uint32,
+) *errors.Error {
+	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		return rErr
 	}
-	if err := uc.roleRepo.DeleteModel(ctx, roleId); err != nil {
-		return database.NewGormError(err, map[string]any{"id": roleId})
+	if err := uc.roleRepo.DeleteModel(ctx, roleID); err != nil {
+		return database.NewGormError(err, map[string]any{"id": roleID})
 	}
 	if err := uc.roleRepo.RemoveGroupPolicy(ctx, *m); err != nil {
 		return ErrRemoveGroupPolicy.WithCause(err)
@@ -210,14 +209,14 @@ func (uc *RoleUsecase) DeleteRoleById(ctx context.Context, roleId uint32) *error
 	return nil
 }
 
-func (uc *RoleUsecase) FindRoleById(
+func (uc *RoleUsecase) FindRoleByID(
 	ctx context.Context,
 	preloads []string,
-	roleId uint32,
+	roleID uint32,
 ) (*RoleModel, *errors.Error) {
-	m, err := uc.roleRepo.FindModel(ctx, preloads, roleId)
+	m, err := uc.roleRepo.FindModel(ctx, preloads, roleID)
 	if err != nil {
-		return nil, database.NewGormError(err, map[string]any{"id": roleId})
+		return nil, database.NewGormError(err, map[string]any{"id": roleID})
 	}
 	return m, nil
 }
@@ -256,4 +255,65 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (uc *RoleUsecase) GetRoleMenuTree(
+	ctx context.Context,
+	roleID uint32,
+) ([]*MenuTreeNode, *errors.Error) {
+	m, rErr := uc.FindRoleByID(ctx, []string{"Menus", "Buttons"}, roleID)
+	if rErr != nil {
+		return nil, rErr
+	}
+	roleMenuMap := make(map[uint32]MenuModel)
+	for _, menu := range m.Menus {
+		roleMenuMap[menu.ID] = menu
+	}
+	roleButtonMap := make(map[uint32]ButtonModel)
+	for _, button := range m.Buttons {
+		roleButtonMap[button.ID] = button
+	}
+	var result []*MenuTreeNode
+	for _, menu := range m.Menus {
+		if menu.ParentID == nil {
+			mt, err := uc.buildMenuTree(menu, roleMenuMap, roleButtonMap)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, mt)
+		}
+	}
+	return result, nil
+}
+
+func (uc *RoleUsecase) buildMenuTree(
+	m MenuModel,
+	mp map[uint32]MenuModel,
+	bp map[uint32]ButtonModel,
+) (*MenuTreeNode, *errors.Error) {
+	var children []MenuModel
+	for _, menu := range mp {
+		if menu.ParentID != nil && *menu.ParentID == m.ID {
+			children = append(children, menu)
+		}
+	}
+	var childTrees []*MenuTreeNode
+	for _, child := range children {
+		childTree, err := uc.buildMenuTree(child, mp, bp)
+		if err != nil {
+			return nil, err
+		}
+		childTrees = append(childTrees, childTree)
+	}
+	var buttons []ButtonModel
+	for _, button := range bp {
+		if button.MenuID == m.ID {
+			buttons = append(buttons, button)
+		}
+	}
+	return &MenuTreeNode{
+		MenuModel: m,
+		Children:  childTrees,
+		Buttons:   buttons,
+	}, nil
 }

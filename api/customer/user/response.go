@@ -8,7 +8,7 @@ import (
 // UserOutBase用户基础信息
 type UserOutBase struct {
 	// 用户ID
-	Id uint32 `json:"id" example:"1"`
+	ID uint32 `json:"id" example:"1"`
 	// 创建时间
 	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
 	// 更新时间

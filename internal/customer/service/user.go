@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pb "gin-artweb/api/customer/user"
+	pbComm "gin-artweb/api/common"
+	pbRole "gin-artweb/api/customer/role"
+	pbUser "gin-artweb/api/customer/user"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
 	"gin-artweb/pkg/common"
@@ -22,12 +24,12 @@ type UserService struct {
 
 func NewUserService(
 	log *zap.Logger,
-	usUser *biz.UserUsecase,
+	ucUser *biz.UserUsecase,
 	ucRecord *biz.RecordUsecase,
 ) *UserService {
 	return &UserService{
 		log:      log,
-		ucUser:   usUser,
+		ucUser:   ucUser,
 		ucRecord: ucRecord,
 	}
 }
@@ -37,11 +39,13 @@ func NewUserService(
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param request body pb.CreateUserRequest true "创建用户请求"
-// @Success 200 {object} pb.UserReply "成功返回用户信息"
+// @Param request body pbUser.CreateUserRequest true "创建用户请求"
+// @Success 201 {object} pbUser.UserReply "成功返回用户信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user [post]
 func (s *UserService) CreateUser(ctx *gin.Context) {
-	var req pb.CreateUserRequest
+	var req pbUser.CreateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -53,13 +57,13 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 		Password: req.Password,
 		IsActive: req.IsActive,
 		IsStaff:  req.IsStaff,
-		RoleId:   req.RoleId,
+		RoleID:   req.RoleID,
 	})
 	if err != nil {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(http.StatusCreated, &pb.UserReply{
+	ctx.JSON(http.StatusCreated, &pbUser.UserReply{
 		Code: http.StatusCreated,
 		Data: *UserModelToOut(*m),
 	})
@@ -71,40 +75,43 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Param request body pb.UpdateUserRequest true "更新用户请求"
-// @Success 200 {object} pb.UserReply "成功返回用户信息"
+// @Param request body pbUser.UpdateUserRequest true "更新用户请求"
+// @Success 200 {object} pbUser.UserReply "成功返回用户信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "用户未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{pk} [put]
 func (s *UserService) UpdateUser(ctx *gin.Context) {
-	var uri PkUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	var req pb.UpdateUserRequest
+	var req pbUser.UpdateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	if err := s.ucUser.UpdateUserById(ctx, uri.Pk, map[string]any{
-		"username": req.Username,
-		"IsActive": req.IsActive,
-		"IsStaff":  req.IsStaff,
-		"RoleId":   req.RoleId,
+	if err := s.ucUser.UpdateUserByID(ctx, uri.PK, map[string]any{
+		"username":  req.Username,
+		"is_active": req.IsActive,
+		"is_staff":  req.IsStaff,
+		"role_id":   req.RoleID,
 	}); err != nil {
 		s.log.Error(err.Error())
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	m, err := s.ucUser.FindUserById(ctx, []string{"Role"}, uri.Pk)
+	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.PK)
 	if err != nil {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(http.StatusOK, &pb.UserReply{
+	ctx.JSON(http.StatusOK, &pbUser.UserReply{
 		Code: http.StatusOK,
 		Data: *UserModelToOut(*m),
 	})
@@ -116,16 +123,20 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
+// @Success 200 {object} common.MapAPIReply "删除成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "用户未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{pk} [delete]
 func (s *UserService) DeleteUser(ctx *gin.Context) {
-	var uri PkUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	if err := s.ucUser.DeleteUserById(ctx, uri.Pk); err != nil {
+	if err := s.ucUser.DeleteUserByID(ctx, uri.PK); err != nil {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
@@ -138,22 +149,25 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Success 200 {object} pb.UserReply "成功返回用户信息"
+// @Success 200 {object} pbUser.UserReply "成功返回用户信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "用户未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{pk} [get]
 func (s *UserService) GetUser(ctx *gin.Context) {
-	var uri PkUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	m, err := s.ucUser.FindUserById(ctx, []string{"Role"}, uri.Pk)
+	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.PK)
 	if err != nil {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(http.StatusOK, &pb.UserReply{
+	ctx.JSON(http.StatusOK, &pbUser.UserReply{
 		Code: http.StatusOK,
 		Data: *UserModelToOut(*m),
 	})
@@ -164,22 +178,18 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码"
-// @Param size query int false "每页数量"
-// @Param pk query uint false "用户主键，可选参数，如果提供则必须大于0"
-// @Param pks query string false "用户主键列表，可选参数，多个用,隔开，如1,2,3"
-// @Param before_create_at query string false "创建时间之前的记录 (RFC3339格式)"
-// @Param after_create_at query string false "创建时间之后的记录 (RFC3339格式)"
-// @Param before_update_at query string false "更新时间之前的记录 (RFC3339格式)"
-// @Param after_update_at query string false "更新时间之后的记录 (RFC3339格式)"
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
 // @Param username query string false "用户名"
 // @Param is_active query bool false "是否激活"
 // @Param is_staff query bool false "是否是工作人员"
 // @Param role_id query uint false "角色ID"
-// @Success 200 {object} pb.PagUserReply "成功返回用户列表"
+// @Success 200 {object} pbUser.PagUserReply "成功返回用户列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user [get]
 func (s *UserService) ListUser(ctx *gin.Context) {
-	var req pb.ListUserRequest
+	var req pbUser.ListUserRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -193,7 +203,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 		return
 	}
 	mbs := ListUserModelToOut(ms)
-	ctx.JSON(http.StatusOK, &pb.PagUserReply{
+	ctx.JSON(http.StatusOK, &pbUser.PagUserReply{
 		Code: http.StatusOK,
 		Data: common.NewPag(page, size, total, mbs),
 	})
@@ -206,16 +216,20 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 // @Produce json
 // @Param pk path uint true "用户编号"
 // @Param request body pb.ResetPasswordRequest true "重置用户密码请求"
+// @Success 200 {object} common.MapAPIReply "密码重置成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "用户未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/password/{pk} [put]
 func (s *UserService) ResetPassword(ctx *gin.Context) {
-	var uri PkUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	var req pb.ResetPasswordRequest
+	var req pbUser.ResetPasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -226,7 +240,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
 		return
 	}
-	if err := s.ucUser.UpdateUserById(ctx, uri.Pk, map[string]any{
+	if err := s.ucUser.UpdateUserByID(ctx, uri.PK, map[string]any{
 		"password": req.NewPassword,
 	}); err != nil {
 		s.log.Error(err.Error())
@@ -241,11 +255,14 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "用户编号"
-// @Param request body pb.PatchPasswordRequest true "修改用户密码请求"
+// @Param request body pbUser.PatchPasswordRequest true "修改用户密码请求"
+// @Success 200 {object} common.MapAPIReply "密码修改成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 401 {object} errors.Error "认证失败"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/own/password [put]
 func (s *UserService) PatchPassword(ctx *gin.Context) {
-	var req pb.PatchPasswordRequest
+	var req pbUser.PatchPasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -261,7 +278,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
 		return
 	}
-	m, rErr := s.ucUser.FindUserById(ctx, []string{"Role"}, claims.UserId)
+	m, rErr := s.ucUser.FindUserByID(ctx, []string{"Role"}, claims.UserID)
 	if rErr != nil {
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
@@ -274,7 +291,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 	if !ok {
 		ctx.JSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.Reply())
 	}
-	if err := s.ucUser.UpdateUserById(ctx, claims.UserId, map[string]any{
+	if err := s.ucUser.UpdateUserByID(ctx, claims.UserID, map[string]any{
 		"password": req.NewPassword,
 	}); err != nil {
 		s.log.Error(err.Error())
@@ -289,11 +306,14 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param request body pb.LoginRequest true "登陆请求参数"
-// @Success 200 {object} pb.LoginReply "成功返回用户信息"
-// @Router /api/v1/customer/own/login [put]
+// @Param request body pbUser.LoginRequest true "登陆请求参数"
+// @Success 200 {object} pbUser.LoginReply "登录成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 401 {object} errors.Error "用户名或密码错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/customer/own/login [post]
 func (s *UserService) Login(ctx *gin.Context) {
-	var req pb.LoginRequest
+	var req pbUser.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -309,34 +329,35 @@ func (s *UserService) Login(ctx *gin.Context) {
 	}
 	token, rErr := s.ucUser.Login(ctx, req.Username, req.Password, lrm.IPAddress)
 	if rErr != nil {
+		s.ucRecord.CreateLoginRecord(ctx, lrm)
 		ctx.JSON(rErr.Code, rErr.Reply())
-	} else {
-		lrm.Status = true
-		reply := pb.LoginReply{
-			Code: http.StatusOK,
-			Data: pb.LoginOut{Token: token},
-		}
-		ctx.JSON(reply.Code, &reply)
+		return
 	}
+	lrm.Status = true
 	s.ucRecord.CreateLoginRecord(ctx, lrm)
+	reply := pbUser.LoginReply{
+		Code: http.StatusOK,
+		Data: pbUser.LoginOut{Token: token},
+	}
+	ctx.JSON(reply.Code, &reply)
 }
 
 func (s *UserService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/user", s.CreateUser)
-	r.PUT("/user/:pk", s.UpdateUser)
-	r.DELETE("/user/:pk", s.DeleteUser)
-	r.GET("/user/:pk", s.GetUser)
-	r.GET("/user", s.ListUser)
-	r.PATCH("/user/password/:pk", s.ResetPassword)
-	r.PATCH("/own/password", s.PatchPassword)
-	r.POST("/own/login", s.Login)
+	r.POST("/userinfo", s.CreateUser)
+	r.PUT("/userinfo/:pk", s.UpdateUser)
+	r.DELETE("/userinfo/:pk", s.DeleteUser)
+	r.GET("/userinfo/:pk", s.GetUser)
+	r.GET("/userinfo", s.ListUser)
+	r.PATCH("/reset_password/:pk", s.ResetPassword)
+	r.PATCH("/change_password", s.PatchPassword)
+	r.POST("/login", s.Login)
 }
 
 func UserModelToOutBase(
 	m biz.UserModel,
-) *pb.UserOutBase {
-	return &pb.UserOutBase{
-		Id:        m.Id,
+) *pbUser.UserOutBase {
+	return &pbUser.UserOutBase{
+		ID:        m.ID,
 		CreatedAt: m.CreatedAt.String(),
 		UpdatedAt: m.UpdatedAt.String(),
 		Username:  m.Username,
@@ -347,17 +368,21 @@ func UserModelToOutBase(
 
 func UserModelToOut(
 	m biz.UserModel,
-) *pb.UserOut {
-	return &pb.UserOut{
+) *pbUser.UserOut {
+	var role *pbRole.RoleOutBase
+	if m.Role.ID != 0 {
+		role = RoleModelToOutBase(m.Role)
+	}
+	return &pbUser.UserOut{
 		UserOutBase: *UserModelToOutBase(m),
-		Role:        RoleModelToOutBase(m.Role),
+		Role:        role,
 	}
 }
 
 func ListUserModelToOut(
 	ms []biz.UserModel,
-) []*pb.UserOut {
-	mso := make([]*pb.UserOut, 0, len(ms))
+) []*pbUser.UserOut {
+	mso := make([]*pbUser.UserOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := UserModelToOut(m)

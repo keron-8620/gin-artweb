@@ -7,9 +7,9 @@ import (
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	IsStaff bool   `json:"isf"`  // 是否是工作人员
-	UserId  uint32 `json:"uid"`  // 用户ID
-	Role    string `json:"role"` // 角色
+	IsStaff bool   `json:"isf"` // 是否是工作人员
+	UserID  uint32 `json:"uid"` // 用户ID
+	RoleID  uint32 `json:"rid"` // 角色
 }
 
 func NewJWT(secretKey []byte, u UserClaims) (string, error) {

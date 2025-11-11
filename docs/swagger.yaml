@@ -99,7 +99,7 @@ definitions:
         type: string
       id:
         description: |-
-          按钮主键，必填，必须大于0
+          按钮主键，必须大于0
           Required: true
           Minimum: 1
         type: integer
@@ -111,7 +111,7 @@ definitions:
         type: integer
       name:
         description: |-
-          名称，必填，最大长度50
+          名称，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -166,7 +166,7 @@ definitions:
         type: integer
       name:
         description: |-
-          名称，必填，最大长度50
+          名称，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -182,12 +182,63 @@ definitions:
     - menu_id
     - name
     type: object
+  common.MapAPIReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        additionalProperties: {}
+        description: |-
+          数据
+          可以是任意类型的数据
+        type: object
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
   common.Pag-button_ButtonOutBase:
     properties:
       items:
         description: 对象数组
         items:
           $ref: '#/definitions/button.ButtonOutBase'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-host_HostOutBase:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/host.HostOutBase'
         type: array
       page:
         description: |-
@@ -374,6 +425,225 @@ definitions:
         example: 100
         type: integer
     type: object
+  errors.Error:
+    properties:
+      code:
+        type: integer
+      data:
+        additionalProperties: {}
+        type: object
+      msg:
+        type: string
+      reason:
+        type: string
+    type: object
+  host.CreateHosrRequest:
+    properties:
+      ip_addr:
+        description: |-
+          ip地址，最大长度108
+          Required: true
+          Max length: 108
+        maxLength: 108
+        type: string
+      label:
+        description: |-
+          标签，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+      name:
+        description: |-
+          名称，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+      password:
+        description: |-
+          密码，最大长度150
+          Required: true
+          Max length: 150
+        maxLength: 150
+        type: string
+      port:
+        description: |-
+          端口，必填
+          Required: true
+        format: int32
+        type: integer
+      py_path:
+        description: |-
+          python路径，最大长度254
+          Required: true
+          Max length: 254
+        maxLength: 254
+        type: string
+      remark:
+        description: |-
+          备注，最大长度254
+          Max length: 254
+        maxLength: 254
+        type: string
+      username:
+        description: |-
+          用户名，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+    required:
+    - ip_addr
+    - label
+    - name
+    - password
+    - username
+    type: object
+  host.HostOutBase:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      id:
+        description: 主机ID
+        example: 1
+        type: integer
+      ip_addr:
+        description: IP地址
+        example: 192.168.1.1
+        type: string
+      label:
+        description: 标签
+        example: artweb
+        type: string
+      name:
+        description: 名称
+        example: artweb主机
+        type: string
+      port:
+        description: 端口
+        example: 22
+        type: integer
+      py_path:
+        description: Python路径
+        example: /usr/bin/python3
+        type: string
+      remark:
+        description: 备注
+        example: 测试
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      username:
+        description: 用户名
+        example: root
+        type: string
+    type: object
+  host.HostReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/host.HostOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  host.PagHostReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-host_HostOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  host.UpdateHostRequest:
+    properties:
+      ip_addr:
+        description: |-
+          ip地址，最大长度108
+          Required: true
+          Max length: 108
+        maxLength: 108
+        type: string
+      label:
+        description: |-
+          标签，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+      name:
+        description: |-
+          名称，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+      password:
+        description: |-
+          密码，最大长度150
+          Required: true
+          Max length: 150
+        maxLength: 150
+        type: string
+      port:
+        description: |-
+          端口，必填
+          Required: true
+        format: int32
+        type: integer
+      py_path:
+        description: |-
+          python路径，最大长度254
+          Required: true
+          Max length: 254
+        maxLength: 254
+        type: string
+      remark:
+        description: |-
+          备注，最大长度254
+          Max length: 254
+        maxLength: 254
+        type: string
+      username:
+        description: |-
+          用户名，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
+    required:
+    - ip_addr
+    - label
+    - name
+    - password
+    - username
+    type: object
   menu.CreateMenuRequest:
     properties:
       arrange_order:
@@ -381,20 +651,20 @@ definitions:
         type: integer
       component:
         description: |-
-          组件路径，必填，最大长度200
+          组件路径，最大长度200
           Required: true
           Max length: 200
         maxLength: 200
         type: string
       descr:
         description: |-
-          描述，必填，最大长度254
+          描述，最大长度254
           Max length: 254
         maxLength: 254
         type: string
       id:
         description: |-
-          菜单主键，必填，必须大于0
+          菜单主键，必须大于0
           Required: true
           Minimum: 1
         type: integer
@@ -407,7 +677,7 @@ definitions:
         description: 菜单元信息，必填
       name:
         description: |-
-          名称，必填，最大长度50
+          名称，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -417,7 +687,7 @@ definitions:
         type: integer
       path:
         description: |-
-          前端路由路径，必填，最大长度100
+          前端路由路径，最大长度100
           Required: true
           Max length: 100
         maxLength: 100
@@ -592,7 +862,7 @@ definitions:
         type: integer
       component:
         description: |-
-          组件路径，必填，最大长度200
+          组件路径，最大长度200
           Required: true
           Max length: 200
         maxLength: 200
@@ -612,7 +882,7 @@ definitions:
         description: 菜单元信息，必填
       name:
         description: |-
-          名称，必填，最大长度50
+          名称，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -622,7 +892,7 @@ definitions:
         type: integer
       path:
         description: |-
-          前端路由路径，必填，最大长度100
+          前端路由路径，最大长度100
           Required: true
           Max length: 100
         maxLength: 100
@@ -650,13 +920,13 @@ definitions:
         type: string
       id:
         description: |-
-          权限主键，必填，必须大于0
+          权限主键，必须大于0
           Required: true
           Minimum: 1
         type: integer
       method:
         description: |-
-          HTTP请求方法，必填，枚举值验证
+          HTTP请求方法，枚举值验证
           Required: true
           Enum: GET,POST,PUT,DELETE,PATCH,WS
         enum:
@@ -669,7 +939,7 @@ definitions:
         type: string
       url:
         description: |-
-          权限对应的HTTP URL，必填，最大长度150
+          权限对应的HTTP URL，最大长度150
           Required: true
           Max length: 150
         maxLength: 150
@@ -700,10 +970,6 @@ definitions:
     type: object
   permission.PermissionOutBase:
     properties:
-      Url:
-        description: HTTP路径
-        example: /api/v1/users
-        type: string
       created_at:
         description: 创建时间
         example: "2023-01-01 12:00:00"
@@ -728,6 +994,10 @@ definitions:
         description: 更新时间
         example: "2023-01-01 12:00:00"
         type: string
+      url:
+        description: HTTP路径
+        example: /api/v1/users
+        type: string
     type: object
   permission.PermissionReply:
     properties:
@@ -750,13 +1020,6 @@ definitions:
     type: object
   permission.UpdatePermissionRequest:
     properties:
-      Url:
-        description: |-
-          权限对应的HTTP URL，必填，最大长度150
-          Required: true
-          Max length: 150
-        maxLength: 150
-        type: string
       descr:
         description: |-
           权限描述信息，可选，最大长度254
@@ -765,7 +1028,7 @@ definitions:
         type: string
       method:
         description: |-
-          HTTP请求方法，必填，枚举值验证
+          HTTP请求方法，枚举值验证
           Required: true
           Enum: GET,POST,PUT,DELETE,PATCH,WS
         enum:
@@ -776,9 +1039,16 @@ definitions:
         - PATCH
         - WS
         type: string
+      url:
+        description: |-
+          权限对应的HTTP URL，最大长度150
+          Required: true
+          Max length: 150
+        maxLength: 150
+        type: string
     required:
-    - Url
     - method
+    - url
     type: object
   record.LoginRecordOutBase:
     properties:
@@ -847,7 +1117,7 @@ definitions:
         type: array
       name:
         description: |-
-          名称，必填，最大长度50
+          名称，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -976,7 +1246,7 @@ definitions:
         type: array
       name:
         description: |-
-          名称，必填，最大长度50
+          名称，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -999,14 +1269,14 @@ definitions:
         type: boolean
       name:
         description: |-
-          用户名，必填，最大长度50
+          用户名，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
         type: string
       password:
         description: |-
-          密码，必填，最大长度20
+          密码，最大长度20
           Required: true
           Max length: 20
         type: string
@@ -1048,7 +1318,7 @@ definitions:
     properties:
       password:
         description: |-
-          密码，必填，最大长度20
+          密码，最大长度20
           Required: true
           Max length: 20
         maxLength: 20
@@ -1087,14 +1357,14 @@ definitions:
     properties:
       confirm_password:
         description: |-
-          确认密码，必填，最大长度20
+          确认密码，最大长度20
           Required: true
           Max length: 20
         maxLength: 20
         type: string
       new_password:
         description: |-
-          新密码，必填，最大长度20
+          新密码，最大长度20
           Required: true
           Max length: 20
         maxLength: 20
@@ -1114,14 +1384,14 @@ definitions:
     properties:
       confirm_password:
         description: |-
-          确认密码，必填，最大长度20
+          确认密码，最大长度20
           Required: true
           Max length: 20
         maxLength: 20
         type: string
       new_password:
         description: |-
-          新密码，必填，最大长度20
+          新密码，最大长度20
           Required: true
           Max length: 20
         maxLength: 20
@@ -1140,7 +1410,7 @@ definitions:
         type: boolean
       name:
         description: |-
-          用户名，必填，最大长度50
+          用户名，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
@@ -1518,10 +1788,13 @@ paths:
       parameters:
       - description: 页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 每页数量
         in: query
+        maximum: 100
+        minimum: 1
         name: size
         type: integer
       - description: 权限主键，可选参数，如果提供则必须大于0
@@ -1553,6 +1826,12 @@ paths:
         name: http_url
         type: string
       - description: HTTP方法
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
         in: query
         name: method
         type: string
@@ -1563,6 +1842,14 @@ paths:
           description: 成功返回权限列表
           schema:
             $ref: '#/definitions/permission.PagPermissionReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
       summary: 查询权限列表
       tags:
       - 权限管理
@@ -1580,10 +1867,18 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: 成功返回权限信息
+        "201":
+          description: 创建权限成功
           schema:
             $ref: '#/definitions/permission.PermissionReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
       summary: 新增权限
       tags:
       - 权限管理
@@ -1600,7 +1895,23 @@ paths:
         type: integer
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 权限未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
       summary: 删除权限
       tags:
       - 权限管理
@@ -1618,9 +1929,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: 成功返回用户信息
+          description: 获取权限详情成功
           schema:
             $ref: '#/definitions/permission.PermissionReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 权限未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
       summary: 查询单个权限
       tags:
       - 权限管理
@@ -1644,9 +1967,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: 成功返回权限信息
+          description: 更新权限成功
           schema:
             $ref: '#/definitions/permission.PermissionReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 权限未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
       summary: 更新权限
       tags:
       - 权限管理
@@ -1954,4 +2289,145 @@ paths:
       summary: 查询用户登录记录列表
       tags:
       - 用户管理
+  /api/v1/resource/Host:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询主机列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: size
+        type: integer
+      - description: 主机主键，可选参数，如果提供则必须大于0
+        in: query
+        name: pk
+        type: integer
+      - description: 主机主键列表，可选参数，多个用,隔开，如1,2,3
+        in: query
+        name: pks
+        type: string
+      - description: 创建时间之前的记录 (RFC3339格式)
+        in: query
+        name: before_create_at
+        type: string
+      - description: 创建时间之后的记录 (RFC3339格式)
+        in: query
+        name: after_create_at
+        type: string
+      - description: 更新时间之前的记录 (RFC3339格式)
+        in: query
+        name: before_update_at
+        type: string
+      - description: 更新时间之后的记录 (RFC3339格式)
+        in: query
+        name: after_update_at
+        type: string
+      - description: HTTP路径
+        in: query
+        name: http_url
+        type: string
+      - description: HTTP方法
+        in: query
+        name: method
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回主机列表
+          schema:
+            $ref: '#/definitions/host.PagHostReply'
+      summary: 查询主机列表
+      tags:
+      - 主机管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于新增主机
+      parameters:
+      - description: 创建主机请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/host.CreateHosrRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回主机信息
+          schema:
+            $ref: '#/definitions/host.HostReply'
+      summary: 新增主机
+      tags:
+      - 主机管理
+  /api/v1/resource/Host/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的主机
+      parameters:
+      - description: 主机编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: 删除主机
+      tags:
+      - 主机管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询一个主机
+      parameters:
+      - description: 主机编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回用户信息
+          schema:
+            $ref: '#/definitions/host.HostReply'
+      summary: 查询单个主机
+      tags:
+      - 主机管理
+  /api/v1/resource/host/{pk}:
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新主机
+      parameters:
+      - description: 主机编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新主机请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/host.UpdateHostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回主机信息
+          schema:
+            $ref: '#/definitions/host.HostReply'
+      summary: 更新主机
+      tags:
+      - 主机管理
 swagger: "2.0"

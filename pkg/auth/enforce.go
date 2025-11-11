@@ -13,12 +13,21 @@ const (
 	SubKey = "sub"
 	ObjKey = "obj"
 	ActKey = "act"
+
+	GroupSubKey = "group_sub" // 组策略主体键
+	GroupObjKey = "group_obj" // 组策略对象键
+)
+
+const (
+	PermissionSubjectFormat = "perm_%d"
+	MenuSubjectFormat       = "menu_%d"
+	ButtonSubjectFormat     = "button_%d"
+	RoleSubjectFormat       = "role_%d"
 )
 
 // AuthEnforcer 管理身份验证令牌和授权权限
 // 它提供线程安全的操作来存储和检索用户声明、角色权限和URL访问控制映射
 type AuthEnforcer struct {
-
 	// enforcer 用于访问控制
 	Enforcer *casbin.Enforcer
 

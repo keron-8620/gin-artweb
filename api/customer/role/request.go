@@ -8,7 +8,7 @@ import (
 //
 // swagger:model CreateRoleRequest
 type CreateRoleRequest struct {
-	// 名称，必填，最大长度50
+	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"required,max=50"`
@@ -18,20 +18,20 @@ type CreateRoleRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 
 	// 关联菜单ID列表，可选
-	MenuIds []uint32 `json:"menu_ids" binding:"omitempty"`
+	MenuIDs []uint32 `json:"menu_ids" binding:"omitempty"`
 
 	// 关联按钮ID列表，可选
-	ButtonIds []uint32 `json:"button_ids" binding:"omitempty"`
+	ButtonIDs []uint32 `json:"button_ids" binding:"omitempty"`
 }
 
 // UpdateRoleRequest 用于更新角色的请求结构体
 //
 // swagger:model UpdateRoleRequest
 type UpdateRoleRequest struct {
-	// 名称，必填，最大长度50
+	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"required,max=50"`
@@ -41,13 +41,13 @@ type UpdateRoleRequest struct {
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 
 	// 关联菜单ID列表，可选
-	MenuIds []uint32 `json:"menu_ids" binding:"omitempty"`
+	MenuIDs []uint32 `json:"menu_ids" binding:"omitempty"`
 
 	// 关联按钮ID列表，可选
-	ButtonIds []uint32 `json:"button_ids" binding:"omitempty"`
+	ButtonIDs []uint32 `json:"button_ids" binding:"omitempty"`
 }
 
 // ListRoleRequest 用于获取角色列表的请求结构体

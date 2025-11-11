@@ -9,7 +9,7 @@ import (
 // ButtonOutBase 按钮基础信息
 type ButtonOutBase struct {
 	// 按钮ID
-	Id uint32 `json:"id" example:"1"`
+	ID uint32 `json:"id" example:"1"`
 	// 创建时间
 	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
 	// 更新时间
@@ -35,3 +35,4 @@ type ButtonReply = common.APIReply[ButtonOut]
 
 // PagButtonBaseReply 按钮的分页响应结构
 type PagButtonBaseReply = common.APIReply[*common.Pag[*ButtonOutBase]]
+

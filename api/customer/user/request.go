@@ -8,12 +8,12 @@ import (
 //
 // swagger:model CreateUserRequest
 type CreateUserRequest struct {
-	// 用户名，必填，最大长度50
+	// 用户名，最大长度50
 	// Required: true
 	// Max length: 50
 	Username string `json:"name" binding:"required,max=50"`
 
-	// 密码，必填，最大长度20
+	// 密码，最大长度20
 	// Required: true
 	// Max length: 20
 	Password string `json:"password" binding:"required, max=20"`
@@ -25,7 +25,7 @@ type CreateUserRequest struct {
 	IsStaff bool `json:"is_staff" binding:"required"`
 
 	// 角色ID，必填
-	RoleId uint32 `json:"role_id" binding:"required"`
+	RoleID uint32 `json:"role_id" binding:"required"`
 }
 
 // UpdateUserRequest 用于更新用户的请求结构体
@@ -33,7 +33,7 @@ type CreateUserRequest struct {
 //
 // swagger:model UpdateUserRequest
 type UpdateUserRequest struct {
-	// 用户名，必填，最大长度50
+	// 用户名，最大长度50
 	// Required: true
 	// Max length: 50
 	Username string `json:"name" binding:"required,max=50"`
@@ -45,7 +45,7 @@ type UpdateUserRequest struct {
 	IsStaff bool `json:"is_staff" binding:"required"`
 
 	// 角色ID，必填
-	RoleId uint32 `json:"role_id" binding:"required"`
+	RoleID uint32 `json:"role_id" binding:"required"`
 }
 
 // ListUserRequest 用于获取用户列表的请求结构体
@@ -66,7 +66,7 @@ type ListUserRequest struct {
 	IsStaff *bool `json:"is_staff" binding:"omitempty"`
 
 	// 角色ID
-	RoleId uint32 `json:"role_id" binding:"omitempty"`
+	RoleID uint32 `json:"role_id" binding:"omitempty"`
 }
 
 func (req *ListUserRequest) Query() (int, int, map[string]any) {
@@ -80,8 +80,8 @@ func (req *ListUserRequest) Query() (int, int, map[string]any) {
 	if req.IsStaff != nil {
 		query["is_staff = ?"] = *req.IsStaff
 	}
-	if req.RoleId != 0 {
-		query["role_id = ?"] = req.RoleId
+	if req.RoleID != 0 {
+		query["role_id = ?"] = req.RoleID
 	}
 	return page, size, query
 }
@@ -90,12 +90,16 @@ func (req *ListUserRequest) Query() (int, int, map[string]any) {
 //
 // swagger:model ResetPasswordRequest
 type ResetPasswordRequest struct {
-	// 新密码，必填，最大长度20
+	// 用户名，最大长度50
+	// Required: true
+	// Max length: 50
+	Username string `json:"name" binding:"required,max=50"`
+	// 新密码，最大长度20
 	// Required: true
 	// Max length: 20
 	NewPassword string `json:"new_password" binding:"required,max=20"`
 
-	// 确认密码，必填，最大长度20
+	// 确认密码，最大长度20
 	// Required: true
 	// Max length: 20
 	ConfirmPassword string `json:"confirm_password" binding:"required,max=20"`
@@ -107,7 +111,7 @@ type LoginRequest struct {
 	// Max length: 50
 	Username string `json:"username" binding:"required,max=50"`
 
-	// 密码，必填，最大长度20
+	// 密码，最大长度20
 	// Required: true
 	// Max length: 20
 	Password string `json:"password" binding:"required,max=20"`
@@ -122,12 +126,12 @@ type PatchPasswordRequest struct {
 	// Max length: 20
 	OldPassword string `json:"old_password" binding:"required"`
 
-	// 新密码，必填，最大长度20
+	// 新密码，最大长度20
 	// Required: true
 	// Max length: 20
 	NewPassword string `json:"new_password" binding:"required,max=20"`
 
-	// 确认密码，必填，最大长度20
+	// 确认密码，最大长度20
 	// Required: true
 	// Max length: 20
 	ConfirmPassword string `json:"confirm_password" binding:"required,max=20"`

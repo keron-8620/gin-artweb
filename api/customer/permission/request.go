@@ -8,17 +8,17 @@ import (
 //
 // swagger:model CreatePermissionRequest
 type CreatePermissionRequest struct {
-	// 权限主键，必填，必须大于0
+	// 权限主键，必须大于0
 	// Required: true
 	// Minimum: 1
-	Id uint32 `json:"id" binding:"required,gt=0"`
+	ID uint32 `json:"id" binding:"required,gt=0"`
 
-	// 权限对应的HTTP URL，必填，最大长度150
+	// 权限对应的HTTP URL，最大长度150
 	// Required: true
 	// Max length: 150
-	Url string `json:"url" binding:"required,max=150"`
+	URL string `json:"url" binding:"required,max=150"`
 
-	// HTTP请求方法，必填，枚举值验证
+	// HTTP请求方法，枚举值验证
 	// Required: true
 	// Enum: GET,POST,PUT,DELETE,PATCH,WS
 	Method string `json:"method" binding:"required,oneof=GET POST PUT DELETE PATCH WS"`
@@ -33,12 +33,12 @@ type CreatePermissionRequest struct {
 //
 // swagger:model UpdatePermissionRequest
 type UpdatePermissionRequest struct {
-	// 权限对应的HTTP URL，必填，最大长度150
+	// 权限对应的HTTP URL，最大长度150
 	// Required: true
 	// Max length: 150
-	Url string `json:"Url" binding:"required,max=150"`
+	URL string `json:"url" binding:"required,max=150"`
 
-	// HTTP请求方法，必填，枚举值验证
+	// HTTP请求方法，枚举值验证
 	// Required: true
 	// Enum: GET,POST,PUT,DELETE,PATCH,WS
 	Method string `json:"method" binding:"required,oneof=GET POST PUT DELETE PATCH WS"`
@@ -57,7 +57,7 @@ type ListPermissionRequest struct {
 
 	// 权限对应的HTTP URL，字符串长度限制
 	// Max length: 150
-	HttpUrl string `form:"http_url" binding:"omitempty,max=150"`
+	URL string `form:"url" binding:"omitempty,max=150"`
 
 	// HTTP请求方法，枚举值验证
 	// Enum: GET,POST,PUT,DELETE,PATCH,WS
@@ -70,8 +70,8 @@ type ListPermissionRequest struct {
 
 func (req *ListPermissionRequest) Query() (int, int, map[string]any) {
 	page, size, query := req.StandardModelQuery.QueryMap(8)
-	if req.HttpUrl != "" {
-		query["http_url like ?"] = "%" + req.HttpUrl + "%"
+	if req.URL != "" {
+		query["url like ?"] = "%" + req.URL + "%"
 	}
 	if req.Method != "" {
 		query["method = ?"] = req.Method

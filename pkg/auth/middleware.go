@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -52,8 +53,9 @@ func AuthMiddleware(enforcer *AuthEnforcer, loginUrl string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		role := fmt.Sprintf(RoleSubjectFormat, info.RoleID)
 		// 访问鉴权
-		hasPerm, err := enforcer.Authorization(info.Role, c.Request.URL.Path, c.Request.Method)
+		hasPerm, err := enforcer.Authorization(role, c.Request.URL.Path, c.Request.Method)
 		if err != nil {
 			c.JSON(err.Code, err.Reply())
 			c.Abort()

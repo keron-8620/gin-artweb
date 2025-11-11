@@ -12,9 +12,9 @@ import (
 
 type PermissionModel struct {
 	database.StandardModel
-	Url    string `gorm:"column:url;type:varchar(150);index:idx_member;comment:HTTP的URL地址" json:"url"`
-	Method string `gorm:"column:method;type:varchar(10);index:idx_member;comment:请求方法" json:"method"`
-	Label  string `gorm:"column:label;type:varchar(50);index:idx_member;comment:标签" json:"label"`
+	URL    string `gorm:"column:url;type:varchar(150);index:idx_permission_url_method_label;comment:HTTP的URL地址" json:"url"`
+	Method string `gorm:"column:method;type:varchar(10);index:idx_permission_url_method_label;comment:请求方法" json:"method"`
+	Label  string `gorm:"column:label;type:varchar(50);index:idx_permission_url_method_label;comment:标签" json:"label"`
 	Descr  string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
 }
 
@@ -26,7 +26,7 @@ func (m *PermissionModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
-	enc.AddString("url", m.Url)
+	enc.AddString("url", m.URL)
 	enc.AddString("method", m.Method)
 	enc.AddString("label", m.Label)
 	enc.AddString("descr", m.Descr)
@@ -71,15 +71,15 @@ func (uc *PermissionUsecase) CreatePermission(
 	return &m, nil
 }
 
-func (uc *PermissionUsecase) UpdatePermissionById(
+func (uc *PermissionUsecase) UpdatePermissionByID(
 	ctx context.Context,
-	permId uint32,
+	permID uint32,
 	data map[string]any,
 ) *errors.Error {
-	if err := uc.permRepo.UpdateModel(ctx, data, "id = ?", permId); err != nil {
+	if err := uc.permRepo.UpdateModel(ctx, data, "id = ?", permID); err != nil {
 		return database.NewGormError(err, data)
 	}
-	m, rErr := uc.FindPermissionById(ctx, permId)
+	m, rErr := uc.FindPermissionByID(ctx, permID)
 	if rErr != nil {
 		return rErr
 	}
@@ -92,16 +92,16 @@ func (uc *PermissionUsecase) UpdatePermissionById(
 	return nil
 }
 
-func (uc *PermissionUsecase) DeletePermissionById(
+func (uc *PermissionUsecase) DeletePermissionByID(
 	ctx context.Context,
-	permId uint32,
+	permID uint32,
 ) *errors.Error {
-	m, rErr := uc.FindPermissionById(ctx, permId)
+	m, rErr := uc.FindPermissionByID(ctx, permID)
 	if rErr != nil {
 		return rErr
 	}
-	if err := uc.permRepo.DeleteModel(ctx, permId); err != nil {
-		return database.NewGormError(err, map[string]any{"id": permId})
+	if err := uc.permRepo.DeleteModel(ctx, permID); err != nil {
+		return database.NewGormError(err, map[string]any{"id": permID})
 	}
 	if err := uc.permRepo.RemovePolicy(ctx, *m, true); err != nil {
 		return ErrRemovePolicy.WithCause(err)
@@ -109,13 +109,13 @@ func (uc *PermissionUsecase) DeletePermissionById(
 	return nil
 }
 
-func (uc *PermissionUsecase) FindPermissionById(
+func (uc *PermissionUsecase) FindPermissionByID(
 	ctx context.Context,
-	permId uint32,
+	permID uint32,
 ) (*PermissionModel, *errors.Error) {
-	m, err := uc.permRepo.FindModel(ctx, nil, permId)
+	m, err := uc.permRepo.FindModel(ctx, nil, permID)
 	if err != nil {
-		return nil, database.NewGormError(err, map[string]any{"id": permId})
+		return nil, database.NewGormError(err, map[string]any{"id": permID})
 	}
 	return m, nil
 }

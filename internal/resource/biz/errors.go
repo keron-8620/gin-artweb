@@ -1,0 +1,30 @@
+package biz
+
+import (
+	"net/http"
+
+	"gin-artweb/pkg/errors"
+)
+
+var (
+	ErrSSHConnect = errors.New(
+		http.StatusBadRequest,
+		"ssh_connection_failed",
+		"SSH连接失败",
+		nil,
+	)
+	
+	ErrSSHKeyDeployment = errors.New(
+		http.StatusBadRequest,
+		"ssh_key_deployment_failed",
+		"SSH密钥部署失败",
+		nil,
+	)
+
+	ErrRemovePakage = errors.New(
+		http.StatusBadRequest,
+		"remove_package_failed",
+		"删除软件包失败",
+		nil,
+	)
+)

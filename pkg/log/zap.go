@@ -3,7 +3,6 @@ package log
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -36,11 +35,12 @@ func NewZapLogger(level string, w io.Writer) (*zap.Logger, error) {
 	// 创建核心
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.NewMultiWriteSyncer(
-			zapcore.AddSync(os.Stdout), 
-			zapcore.AddSync(os.Stderr),
-			zapcore.AddSync(w),
-		),
+		zapcore.AddSync(w),
+		// zapcore.NewMultiWriteSyncer(
+		// 	zapcore.AddSync(os.Stdout),
+		// 	zapcore.AddSync(os.Stderr),
+		// 	zapcore.AddSync(w),
+		// ),
 		atomicLevel,
 	)
 

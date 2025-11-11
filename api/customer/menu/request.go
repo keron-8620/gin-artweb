@@ -8,22 +8,22 @@ import (
 //
 // swagger:model CreateMenuRequest
 type CreateMenuRequest struct {
-	// 菜单主键，必填，必须大于0
+	// 菜单主键，必须大于0
 	// Required: true
 	// Minimum: 1
-	Id uint32 `json:"id" binding:"required,gt=0"`
+	ID uint32 `json:"id" binding:"required,gt=0"`
 
-	// 前端路由路径，必填，最大长度100
+	// 前端路由路径，最大长度100
 	// Required: true
 	// Max length: 100
 	Path string `json:"path" binding:"required,max=100"`
 
-	// 组件路径，必填，最大长度200
+	// 组件路径，最大长度200
 	// Required: true
 	// Max length: 200
 	Component string `json:"component" binding:"required,max=200"`
 
-	// 名称，必填，最大长度50
+	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"required,max=50"`
@@ -37,32 +37,32 @@ type CreateMenuRequest struct {
 	// 是否激活，必填
 	IsActive bool `json:"is_active" binding:"required"`
 
-	// 描述，必填，最大长度254
+	// 描述，最大长度254
 	// Max length: 254
 	Descr string `json:"descr" binding:"omitempty,max=254"`
 
 	// 父级菜单ID，可选
-	ParentId *uint32 `json:"parent_id" binding:"omitempty"`
+	ParentID *uint32 `json:"parent_id" binding:"omitempty"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // UpdateMenuRequest 用于更新菜单的请求结构体
 //
 // swagger:model UpdateMenuRequest
 type UpdateMenuRequest struct {
-	// 前端路由路径，必填，最大长度100
+	// 前端路由路径，最大长度100
 	// Required: true
 	// Max length: 100
 	Path string `json:"path" binding:"required,max=100"`
 
-	// 组件路径，必填，最大长度200
+	// 组件路径，最大长度200
 	// Required: true
 	// Max length: 200
 	Component string `json:"component" binding:"required,max=200"`
 
-	// 名称，必填，最大长度50
+	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"required,max=50"`
@@ -81,10 +81,10 @@ type UpdateMenuRequest struct {
 	Descr string `json:"descr" binding:"max=254"`
 
 	// 父级菜单ID，可选
-	ParentId *uint32 `json:"parent_id" binding:"omitempty"`
+	ParentID *uint32 `json:"parent_id" binding:"omitempty"`
 
 	// 关联权限ID列表，可选
-	PermissionIds []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
 // ListMenuRequest 用于获取菜单列表的请求结构体
@@ -114,7 +114,7 @@ type ListMenuRequest struct {
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
 	// 父级菜单ID筛选
-	ParentId *uint32 `form:"parent_id" binding:"omitempty"`
+	ParentID *uint32 `form:"parent_id" binding:"omitempty"`
 }
 
 func (req *ListMenuRequest) Query() (int, int, map[string]any) {
@@ -134,8 +134,8 @@ func (req *ListMenuRequest) Query() (int, int, map[string]any) {
 	if req.Descr != "" {
 		query["descr like ?"] = "%" + req.Descr + "%"
 	}
-	if req.ParentId != nil {
-		query["parent_id = ?"] = *req.ParentId
+	if req.ParentID != nil {
+		query["parent_id = ?"] = *req.ParentID
 	}
 	return page, size, query
 }

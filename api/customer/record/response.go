@@ -5,7 +5,7 @@ import "gin-artweb/pkg/common"
 // LoginRecordOutBase登陆记录信息
 type LoginRecordOutBase struct {
 	// 用户ID
-	Id uint32 `json:"id" example:"1"`
+	ID uint32 `json:"id" example:"1"`
 	// 名称
 	Username string `json:"username" example:"judgement"`
 	// 登录时间

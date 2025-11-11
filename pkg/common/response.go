@@ -56,7 +56,19 @@ func NewPag[T any](page, size int, total int64, items []T) *Pag[T] {
 	}
 }
 
-var NoDataReply = APIReply[any]{
+type MapAPIReply struct {
+	// 状态码
+	// Example: 200
+	Code int `json:"code"`
+	// 信息
+	// Example: "success"
+	Msg string `json:"msg"`
+	// 数据
+	// 可以是任意类型的数据
+	Data map[string]any `json:"data,omitempty"`
+}
+
+var NoDataReply = MapAPIReply{
 	Code: http.StatusOK,
 	Msg:  "",
 	Data: map[string]any{},

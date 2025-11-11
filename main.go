@@ -100,7 +100,7 @@ func main() {
 	defer clearFunc() // 程序结束前执行资源清理操作
 
 	// 设置 Gin 框架的日志输出到 Zap 日志中，并设置运行模式为 ReleaseMode
-	gin.DefaultWriter = zap.NewStdLog(i.log).Writer()
+	// gin.DefaultWriter = zap.NewStdLog(i.log).Writer()
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 

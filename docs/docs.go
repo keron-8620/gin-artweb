@@ -491,12 +491,15 @@ const docTemplate = `{
                 "summary": "查询权限列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "每页数量",
                         "name": "size",
@@ -545,6 +548,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "DELETE",
+                            "PATCH"
+                        ],
                         "type": "string",
                         "description": "HTTP方法",
                         "name": "method",
@@ -556,6 +566,18 @@ const docTemplate = `{
                         "description": "成功返回权限列表",
                         "schema": {
                             "$ref": "#/definitions/permission.PagPermissionReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -584,10 +606,22 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "成功返回权限信息",
+                    "201": {
+                        "description": "创建权限成功",
                         "schema": {
                             "$ref": "#/definitions/permission.PermissionReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -617,9 +651,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回用户信息",
+                        "description": "获取权限详情成功",
                         "schema": {
                             "$ref": "#/definitions/permission.PermissionReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "权限未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -656,9 +708,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回权限信息",
+                        "description": "更新权限成功",
                         "schema": {
                             "$ref": "#/definitions/permission.PermissionReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "权限未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -684,7 +754,32 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "权限未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/customer/role": {
@@ -1144,6 +1239,219 @@ const docTemplate = `{
                 ],
                 "responses": {}
             }
+        },
+        "/api/v1/resource/Host": {
+            "get": {
+                "description": "本接口用于查询主机列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "主机管理"
+                ],
+                "summary": "查询主机列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "主机主键，可选参数，如果提供则必须大于0",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "主机主键列表，可选参数，多个用,隔开，如1,2,3",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)",
+                        "name": "before_create_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)",
+                        "name": "after_create_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)",
+                        "name": "before_update_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)",
+                        "name": "after_update_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "HTTP路径",
+                        "name": "http_url",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "HTTP方法",
+                        "name": "method",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回主机列表",
+                        "schema": {
+                            "$ref": "#/definitions/host.PagHostReply"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "本接口用于新增主机",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "主机管理"
+                ],
+                "summary": "新增主机",
+                "parameters": [
+                    {
+                        "description": "创建主机请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/host.CreateHosrRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回主机信息",
+                        "schema": {
+                            "$ref": "#/definitions/host.HostReply"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/resource/Host/{pk}": {
+            "get": {
+                "description": "本接口用于查询一个主机",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "主机管理"
+                ],
+                "summary": "查询单个主机",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "主机编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/host.HostReply"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "本接口用于删除指定ID的主机",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "主机管理"
+                ],
+                "summary": "删除主机",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "主机编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/resource/host/{pk}": {
+            "put": {
+                "description": "本接口用于更新主机",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "主机管理"
+                ],
+                "summary": "更新主机",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "主机编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新主机请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/host.UpdateHostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回主机信息",
+                        "schema": {
+                            "$ref": "#/definitions/host.HostReply"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1277,7 +1585,7 @@ const docTemplate = `{
                     "maxLength": 254
                 },
                 "id": {
-                    "description": "按钮主键，必填，必须大于0\nRequired: true\nMinimum: 1",
+                    "description": "按钮主键，必须大于0\nRequired: true\nMinimum: 1",
                     "type": "integer"
                 },
                 "is_active": {
@@ -1289,7 +1597,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
-                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -1350,7 +1658,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
-                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -1363,6 +1671,24 @@ const docTemplate = `{
                 }
             }
         },
+        "common.MapAPIReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
         "common.Pag-button_ButtonOutBase": {
             "type": "object",
             "properties": {
@@ -1371,6 +1697,38 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/button.ButtonOutBase"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-host_HostOutBase": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/host.HostOutBase"
                     }
                 },
                 "page": {
@@ -1555,6 +1913,225 @@ const docTemplate = `{
                 }
             }
         },
+        "errors.Error": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "host.CreateHosrRequest": {
+            "type": "object",
+            "required": [
+                "ip_addr",
+                "label",
+                "name",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "ip_addr": {
+                    "description": "ip地址，最大长度108\nRequired: true\nMax length: 108",
+                    "type": "string",
+                    "maxLength": 108
+                },
+                "label": {
+                    "description": "标签，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "name": {
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "password": {
+                    "description": "密码，最大长度150\nRequired: true\nMax length: 150",
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "port": {
+                    "description": "端口，必填\nRequired: true",
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "py_path": {
+                    "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "remark": {
+                    "description": "备注，最大长度254\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "username": {
+                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "host.HostOutBase": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "id": {
+                    "description": "主机ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "ip_addr": {
+                    "description": "IP地址",
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "artweb"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "artweb主机"
+                },
+                "port": {
+                    "description": "端口",
+                    "type": "integer",
+                    "example": 22
+                },
+                "py_path": {
+                    "description": "Python路径",
+                    "type": "string",
+                    "example": "/usr/bin/python3"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string",
+                    "example": "测试"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "root"
+                }
+            }
+        },
+        "host.HostReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/host.HostOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "host.PagHostReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-host_HostOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "host.UpdateHostRequest": {
+            "type": "object",
+            "required": [
+                "ip_addr",
+                "label",
+                "name",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "ip_addr": {
+                    "description": "ip地址，最大长度108\nRequired: true\nMax length: 108",
+                    "type": "string",
+                    "maxLength": 108
+                },
+                "label": {
+                    "description": "标签，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "name": {
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "password": {
+                    "description": "密码，最大长度150\nRequired: true\nMax length: 150",
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "port": {
+                    "description": "端口，必填\nRequired: true",
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "py_path": {
+                    "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "remark": {
+                    "description": "备注，最大长度254\nMax length: 254",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "username": {
+                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
         "menu.CreateMenuRequest": {
             "type": "object",
             "required": [
@@ -1572,17 +2149,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "component": {
-                    "description": "组件路径，必填，最大长度200\nRequired: true\nMax length: 200",
+                    "description": "组件路径，最大长度200\nRequired: true\nMax length: 200",
                     "type": "string",
                     "maxLength": 200
                 },
                 "descr": {
-                    "description": "描述，必填，最大长度254\nMax length: 254",
+                    "description": "描述，最大长度254\nMax length: 254",
                     "type": "string",
                     "maxLength": 254
                 },
                 "id": {
-                    "description": "菜单主键，必填，必须大于0\nRequired: true\nMinimum: 1",
+                    "description": "菜单主键，必须大于0\nRequired: true\nMinimum: 1",
                     "type": "integer"
                 },
                 "is_active": {
@@ -1598,7 +2175,7 @@ const docTemplate = `{
                     ]
                 },
                 "name": {
-                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -1607,7 +2184,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "path": {
-                    "description": "前端路由路径，必填，最大长度100\nRequired: true\nMax length: 100",
+                    "description": "前端路由路径，最大长度100\nRequired: true\nMax length: 100",
                     "type": "string",
                     "maxLength": 100
                 },
@@ -1828,7 +2405,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "component": {
-                    "description": "组件路径，必填，最大长度200\nRequired: true\nMax length: 200",
+                    "description": "组件路径，最大长度200\nRequired: true\nMax length: 200",
                     "type": "string",
                     "maxLength": 200
                 },
@@ -1850,7 +2427,7 @@ const docTemplate = `{
                     ]
                 },
                 "name": {
-                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -1859,7 +2436,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "path": {
-                    "description": "前端路由路径，必填，最大长度100\nRequired: true\nMax length: 100",
+                    "description": "前端路由路径，最大长度100\nRequired: true\nMax length: 100",
                     "type": "string",
                     "maxLength": 100
                 },
@@ -1886,11 +2463,11 @@ const docTemplate = `{
                     "maxLength": 254
                 },
                 "id": {
-                    "description": "权限主键，必填，必须大于0\nRequired: true\nMinimum: 1",
+                    "description": "权限主键，必须大于0\nRequired: true\nMinimum: 1",
                     "type": "integer"
                 },
                 "method": {
-                    "description": "HTTP请求方法，必填，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
+                    "description": "HTTP请求方法，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
                     "type": "string",
                     "enum": [
                         "GET",
@@ -1902,7 +2479,7 @@ const docTemplate = `{
                     ]
                 },
                 "url": {
-                    "description": "权限对应的HTTP URL，必填，最大长度150\nRequired: true\nMax length: 150",
+                    "description": "权限对应的HTTP URL，最大长度150\nRequired: true\nMax length: 150",
                     "type": "string",
                     "maxLength": 150
                 }
@@ -1932,11 +2509,6 @@ const docTemplate = `{
         "permission.PermissionOutBase": {
             "type": "object",
             "properties": {
-                "Url": {
-                    "description": "HTTP路径",
-                    "type": "string",
-                    "example": "/api/v1/users"
-                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string",
@@ -1966,6 +2538,11 @@ const docTemplate = `{
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
+                },
+                "url": {
+                    "description": "HTTP路径",
+                    "type": "string",
+                    "example": "/api/v1/users"
                 }
             }
         },
@@ -1993,22 +2570,17 @@ const docTemplate = `{
         "permission.UpdatePermissionRequest": {
             "type": "object",
             "required": [
-                "Url",
-                "method"
+                "method",
+                "url"
             ],
             "properties": {
-                "Url": {
-                    "description": "权限对应的HTTP URL，必填，最大长度150\nRequired: true\nMax length: 150",
-                    "type": "string",
-                    "maxLength": 150
-                },
                 "descr": {
                     "description": "权限描述信息，可选，最大长度254\nMax length: 254",
                     "type": "string",
                     "maxLength": 254
                 },
                 "method": {
-                    "description": "HTTP请求方法，必填，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
+                    "description": "HTTP请求方法，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
                     "type": "string",
                     "enum": [
                         "GET",
@@ -2018,6 +2590,11 @@ const docTemplate = `{
                         "PATCH",
                         "WS"
                     ]
+                },
+                "url": {
+                    "description": "权限对应的HTTP URL，最大长度150\nRequired: true\nMax length: 150",
+                    "type": "string",
+                    "maxLength": 150
                 }
             }
         },
@@ -2103,7 +2680,7 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -2262,7 +2839,7 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "description": "名称，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
@@ -2294,12 +2871,12 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "name": {
-                    "description": "用户名，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },
                 "password": {
-                    "description": "密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string"
                 },
                 "role_id": {
@@ -2345,7 +2922,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "description": "密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string",
                     "maxLength": 20
                 },
@@ -2386,12 +2963,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "confirm_password": {
-                    "description": "确认密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "确认密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string",
                     "maxLength": 20
                 },
                 "new_password": {
-                    "description": "新密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "新密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string",
                     "maxLength": 20
                 },
@@ -2409,12 +2986,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "confirm_password": {
-                    "description": "确认密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "确认密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string",
                     "maxLength": 20
                 },
                 "new_password": {
-                    "description": "新密码，必填，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "新密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string",
                     "maxLength": 20
                 }
@@ -2438,7 +3015,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "name": {
-                    "description": "用户名，必填，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
                     "type": "string",
                     "maxLength": 50
                 },

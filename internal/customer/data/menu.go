@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
@@ -38,7 +39,7 @@ func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
 	if err := database.DBCreate(ctx, r.gormDB, &biz.MenuModel{}, m); err != nil {
 		r.log.Error(
 			"新增菜单模型失败",
-			zap.Object("model", m),
+			zap.Object(database.ModelKey, m),
 			zap.Error(err),
 		)
 		return err
@@ -46,12 +47,28 @@ func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
 	return nil
 }
 
-func (r *menuRepo) UpdateModel(ctx context.Context, data map[string]any, upmap map[string]any, conds ...any) error {
+func (r *menuRepo) UpdateModel(
+	ctx context.Context,
+	data map[string]any,
+	perms []biz.PermissionModel,
+	conds ...any,
+) error {
+	upmap := make(map[string]any, 1)
+	if len(perms) > 0 {
+		upmap["Permissions"] = perms
+	}
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.MenuModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
 			"更新菜单模型失败",
-			zap.Any("data", data),
-			zap.Any("conditions", conds),
+			zap.Any(database.UpdateDataKey, data),
+			zap.Objects("permissions", func() []zapcore.ObjectMarshaler {
+				objs := make([]zapcore.ObjectMarshaler, len(perms))
+				for i := range perms {
+					objs[i] = &perms[i]
+				}
+				return objs
+			}()),
+			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
 		)
 		return err
@@ -63,7 +80,7 @@ func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	if err := database.DBDelete(ctx, r.gormDB, &biz.MenuModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除菜单模型失败",
-			zap.Any("conditions", conds),
+			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
 		)
 		return err
@@ -80,8 +97,8 @@ func (r *menuRepo) FindModel(
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询菜单模型失败",
-			zap.Strings("preloads", preloads),
-			zap.Any("conditions", conds),
+			zap.Strings(database.PreloadKey, preloads),
+			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
 		)
 		return nil, err
@@ -98,7 +115,7 @@ func (r *menuRepo) ListModel(
 	if err != nil {
 		r.log.Error(
 			"查询菜单列表失败",
-			zap.Object("query_params", &qp),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.Error(err),
 		)
 		return 0, nil, err
@@ -115,18 +132,18 @@ func (r *menuRepo) AddGroupPolicy(
 		return ctx.Err()
 	default:
 	}
-	sub := menuModelToSub(m)
+	sub := menuModelToSubject(m)
 
 	// 处理父级关系
 	if m.Parent != nil {
-		obj := menuModelToSub(*m.Parent)
+		obj := menuModelToSubject(*m.Parent)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
 			r.log.Error(
 				"添加菜单与父级菜单的继承关系策略失败",
-				zap.String(auth.SubKey, sub),
-				zap.String(auth.ObjKey, obj),
-				zap.Uint32("menu_id", m.Id),
-				zap.Uint32("parent_menu_id", *m.ParentId),
+				zap.String(auth.GroupSubKey, sub),
+				zap.String(auth.GroupObjKey, obj),
+				zap.Uint32("menu_id", m.ID),
+				zap.Uint32("parent_menu_id", *m.ParentID),
 				zap.Error(err),
 			)
 			return err
@@ -135,14 +152,14 @@ func (r *menuRepo) AddGroupPolicy(
 
 	// 批量处理权限
 	for _, o := range m.Permissions {
-		obj := permissionModelToSub(o)
+		obj := permissionModelToSubject(o)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
 			r.log.Error(
 				"添加菜单与权限的关联策略失败",
-				zap.String(auth.SubKey, sub),
-				zap.String(auth.ObjKey, obj),
-				zap.Uint32("menu_id", m.Id),
-				zap.Uint32("permission_id", o.Id),
+				zap.String(auth.GroupSubKey, sub),
+				zap.String(auth.GroupObjKey, obj),
+				zap.Uint32("menu_id", m.ID),
+				zap.Uint32("permission_id", o.ID),
 				zap.Error(err),
 			)
 			return err
@@ -161,23 +178,20 @@ func (r *menuRepo) RemoveGroupPolicy(
 		return ctx.Err()
 	default:
 	}
-	sub := menuModelToSub(m)
-
-	// 删除该菜单作为父级的策略（被其他菜单或权限继承）
-	if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
+	sub := menuModelToSubject(m)
+	if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
 		r.log.Error(
 			"删除菜单作为子级策略失败(该策略继承自其他策略)",
-			zap.String("sub", sub),
+			zap.String(auth.GroupSubKey, sub),
 			zap.Error(err),
 		)
 		return err
 	}
-	// 删除该菜单作为子级的策略（从其他菜单或权限继承）
 	if removeInherited {
-		if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
+		if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {
 			r.log.Error(
 				"删除菜单作为父级策略失败(该策略被其他策略继承)",
-				zap.String(auth.ObjKey, sub),
+				zap.String(auth.GroupObjKey, sub),
 				zap.Error(err),
 			)
 			return err
@@ -186,6 +200,6 @@ func (r *menuRepo) RemoveGroupPolicy(
 	return nil
 }
 
-func menuModelToSub(m biz.MenuModel) string {
-	return fmt.Sprintf("menu_%d", m.Id)
+func menuModelToSubject(m biz.MenuModel) string {
+	return fmt.Sprintf(auth.MenuSubjectFormat, m.ID)
 }

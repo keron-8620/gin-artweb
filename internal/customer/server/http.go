@@ -54,6 +54,12 @@ func NewServer(
 	userUsecase := biz.NewUserUsecase(logger, roleRepo, userRepo, recordRepo, hasher, conf.Security)
 	recordUsecase := biz.NewRecordUsecase(logger, recordRepo)
 
+	permissionUsecase.LoadPermissionPolicy(ctx)
+	menuUsecase.LoadMenuPolicy(ctx)
+	buttonUsecase.LoadButtonPolicy(ctx)
+	roleUsecase.LoadRolePolicy(ctx)
+	router.Use(auth.AuthMiddleware(enforcer, "/api/v1/customer/own/login"))
+
 	permissionService := service.NewPermissionService(logger, permissionUsecase)
 	menuService := service.NewMenuService(logger, menuUsecase)
 	buttonService := service.NewButtonService(logger, buttonUsecase)
@@ -68,10 +74,4 @@ func NewServer(
 	roleService.LoadRouter(appRouter)
 	userService.LoadRouter(appRouter)
 	recordService.LoadRouter(appRouter)
-
-	permissionUsecase.LoadPermissionPolicy(ctx)
-	menuUsecase.LoadMenuPolicy(ctx)
-	buttonUsecase.LoadButtonPolicy(ctx)
-	roleUsecase.LoadRolePolicy(ctx)
-	router.Use(auth.AuthMiddleware(enforcer, "/api/v1/customer/own/login"))
 }

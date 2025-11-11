@@ -2,9 +2,7 @@ package data
 
 import (
 	"context"
-	"net"
-	"os"
-	"strconv"
+	"encoding/base64"
 	"time"
 
 	"go.uber.org/zap"
@@ -16,14 +14,14 @@ import (
 )
 
 type hostRepo struct {
-	log        *zap.Logger
-	gormDB     *gorm.DB
-	privateKey string
+	log    *zap.Logger
+	gormDB *gorm.DB
 }
 
 func NewHostRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
+	publicKey []byte,
 ) biz.HostRepo {
 	return &hostRepo{
 		log:    log,
@@ -120,41 +118,59 @@ func (r *hostRepo) ListModelByIds(
 
 func (r *hostRepo) NewSSHClient(
 	ctx context.Context,
-	m biz.HostModel,
+	addr string,
+	c ssh.ClientConfig,
 ) (*ssh.Client, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
-	key, err := os.ReadFile(r.privateKey)
-	if err != nil {
-		r.log.Error("读取ssh私钥文件失败", zap.Error(err))
-		return nil, err
-	}
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-		r.log.Error("解析私钥失败", zap.Error(err))
-		return nil, err
-	}
-	config := &ssh.ClientConfig{
-		User: m.Username,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-	addr := net.JoinHostPort(m.IPAddr, strconv.FormatUint(uint64(m.Port), 10))
-	client, err := ssh.Dial("tcp", addr, config)
+	client, err := ssh.Dial("tcp", addr, &c)
 	if err != nil {
 		r.log.Error(
 			"创建ssh连接失败",
-			zap.String("ip_addr", m.IPAddr),
-			zap.Uint16("port", m.Port),
-			zap.String("username", m.Username),
+			zap.String("addr", addr),
+			zap.String("username", c.User),
 			zap.Error(err),
 		)
 		return nil, err
 	}
 	return client, nil
+}
+
+func (r *hostRepo) DeployPublicKey(c *ssh.Client, key ssh.PublicKey) error {
+	session, err := c.NewSession()
+	if err != nil {
+		r.log.Error(
+			"创建ssh会话失败",
+			zap.Error(err),
+		)
+		return err
+	}
+	defer session.Close()
+
+	pubKeyBytes := ssh.MarshalAuthorizedKey(key)
+
+	pubKeyB64 := base64.StdEncoding.EncodeToString(pubKeyBytes)
+
+	script := `
+		mkdir -p ~/.ssh
+		tmp_key=$(mktemp)
+		echo '` + pubKeyB64 + `' | base64 -d > "$tmp_key"
+		if ! grep -Fq "$(cat "$tmp_key")" ~/.ssh/authorized_keys 2>/dev/null; then
+			cat "$tmp_key" >> ~/.ssh/authorized_keys
+		fi
+		rm -f "$tmp_key"
+		chmod 700 ~/.ssh
+		chmod 600 ~/.ssh/authorized_keys
+	`
+	if err := session.Run(script); err != nil {
+		r.log.Error(
+			"部署SSH密钥失败",
+			zap.Error(err),
+		)
+		return err
+	}
+	return nil
 }
