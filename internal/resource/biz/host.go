@@ -2,15 +2,20 @@ package biz
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"strconv"
-
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/crypto/ssh"
+
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
+	"gin-artweb/pkg/file"
 )
 
 type AnsibleHostVars struct {
@@ -19,6 +24,15 @@ type AnsibleHostVars struct {
 	AnsiblePort              uint16 `json:"ansible_port"`
 	AnsibleUser              string `json:"ansible_user"`
 	AnsiblePythonInterpreter string `json:"ansible_python_interpreter,omitempty"`
+}
+
+func (h *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("id", h.ID)
+	enc.AddString("ansible_host", h.AnsibleHost)
+	enc.AddUint16("ansible_port", h.AnsiblePort)
+	enc.AddString("ansible_user", h.AnsibleUser)
+	enc.AddString("ansible_python_interpreter", h.AnsiblePythonInterpreter)
+	return nil
 }
 
 type HostModel struct {
@@ -52,7 +66,6 @@ func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *HostModel) ExportAnsibleHostVars() AnsibleHostVars {
 	return AnsibleHostVars{
-
 		AnsibleHost:              m.IPAddr,
 		AnsiblePort:              m.Port,
 		AnsibleUser:              m.Username,
@@ -74,39 +87,24 @@ type HostUsecase struct {
 	log      *zap.Logger
 	hostRepo HostRepo
 	signer   ssh.Signer
+	timeout  time.Duration
+	dir      string
 }
 
 func NewHostUsecase(
 	log *zap.Logger,
 	hostRepo HostRepo,
 	signer ssh.Signer,
+	timeout time.Duration,
+	dir string,
 ) *HostUsecase {
 	return &HostUsecase{
 		log:      log,
 		hostRepo: hostRepo,
 		signer:   signer,
+		timeout:  timeout,
+		dir:      dir,
 	}
-}
-
-func (uc *HostUsecase) TestSSHConnection(ctx context.Context, ip string, port uint16, user, password string) *errors.Error {
-	sshConfig := ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(uc.signer),
-			ssh.Password(password),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	addr := net.JoinHostPort(ip, strconv.FormatUint(uint64(port), 10))
-	client, err := uc.hostRepo.NewSSHClient(ctx, addr, sshConfig)
-	if err != nil {
-		return ErrSSHConnect.WithCause(err)
-	}
-	if err := uc.hostRepo.DeployPublicKey(client, uc.signer.PublicKey()); err != nil {
-		return ErrSSHKeyDeployment.WithCause(err)
-	}
-	return nil
 }
 
 func (uc *HostUsecase) CreateHost(
@@ -119,6 +117,9 @@ func (uc *HostUsecase) CreateHost(
 	}
 	if err := uc.hostRepo.CreateModel(ctx, &m); err != nil {
 		return nil, database.NewGormError(err, nil)
+	}
+	if err := uc.ExportHost(m); err != nil {
+		return nil, err
 	}
 	return &m, nil
 }
@@ -144,7 +145,7 @@ func (uc *HostUsecase) UpdateHostById(
 	if err := uc.hostRepo.UpdateModel(ctx, data, "id = ?", hostId); err != nil {
 		return database.NewGormError(err, data)
 	}
-	return nil
+	return uc.ExportHost(m)
 }
 
 func (uc *HostUsecase) DeleteHostById(
@@ -153,6 +154,16 @@ func (uc *HostUsecase) DeleteHostById(
 ) *errors.Error {
 	if err := uc.hostRepo.DeleteModel(ctx, hostId); err != nil {
 		return database.NewGormError(err, map[string]any{"id": hostId})
+	}
+	path := uc.HostPath(hostId)
+	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
+		uc.log.Error(
+			"删除ansible主机变量文件失败",
+			zap.String("path", path),
+			zap.Uint32("host_id", hostId),
+			zap.Error(err),
+		)
+		return ErrDeleteHostFileFailed.WithCause(err)
 	}
 	return nil
 }
@@ -188,4 +199,66 @@ func (uc *HostUsecase) ListHost(
 		return 0, nil, database.NewGormError(err, nil)
 	}
 	return count, ms, nil
+}
+
+func (uc *HostUsecase) TestSSHConnection(ctx context.Context, ip string, port uint16, user, password string) *errors.Error {
+	sshConfig := ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(uc.signer),
+			ssh.Password(password),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         uc.timeout,
+	}
+
+	addr := net.JoinHostPort(ip, strconv.FormatUint(uint64(port), 10))
+	client, err := uc.hostRepo.NewSSHClient(ctx, addr, sshConfig)
+	if err != nil {
+		uc.log.Error(
+			"创建ssh连接失败",
+			zap.String("ip_addr", ip),
+			zap.Uint16("port", port),
+			zap.String("username", user),
+			zap.Error(err),
+		)
+		return ErrSSHConnect.WithCause(err)
+	}
+	if err := uc.hostRepo.DeployPublicKey(client, uc.signer.PublicKey()); err != nil {
+		uc.log.Error(
+			"部署ssh公钥失败",
+			zap.String("ip_addr", ip),
+			zap.Uint16("port", port),
+			zap.String("username", user),
+			zap.Error(err),
+		)
+		return ErrSSHKeyDeployment.WithCause(err)
+	}
+	return nil
+}
+
+func (uc *HostUsecase) HostPath(pk uint32) string {
+	filename := fmt.Sprintf("host_%d.json", pk)
+	return filepath.Join(uc.dir, filename)
+}
+
+func (uc *HostUsecase) ExportHost(m HostModel) *errors.Error {
+	path := uc.HostPath(m.ID)
+	ansibleHost := AnsibleHostVars{
+		ID:                       m.ID,
+		AnsibleHost:              m.IPAddr,
+		AnsiblePort:              m.Port,
+		AnsibleUser:              m.Username,
+		AnsiblePythonInterpreter: m.PyPath,
+	}
+	if err := file.WriteJSON(path, ansibleHost, 4); err != nil {
+		uc.log.Error(
+			"写入ansible主机变量文件失败",
+			zap.String("path", path),
+			zap.Object("ansible_host", &ansibleHost),
+			zap.Error(err),
+		)
+		return ErrExportHostFailed.WithCause(err)
+	}
+	return nil
 }

@@ -1,10 +1,10 @@
 package role
 
 import (
+	"gin-artweb/api/common"
 	"gin-artweb/api/customer/button"
 	"gin-artweb/api/customer/menu"
 	"gin-artweb/api/customer/permission"
-	"gin-artweb/pkg/common"
 )
 
 // RoleOutBase 角色基础信息

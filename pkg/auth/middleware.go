@@ -1,11 +1,11 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // extractToken 从不同位置提取 token
@@ -27,18 +27,22 @@ func extractToken(c *gin.Context) string {
 	return c.GetHeader("Authorization")
 }
 
-func AuthMiddleware(enforcer *AuthEnforcer, loginUrl string) gin.HandlerFunc {
+func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		fullPath := c.FullPath()
+
 		// 检查是否是 API 请求
-		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
+		if !strings.HasPrefix(fullPath, "/api") {
 			c.Next()
 			return
 		}
+
 		// 检查是否是登陆请求
-		if c.Request.URL.Path == loginUrl && c.Request.Method == http.MethodPost {
+		if fullPath == loginUrl && c.Request.Method == http.MethodPost {
 			c.Next()
 			return
 		}
+
 		// 从请求头获取token
 		token := extractToken(c)
 		if token == "" {
@@ -46,6 +50,7 @@ func AuthMiddleware(enforcer *AuthEnforcer, loginUrl string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		// 身份认证
 		info, err := enforcer.Authentication(token)
 		if err != nil {
@@ -53,15 +58,22 @@ func AuthMiddleware(enforcer *AuthEnforcer, loginUrl string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		role := fmt.Sprintf(RoleSubjectFormat, info.RoleID)
+		role := RoleToSubject(info.RoleID)
+
 		// 访问鉴权
-		hasPerm, err := enforcer.Authorization(role, c.Request.URL.Path, c.Request.Method)
+		hasPerm, err := enforcer.Authorization(role, fullPath, c.Request.Method)
 		if err != nil {
 			c.JSON(err.Code, err.Reply())
 			c.Abort()
 			return
 		}
 		if !hasPerm {
+			logger.Error(
+				"权限校验失败",
+				zap.String(SubKey, role),
+				zap.String(ObjKey, fullPath),
+				zap.String(ActKey, c.Request.Method),
+			)
 			c.JSON(ErrForbidden.Code, ErrForbidden.Reply())
 			c.Abort()
 			return

@@ -1,9 +1,9 @@
 package button
 
 import (
+	"gin-artweb/api/common"
 	"gin-artweb/api/customer/menu"
 	"gin-artweb/api/customer/permission"
-	"gin-artweb/pkg/common"
 )
 
 // ButtonOutBase 按钮基础信息
@@ -35,4 +35,3 @@ type ButtonReply = common.APIReply[ButtonOut]
 
 // PagButtonBaseReply 按钮的分页响应结构
 type PagButtonBaseReply = common.APIReply[*common.Pag[*ButtonOutBase]]
-

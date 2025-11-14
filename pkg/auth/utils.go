@@ -1,6 +1,33 @@
 package auth
 
-import "github.com/gin-gonic/gin"
+import (
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+)
+
+const (
+	permissionSubjectFormat = "perm_%d"
+	menuSubjectFormat       = "menu_%d"
+	buttonSubjectFormat     = "button_%d"
+	roleSubjectFormat       = "role_%d"
+)
+
+func PermissionToSubject(pk uint32) string {
+	return fmt.Sprintf(permissionSubjectFormat, pk)
+}
+
+func MenuToSubject(pk uint32) string {
+	return fmt.Sprintf(menuSubjectFormat, pk)
+}
+
+func ButtonToSubject(pk uint32) string {
+	return fmt.Sprintf(buttonSubjectFormat, pk)
+}
+
+func RoleToSubject(pk uint32) string {
+	return fmt.Sprintf(roleSubjectFormat, pk)
+}
 
 const (
 	contextUserKey = "claims"

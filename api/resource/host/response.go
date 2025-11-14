@@ -1,7 +1,7 @@
 package host
 
 import (
-	"gin-artweb/pkg/common"
+	"gin-artweb/api/common"
 )
 
 // HostOutBase 主机基础信息

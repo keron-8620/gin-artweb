@@ -3,7 +3,7 @@ package record
 import (
 	"time"
 
-	"gin-artweb/pkg/database"
+	"gin-artweb/api/common"
 )
 
 // ListLoginRecordRequest 用于获取用户登陆记录的请求结构体
@@ -11,7 +11,7 @@ import (
 //
 // swagger:model ListUserRequest
 type ListLoginRecordRequest struct {
-	database.BaseModelQuery
+	common.BaseModelQuery
 
 	// 用户名称，字符串长度限制
 	// Max length: 50

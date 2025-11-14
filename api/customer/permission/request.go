@@ -1,8 +1,6 @@
 package permission
 
-import (
-	"gin-artweb/pkg/database"
-)
+import "gin-artweb/api/common"
 
 // CreatePermissionRequest 用于创建权限的请求结构体
 //
@@ -22,6 +20,11 @@ type CreatePermissionRequest struct {
 	// Required: true
 	// Enum: GET,POST,PUT,DELETE,PATCH,WS
 	Method string `json:"method" binding:"required,oneof=GET POST PUT DELETE PATCH WS"`
+
+	// 权限描述信息，最大长度50
+	// Required: true
+	// Max length: 50
+	Label string `json:"label" binding:"required,max=50"`
 
 	// 权限描述信息，可选，最大长度254
 	// Max length: 254
@@ -43,6 +46,11 @@ type UpdatePermissionRequest struct {
 	// Enum: GET,POST,PUT,DELETE,PATCH,WS
 	Method string `json:"method" binding:"required,oneof=GET POST PUT DELETE PATCH WS"`
 
+	// 权限描述信息，最大长度50
+	// Required: true
+	// Max length: 50
+	Label string `json:"label" binding:"required,max=50"`
+
 	// 权限描述信息，可选，最大长度254
 	// Max length: 254
 	Descr string `json:"descr" binding:"omitempty,max=254"`
@@ -53,7 +61,7 @@ type UpdatePermissionRequest struct {
 //
 // swagger:model ListPermissionRequest
 type ListPermissionRequest struct {
-	database.StandardModelQuery
+	common.StandardModelQuery
 
 	// 权限对应的HTTP URL，字符串长度限制
 	// Max length: 150
@@ -63,18 +71,28 @@ type ListPermissionRequest struct {
 	// Enum: GET,POST,PUT,DELETE,PATCH,WS
 	Method string `form:"method" binding:"omitempty,oneof=GET POST PUT DELETE PATCH WS"`
 
+	// 权限描述信息，最大长度50
+	// Max length: 50
+	Label string `json:"label" binding:"omitempty,max=50"`
+
 	// 描述信息，字符串长度限制
 	// Max length: 254
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 }
 
 func (req *ListPermissionRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(8)
+	page, size, query := req.StandardModelQuery.QueryMap(10)
 	if req.URL != "" {
 		query["url like ?"] = "%" + req.URL + "%"
 	}
 	if req.Method != "" {
 		query["method = ?"] = req.Method
+	}
+	if req.Label != "" {
+		query["label like ?"] = "%" + req.Label + "%"
+	}
+	if req.Descr != "" {
+		query["descr like ?"] = "%" + req.Descr + "%"
 	}
 	return page, size, query
 }

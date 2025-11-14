@@ -71,6 +71,7 @@ func (r *recordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error
 		return 0, ctx.Err()
 	default:
 	}
+	// 获取缓存的登陆失败次数，不存在返回允许失败次数的最大值
 	num, exists := r.cache.Get(ip)
 	if !exists {
 		return r.maxNum, nil
@@ -85,6 +86,7 @@ func (r *recordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) er
 		return ctx.Err()
 	default:
 	}
+	// 设置缓存的登陆失败次数
 	r.cache.Set(ip, num, r.ttl)
 	return nil
 }

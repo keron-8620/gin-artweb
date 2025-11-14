@@ -4,12 +4,14 @@ package database
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"runtime"
 	"strings"
 
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
+
+	"gin-artweb/pkg/errors"
 )
 
 const (
@@ -81,9 +83,11 @@ func DBPanic(ctx context.Context, tx *gorm.DB) (err error) {
 			buf = buf[:n]
 
 			// 记录错误日志
-			errMsg := "a panic error occurred during database operation"
-			tx.Logger.Error(ctx, errMsg, r, buf)
-			err = errors.New(errMsg)
+			errMsg := "database operation panic occurred"
+			if tx.Logger != nil {
+				tx.Logger.Error(ctx, errMsg, "panic", r, "stack", string(buf))
+			}
+			err = fmt.Errorf("%s: %v", errMsg, r)
 		}
 	}()
 	return
@@ -94,15 +98,11 @@ func DBPanic(ctx context.Context, tx *gorm.DB) (err error) {
 // tx: GORM事务对象
 // 返回回滚操作可能产生的错误
 func DBRollback(ctx context.Context, tx *gorm.DB) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
 	// 执行回滚操作
 	if err := tx.Rollback().Error; err != nil {
-		// 回滚失败时记录错误日志
-		tx.Logger.Error(ctx, "database rollback error", err)
 		return err
 	}
 	return nil
@@ -113,15 +113,11 @@ func DBRollback(ctx context.Context, tx *gorm.DB) error {
 // tx: GORM事务对象
 // 返回提交操作可能产生的错误
 func DBCommit(ctx context.Context, tx *gorm.DB) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
 	// 执行提交操作
 	if err := tx.Commit().Error; err != nil {
-		// 提交失败时记录错误日志并回滚事务
-		tx.Logger.Error(ctx, "database commit error", err)
 		DBRollback(ctx, tx)
 		return err
 	}
@@ -135,14 +131,18 @@ func DBCommit(ctx context.Context, tx *gorm.DB) error {
 // upmap: 关联关系映射，key为关联字段名，value为关联数据
 // 返回操作可能产生的错误
 func DBAssociate(ctx context.Context, db *gorm.DB, om any, upmap map[string]any) error {
+	if len(upmap) == 0 {
+		return nil
+	}
+
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
-		select {
-		case <-ctx.Done():
-			return ctx.Err() // 返回取消原因
-		default:
+		if err := errors.CheckContext(ctx); err != nil {
+			return err
 		}
-		// 使用Replace方法替换关联关系
+		if k == "" {
+			continue
+		}
 		if err := db.Model(om).Association(k).Replace(v); err != nil {
 			return err
 		}
@@ -157,10 +157,8 @@ func DBAssociate(ctx context.Context, db *gorm.DB, om any, upmap map[string]any)
 // value: 要创建的数据
 // 返回操作可能产生的错误
 func DBCreate(ctx context.Context, db *gorm.DB, model, value any) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
 	// 使用GORM的Create方法创建记录
 	return db.Model(model).Create(value).Error
@@ -175,10 +173,8 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any) error {
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upmap map[string]any, conds ...any) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
 	// 检查是否提供了查询条件
 	if len(conds) == 0 {
@@ -194,7 +190,6 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	tx := db.Begin()
 	if tx.Error != nil {
 		// 事务开启失败时记录错误日志
-		tx.Logger.Error(ctx, "faild to begin transaction for database", tx.Error)
 		return tx.Error
 	}
 
@@ -224,10 +219,8 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBDelete(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
 	// 检查是否提供了查询条件
 	if len(conds) == 0 {
@@ -246,10 +239,8 @@ func DBDelete(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBFind(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...any) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
 	// 预加载关联关系
 	for _, preload := range preloads {
@@ -268,10 +259,8 @@ func DBFind(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ..
 // query: 查询参数
 // 返回记录总数和操作可能产生的错误
 func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParams) (int64, error) {
-	select {
-	case <-ctx.Done():
-		return 0, ctx.Err() // 返回取消原因
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return 0, err
 	}
 	// 初始化查询构建器
 	mdb := db.Model(model)

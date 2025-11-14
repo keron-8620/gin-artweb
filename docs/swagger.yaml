@@ -728,10 +728,6 @@ definitions:
         description: 是否激活
         example: true
         type: boolean
-      label:
-        description: 标签
-        example: customer
-        type: string
       meta:
         allOf:
         - $ref: '#/definitions/menu.MetaSchemas'
@@ -781,10 +777,6 @@ definitions:
         description: 是否激活
         example: true
         type: boolean
-      label:
-        description: 标签
-        example: customer
-        type: string
       meta:
         allOf:
         - $ref: '#/definitions/menu.MetaSchemas'
@@ -924,6 +916,13 @@ definitions:
           Required: true
           Minimum: 1
         type: integer
+      label:
+        description: |-
+          权限描述信息，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
       method:
         description: |-
           HTTP请求方法，枚举值验证
@@ -946,6 +945,7 @@ definitions:
         type: string
     required:
     - id
+    - label
     - method
     - url
     type: object
@@ -1026,6 +1026,13 @@ definitions:
           Max length: 254
         maxLength: 254
         type: string
+      label:
+        description: |-
+          权限描述信息，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
       method:
         description: |-
           HTTP请求方法，枚举值验证
@@ -1047,6 +1054,7 @@ definitions:
         maxLength: 150
         type: string
     required:
+    - label
     - method
     - url
     type: object
@@ -1143,6 +1151,79 @@ definitions:
         description: |-
           数据
           可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  role.RoleMenuPerm:
+    properties:
+      arrange_order:
+        description: 排列顺序
+        example: 1000
+        type: integer
+      buttons:
+        description: 按钮
+        items:
+          $ref: '#/definitions/button.ButtonOutBase'
+        type: array
+      children:
+        description: 子菜单
+        items:
+          $ref: '#/definitions/role.RoleMenuPerm'
+        type: array
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      descr:
+        description: 描述
+        example: 用户管理
+        type: string
+      id:
+        description: 菜单ID
+        example: 1
+        type: integer
+      is_active:
+        description: 是否激活
+        example: true
+        type: boolean
+      meta:
+        allOf:
+        - $ref: '#/definitions/menu.MetaSchemas'
+        description: 菜单信息
+      name:
+        description: 名称
+        example: 用户管理
+        type: string
+      path:
+        description: 前端路由
+        example: /api/v1/users
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      xomponent:
+        description: 组件路径
+        example: GET
+        type: string
+    type: object
+  role.RoleMenuTreeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        description: |-
+          数据
+          可以是任意类型的数据
+        items:
+          $ref: '#/definitions/role.RoleMenuPerm'
+        type: array
       msg:
         description: |-
           信息
@@ -1479,26 +1560,55 @@ paths:
     get:
       consumes:
       - application/json
-      description: 本接口用于查询角色列表
+      description: 本接口用于查询按钮列表
       parameters:
       - description: 页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 每页数量
         in: query
+        maximum: 100
+        minimum: 1
         name: size
         type: integer
+      - description: 按钮名称
+        in: query
+        name: name
+        type: string
+      - description: 菜单ID
+        in: query
+        name: menu_id
+        type: integer
+      - description: 是否激活
+        in: query
+        name: is_active
+        type: boolean
+      - description: 按钮描述
+        in: query
+        name: descr
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: 成功返回角色列表
+          description: 成功返回按钮列表
           schema:
-            $ref: '#/definitions/role.PagRoleBaseReply'
-      summary: 查询角色列表
+            $ref: '#/definitions/button.PagButtonBaseReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询按钮列表
       tags:
-      - 角色管理
+      - 按钮管理
     post:
       consumes:
       - application/json
@@ -1513,10 +1623,20 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: 成功返回按钮信息
           schema:
             $ref: '#/definitions/button.ButtonReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 新增按钮
       tags:
       - 按钮管理
@@ -1533,14 +1653,32 @@ paths:
         type: integer
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 按钮未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 删除按钮
       tags:
       - 按钮管理
     get:
       consumes:
       - application/json
-      description: 本接口用于查询一个按钮
+      description: 本接口用于查询指定ID的按钮
       parameters:
       - description: 按钮编号
         in: path
@@ -1554,13 +1692,27 @@ paths:
           description: 成功返回按钮信息
           schema:
             $ref: '#/definitions/button.ButtonReply'
-      summary: 查询单个按钮
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 按钮未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询按钮
       tags:
       - 按钮管理
     put:
       consumes:
       - application/json
-      description: 本接口用于更新按钮
+      description: 本接口用于更新指定ID的按钮
       parameters:
       - description: 按钮编号
         in: path
@@ -1580,9 +1732,175 @@ paths:
           description: 成功返回按钮信息
           schema:
             $ref: '#/definitions/button.ButtonReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 按钮未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 更新按钮
       tags:
       - 按钮管理
+  /api/v1/customer/login:
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于登陆
+      parameters:
+      - description: 登陆请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            $ref: '#/definitions/user.LoginReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: 用户名或密码错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: 登陆接口
+      tags:
+      - 用户管理
+  /api/v1/customer/me/menu/tree:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于获取当前登录用户的菜单权限树
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回菜单权限树
+          schema:
+            $ref: '#/definitions/role.RoleMenuTreeReply'
+        "401":
+          description: 用户未认证
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取当前用户菜单树
+      tags:
+      - 角色管理
+  /api/v1/customer/me/password:
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于修改当前登录用户的密码
+      parameters:
+      - description: 修改用户密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.PatchPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 密码修改成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: 认证失败
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 修改当前用户密码
+      tags:
+      - 用户管理
+  /api/v1/customer/me/record/login:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询当前登录用户的登录记录列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: ip地址
+        in: query
+        name: ip_address
+        type: string
+      - description: 登录状态
+        in: query
+        name: status
+        type: boolean
+      - description: 登录时间之前的记录 (RFC3339格式)
+        in: query
+        name: before_login_at
+        type: string
+      - description: 登录时间之后的记录 (RFC3339格式)
+        in: query
+        name: after_login_at
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回用户登录记录列表
+          schema:
+            $ref: '#/definitions/record.PagLoginRecordReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: 未授权访问
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询当前用户的登录记录列表
+      tags:
+      - 用户管理
   /api/v1/customer/menu:
     get:
       consumes:
@@ -1591,11 +1909,30 @@ paths:
       parameters:
       - description: 页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 每页数量
         in: query
+        maximum: 100
+        minimum: 1
         name: size
+        type: integer
+      - description: 菜单名称
+        in: query
+        name: name
+        type: string
+      - description: 菜单路径
+        in: query
+        name: path
+        type: string
+      - description: 是否激活
+        in: query
+        name: is_active
+        type: boolean
+      - description: 父级菜单ID
+        in: query
+        name: parent_id
         type: integer
       produces:
       - application/json
@@ -1604,6 +1941,16 @@ paths:
           description: 成功返回菜单列表
           schema:
             $ref: '#/definitions/menu.PagMenuBaseReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 查询菜单列表
       tags:
       - 菜单管理
@@ -1625,6 +1972,16 @@ paths:
           description: 成功返回菜单信息
           schema:
             $ref: '#/definitions/menu.MenuReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 新增菜单
       tags:
       - 菜单管理
@@ -1641,14 +1998,32 @@ paths:
         type: integer
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 菜单未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 删除菜单
       tags:
       - 菜单管理
     get:
       consumes:
       - application/json
-      description: 本接口用于查询一个菜单
+      description: 本接口用于查询指定ID的菜单
       parameters:
       - description: 菜单编号
         in: path
@@ -1662,13 +2037,27 @@ paths:
           description: 成功返回用户信息
           schema:
             $ref: '#/definitions/menu.MenuReply'
-      summary: 查询单个菜单
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 菜单未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询菜单
       tags:
       - 菜单管理
     put:
       consumes:
       - application/json
-      description: 本接口用于更新菜单
+      description: 本接口用于更新指定ID的菜单
       parameters:
       - description: 菜单编号
         in: path
@@ -1688,98 +2077,23 @@ paths:
           description: 成功返回菜单信息
           schema:
             $ref: '#/definitions/menu.MenuReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 菜单未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 更新菜单
       tags:
       - 菜单管理
-  /api/v1/customer/own/login:
-    put:
-      consumes:
-      - application/json
-      description: 本接口用于登陆
-      parameters:
-      - description: 登陆请求参数
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/user.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回用户信息
-          schema:
-            $ref: '#/definitions/user.LoginReply'
-      summary: 登陆接口
-      tags:
-      - 用户管理
-  /api/v1/customer/own/password:
-    put:
-      consumes:
-      - application/json
-      description: 本接口用于修改用户密码
-      parameters:
-      - description: 用户编号
-        in: path
-        name: pk
-        required: true
-        type: integer
-      - description: 修改用户密码请求
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/user.PatchPasswordRequest'
-      produces:
-      - application/json
-      responses: {}
-      summary: 修改用户密码
-      tags:
-      - 用户管理
-  /api/v1/customer/own/record/login:
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询人登录记录列表
-      parameters:
-      - description: 页码
-        in: query
-        name: page
-        type: integer
-      - description: 每页数量
-        in: query
-        name: size
-        type: integer
-      - description: 用户主键，可选参数，如果提供则必须大于0
-        in: query
-        name: pk
-        type: integer
-      - description: 用户主键列表，可选参数，多个用,隔开，如1,2,3
-        in: query
-        name: pks
-        type: string
-      - description: ip地址
-        in: query
-        name: ip_address
-        type: string
-      - description: 登录时间之前的记录 (RFC3339格式)
-        in: query
-        name: before_login_at
-        type: string
-      - description: 登录时间之后的记录 (RFC3339格式)
-        in: query
-        name: after_login_at
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回用户登录记录列表
-          schema:
-            $ref: '#/definitions/record.PagLoginRecordReply'
-      summary: 查询个人登录记录列表
-      tags:
-      - 用户管理
   /api/v1/customer/permission:
     get:
       consumes:
@@ -1823,7 +2137,7 @@ paths:
         type: string
       - description: HTTP路径
         in: query
-        name: http_url
+        name: url
         type: string
       - description: HTTP方法
         enum:
@@ -1846,10 +2160,8 @@ paths:
           description: 请求参数错误
           schema:
             $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 查询权限列表
       tags:
       - 权限管理
@@ -1875,10 +2187,8 @@ paths:
           description: 请求参数错误
           schema:
             $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 新增权限
       tags:
       - 权限管理
@@ -1908,17 +2218,15 @@ paths:
           description: 权限未找到
           schema:
             $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 删除权限
       tags:
       - 权限管理
     get:
       consumes:
       - application/json
-      description: 本接口用于查询一个权限
+      description: 本接口用于查询指定ID的权限
       parameters:
       - description: 权限编号
         in: path
@@ -1940,17 +2248,15 @@ paths:
           description: 权限未找到
           schema:
             $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      summary: 查询单个权限
+      security:
+      - ApiKeyAuth: []
+      summary: 查询权限
       tags:
       - 权限管理
     put:
       consumes:
       - application/json
-      description: 本接口用于更新权限
+      description: 本接口用于更新指定ID的权限
       parameters:
       - description: 权限编号
         in: path
@@ -1978,14 +2284,52 @@ paths:
           description: 权限未找到
           schema:
             $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 更新权限
       tags:
       - 权限管理
   /api/v1/customer/role:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询角色列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: 角色名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回角色列表
+          schema:
+            $ref: '#/definitions/role.PagRoleBaseReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询角色列表
+      tags:
+      - 角色管理
     post:
       consumes:
       - application/json
@@ -2000,10 +2344,20 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: 成功返回角色信息
           schema:
             $ref: '#/definitions/role.RoleReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 新增角色
       tags:
       - 角色管理
@@ -2020,14 +2374,32 @@ paths:
         type: integer
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 角色未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 删除角色
       tags:
       - 角色管理
     get:
       consumes:
       - application/json
-      description: 本接口用于查询一个角色
+      description: 本接口用于查询指定ID的角色
       parameters:
       - description: 角色编号
         in: path
@@ -2041,13 +2413,27 @@ paths:
           description: 成功返回角色信息
           schema:
             $ref: '#/definitions/role.RoleReply'
-      summary: 查询单个角色
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 角色未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询角色
       tags:
       - 角色管理
     put:
       consumes:
       - application/json
-      description: 本接口用于更新角色
+      description: 本接口用于更新指定ID的角色
       parameters:
       - description: 角色编号
         in: path
@@ -2067,6 +2453,20 @@ paths:
           description: 成功返回角色信息
           schema:
             $ref: '#/definitions/role.RoleReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 角色未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 更新角色
       tags:
       - 角色管理
@@ -2078,36 +2478,15 @@ paths:
       parameters:
       - description: 页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 每页数量
         in: query
+        maximum: 100
+        minimum: 1
         name: size
         type: integer
-      - description: 用户主键，可选参数，如果提供则必须大于0
-        in: query
-        name: pk
-        type: integer
-      - description: 用户主键列表，可选参数，多个用,隔开，如1,2,3
-        in: query
-        name: pks
-        type: string
-      - description: 创建时间之前的记录 (RFC3339格式)
-        in: query
-        name: before_create_at
-        type: string
-      - description: 创建时间之后的记录 (RFC3339格式)
-        in: query
-        name: after_create_at
-        type: string
-      - description: 更新时间之前的记录 (RFC3339格式)
-        in: query
-        name: before_update_at
-        type: string
-      - description: 更新时间之后的记录 (RFC3339格式)
-        in: query
-        name: after_update_at
-        type: string
       - description: 用户名
         in: query
         name: username
@@ -2131,6 +2510,16 @@ paths:
           description: 成功返回用户列表
           schema:
             $ref: '#/definitions/user.PagUserReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 查询用户列表
       tags:
       - 用户管理
@@ -2148,10 +2537,20 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: 成功返回用户信息
           schema:
             $ref: '#/definitions/user.UserReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 新增用户
       tags:
       - 用户管理
@@ -2168,14 +2567,32 @@ paths:
         type: integer
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 用户未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 删除用户
       tags:
       - 用户管理
     get:
       consumes:
       - application/json
-      description: 本接口用于查询一个用户
+      description: 本接口用于查询指定ID的用户
       parameters:
       - description: 用户编号
         in: path
@@ -2189,13 +2606,27 @@ paths:
           description: 成功返回用户信息
           schema:
             $ref: '#/definitions/user.UserReply'
-      summary: 查询单个用户
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 用户未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询用户
       tags:
       - 用户管理
     put:
       consumes:
       - application/json
-      description: 本接口用于更新用户
+      description: 本接口用于更新指定ID的用户
       parameters:
       - description: 用户编号
         in: path
@@ -2215,6 +2646,20 @@ paths:
           description: 成功返回用户信息
           schema:
             $ref: '#/definitions/user.UserReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 用户未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 更新用户
       tags:
       - 用户管理
@@ -2222,7 +2667,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: 本接口用于重置用户密码
+      description: 本接口用于重置指定ID的用户密码
       parameters:
       - description: 用户编号
         in: path
@@ -2237,7 +2682,25 @@ paths:
           $ref: '#/definitions/user.ResetPasswordRequest'
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 密码重置成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 用户未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 重置用户密码
       tags:
       - 用户管理
@@ -2249,20 +2712,15 @@ paths:
       parameters:
       - description: 页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 每页数量
         in: query
+        maximum: 100
+        minimum: 1
         name: size
         type: integer
-      - description: 用户主键，可选参数，如果提供则必须大于0
-        in: query
-        name: pk
-        type: integer
-      - description: 用户主键列表，可选参数，多个用,隔开，如1,2,3
-        in: query
-        name: pks
-        type: string
       - description: 用户名
         in: query
         name: username
@@ -2271,6 +2729,10 @@ paths:
         in: query
         name: ip_address
         type: string
+      - description: 登录状态
+        in: query
+        name: status
+        type: boolean
       - description: 登录时间之前的记录 (RFC3339格式)
         in: query
         name: before_login_at
@@ -2286,54 +2748,47 @@ paths:
           description: 成功返回用户登录记录列表
           schema:
             $ref: '#/definitions/record.PagLoginRecordReply'
-      summary: 查询用户登录记录列表
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询用户的登录记录列表
       tags:
       - 用户管理
-  /api/v1/resource/Host:
+  /api/v1/resource/host:
     get:
       consumes:
       - application/json
-      description: 本接口用于查询主机列表
+      description: 本接口用于查询主机配置信息列表
       parameters:
       - description: 页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 每页数量
         in: query
+        maximum: 100
+        minimum: 1
         name: size
         type: integer
-      - description: 主机主键，可选参数，如果提供则必须大于0
+      - description: 主机名称
         in: query
-        name: pk
-        type: integer
-      - description: 主机主键列表，可选参数，多个用,隔开，如1,2,3
-        in: query
-        name: pks
+        name: name
         type: string
-      - description: 创建时间之前的记录 (RFC3339格式)
+      - description: 主机标签
         in: query
-        name: before_create_at
+        name: label
         type: string
-      - description: 创建时间之后的记录 (RFC3339格式)
+      - description: IP地址
         in: query
-        name: after_create_at
-        type: string
-      - description: 更新时间之前的记录 (RFC3339格式)
-        in: query
-        name: before_update_at
-        type: string
-      - description: 更新时间之后的记录 (RFC3339格式)
-        in: query
-        name: after_update_at
-        type: string
-      - description: HTTP路径
-        in: query
-        name: http_url
-        type: string
-      - description: HTTP方法
-        in: query
-        name: method
+        name: ip_addr
         type: string
       produces:
       - application/json
@@ -2342,13 +2797,23 @@ paths:
           description: 成功返回主机列表
           schema:
             $ref: '#/definitions/host.PagHostReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 查询主机列表
       tags:
       - 主机管理
     post:
       consumes:
       - application/json
-      description: 本接口用于新增主机
+      description: 本接口用于创建新的主机配置信息
       parameters:
       - description: 创建主机请求
         in: body
@@ -2359,34 +2824,28 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: 成功返回主机信息
+        "201":
+          description: 创建主机成功
           schema:
             $ref: '#/definitions/host.HostReply'
-      summary: 新增主机
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建主机
       tags:
       - 主机管理
-  /api/v1/resource/Host/{pk}:
+  /api/v1/resource/host/{pk}:
     delete:
       consumes:
       - application/json
-      description: 本接口用于删除指定ID的主机
-      parameters:
-      - description: 主机编号
-        in: path
-        name: pk
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses: {}
-      summary: 删除主机
-      tags:
-      - 主机管理
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询一个主机
+      description: 本接口用于删除指定ID的主机配置信息
       parameters:
       - description: 主机编号
         in: path
@@ -2397,17 +2856,64 @@ paths:
       - application/json
       responses:
         "200":
-          description: 成功返回用户信息
+          description: 删除成功
           schema:
-            $ref: '#/definitions/host.HostReply'
-      summary: 查询单个主机
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 主机未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除主机
       tags:
       - 主机管理
-  /api/v1/resource/host/{pk}:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的主机详细信息
+      parameters:
+      - description: 主机编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取主机详情成功
+          schema:
+            $ref: '#/definitions/host.HostReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 主机未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询主机详情
+      tags:
+      - 主机管理
     put:
       consumes:
       - application/json
-      description: 本接口用于更新主机
+      description: 本接口用于更新指定ID的主机配置信息
       parameters:
       - description: 主机编号
         in: path
@@ -2424,10 +2930,29 @@ paths:
       - application/json
       responses:
         "200":
-          description: 成功返回主机信息
+          description: 更新主机成功
           schema:
             $ref: '#/definitions/host.HostReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 主机未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
       summary: 更新主机
       tags:
       - 主机管理
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -1,7 +1,7 @@
 package menu
 
 import (
-	"gin-artweb/pkg/database"
+	"gin-artweb/api/common"
 )
 
 // CreateMenuRequest 用于创建菜单的请求结构体
@@ -92,7 +92,7 @@ type UpdateMenuRequest struct {
 //
 // swagger:model ListMenuRequest
 type ListMenuRequest struct {
-	database.StandardModelQuery
+	common.StandardModelQuery
 
 	// 前端路由路径，字符串长度限制
 	// Max length: 100

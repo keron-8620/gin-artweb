@@ -17,7 +17,12 @@ const docTemplate = `{
     "paths": {
         "/api/v1/customer/button": {
             "get": {
-                "description": "本接口用于查询角色列表",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询按钮列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,33 +30,77 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "角色管理"
+                    "按钮管理"
                 ],
-                "summary": "查询角色列表",
+                "summary": "查询按钮列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "每页数量",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按钮名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "菜单ID",
+                        "name": "menu_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否激活",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按钮描述",
+                        "name": "descr",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回角色列表",
+                        "description": "成功返回按钮列表",
                         "schema": {
-                            "$ref": "#/definitions/role.PagRoleBaseReply"
+                            "$ref": "#/definitions/button.PagButtonBaseReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于新增按钮",
                 "consumes": [
                     "application/json"
@@ -75,10 +124,22 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "成功返回按钮信息",
                         "schema": {
                             "$ref": "#/definitions/button.ButtonReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -86,7 +147,12 @@ const docTemplate = `{
         },
         "/api/v1/customer/button/{pk}": {
             "get": {
-                "description": "本接口用于查询一个按钮",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的按钮",
                 "consumes": [
                     "application/json"
                 ],
@@ -96,7 +162,7 @@ const docTemplate = `{
                 "tags": [
                     "按钮管理"
                 ],
-                "summary": "查询单个按钮",
+                "summary": "查询按钮",
                 "parameters": [
                     {
                         "type": "integer",
@@ -112,11 +178,34 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/button.ButtonReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "按钮未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "put": {
-                "description": "本接口用于更新按钮",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的按钮",
                 "consumes": [
                     "application/json"
                 ],
@@ -151,10 +240,33 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/button.ButtonReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "按钮未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于删除指定ID的按钮",
                 "consumes": [
                     "application/json"
@@ -175,11 +287,277 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "按钮未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/login": {
+            "post": {
+                "description": "本接口用于登陆",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "登陆接口",
+                "parameters": [
+                    {
+                        "description": "登陆请求参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "登录成功",
+                        "schema": {
+                            "$ref": "#/definitions/user.LoginReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "用户名或密码错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/me/menu/tree": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于获取当前登录用户的菜单权限树",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "获取当前用户菜单树",
+                "responses": {
+                    "200": {
+                        "description": "成功返回菜单权限树",
+                        "schema": {
+                            "$ref": "#/definitions/role.RoleMenuTreeReply"
+                        }
+                    },
+                    "401": {
+                        "description": "用户未认证",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/me/password": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于修改当前登录用户的密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "修改当前用户密码",
+                "parameters": [
+                    {
+                        "description": "修改用户密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.PatchPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "密码修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "认证失败",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/me/record/login": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询当前登录用户的登录记录列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "查询当前用户的登录记录列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ip地址",
+                        "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "登录状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录时间之前的记录 (RFC3339格式)",
+                        "name": "before_login_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录时间之后的记录 (RFC3339格式)",
+                        "name": "after_login_at",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回用户登录记录列表",
+                        "schema": {
+                            "$ref": "#/definitions/record.PagLoginRecordReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权访问",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/customer/menu": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于查询菜单列表",
                 "consumes": [
                     "application/json"
@@ -193,15 +571,42 @@ const docTemplate = `{
                 "summary": "查询菜单列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "每页数量",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "菜单名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "菜单路径",
+                        "name": "path",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否激活",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "父级菜单ID",
+                        "name": "parent_id",
                         "in": "query"
                     }
                 ],
@@ -211,10 +616,27 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/menu.PagMenuBaseReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于新增菜单",
                 "consumes": [
                     "application/json"
@@ -243,13 +665,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/menu.MenuReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             }
         },
         "/api/v1/customer/menu/{pk}": {
             "get": {
-                "description": "本接口用于查询一个菜单",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的菜单",
                 "consumes": [
                     "application/json"
                 ],
@@ -259,7 +698,7 @@ const docTemplate = `{
                 "tags": [
                     "菜单管理"
                 ],
-                "summary": "查询单个菜单",
+                "summary": "查询菜单",
                 "parameters": [
                     {
                         "type": "integer",
@@ -275,11 +714,34 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/menu.MenuReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "菜单未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "put": {
-                "description": "本接口用于更新菜单",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的菜单",
                 "consumes": [
                     "application/json"
                 ],
@@ -314,10 +776,33 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/menu.MenuReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "菜单未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于删除指定ID的菜单",
                 "consumes": [
                     "application/json"
@@ -338,139 +823,29 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
-            }
-        },
-        "/api/v1/customer/own/login": {
-            "put": {
-                "description": "本接口用于登陆",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "登陆接口",
-                "parameters": [
-                    {
-                        "description": "登陆请求参数",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/user.LoginRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "成功返回用户信息",
+                        "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/user.LoginReply"
+                            "$ref": "#/definitions/common.MapAPIReply"
                         }
-                    }
-                }
-            }
-        },
-        "/api/v1/customer/own/password": {
-            "put": {
-                "description": "本接口用于修改用户密码",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "修改用户密码",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "用户编号",
-                        "name": "pk",
-                        "in": "path",
-                        "required": true
                     },
-                    {
-                        "description": "修改用户密码请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
+                    "400": {
+                        "description": "请求参数错误",
                         "schema": {
-                            "$ref": "#/definitions/user.PatchPasswordRequest"
+                            "$ref": "#/definitions/errors.Error"
                         }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/v1/customer/own/record/login": {
-            "get": {
-                "description": "本接口用于查询人登录记录列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "查询个人登录记录列表",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
                     },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户主键，可选参数，如果提供则必须大于0",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户主键列表，可选参数，多个用,隔开，如1,2,3",
-                        "name": "pks",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "ip地址",
-                        "name": "ip_address",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "登录时间之前的记录 (RFC3339格式)",
-                        "name": "before_login_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "登录时间之后的记录 (RFC3339格式)",
-                        "name": "after_login_at",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功返回用户登录记录列表",
+                    "404": {
+                        "description": "菜单未找到",
                         "schema": {
-                            "$ref": "#/definitions/record.PagLoginRecordReply"
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -478,6 +853,11 @@ const docTemplate = `{
         },
         "/api/v1/customer/permission": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于查询权限列表",
                 "consumes": [
                     "application/json"
@@ -544,7 +924,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "HTTP路径",
-                        "name": "http_url",
+                        "name": "url",
                         "in": "query"
                     },
                     {
@@ -573,16 +953,15 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于新增权限",
                 "consumes": [
                     "application/json"
@@ -617,19 +996,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
                     }
                 }
             }
         },
         "/api/v1/customer/permission/{pk}": {
             "get": {
-                "description": "本接口用于查询一个权限",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的权限",
                 "consumes": [
                     "application/json"
                 ],
@@ -639,7 +1017,7 @@ const docTemplate = `{
                 "tags": [
                     "权限管理"
                 ],
-                "summary": "查询单个权限",
+                "summary": "查询权限",
                 "parameters": [
                     {
                         "type": "integer",
@@ -667,17 +1045,16 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
                     }
                 }
             },
             "put": {
-                "description": "本接口用于更新权限",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的权限",
                 "consumes": [
                     "application/json"
                 ],
@@ -724,16 +1101,15 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于删除指定ID的权限",
                 "consumes": [
                     "application/json"
@@ -772,6 +1148,63 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/role": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询角色列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "查询角色列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "角色名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回角色列表",
+                        "schema": {
+                            "$ref": "#/definitions/role.PagRoleBaseReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     },
                     "500": {
                         "description": "服务器内部错误",
@@ -780,10 +1213,13 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/v1/customer/role": {
+            },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于新增角色",
                 "consumes": [
                     "application/json"
@@ -807,10 +1243,22 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "成功返回角色信息",
                         "schema": {
                             "$ref": "#/definitions/role.RoleReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -818,7 +1266,12 @@ const docTemplate = `{
         },
         "/api/v1/customer/role/{pk}": {
             "get": {
-                "description": "本接口用于查询一个角色",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的角色",
                 "consumes": [
                     "application/json"
                 ],
@@ -828,7 +1281,7 @@ const docTemplate = `{
                 "tags": [
                     "角色管理"
                 ],
-                "summary": "查询单个角色",
+                "summary": "查询角色",
                 "parameters": [
                     {
                         "type": "integer",
@@ -844,11 +1297,34 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/role.RoleReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "角色未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "put": {
-                "description": "本接口用于更新角色",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的角色",
                 "consumes": [
                     "application/json"
                 ],
@@ -883,10 +1359,33 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/role.RoleReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "角色未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于删除指定ID的角色",
                 "consumes": [
                     "application/json"
@@ -907,11 +1406,41 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "角色未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/customer/user": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于查询用户列表",
                 "consumes": [
                     "application/json"
@@ -925,51 +1454,18 @@ const docTemplate = `{
                 "summary": "查询用户列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "每页数量",
                         "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户主键，可选参数，如果提供则必须大于0",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户主键列表，可选参数，多个用,隔开，如1,2,3",
-                        "name": "pks",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建时间之前的记录 (RFC3339格式)",
-                        "name": "before_create_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建时间之后的记录 (RFC3339格式)",
-                        "name": "after_create_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "更新时间之前的记录 (RFC3339格式)",
-                        "name": "before_update_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "更新时间之后的记录 (RFC3339格式)",
-                        "name": "after_update_at",
                         "in": "query"
                     },
                     {
@@ -1003,10 +1499,27 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/user.PagUserReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于新增用户",
                 "consumes": [
                     "application/json"
@@ -1030,10 +1543,22 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "成功返回用户信息",
                         "schema": {
                             "$ref": "#/definitions/user.UserReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -1041,7 +1566,12 @@ const docTemplate = `{
         },
         "/api/v1/customer/user/password/{pk}": {
             "put": {
-                "description": "本接口用于重置用户密码",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于重置指定ID的用户密码",
                 "consumes": [
                     "application/json"
                 ],
@@ -1070,11 +1600,41 @@ const docTemplate = `{
                         }
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "密码重置成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "用户未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/customer/user/record/login": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于查询用户登录记录列表",
                 "consumes": [
                     "application/json"
@@ -1085,30 +1645,21 @@ const docTemplate = `{
                 "tags": [
                     "用户管理"
                 ],
-                "summary": "查询用户登录记录列表",
+                "summary": "查询用户的登录记录列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "每页数量",
                         "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户主键，可选参数，如果提供则必须大于0",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户主键列表，可选参数，多个用,隔开，如1,2,3",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
@@ -1121,6 +1672,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "ip地址",
                         "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "登录状态",
+                        "name": "status",
                         "in": "query"
                     },
                     {
@@ -1142,13 +1699,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/record.PagLoginRecordReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             }
         },
         "/api/v1/customer/user/{pk}": {
             "get": {
-                "description": "本接口用于查询一个用户",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的用户",
                 "consumes": [
                     "application/json"
                 ],
@@ -1158,7 +1732,7 @@ const docTemplate = `{
                 "tags": [
                     "用户管理"
                 ],
-                "summary": "查询单个用户",
+                "summary": "查询用户",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1174,11 +1748,34 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/user.UserReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "用户未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "put": {
-                "description": "本接口用于更新用户",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的用户",
                 "consumes": [
                     "application/json"
                 ],
@@ -1213,10 +1810,33 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/user.UserReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "用户未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "本接口用于删除指定ID的用户",
                 "consumes": [
                     "application/json"
@@ -1237,12 +1857,42 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "用户未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
             }
         },
-        "/api/v1/resource/Host": {
+        "/api/v1/resource/host": {
             "get": {
-                "description": "本接口用于查询主机列表",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询主机配置信息列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -1255,63 +1905,36 @@ const docTemplate = `{
                 "summary": "查询主机列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "每页数量",
                         "name": "size",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "主机主键，可选参数，如果提供则必须大于0",
-                        "name": "pk",
+                        "type": "string",
+                        "description": "主机名称",
+                        "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "主机主键列表，可选参数，多个用,隔开，如1,2,3",
-                        "name": "pks",
+                        "description": "主机标签",
+                        "name": "label",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "创建时间之前的记录 (RFC3339格式)",
-                        "name": "before_create_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建时间之后的记录 (RFC3339格式)",
-                        "name": "after_create_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "更新时间之前的记录 (RFC3339格式)",
-                        "name": "before_update_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "更新时间之后的记录 (RFC3339格式)",
-                        "name": "after_update_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "HTTP路径",
-                        "name": "http_url",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "HTTP方法",
-                        "name": "method",
+                        "description": "IP地址",
+                        "name": "ip_addr",
                         "in": "query"
                     }
                 ],
@@ -1321,11 +1944,28 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/host.PagHostReply"
                         }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
                     }
                 }
             },
             "post": {
-                "description": "本接口用于新增主机",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于创建新的主机配置信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -1335,7 +1975,7 @@ const docTemplate = `{
                 "tags": [
                     "主机管理"
                 ],
-                "summary": "新增主机",
+                "summary": "创建主机",
                 "parameters": [
                     {
                         "description": "创建主机请求",
@@ -1348,18 +1988,35 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "成功返回主机信息",
+                    "201": {
+                        "description": "创建主机成功",
                         "schema": {
                             "$ref": "#/definitions/host.HostReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
             }
         },
-        "/api/v1/resource/Host/{pk}": {
+        "/api/v1/resource/host/{pk}": {
             "get": {
-                "description": "本接口用于查询一个主机",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的主机详细信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -1369,7 +2026,7 @@ const docTemplate = `{
                 "tags": [
                     "主机管理"
                 ],
-                "summary": "查询单个主机",
+                "summary": "查询主机详情",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1381,40 +2038,38 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回用户信息",
+                        "description": "获取主机详情成功",
                         "schema": {
                             "$ref": "#/definitions/host.HostReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "主机未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
             },
-            "delete": {
-                "description": "本接口用于删除指定ID的主机",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "主机管理"
-                ],
-                "summary": "删除主机",
-                "parameters": [
+            "put": {
+                "security": [
                     {
-                        "type": "integer",
-                        "description": "主机编号",
-                        "name": "pk",
-                        "in": "path",
-                        "required": true
+                        "ApiKeyAuth": []
                     }
                 ],
-                "responses": {}
-            }
-        },
-        "/api/v1/resource/host/{pk}": {
-            "put": {
-                "description": "本接口用于更新主机",
+                "description": "本接口用于更新指定ID的主机配置信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -1445,9 +2100,80 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回主机信息",
+                        "description": "更新主机成功",
                         "schema": {
                             "$ref": "#/definitions/host.HostReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "主机未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的主机配置信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "主机管理"
+                ],
+                "summary": "删除主机",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "主机编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "主机未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -2225,11 +2951,6 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "example": "customer"
-                },
                 "meta": {
                     "description": "菜单信息",
                     "allOf": [
@@ -2296,11 +3017,6 @@ const docTemplate = `{
                     "description": "是否激活",
                     "type": "boolean",
                     "example": true
-                },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "example": "customer"
                 },
                 "meta": {
                     "description": "菜单信息",
@@ -2453,6 +3169,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id",
+                "label",
                 "method",
                 "url"
             ],
@@ -2465,6 +3182,11 @@ const docTemplate = `{
                 "id": {
                     "description": "权限主键，必须大于0\nRequired: true\nMinimum: 1",
                     "type": "integer"
+                },
+                "label": {
+                    "description": "权限描述信息，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
                 },
                 "method": {
                     "description": "HTTP请求方法，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
@@ -2570,6 +3292,7 @@ const docTemplate = `{
         "permission.UpdatePermissionRequest": {
             "type": "object",
             "required": [
+                "label",
                 "method",
                 "url"
             ],
@@ -2578,6 +3301,11 @@ const docTemplate = `{
                     "description": "权限描述信息，可选，最大长度254\nMax length: 254",
                     "type": "string",
                     "maxLength": 254
+                },
+                "label": {
+                    "description": "权限描述信息，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
                 },
                 "method": {
                     "description": "HTTP请求方法，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
@@ -2707,6 +3435,98 @@ const docTemplate = `{
                             "$ref": "#/definitions/common.Pag-role_RoleOutBase"
                         }
                     ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "role.RoleMenuPerm": {
+            "type": "object",
+            "properties": {
+                "arrange_order": {
+                    "description": "排列顺序",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "buttons": {
+                    "description": "按钮",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/button.ButtonOutBase"
+                    }
+                },
+                "children": {
+                    "description": "子菜单",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/role.RoleMenuPerm"
+                    }
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "菜单ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "meta": {
+                    "description": "菜单信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/menu.MetaSchemas"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "path": {
+                    "description": "前端路由",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "xomponent": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                }
+            }
+        },
+        "role.RoleMenuTreeReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/role.RoleMenuPerm"
+                    }
                 },
                 "msg": {
                     "description": "信息\nExample: \"success\"",
@@ -3083,6 +3903,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

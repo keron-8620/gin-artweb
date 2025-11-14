@@ -6,10 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pnComm "gin-artweb/api/common"
+	pbComm "gin-artweb/api/common"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -39,6 +38,7 @@ func NewMenuService(
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu [post]
+// @Security ApiKeyAuth
 func (s *MenuService) CreateMenu(ctx *gin.Context) {
 	var req pbMenu.CreateMenuRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -78,7 +78,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 }
 
 // @Summary 更新菜单
-// @Description 本接口用于更新菜单
+// @Description 本接口用于更新指定ID的菜单
 // @Tags 菜单管理
 // @Accept json
 // @Produce json
@@ -89,8 +89,9 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "菜单未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu/{pk} [put]
+// @Security ApiKeyAuth
 func (s *MenuService) UpdateMenu(ctx *gin.Context) {
-	var uri pnComm.PKUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -142,13 +143,14 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "菜单编号"
-// @Success 200 {object} common.MapAPIReply "删除成功"
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "菜单未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu/{pk} [delete]
+// @Security ApiKeyAuth
 func (s *MenuService) DeleteMenu(ctx *gin.Context) {
-	var uri pnComm.PKUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -159,11 +161,11 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询单个菜单
-// @Description 本接口用于查询一个菜单
+// @Summary 查询菜单
+// @Description 本接口用于查询指定ID的菜单
 // @Tags 菜单管理
 // @Accept json
 // @Produce json
@@ -173,8 +175,9 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "菜单未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu/{pk} [get]
+// @Security ApiKeyAuth
 func (s *MenuService) GetMenu(ctx *gin.Context) {
-	var uri pnComm.PKUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -208,6 +211,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu [get]
+// @Security ApiKeyAuth
 func (s *MenuService) ListMenu(ctx *gin.Context) {
 	var req pbMenu.ListMenuRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -225,16 +229,16 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 	mbs := ListMenuModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbMenu.PagMenuBaseReply{
 		Code: http.StatusOK,
-		Data: common.NewPag(page, size, total, mbs),
+		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
 func (s *MenuService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/menuinfo", s.CreateMenu)
-	r.PUT("/menuinfo/:pk", s.UpdateMenu)
-	r.DELETE("/menuinfo/:pk", s.DeleteMenu)
-	r.GET("/menuinfo/:pk", s.GetMenu)
-	r.GET("/menuinfo", s.ListMenu)
+	r.POST("/menu", s.CreateMenu)
+	r.PUT("/menu/:pk", s.UpdateMenu)
+	r.DELETE("/menu/:pk", s.DeleteMenu)
+	r.GET("/menu/:pk", s.GetMenu)
+	r.GET("/menu", s.ListMenu)
 }
 
 func MenuModelToOutBase(
@@ -258,12 +262,12 @@ func MenuModelToOutBase(
 }
 
 func ListMenuModelToOutBase(
-	ms []biz.MenuModel,
+	ms []*biz.MenuModel,
 ) []*pbMenu.MenuOutBase {
 	mso := make([]*pbMenu.MenuOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := MenuModelToOutBase(m)
+			mo := MenuModelToOutBase(*m)
 			mso = append(mso, mo)
 		}
 	}

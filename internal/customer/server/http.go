@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"path/filepath"
 	"time"
 
@@ -15,7 +17,6 @@ import (
 	"gin-artweb/internal/customer/data"
 	"gin-artweb/internal/customer/service"
 	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/config"
 	"gin-artweb/pkg/crypto"
 )
@@ -26,11 +27,26 @@ func NewServer(
 	db *gorm.DB,
 	logger *zap.Logger,
 ) {
+	if err := db.AutoMigrate(
+		&biz.PermissionModel{},
+		&biz.MenuModel{},
+		&biz.ButtonModel{},
+		&biz.RoleModel{},
+		&biz.UserModel{},
+		&biz.LoginRecordModel{},
+	); err != nil {
+		logger.Error("数据库自动迁移失败", zap.Error(err))
+		panic(err)
+	}
+
 	ctx := context.Background()
-	modelPath := filepath.Join(common.ConfigDir, "model.conf")
-	adapter := stringadapter.NewAdapter(`p, admin, *, *`)
+	modelPath := filepath.Join(config.ConfigDir, "model.conf")
+	loginURL := "/api/v1/customer/login"
+	policyLine := fmt.Sprintf(`p, *, %s, %s`, loginURL, http.MethodPost)
+	adapter := stringadapter.NewAdapter(policyLine)
 	enf, err := casbin.NewEnforcer(modelPath, adapter)
 	if err != nil {
+		logger.Error("创建casbin失败", zap.Error(err))
 		panic(err)
 	}
 	enforcer := auth.NewAuthEnforcer(enf, conf.Security.SecretKey)
@@ -58,7 +74,7 @@ func NewServer(
 	menuUsecase.LoadMenuPolicy(ctx)
 	buttonUsecase.LoadButtonPolicy(ctx)
 	roleUsecase.LoadRolePolicy(ctx)
-	router.Use(auth.AuthMiddleware(enforcer, "/api/v1/customer/own/login"))
+	router.Use(auth.AuthMiddleware(enforcer, logger, loginURL))
 
 	permissionService := service.NewPermissionService(logger, permissionUsecase)
 	menuService := service.NewMenuService(logger, menuUsecase)

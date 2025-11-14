@@ -1,7 +1,7 @@
 package button
 
 import (
-	"gin-artweb/pkg/database"
+	"gin-artweb/api/common"
 )
 
 // CreateButtonRequest 用于创建按钮的请求结构体
@@ -66,7 +66,7 @@ type UpdateButtonRequest struct {
 //
 // swagger:model ListButtonRequest
 type ListButtonRequest struct {
-	database.StandardModelQuery
+	common.StandardModelQuery
 
 	// 按钮名称，字符串长度限制
 	// Max length: 50

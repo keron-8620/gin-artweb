@@ -20,7 +20,6 @@ import (
 	customer "gin-artweb/internal/customer/server"
 
 	"gin-artweb/docs"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/config"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/log"
@@ -52,11 +51,11 @@ func newInitialize(path string) (*initialize, func(), error) {
 	conf := config.NewSystemConf(path)
 
 	// 初始化服务器日志记录器
-	write := log.NewLumLogger(conf.Log, filepath.Join(common.LogDir, serverLogName))
+	write := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, serverLogName))
 	logger := log.NewZapLoggerMust(conf.Log.Level, write)
 
 	// 创建GORM数据库配置并连接数据库
-	dbWrite := log.NewLumLogger(conf.Log, filepath.Join(common.LogDir, databaseLogName))
+	dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, databaseLogName))
 	dbConf := database.NewGormConfig(dbWrite)
 	db, err := database.NewGormDB(conf.Database.Type, conf.Database.Dns, dbConf)
 	if err != nil {
@@ -84,8 +83,9 @@ func newInitialize(path string) (*initialize, func(), error) {
 		}, nil
 }
 
-// main 是程序的入口函数，负责初始化配置、数据库连接、日志系统，
-// 并启动 HTTP 或 HTTPS 服务。同时监听系统信号以实现优雅停机。
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	// 定义并解析命令行参数，指定配置文件路径，默认为 "../config/system.yaml"
 	var configPath string
@@ -119,8 +119,8 @@ func main() {
 		// 判断是否启用 SSL/TLS 加密传输
 		if i.conf.Server.SSL.Enable {
 			// 构造证书和私钥的完整路径
-			crtPath := filepath.Join(common.ConfigDir, i.conf.Server.SSL.CrtPath)
-			keyPath := filepath.Join(common.ConfigDir, i.conf.Server.SSL.KeyPath)
+			crtPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.CrtPath)
+			keyPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.KeyPath)
 
 			// 校验证书文件是否存在
 			if _, statErr := os.Stat(crtPath); os.IsNotExist(statErr) {
@@ -179,25 +179,25 @@ func main() {
 }
 
 func newRouter(init *initialize) *gin.Engine {
-	wrire := log.NewLumLogger(init.conf.Log, filepath.Join(common.LogDir, serviceLogName))
+	wrire := log.NewLumLogger(init.conf.Log, filepath.Join(config.LogDir, serviceLogName))
 	// 创建 Zap 日志记录器用于服务日志输出
 	logger := log.NewZapLoggerMust(init.conf.Log.Level, wrire)
 	r := gin.New()
 	r.GET("/", func(c *gin.Context) {
-		c.File(filepath.Join(common.BaseDir, "html", "index.html"))
+		c.File(filepath.Join(config.BaseDir, "html", "index.html"))
 	})
-	r.Static("/static", filepath.Join(common.BaseDir, "html", "static"))
+	r.Static("/static", filepath.Join(config.BaseDir, "html", "static"))
 
 	// 设置 Swagger 文档信息
-	docs.SwaggerInfo.Title = "gin-art-web"
-	docs.SwaggerInfo.Description = "art-web自动化运维平台"
+	docs.SwaggerInfo.Title = "gin-artweb"
+	docs.SwaggerInfo.Description = "gin-artweb自动化运维平台"
 	docs.SwaggerInfo.Version = version
 	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 注册访问日志中间件
-	accWriet := log.NewLumLogger(init.conf.Log, filepath.Join(common.LogDir, accessLogName))
+	accWriet := log.NewLumLogger(init.conf.Log, filepath.Join(config.LogDir, accessLogName))
 	r.Use(gin.LoggerWithWriter(accWriet))
 
 	// 注册统一异常处理中间件

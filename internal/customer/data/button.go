@@ -2,16 +2,16 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
 	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/errors"
+	"gin-artweb/pkg/log"
 )
 
 const (
@@ -37,17 +37,27 @@ func NewButtonRepo(
 }
 
 func (r *buttonRepo) CreateModel(ctx context.Context, m *biz.ButtonModel) error {
+	r.log.Debug(
+		"开始创建按钮模型",
+		zap.Object(database.ModelKey, m),
+	)
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
 	if err := database.DBCreate(ctx, r.gormDB, &biz.ButtonModel{}, m); err != nil {
 		r.log.Error(
-			"新增按钮模型失败",
-			zap.Object(database.ModelKey, m),
+			"创建按钮模型失败",
 			zap.Error(err),
+			zap.Object(database.ModelKey, m),
+			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
 	}
+	r.log.Debug(
+		"创建按钮模型成功",
+		zap.Object(database.ModelKey, m),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
 	return nil
 }
 
@@ -57,6 +67,13 @@ func (r *buttonRepo) UpdateModel(
 	perms []biz.PermissionModel,
 	conds ...any,
 ) error {
+	r.log.Debug(
+		"开始更新按钮模型",
+		zap.Any(database.UpdateDataKey, data),
+		zap.Any(database.ConditionKey, conds),
+		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
+	)
+	now := time.Now()
 	upmap := make(map[string]any, 1)
 	if len(perms) > 0 {
 		upmap["Permissions"] = perms
@@ -64,31 +81,41 @@ func (r *buttonRepo) UpdateModel(
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.ButtonModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
 			"更新按钮模型失败",
-			zap.Any(database.UpdateDataKey, data),
-			zap.Objects("permissions", func() []zapcore.ObjectMarshaler {
-				objs := make([]zapcore.ObjectMarshaler, len(perms))
-				for i := range perms {
-					objs[i] = &perms[i]
-				}
-				return objs
-			}()),
-			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
+			zap.Any(database.UpdateDataKey, data),
+			zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
+			zap.Any(database.ConditionKey, conds),
+			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
 	}
+	r.log.Debug(
+		"更新按钮模型成功",
+		zap.Any(database.UpdateDataKey, data),
+		zap.Any(database.ConditionKey, conds),
+		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
 	return nil
 }
 
 func (r *buttonRepo) DeleteModel(ctx context.Context, conds ...any) error {
+	r.log.Debug("开始删除按钮模型", zap.Any(database.ConditionKey, conds))
+	now := time.Now()
 	if err := database.DBDelete(ctx, r.gormDB, &biz.ButtonModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除按钮模型失败",
-			zap.Any(database.ConditionKey, conds),
 			zap.Error(err),
+			zap.Any(database.ConditionKey, conds),
+			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
 	}
+	r.log.Debug(
+		"删除按钮模型成功",
+		zap.Any(database.ConditionKey, conds),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
 	return nil
 }
 
@@ -97,16 +124,30 @@ func (r *buttonRepo) FindModel(
 	preloads []string,
 	conds ...any,
 ) (*biz.ButtonModel, error) {
+	r.log.Debug(
+		"开始查询按钮模型",
+		zap.Strings(database.PreloadKey, preloads),
+		zap.Any(database.ConditionKey, conds),
+	)
+	now := time.Now()
 	var m biz.ButtonModel
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询按钮模型失败",
+			zap.Error(err),
 			zap.Strings(database.PreloadKey, preloads),
 			zap.Any(database.ConditionKey, conds),
-			zap.Error(err),
+			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return nil, err
 	}
+	r.log.Debug(
+		"查询按钮模型成功",
+		zap.Object(database.ModelKey, &m),
+		zap.Strings(database.PreloadKey, preloads),
+		zap.Any(database.ConditionKey, conds),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
 	return &m, nil
 }
 
@@ -114,16 +155,27 @@ func (r *buttonRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, []biz.ButtonModel, error) {
+	r.log.Debug(
+		"开始查询按钮模型列表",
+		zap.Object(database.QueryParamsKey, &qp),
+	)
+	now := time.Now()
 	var ms []biz.ButtonModel
 	count, err := database.DBList(ctx, r.gormDB, &biz.ButtonModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询按钮列表失败",
-			zap.Object(database.QueryParamsKey, &qp),
 			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return 0, nil, err
 	}
+	r.log.Debug(
+		"查询按钮模型列表成功",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
 	return count, ms, nil
 }
 
@@ -131,28 +183,29 @@ func (r *buttonRepo) AddGroupPolicy(
 	ctx context.Context,
 	m biz.ButtonModel,
 ) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
 	}
-	sub := buttonModelToSubject(m)
-	menuObj := menuModelToSubject(m.Menu)
+	sub := auth.ButtonToSubject(m.ID)
+	menuObj := auth.MenuToSubject(m.MenuID)
+	r.log.Debug(
+		"开始添加按钮与父级菜单的继承关系策略",
+		zap.String(auth.GroupSubKey, sub),
+		zap.String(auth.GroupObjKey, menuObj),
+	)
 	if err := r.cache.AddGroupPolicy(sub, menuObj); err != nil {
 		r.log.Error(
-			"添加按钮权限失败",
+			"添加按钮与父级菜单的继承关系策略失败",
+			zap.Error(err),
 			zap.String(auth.GroupSubKey, sub),
 			zap.String(auth.GroupObjKey, menuObj),
-			zap.Uint32("button_id", m.ID),
-			zap.Uint32("menu_id", m.MenuID),
-			zap.Error(err),
 		)
 		return err
 	}
 
 	// 批量处理权限
 	for _, o := range m.Permissions {
-		obj := permissionModelToSubject(o)
+		obj := auth.PermissionToSubject(o.ID)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
 			r.log.Error(
 				"添加按钮与菜单的继承关系策略失败",
@@ -178,7 +231,7 @@ func (r *buttonRepo) RemoveGroupPolicy(
 		return ctx.Err()
 	default:
 	}
-	sub := buttonModelToSubject(m)
+	sub := auth.ButtonToSubject(m.ID)
 
 	// 删除该按钮作为父级的策略（被其他菜单或权限继承）
 	if err := r.cache.RemoveGroupPolicy(0, sub); err != nil {
@@ -201,8 +254,4 @@ func (r *buttonRepo) RemoveGroupPolicy(
 		}
 	}
 	return nil
-}
-
-func buttonModelToSubject(m biz.ButtonModel) string {
-	return fmt.Sprintf(auth.ButtonSubjectFormat, m.ID)
 }

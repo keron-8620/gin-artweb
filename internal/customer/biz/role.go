@@ -44,7 +44,6 @@ type RoleRepo interface {
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*RoleModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, []RoleModel, error)
-	RoleModelToSub(RoleModel) string
 	AddGroupPolicy(context.Context, RoleModel) error
 	RemoveGroupPolicy(context.Context, RoleModel) error
 }
@@ -245,7 +244,7 @@ func (uc *RoleUsecase) ListRole(
 }
 
 func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) error {
-	_, rms, err := uc.ListRole(ctx, 0, 0, nil, nil, false, nil)
+	_, rms, err := uc.ListRole(ctx, 0, 0, nil, nil, false, []string{"Permissions", "Menus", "Buttons"})
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,6 @@
 package role
 
-import (
-	"gin-artweb/pkg/database"
-)
+import "gin-artweb/api/common"
 
 // CreateRoleRequest 用于创建角色的请求结构体
 //
@@ -55,7 +53,7 @@ type UpdateRoleRequest struct {
 //
 // swagger:model ListRoleRequest
 type ListRoleRequest struct {
-	database.StandardModelQuery
+	common.StandardModelQuery
 
 	// 角色名称，字符串长度限制
 	// Max length: 50

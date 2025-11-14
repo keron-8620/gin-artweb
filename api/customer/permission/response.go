@@ -1,7 +1,7 @@
 package permission
 
 import (
-	"gin-artweb/pkg/common"
+	"gin-artweb/api/common"
 )
 
 // PermissionOutBase 权限基础信息

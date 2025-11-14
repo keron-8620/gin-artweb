@@ -1,8 +1,6 @@
 package user
 
-import (
-	"gin-artweb/pkg/database"
-)
+import "gin-artweb/api/common"
 
 // CreateUserRequest 用于创建用户的请求结构体
 //
@@ -53,7 +51,7 @@ type UpdateUserRequest struct {
 //
 // swagger:model ListUserRequest
 type ListUserRequest struct {
-	database.StandardModelQuery
+	common.StandardModelQuery
 
 	// 用户名称，字符串长度限制
 	// Max length: 50
@@ -90,10 +88,6 @@ func (req *ListUserRequest) Query() (int, int, map[string]any) {
 //
 // swagger:model ResetPasswordRequest
 type ResetPasswordRequest struct {
-	// 用户名，最大长度50
-	// Required: true
-	// Max length: 50
-	Username string `json:"name" binding:"required,max=50"`
 	// 新密码，最大长度20
 	// Required: true
 	// Max length: 20

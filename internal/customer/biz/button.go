@@ -34,6 +34,7 @@ func (m *ButtonModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddString("descr", m.Descr)
 	enc.AddUint32("menu_id", m.MenuID)
+	zap.Uint32s(PermissionIDsKey, ListPermissionModelToUint32s(m.Permissions))
 	return nil
 }
 
@@ -200,7 +201,7 @@ func (uc *ButtonUsecase) ListButton(
 }
 
 func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) error {
-	_, bms, err := uc.ListButton(ctx, 0, 0, nil, nil, false, nil)
+	_, bms, err := uc.ListButton(ctx, 0, 0, nil, nil, false, []string{"Menu", "Permissions"})
 	if err != nil {
 		return err
 	}

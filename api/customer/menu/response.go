@@ -2,7 +2,7 @@ package menu
 
 import (
 	"gin-artweb/api/customer/permission"
-	"gin-artweb/pkg/common"
+	"gin-artweb/api/common"
 )
 
 // MenuOutBase 菜单基础信息

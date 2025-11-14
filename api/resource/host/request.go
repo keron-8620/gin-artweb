@@ -1,8 +1,6 @@
 package host
 
-import (
-	"gin-artweb/pkg/database"
-)
+import "gin-artweb/api/common"
 
 // CreateHosrRequest 用于创建主机的请求结构体
 //
@@ -96,7 +94,7 @@ type UpdateHostRequest struct {
 //
 // swagger:model ListHostRequest
 type ListHostRequest struct {
-	database.StandardModelQuery
+	common.StandardModelQuery
 
 	// 名称，最大长度50
 	// Required: true

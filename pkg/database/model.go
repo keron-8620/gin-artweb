@@ -6,8 +6,16 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type Identifiable interface {
+	GetID() uint32
+}
+
 type BaseModel struct {
 	ID uint32 `gorm:"column:id;primary_key;AUTO_INCREMENT;comment:编号" json:"id"`
+}
+
+func (m *BaseModel) GetID() uint32 {
+	return m.ID
 }
 
 func (m *BaseModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -15,11 +23,12 @@ func (m *BaseModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+
 type StandardModel struct {
 	BaseModel
 
-	CreatedAt time.Time `gorm:"column:created_at;comment:创建时间" json:"created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at;comment:修改时间" json:"updated_at"`
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime;comment:创建时间" json:"created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime;comment:修改时间" json:"updated_at"`
 }
 
 func (m *StandardModel) CreateSetTime() {

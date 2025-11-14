@@ -10,7 +10,6 @@ import (
 	pbButton "gin-artweb/api/customer/button"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -40,6 +39,7 @@ func NewButtonService(
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button [post]
+// @Security ApiKeyAuth
 func (s *ButtonService) CreateButton(ctx *gin.Context) {
 	var req pbButton.CreateButtonRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -69,7 +69,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 }
 
 // @Summary 更新按钮
-// @Description 本接口用于更新按钮
+// @Description 本接口用于更新指定ID的按钮
 // @Tags 按钮管理
 // @Accept json
 // @Produce json
@@ -80,6 +80,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "按钮未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button/{pk} [put]
+// @Security ApiKeyAuth
 func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -121,11 +122,12 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "按钮编号"
-// @Success 200 {object} common.MapAPIReply "删除成功"
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "按钮未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button/{pk} [delete]
+// @Security ApiKeyAuth
 func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -138,11 +140,11 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询单个按钮
-// @Description 本接口用于查询一个按钮
+// @Summary 查询按钮
+// @Description 本接口用于查询指定ID的按钮
 // @Tags 按钮管理
 // @Accept json
 // @Produce json
@@ -152,6 +154,7 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "按钮未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button/{pk} [get]
+// @Security ApiKeyAuth
 func (s *ButtonService) GetButton(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -186,6 +189,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button [get]
+// @Security ApiKeyAuth
 func (s *ButtonService) ListButton(ctx *gin.Context) {
 	var req pbButton.ListButtonRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -203,16 +207,16 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 	mbs := ListButtonModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbButton.PagButtonBaseReply{
 		Code: http.StatusOK,
-		Data: common.NewPag(page, size, total, mbs),
+		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
 func (s *ButtonService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/buttoninfo", s.CreateButton)
-	r.PUT("/buttoninfo/:pk", s.UpdateButton)
-	r.DELETE("/buttoninfo/:pk", s.DeleteButton)
-	r.GET("/buttoninfo/:pk", s.GetButton)
-	r.GET("/buttoninfo", s.ListButton)
+	r.POST("/button", s.CreateButton)
+	r.PUT("/button/:pk", s.UpdateButton)
+	r.DELETE("/button/:pk", s.DeleteButton)
+	r.GET("/button/:pk", s.GetButton)
+	r.GET("/button", s.ListButton)
 }
 
 func ButtonModelToOutBase(

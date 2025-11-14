@@ -2,16 +2,15 @@ server:
   host: "192.168.10.12"
   port: 8620
   ssl:
-    enable: true
+    enable: false
     key_path: "server.key"
     crt_path: "server.crt"
     password: ""
   enable_swagger: true
-  
 
 database:
   type: "opengauss"
-  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=pydango sslmode=disable"
+  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable"
   max_open_conns: 10
   max_idle_conns: 10
   conn_max_lifetime: 60

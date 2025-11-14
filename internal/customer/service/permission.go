@@ -9,7 +9,6 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbPerm "gin-artweb/api/customer/permission"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -38,6 +37,7 @@ func NewPermissionService(
 // @Success 201 {object} pbPerm.PermissionReply "创建权限成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Router /api/v1/customer/permission [post]
+// @Security ApiKeyAuth
 func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 	var req pbPerm.CreatePermissionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -52,6 +52,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 		},
 		URL:    req.URL,
 		Method: req.Method,
+		Label:  req.Label,
 		Descr:  req.Descr,
 	})
 	if err != nil {
@@ -66,7 +67,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 }
 
 // @Summary 更新权限
-// @Description 本接口用于更新权限
+// @Description 本接口用于更新指定ID的权限
 // @Tags 权限管理
 // @Accept json
 // @Produce json
@@ -76,6 +77,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "权限未找到"
 // @Router /api/v1/customer/permission/{pk} [put]
+// @Security ApiKeyAuth
 func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -117,10 +119,11 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "权限编号"
-// @Success 200 {object} common.MapAPIReply "删除成功"
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "权限未找到"
 // @Router /api/v1/customer/permission/{pk} [delete]
+// @Security ApiKeyAuth
 func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -133,11 +136,11 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询单个权限
-// @Description 本接口用于查询一个权限
+// @Summary 查询权限
+// @Description 本接口用于查询指定ID的权限
 // @Tags 权限管理
 // @Accept json
 // @Produce json
@@ -146,6 +149,7 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "权限未找到"
 // @Router /api/v1/customer/permission/{pk} [get]
+// @Security ApiKeyAuth
 func (s *PermissionService) GetPermission(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -179,11 +183,12 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 // @Param after_create_at query string false "创建时间之后的记录 (RFC3339格式)"
 // @Param before_update_at query string false "更新时间之前的记录 (RFC3339格式)"
 // @Param after_update_at query string false "更新时间之后的记录 (RFC3339格式)"
-// @Param http_url query string false "HTTP路径"
+// @Param url query string false "HTTP路径"
 // @Param method query string false "HTTP方法" Enums(GET, POST, PUT, DELETE, PATCH)
 // @Success 200 {object} pbPerm.PagPermissionReply "成功返回权限列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Router /api/v1/customer/permission [get]
+// @Security ApiKeyAuth
 func (s *PermissionService) ListPermission(ctx *gin.Context) {
 	var req pbPerm.ListPermissionRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -201,16 +206,16 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 	mbs := ListPermModelToOut(ms)
 	ctx.JSON(http.StatusOK, &pbPerm.PagPermissionReply{
 		Code: http.StatusOK,
-		Data: common.NewPag(page, size, total, mbs),
+		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
 func (s *PermissionService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/permissioninfo", s.CreatePermission)
-	r.PUT("/permissioninfo/:pk", s.UpdatePermission)
-	r.DELETE("/permissioninfo/:pk", s.DeletePermission)
-	r.GET("/permissioninfo/:pk", s.GetPermission)
-	r.GET("/permissioninfo", s.ListPermission)
+	r.POST("/permission", s.CreatePermission)
+	r.PUT("/permission/:pk", s.UpdatePermission)
+	r.DELETE("/permission/:pk", s.DeletePermission)
+	r.GET("/permission/:pk", s.GetPermission)
+	r.GET("/permission", s.ListPermission)
 }
 
 func PermModelToOutBase(
@@ -228,13 +233,15 @@ func PermModelToOutBase(
 }
 
 func ListPermModelToOut(
-	ms []biz.PermissionModel,
+	ms []*biz.PermissionModel,
 ) []*pbPerm.PermissionOutBase {
 	mso := make([]*pbPerm.PermissionOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := PermModelToOutBase(m)
-			mso = append(mso, mo)
+			if m != nil {
+				mo := PermModelToOutBase(*m)
+				mso = append(mso, mo)
+			}
 		}
 	}
 	return mso

@@ -18,13 +18,6 @@ const (
 	GroupObjKey = "group_obj" // 组策略对象键
 )
 
-const (
-	PermissionSubjectFormat = "perm_%d"
-	MenuSubjectFormat       = "menu_%d"
-	ButtonSubjectFormat     = "button_%d"
-	RoleSubjectFormat       = "role_%d"
-)
-
 // AuthEnforcer 管理身份验证令牌和授权权限
 // 它提供线程安全的操作来存储和检索用户声明、角色权限和URL访问控制映射
 type AuthEnforcer struct {
@@ -54,7 +47,7 @@ func (c *AuthEnforcer) Authentication(token string) (*UserClaims, *errors.Error)
 	})
 	if err != nil {
 		if goerrors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrTokenExpired.WithCause(err)
+			return nil, ErrTokenExpired
 		}
 		return nil, ErrInvalidToken.WithCause(err)
 	}

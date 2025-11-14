@@ -10,6 +10,8 @@ import (
 	"gin-artweb/pkg/errors"
 )
 
+const PermissionIDsKey = "permission_ids"
+
 type PermissionModel struct {
 	database.StandardModel
 	URL    string `gorm:"column:url;type:varchar(150);index:idx_permission_url_method_label;comment:HTTP的URL地址" json:"url"`
@@ -38,7 +40,7 @@ type PermissionRepo interface {
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*PermissionModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, []PermissionModel, error)
+	ListModel(context.Context, database.QueryParams) (int64, *[]PermissionModel, error)
 	AddPolicy(context.Context, PermissionModel) error
 	RemovePolicy(context.Context, PermissionModel, bool) error
 }
@@ -62,9 +64,11 @@ func (uc *PermissionUsecase) CreatePermission(
 	ctx context.Context,
 	m PermissionModel,
 ) (*PermissionModel, *errors.Error) {
+	// 创建权限
 	if err := uc.permRepo.CreateModel(ctx, &m); err != nil {
 		return nil, database.NewGormError(err, nil)
 	}
+	// 添加casbin权限策略
 	if err := uc.permRepo.AddPolicy(ctx, m); err != nil {
 		return nil, ErrAddPolicy.WithCause(err)
 	}
@@ -126,7 +130,7 @@ func (uc *PermissionUsecase) ListPermission(
 	query map[string]any,
 	orderBy []string,
 	isCount bool,
-) (int64, []PermissionModel, *errors.Error) {
+) (int64, *[]PermissionModel, *errors.Error) {
 	qp := database.QueryParams{
 		Preloads: []string{},
 		Query:    query,
@@ -147,9 +151,12 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	for _, pm := range pms {
-		if err := uc.permRepo.AddPolicy(ctx, pm); err != nil {
-			return ErrAddPolicy.WithCause(err)
+	if pms != nil {
+		for i := range *pms {
+			pm := (*pms)[i]
+			if err := uc.permRepo.AddPolicy(ctx, pm); err != nil {
+				return ErrAddPolicy.WithCause(err)
+			}
 		}
 	}
 	return nil

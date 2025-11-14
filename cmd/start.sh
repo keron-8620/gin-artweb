@@ -4,15 +4,13 @@ basepath=$(cd `dirname $0`/..; pwd)
 
 cd $basepath
 
-if [ -d "$basepath/bin" ]; then
-  rm -rf "$basepath/bin"
+# 编译前清理旧的可执行文件
+if [ -f "$basepath/gin-artweb" ]; then
+  rm -rf "$basepath/gin-artweb"
 fi
 
-# 创建临时目录
-mkdir bin
-
 # 编译到临时目录
-go build -o "$basepath/bin/artweb" main.go
+CGO_ENABLED=0 GOOS=linux go build -o gin-artweb .
 
 # 执行
-"$basepath/bin/artweb" --config "$basepath/config/system.yml"
+"$basepath/gin-artweb" --config "$basepath/config/system.yml"

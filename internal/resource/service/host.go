@@ -6,10 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	cpb "gin-artweb/api/common"
-	pb "gin-artweb/api/resource/host"
+	pbComm "gin-artweb/api/common"
+	pbHost "gin-artweb/api/resource/host"
 	"gin-artweb/internal/resource/biz"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/errors"
 )
 
@@ -28,16 +27,19 @@ func NewHostService(
 	}
 }
 
-// @Summary 新增主机
-// @Description 本接口用于新增主机
+// @Summary 创建主机
+// @Description 本接口用于创建新的主机配置信息
 // @Tags 主机管理
 // @Accept json
 // @Produce json
-// @Param request body pb.CreateHosrRequest true "创建主机请求"
-// @Success 200 {object} pb.HostReply "成功返回主机信息"
-// @Router /api/v1/resource/Host [post]
+// @Param request body pbHost.CreateHosrRequest true "创建主机请求"
+// @Success 201 {object} pbHost.HostReply "创建主机成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/resource/host [post]
+// @Security ApiKeyAuth
 func (s *HostService) CreateHost(ctx *gin.Context) {
-	var req pb.CreateHosrRequest
+	var req pbHost.CreateHosrRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -58,30 +60,34 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 		return
 	}
 	mo := HostModelToOutBase(*m)
-	ctx.JSON(http.StatusCreated, &pb.HostReply{
+	ctx.JSON(http.StatusCreated, &pbHost.HostReply{
 		Code: http.StatusCreated,
 		Data: *mo,
 	})
 }
 
 // @Summary 更新主机
-// @Description 本接口用于更新主机
+// @Description 本接口用于更新指定ID的主机配置信息
 // @Tags 主机管理
 // @Accept json
 // @Produce json
 // @Param pk path uint true "主机编号"
-// @Param request body pb.UpdateHostRequest true "更新主机请求"
-// @Success 200 {object} pb.HostReply "成功返回主机信息"
+// @Param request body pbHost.UpdateHostRequest true "更新主机请求"
+// @Success 200 {object} pbHost.HostReply "更新主机成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "主机未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{pk} [put]
+// @Security ApiKeyAuth
 func (s *HostService) UpdateHost(ctx *gin.Context) {
-	var uri cpb.PKUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	var req pb.UpdateHostRequest
+	var req pbHost.UpdateHostRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -106,21 +112,26 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		return
 	}
 	mo := HostModelToOutBase(*m)
-	ctx.JSON(http.StatusOK, &pb.HostReply{
+	ctx.JSON(http.StatusOK, &pbHost.HostReply{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
 }
 
 // @Summary 删除主机
-// @Description 本接口用于删除指定ID的主机
+// @Description 本接口用于删除指定ID的主机配置信息
 // @Tags 主机管理
 // @Accept json
 // @Produce json
 // @Param pk path uint true "主机编号"
-// @Router /api/v1/resource/Host/{pk} [delete]
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "主机未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/resource/host/{pk} [delete]
+// @Security ApiKeyAuth
 func (s *HostService) DeleteHost(ctx *gin.Context) {
-	var uri cpb.PKUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -131,19 +142,23 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(http.StatusOK, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询单个主机
-// @Description 本接口用于查询一个主机
+// @Summary 查询主机详情
+// @Description 本接口用于查询指定ID的主机详细信息
 // @Tags 主机管理
 // @Accept json
 // @Produce json
 // @Param pk path uint true "主机编号"
-// @Success 200 {object} pb.HostReply "成功返回用户信息"
-// @Router /api/v1/resource/Host/{pk} [get]
+// @Success 200 {object} pbHost.HostReply "获取主机详情成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "主机未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/resource/host/{pk} [get]
+// @Security ApiKeyAuth
 func (s *HostService) GetHost(ctx *gin.Context) {
-	var uri cpb.PKUri
+	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -156,31 +171,29 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 		return
 	}
 	mo := HostModelToOutBase(*m)
-	ctx.JSON(http.StatusOK, &pb.HostReply{
+	ctx.JSON(http.StatusOK, &pbHost.HostReply{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
 }
 
 // @Summary 查询主机列表
-// @Description 本接口用于查询主机列表
+// @Description 本接口用于查询主机配置信息列表
 // @Tags 主机管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码"
-// @Param size query int false "每页数量"
-// @Param pk query uint false "主机主键，可选参数，如果提供则必须大于0"
-// @Param pks query string false "主机主键列表，可选参数，多个用,隔开，如1,2,3"
-// @Param before_create_at query string false "创建时间之前的记录 (RFC3339格式)"
-// @Param after_create_at query string false "创建时间之后的记录 (RFC3339格式)"
-// @Param before_update_at query string false "更新时间之前的记录 (RFC3339格式)"
-// @Param after_update_at query string false "更新时间之后的记录 (RFC3339格式)"
-// @Param http_url query string false "HTTP路径"
-// @Param method query string false "HTTP方法"
-// @Success 200 {object} pb.PagHostReply "成功返回主机列表"
-// @Router /api/v1/resource/Host [get]
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param name query string false "主机名称"
+// @Param label query string false "主机标签"
+// @Param ip_addr query string false "IP地址"
+// @Success 200 {object} pbHost.PagHostReply "成功返回主机列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/resource/host [get]
+// @Security ApiKeyAuth
 func (s *HostService) ListHost(ctx *gin.Context) {
-	var req pb.ListHostRequest
+	var req pbHost.ListHostRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		rErr := errors.ValidateError.WithCause(err)
 		s.log.Error(rErr.Error())
@@ -194,24 +207,24 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 		return
 	}
 	mbs := ListHostModelToOut(ms)
-	ctx.JSON(http.StatusOK, &pb.PagHostReply{
+	ctx.JSON(http.StatusOK, &pbHost.PagHostReply{
 		Code: http.StatusOK,
-		Data: common.NewPag(page, size, total, mbs),
+		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
 func (s *HostService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/Host", s.CreateHost)
-	r.PUT("/Host/:pk", s.UpdateHost)
-	r.DELETE("/Host/:pk", s.DeleteHost)
-	r.GET("/Host/:pk", s.GetHost)
-	r.GET("/Host", s.ListHost)
+	r.POST("/host", s.CreateHost)
+	r.PUT("/host/:pk", s.UpdateHost)
+	r.DELETE("/host/:pk", s.DeleteHost)
+	r.GET("/host/:pk", s.GetHost)
+	r.GET("/host", s.ListHost)
 }
 
 func HostModelToOutBase(
 	m biz.HostModel,
-) *pb.HostOutBase {
-	return &pb.HostOutBase{
+) *pbHost.HostOutBase {
+	return &pbHost.HostOutBase{
 		ID:        m.ID,
 		CreatedAt: m.CreatedAt.String(),
 		UpdatedAt: m.UpdatedAt.String(),
@@ -227,8 +240,8 @@ func HostModelToOutBase(
 
 func ListHostModelToOut(
 	ms []biz.HostModel,
-) []*pb.HostOutBase {
-	mso := make([]*pb.HostOutBase, 0, len(ms))
+) []*pbHost.HostOutBase {
+	mso := make([]*pbHost.HostOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := HostModelToOutBase(m)

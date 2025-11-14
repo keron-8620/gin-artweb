@@ -1,6 +1,6 @@
 package record
 
-import "gin-artweb/pkg/common"
+import "gin-artweb/api/common"
 
 // LoginRecordOutBase登陆记录信息
 type LoginRecordOutBase struct {

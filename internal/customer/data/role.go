@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -145,10 +144,6 @@ func (r *roleRepo) ListModel(
 	return count, ms, nil
 }
 
-func (r *roleRepo) RoleModelToSub(m biz.RoleModel) string {
-	return fmt.Sprintf(auth.RoleSubjectFormat, m.ID)
-}
-
 func (r *roleRepo) AddGroupPolicy(
 	ctx context.Context,
 	m biz.RoleModel,
@@ -158,11 +153,11 @@ func (r *roleRepo) AddGroupPolicy(
 		return ctx.Err()
 	default:
 	}
-	sub := r.RoleModelToSub(m)
+	sub := auth.RoleToSubject(m.ID)
 
 	// 批量处理权限
 	for _, o := range m.Permissions {
-		obj := permissionModelToSubject(o)
+		obj := auth.PermissionToSubject(o.ID)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
 			r.log.Error(
 				"添加角色与权限的关联策略失败",
@@ -178,7 +173,7 @@ func (r *roleRepo) AddGroupPolicy(
 
 	// 批量处理菜单
 	for _, o := range m.Menus {
-		obj := menuModelToSubject(o)
+		obj := auth.MenuToSubject(o.ID)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
 			r.log.Error(
 				"添加角色与菜单的关联策略失败",
@@ -194,7 +189,7 @@ func (r *roleRepo) AddGroupPolicy(
 
 	// 批量处理按钮
 	for _, o := range m.Buttons {
-		obj := buttonModelToSubject(o)
+		obj := auth.ButtonToSubject(o.ID)
 		if err := r.cache.AddGroupPolicy(sub, obj); err != nil {
 			r.log.Error(
 				"添加角色与按钮的关联策略失败",
@@ -219,7 +214,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 		return ctx.Err()
 	default:
 	}
-	sub := r.RoleModelToSub(m)
+	sub := auth.RoleToSubject(m.ID)
 
 	// 删除角色作为子级的策略（从其他菜单或权限继承）
 	if err := r.cache.RemoveGroupPolicy(1, sub); err != nil {

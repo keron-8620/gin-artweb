@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const ErrKey = "error"
-
 type Error struct {
 	Code   int            `json:"code"`
 	Reason string         `json:"reason"`

@@ -1,8 +1,8 @@
 package user
 
 import (
+	"gin-artweb/api/common"
 	"gin-artweb/api/customer/role"
-	"gin-artweb/pkg/common"
 )
 
 // UserOutBase用户基础信息

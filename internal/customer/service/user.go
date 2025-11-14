@@ -12,7 +12,6 @@ import (
 	pbUser "gin-artweb/api/customer/user"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/errors"
 )
 
@@ -44,6 +43,7 @@ func NewUserService(
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user [post]
+// @Security ApiKeyAuth
 func (s *UserService) CreateUser(ctx *gin.Context) {
 	var req pbUser.CreateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -70,7 +70,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 }
 
 // @Summary 更新用户
-// @Description 本接口用于更新用户
+// @Description 本接口用于更新指定ID的用户
 // @Tags 用户管理
 // @Accept json
 // @Produce json
@@ -81,6 +81,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{pk} [put]
+// @Security ApiKeyAuth
 func (s *UserService) UpdateUser(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -123,11 +124,12 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Success 200 {object} common.MapAPIReply "删除成功"
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{pk} [delete]
+// @Security ApiKeyAuth
 func (s *UserService) DeleteUser(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -140,11 +142,11 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询单个用户
-// @Description 本接口用于查询一个用户
+// @Summary 查询用户
+// @Description 本接口用于查询指定ID的用户
 // @Tags 用户管理
 // @Accept json
 // @Produce json
@@ -154,6 +156,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{pk} [get]
+// @Security ApiKeyAuth
 func (s *UserService) GetUser(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -188,6 +191,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user [get]
+// @Security ApiKeyAuth
 func (s *UserService) ListUser(ctx *gin.Context) {
 	var req pbUser.ListUserRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -205,22 +209,23 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 	mbs := ListUserModelToOut(ms)
 	ctx.JSON(http.StatusOK, &pbUser.PagUserReply{
 		Code: http.StatusOK,
-		Data: common.NewPag(page, size, total, mbs),
+		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
 // @Summary 重置用户密码
-// @Description 本接口用于重置用户密码
+// @Description 本接口用于重置指定ID的用户密码
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Param pk path uint true "用户编号"
-// @Param request body pb.ResetPasswordRequest true "重置用户密码请求"
-// @Success 200 {object} common.MapAPIReply "密码重置成功"
+// @Param request body pbUser.ResetPasswordRequest true "重置用户密码请求"
+// @Success 200 {object} pbComm.MapAPIReply "密码重置成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/password/{pk} [put]
+// @Security ApiKeyAuth
 func (s *UserService) ResetPassword(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -247,20 +252,21 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 修改用户密码
-// @Description 本接口用于修改用户密码
+// @Summary 修改当前用户密码
+// @Description 本接口用于修改当前登录用户的密码
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Param request body pbUser.PatchPasswordRequest true "修改用户密码请求"
-// @Success 200 {object} common.MapAPIReply "密码修改成功"
+// @Success 200 {object} pbComm.MapAPIReply "密码修改成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 401 {object} errors.Error "认证失败"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/own/password [put]
+// @Router /api/v1/customer/me/password [put]
+// @Security ApiKeyAuth
 func (s *UserService) PatchPassword(ctx *gin.Context) {
 	var req pbUser.PatchPasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -298,7 +304,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
 // @Summary 登陆接口
@@ -311,7 +317,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 401 {object} errors.Error "用户名或密码错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/own/login [post]
+// @Router /api/v1/customer/login [post]
 func (s *UserService) Login(ctx *gin.Context) {
 	var req pbUser.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -343,13 +349,13 @@ func (s *UserService) Login(ctx *gin.Context) {
 }
 
 func (s *UserService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/userinfo", s.CreateUser)
-	r.PUT("/userinfo/:pk", s.UpdateUser)
-	r.DELETE("/userinfo/:pk", s.DeleteUser)
-	r.GET("/userinfo/:pk", s.GetUser)
-	r.GET("/userinfo", s.ListUser)
-	r.PATCH("/reset_password/:pk", s.ResetPassword)
-	r.PATCH("/change_password", s.PatchPassword)
+	r.POST("/user", s.CreateUser)
+	r.PUT("/user/:pk", s.UpdateUser)
+	r.DELETE("/user/:pk", s.DeleteUser)
+	r.GET("/user/:pk", s.GetUser)
+	r.GET("/user", s.ListUser)
+	r.PATCH("/user/password/:pk", s.ResetPassword)
+	r.PATCH("/me/password", s.PatchPassword)
 	r.POST("/login", s.Login)
 }
 

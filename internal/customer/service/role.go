@@ -13,7 +13,6 @@ import (
 	pbRole "gin-artweb/api/customer/role"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/errors"
 )
 
@@ -42,6 +41,7 @@ func NewRoleService(
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role [post]
+// @Security ApiKeyAuth
 func (s *RoleService) CreateRole(ctx *gin.Context) {
 	var req pbRole.CreateRoleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -71,7 +71,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 }
 
 // @Summary 更新角色
-// @Description 本接口用于更新角色
+// @Description 本接口用于更新指定ID的角色
 // @Tags 角色管理
 // @Accept json
 // @Produce json
@@ -82,6 +82,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "角色未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role/{pk} [put]
+// @Security ApiKeyAuth
 func (s *RoleService) UpdateRole(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -127,11 +128,12 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "角色编号"
-// @Success 200 {object} common.MapAPIReply "删除成功"
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "角色未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role/{pk} [delete]
+// @Security ApiKeyAuth
 func (s *RoleService) DeleteRole(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -144,11 +146,11 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	ctx.JSON(common.NoDataReply.Code, common.NoDataReply)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询单个角色
-// @Description 本接口用于查询一个角色
+// @Summary 查询角色
+// @Description 本接口用于查询指定ID的角色
 // @Tags 角色管理
 // @Accept json
 // @Produce json
@@ -158,6 +160,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "角色未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role/{pk} [get]
+// @Security ApiKeyAuth
 func (s *RoleService) GetRole(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
@@ -189,6 +192,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role [get]
+// @Security ApiKeyAuth
 func (s *RoleService) ListRole(ctx *gin.Context) {
 	var req pbRole.ListRoleRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -206,21 +210,20 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 	mbs := ListRoleModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbRole.PagRoleBaseReply{
 		Code: http.StatusOK,
-		Data: common.NewPag(page, size, total, mbs),
+		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
-// @Summary 获取角色权限树
-// @Description 本接口用于获取指定角色的权限树结构
+// @Summary 获取当前用户菜单树
+// @Description 本接口用于获取当前登录用户的菜单权限树
 // @Tags 角色管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "角色编号"
-// @Success 200 {object} pbRole.RoleMenuTreeReply "成功返回权限树"
-// @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "角色未找到"
+// @Success 200 {object} pbRole.RoleMenuTreeReply "成功返回菜单权限树"
+// @Failure 401 {object} errors.Error "用户未认证"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/role/menutree [get]
+// @Router /api/v1/customer/me/menu/tree [get]
+// @Security ApiKeyAuth
 func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 	claims := auth.GetGinUserClaims(ctx)
 	if claims == nil {
@@ -246,11 +249,12 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 }
 
 func (s *RoleService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/roleinfo", s.CreateRole)
-	r.PUT("/roleinfo/:pk", s.UpdateRole)
-	r.DELETE("/roleinfo/:pk", s.DeleteRole)
-	r.GET("/roleinfo/:pk", s.GetRole)
-	r.GET("/roleinfo", s.ListRole)
+	r.POST("/role", s.CreateRole)
+	r.PUT("/role/:pk", s.UpdateRole)
+	r.DELETE("/role/:pk", s.DeleteRole)
+	r.GET("/role/:pk", s.GetRole)
+	r.GET("/role", s.ListRole)
+	r.GET("/me/menu/tree", s.GetRoleMenuTree)
 }
 
 func RoleModelToOutBase(

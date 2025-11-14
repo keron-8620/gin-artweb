@@ -26,16 +26,16 @@ func (m *Meta) Json() string {
 
 type MenuModel struct {
 	database.StandardModel
-	Path         string            `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"path"`
-	Component    string            `gorm:"column:component;type:varchar(200);not null;comment:前端组件" json:"component"`
-	Name         string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Meta         Meta              `gorm:"column:meta;serializer:json;comment:菜单信息" json:"meta"`
-	ArrangeOrder uint32            `gorm:"column:arrange_order;type:integer;comment:排序" json:"arrange_order"`
-	IsActive     bool              `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
-	Descr        string            `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	ParentID     *uint32           `gorm:"column:parent_id;comment:父菜单ID" json:"parent_id"`
-	Parent       *MenuModel        `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE" json:"parent"`
-	Permissions  []PermissionModel `gorm:"many2many:customer_menu_permission;joinForeignKey:menu_id;joinReferences:permission_id;constraint:OnDelete:CASCADE"`
+	Path         string             `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"path"`
+	Component    string             `gorm:"column:component;type:varchar(200);not null;comment:前端组件" json:"component"`
+	Name         string             `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	Meta         Meta               `gorm:"column:meta;serializer:json;comment:菜单信息" json:"meta"`
+	ArrangeOrder uint32             `gorm:"column:arrange_order;type:integer;comment:排序" json:"arrange_order"`
+	IsActive     bool               `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
+	Descr        string             `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
+	ParentID     *uint32            `gorm:"column:parent_id;comment:父菜单ID" json:"parent_id"`
+	Parent       *MenuModel         `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE" json:"parent"`
+	Permissions  []*PermissionModel `gorm:"many2many:customer_menu_permission;joinForeignKey:menu_id;joinReferences:permission_id;constraint:OnDelete:CASCADE"`
 }
 
 func (m *MenuModel) TableName() string {
@@ -56,15 +56,27 @@ func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m.ParentID != nil {
 		enc.AddUint32("parent_id", *m.ParentID)
 	}
+	zap.Uint32s(PermissionIDsKey, database.ListModelToIDs(m.Permissions))
 	return nil
+}
+
+func ListMenuModelToUint32s(ms []MenuModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+	us := make([]uint32, len(ms))
+	for _, m := range ms {
+		us = append(us, m.ID)
+	}
+	return us
 }
 
 type MenuRepo interface {
 	CreateModel(context.Context, *MenuModel) error
-	UpdateModel(context.Context, map[string]any, []PermissionModel, ...any) error
+	UpdateModel(context.Context, map[string]any, []*PermissionModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*MenuModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, []MenuModel, error)
+	ListModel(context.Context, database.QueryParams) (int64, []*MenuModel, error)
 	AddGroupPolicy(context.Context, MenuModel) error
 	RemoveGroupPolicy(context.Context, MenuModel, bool) error
 }
@@ -104,7 +116,7 @@ func (uc *MenuUsecase) GetParentMenu(
 func (uc *MenuUsecase) GetPermissions(
 	ctx context.Context,
 	permIDs []uint32,
-) ([]PermissionModel, *errors.Error) {
+) ([]*PermissionModel, *errors.Error) {
 	if len(permIDs) == 0 {
 		return nil, nil
 	}
@@ -207,7 +219,7 @@ func (uc *MenuUsecase) ListMenu(
 	orderBy []string,
 	isCount bool,
 	preloads []string,
-) (int64, []MenuModel, *errors.Error) {
+) (int64, []*MenuModel, *errors.Error) {
 	qp := database.QueryParams{
 		Preloads: preloads,
 		Query:    query,
@@ -224,12 +236,12 @@ func (uc *MenuUsecase) ListMenu(
 }
 
 func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) error {
-	_, mms, err := uc.ListMenu(ctx, 0, 0, nil, nil, false, nil)
+	_, mms, err := uc.ListMenu(ctx, 0, 0, nil, nil, false, []string{"Parent", "Permissions"})
 	if err != nil {
 		return err
 	}
 	for _, mm := range mms {
-		if err := uc.menuRepo.AddGroupPolicy(ctx, mm); err != nil {
+		if err := uc.menuRepo.AddGroupPolicy(ctx, *mm); err != nil {
 			return ErrAddGroupPolicy.WithCause(err)
 		}
 	}
