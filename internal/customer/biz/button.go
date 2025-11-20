@@ -6,8 +6,14 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
+)
+
+const (
+	ButtonIDKey  = "button_id"
+	ButtonIDsKey = "button_ids"
 )
 
 type ButtonModel struct {
@@ -34,8 +40,29 @@ func (m *ButtonModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddString("descr", m.Descr)
 	enc.AddUint32("menu_id", m.MenuID)
-	zap.Uint32s(PermissionIDsKey, ListPermissionModelToUint32s(m.Permissions))
+	enc.AddArray(PermissionIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, perm := range m.Permissions {
+			ae.AppendUint32(perm.ID)
+		}
+		return nil
+	}))
 	return nil
+}
+
+func ListButtonModelToUint32s(bms *[]ButtonModel) []uint32 {
+	if bms == nil {
+		return []uint32{}
+	}
+	ms := *bms
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
 }
 
 type ButtonUsecase struct {
@@ -47,12 +74,12 @@ type ButtonUsecase struct {
 
 type ButtonRepo interface {
 	CreateModel(context.Context, *ButtonModel) error
-	UpdateModel(context.Context, map[string]any, []PermissionModel, ...any) error
+	UpdateModel(context.Context, map[string]any, *[]PermissionModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*ButtonModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, []ButtonModel, error)
-	AddGroupPolicy(context.Context, ButtonModel) error
-	RemoveGroupPolicy(context.Context, ButtonModel, bool) error
+	ListModel(context.Context, database.QueryParams) (int64, *[]ButtonModel, error)
+	AddGroupPolicy(context.Context, *ButtonModel) error
+	RemoveGroupPolicy(context.Context, *ButtonModel, bool) error
 }
 
 func NewButtonUsecase(
@@ -73,25 +100,70 @@ func (uc *ButtonUsecase) GetMenu(
 	ctx context.Context,
 	menuID uint32,
 ) (*MenuModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询按钮关联的菜单",
+		zap.Uint32(MenuIDKey, menuID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := uc.menuRepo.FindModel(ctx, nil, menuID)
 	if err != nil {
+		uc.log.Error(
+			"查询按钮关联的菜单失败",
+			zap.Error(err),
+			zap.Uint32(MenuIDKey, menuID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, map[string]any{"menu_id": menuID})
 	}
+
+	uc.log.Info(
+		"查询按钮关联的菜单成功",
+		zap.Uint32(MenuIDKey, menuID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return m, nil
 }
 
 func (uc *ButtonUsecase) GetPermissions(
 	ctx context.Context,
 	permIDs []uint32,
-) ([]PermissionModel, *errors.Error) {
-	if len(permIDs) == 0 {
-		return nil, nil
+) (*[]PermissionModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
 	}
+
+	if len(permIDs) == 0 {
+		return &[]PermissionModel{}, nil
+	}
+
+	uc.log.Info(
+		"开始查询按钮关联的权限列表",
+		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	qp := database.NewPksQueryParams(permIDs)
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
+		uc.log.Error(
+			"查询按钮关联的权限列表失败",
+			zap.Error(err),
+			zap.Uint32s(PermissionIDsKey, permIDs),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"查询按钮关联的权限列表成功",
+		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return ms, nil
 }
 
@@ -100,24 +172,56 @@ func (uc *ButtonUsecase) CreateButton(
 	permIDs []uint32,
 	m ButtonModel,
 ) (*ButtonModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始创建按钮",
+		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	menu, err := uc.GetMenu(ctx, m.MenuID)
 	if err != nil {
 		return nil, err
 	}
 	m.Menu = *menu
+
 	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
 		return nil, err
 	}
-	if len(perms) > 0 {
-		m.Permissions = perms
+	if len(*perms) > 0 {
+		m.Permissions = *perms
 	}
+
 	if err := uc.buttonRepo.CreateModel(ctx, &m); err != nil {
+		uc.log.Error(
+			"创建按钮失败",
+			zap.Error(err),
+			zap.Object(database.ModelKey, &m),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, nil)
 	}
-	if err := uc.buttonRepo.AddGroupPolicy(ctx, m); err != nil {
+
+	if err := uc.buttonRepo.AddGroupPolicy(ctx, &m); err != nil {
+		uc.log.Error(
+			"添加按钮组策略失败",
+			zap.Error(err),
+			zap.Object(database.ModelKey, &m),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
+
+	uc.log.Info(
+		"按钮创建成功",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return &m, nil
 }
 
@@ -127,24 +231,65 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 	permIDs []uint32,
 	data map[string]any,
 ) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始更新按钮",
+		zap.Uint32(ButtonIDKey, buttonID),
+		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Any(database.UpdateDataKey, data),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
 		return err
 	}
+
 	data["id"] = buttonID
 	if err := uc.buttonRepo.UpdateModel(ctx, data, perms, "id = ?", buttonID); err != nil {
+		uc.log.Error(
+			"更新按钮失败",
+			zap.Error(err),
+			zap.Uint32(ButtonIDKey, buttonID),
+			zap.Any(database.UpdateDataKey, data),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return database.NewGormError(err, data)
 	}
+
 	m, rErr := uc.FindButtonByID(ctx, []string{"Menu", "Permissions"}, buttonID)
 	if rErr != nil {
 		return rErr
 	}
-	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, *m, false); err != nil {
+
+	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, m, false); err != nil {
+		uc.log.Error(
+			"移除旧按钮组策略失败",
+			zap.Error(err),
+			zap.Uint32(ButtonIDKey, buttonID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return ErrRemoveGroupPolicy.WithCause(err)
 	}
-	if err := uc.buttonRepo.AddGroupPolicy(ctx, *m); err != nil {
+
+	if err := uc.buttonRepo.AddGroupPolicy(ctx, m); err != nil {
+		uc.log.Error(
+			"添加新按钮组策略失败",
+			zap.Error(err),
+			zap.Uint32(ButtonIDKey, buttonID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return ErrAddGroupPolicy.WithCause(err)
 	}
+
+	uc.log.Info(
+		"按钮更新成功",
+		zap.Uint32(ButtonIDKey, buttonID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }
 
@@ -152,16 +297,46 @@ func (uc *ButtonUsecase) DeleteButtonByID(
 	ctx context.Context,
 	buttonID uint32,
 ) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始删除按钮",
+		zap.Uint32(ButtonIDKey, buttonID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, rErr := uc.FindButtonByID(ctx, []string{"Menu", "Permissions"}, buttonID)
 	if rErr != nil {
 		return rErr
 	}
+
 	if err := uc.buttonRepo.DeleteModel(ctx, buttonID); err != nil {
+		uc.log.Error(
+			"删除按钮失败",
+			zap.Error(err),
+			zap.Uint32(ButtonIDKey, buttonID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return database.NewGormError(err, map[string]any{"id": buttonID})
 	}
-	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, *m, true); err != nil {
+
+	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, m, true); err != nil {
+		uc.log.Error(
+			"移除按钮组策略失败",
+			zap.Error(err),
+			zap.Uint32(ButtonIDKey, buttonID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return ErrRemoveGroupPolicy.WithCause(err)
 	}
+
+	uc.log.Info(
+		"按钮删除成功",
+		zap.Uint32(ButtonIDKey, buttonID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }
 
@@ -170,10 +345,33 @@ func (uc *ButtonUsecase) FindButtonByID(
 	preloads []string,
 	buttonID uint32,
 ) (*ButtonModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询按钮",
+		zap.Strings(database.PreloadKey, preloads),
+		zap.Uint32(ButtonIDKey, buttonID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := uc.buttonRepo.FindModel(ctx, preloads, buttonID)
 	if err != nil {
+		uc.log.Error(
+			"查询按钮失败",
+			zap.Error(err),
+			zap.Uint32(ButtonIDKey, buttonID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, map[string]any{"id": buttonID})
 	}
+
+	uc.log.Info(
+		"查询按钮成功",
+		zap.Uint32(ButtonIDKey, buttonID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return m, nil
 }
 
@@ -184,7 +382,22 @@ func (uc *ButtonUsecase) ListButton(
 	orderBy []string,
 	isCount bool,
 	preloads []string,
-) (int64, []ButtonModel, *errors.Error) {
+) (int64, *[]ButtonModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return 0, nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询角色列表",
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Any("query", query),
+		zap.Strings("order_by", orderBy),
+		zap.Bool("is_count", isCount),
+		zap.Strings("preloads", preloads),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	qp := database.QueryParams{
 		Preloads: preloads,
 		Query:    query,
@@ -193,22 +406,67 @@ func (uc *ButtonUsecase) ListButton(
 		Offset:   max(page-1, 0),
 		IsCount:  isCount,
 	}
+
 	count, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
+		uc.log.Error(
+			"查询按钮列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"查询按钮列表成功",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return count, ms, nil
 }
 
-func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) error {
+func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始加载按钮策略",
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	_, bms, err := uc.ListButton(ctx, 0, 0, nil, nil, false, []string{"Menu", "Permissions"})
 	if err != nil {
+		uc.log.Error(
+			"加载按钮策略时查询按钮列表失败",
+			zap.Error(err),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return err
 	}
-	for _, bm := range bms {
-		if err := uc.buttonRepo.AddGroupPolicy(ctx, bm); err != nil {
-			return ErrAddGroupPolicy.WithCause(err)
+
+	var policyCount int
+	if bms != nil {
+		ms := *bms
+		policyCount = len(ms)
+		for i := range ms {
+			if err := uc.buttonRepo.AddGroupPolicy(ctx, &ms[i]); err != nil {
+				uc.log.Error(
+					"加载按钮策略失败",
+					zap.Error(err),
+					zap.Uint32(MenuIDKey, ms[i].ID),
+					zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				)
+				return ErrAddGroupPolicy.WithCause(err)
+			}
 		}
 	}
+
+	uc.log.Info(
+		"按钮策略加载成功",
+		zap.Int("policy_count", policyCount),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }

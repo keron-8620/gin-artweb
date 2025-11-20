@@ -4,7 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	golog "log"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -12,14 +14,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 
 	customer "gin-artweb/internal/customer/server"
 
 	"gin-artweb/docs"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/config"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/log"
@@ -30,9 +35,7 @@ const version = "v0.17.6.3.1"
 
 const (
 	serverLogName   = "server.log"
-	accessLogName   = "access.log"
 	databaseLogName = "database.log"
-	serviceLogName  = "service.log"
 )
 
 type initialize struct {
@@ -51,12 +54,16 @@ func newInitialize(path string) (*initialize, func(), error) {
 	conf := config.NewSystemConf(path)
 
 	// 初始化服务器日志记录器
-	write := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, serverLogName))
+	write := log.NewLumLogger(conf.Log, filepath.Join(common.LogDir, serverLogName))
 	logger := log.NewZapLoggerMust(conf.Log.Level, write)
 
 	// 创建GORM数据库配置并连接数据库
-	dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, databaseLogName))
-	dbConf := database.NewGormConfig(dbWrite)
+	var dbLog *golog.Logger
+	if conf.Database.LogSQL {
+		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(common.LogDir, databaseLogName))
+		dbLog = golog.New(dbWrite, " ", golog.LstdFlags)
+	}
+	dbConf := database.NewGormConfig(dbLog)
 	db, err := database.NewGormDB(conf.Database.Type, conf.Database.Dns, dbConf)
 	if err != nil {
 		logger.Error("数据库连接失败", zap.Error(err))
@@ -89,7 +96,7 @@ func newInitialize(path string) (*initialize, func(), error) {
 func main() {
 	// 定义并解析命令行参数，指定配置文件路径，默认为 "../config/system.yaml"
 	var configPath string
-	flag.StringVar(&configPath, "config", "../config/system.yaml", "Path to config file")
+	flag.StringVar(&configPath, "config", "./config/system.yaml", "Path to config file")
 	flag.Parse()
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
@@ -119,8 +126,8 @@ func main() {
 		// 判断是否启用 SSL/TLS 加密传输
 		if i.conf.Server.SSL.Enable {
 			// 构造证书和私钥的完整路径
-			crtPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.CrtPath)
-			keyPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.KeyPath)
+			crtPath := filepath.Join(common.ConfigDir, i.conf.Server.SSL.CrtPath)
+			keyPath := filepath.Join(common.ConfigDir, i.conf.Server.SSL.KeyPath)
 
 			// 校验证书文件是否存在
 			if _, statErr := os.Stat(crtPath); os.IsNotExist(statErr) {
@@ -166,7 +173,7 @@ func main() {
 
 	// 创建带超时控制的上下文对象用于通知服务器关闭
 	ctx, cancel := context.WithTimeout(context.Background(),
-		time.Duration(i.conf.Security.TimeoutShutdown)*time.Second)
+		time.Duration(i.conf.Security.Timeout.ShutdownTimeout)*time.Second)
 	defer cancel()
 
 	// 执行服务器优雅关闭逻辑
@@ -179,14 +186,37 @@ func main() {
 }
 
 func newRouter(init *initialize) *gin.Engine {
-	wrire := log.NewLumLogger(init.conf.Log, filepath.Join(config.LogDir, serviceLogName))
-	// 创建 Zap 日志记录器用于服务日志输出
-	logger := log.NewZapLoggerMust(init.conf.Log.Level, wrire)
+	loggers := NewLoggers(init.conf.Log)
 	r := gin.New()
+
+	// 注册跨域请求处理中间件
+	r.Use(middleware.CorsMiddleware(init.conf.CORS))
+
+	// 注册链路追踪处理中间件
+	r.Use(middleware.TracingMiddleware(loggers.Service))
+
+	// 注册统一异常处理中间件
+	r.Use(middleware.ErrorMiddleware(loggers.Service))
+
+	// 注册超时处理中间件
+	r.Use(middleware.TimeoutMiddleware(time.Duration(init.conf.Security.Timeout.RequestTimeout) * time.Second))
+
+	// 注册时间戳处理中间件,用于防御重放攻击
+	if init.conf.Security.Timestamp.CheckTimestamp {
+		r.Use(middleware.TimestampMiddleware(
+			loggers.Service,
+			int64(init.conf.Security.Timestamp.Tolerance),
+			int64(init.conf.Security.Timestamp.FutureTolerance),
+		))
+	}
+
+	// IP限流中间件
+	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.conf.Rate.RPS), init.conf.Rate.Burst))
+
 	r.GET("/", func(c *gin.Context) {
-		c.File(filepath.Join(config.BaseDir, "html", "index.html"))
+		c.File(filepath.Join(common.BaseDir, "html", "index.html"))
 	})
-	r.Static("/static", filepath.Join(config.BaseDir, "html", "static"))
+	r.Static("/static", filepath.Join(common.BaseDir, "html", "static"))
 
 	// 设置 Swagger 文档信息
 	docs.SwaggerInfo.Title = "gin-artweb"
@@ -196,19 +226,32 @@ func newRouter(init *initialize) *gin.Engine {
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// 注册访问日志中间件
-	accWriet := log.NewLumLogger(init.conf.Log, filepath.Join(config.LogDir, accessLogName))
-	r.Use(gin.LoggerWithWriter(accWriet))
-
-	// 注册统一异常处理中间件
-	r.Use(middleware.ErrorMiddleware(logger))
-
-	// 注册跨域请求处理中间件
-	r.Use(middleware.CorsMiddleware(init.conf.CORS))
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
 
 	apiRouter := r.Group("/api")
 
+	dbTimeout := database.DBTimeout{
+		ListTimeout:  time.Duration(init.conf.Database.ListTimeout) * time.Second,
+		ReadTimeout:  time.Duration(init.conf.Database.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(init.conf.Database.WriteTimeout) * time.Second,
+	}
+
 	// 初始化加载业务模块
-	customer.NewServer(apiRouter, init.conf, init.db, logger)
+	customer.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	return r
+}
+
+func NewLoggers(conf *config.LogConfig) *log.Loggers {
+	serviceWrire := log.NewLumLogger(conf, filepath.Join(common.LogDir, "service.log"))
+	bizWrire := log.NewLumLogger(conf, filepath.Join(common.LogDir, "biz.log"))
+	dataWrire := log.NewLumLogger(conf, filepath.Join(common.LogDir, "data.log"))
+	return &log.Loggers{
+		Service: log.NewZapLoggerMust(conf.Level, serviceWrire),
+		Biz:     log.NewZapLoggerMust(conf.Level, bizWrire),
+		Data:    log.NewZapLoggerMust(conf.Level, dataWrire),
+	}
 }

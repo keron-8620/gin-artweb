@@ -61,4 +61,12 @@ var (
 		"因登录失败次数过多，账户已被锁定",
 		nil,
 	)
+
+	ErrPermissionExists = errors.New(
+		http.StatusNotFound,
+		"perm_exists",
+		"用户不存在",
+		nil,
+	)
+
 )

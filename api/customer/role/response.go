@@ -23,16 +23,16 @@ type RoleOutBase struct {
 
 type RoleOut struct {
 	RoleOutBase
-	Permissions []*permission.PermissionOutBase `json:"permissions"`
-	Menus       []*menu.MenuOutBase             `json:"menus"`
-	Buttons     []*button.ButtonOutBase         `json:"buttons"`
+	Permissions *[]permission.PermissionOutBase `json:"permissions"`
+	Menus       *[]menu.MenuOutBase             `json:"menus"`
+	Buttons     *[]button.ButtonOutBase         `json:"buttons"`
 }
 
 // RoleBaseReply 角色响应结构
-type RoleReply = common.APIReply[RoleOut]
+type RoleReply = common.APIReply[*RoleOut]
 
 // PagRoleBaseReply 角色的分页响应结构
-type PagRoleBaseReply = common.APIReply[*common.Pag[*RoleOutBase]]
+type PagRoleBaseReply = common.APIReply[*common.Pag[RoleOutBase]]
 
 // RoleMenuPerm 角色菜单权限
 type RoleMenuPerm struct {
@@ -44,4 +44,4 @@ type RoleMenuPerm struct {
 }
 
 // RolePermTreeReply 角色响应结构
-type RoleMenuTreeReply = common.APIReply[[]*RoleMenuPerm]
+type RoleMenuTreeReply = common.APIReply[*[]RoleMenuPerm]

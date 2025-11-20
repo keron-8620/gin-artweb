@@ -2,15 +2,9 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"path/filepath"
 	"time"
 
-	"github.com/casbin/casbin/v2"
-	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
@@ -19,69 +13,65 @@ import (
 	"gin-artweb/pkg/auth"
 	"gin-artweb/pkg/config"
 	"gin-artweb/pkg/crypto"
+	"gin-artweb/pkg/database"
+	"gin-artweb/pkg/log"
 )
 
 func NewServer(
 	router *gin.RouterGroup,
 	conf *config.SystemConf,
 	db *gorm.DB,
-	logger *zap.Logger,
+	dbTimeout *database.DBTimeout,
+	loggers *log.Loggers,
 ) {
-	if err := db.AutoMigrate(
-		&biz.PermissionModel{},
-		&biz.MenuModel{},
-		&biz.ButtonModel{},
-		&biz.RoleModel{},
-		&biz.UserModel{},
-		&biz.LoginRecordModel{},
-	); err != nil {
-		logger.Error("数据库自动迁移失败", zap.Error(err))
+	if err := dbAutoMigrate(db, loggers.Data); err != nil {
 		panic(err)
 	}
 
-	ctx := context.Background()
-	modelPath := filepath.Join(config.ConfigDir, "model.conf")
-	loginURL := "/api/v1/customer/login"
-	policyLine := fmt.Sprintf(`p, *, %s, %s`, loginURL, http.MethodPost)
-	adapter := stringadapter.NewAdapter(policyLine)
-	enf, err := casbin.NewEnforcer(modelPath, adapter)
+	enforcer, err := NewCasbinEnforcer(loggers.Service, conf.Security.Token.SecretKey)
 	if err != nil {
-		logger.Error("创建casbin失败", zap.Error(err))
 		panic(err)
 	}
-	enforcer := auth.NewAuthEnforcer(enf, conf.Security.SecretKey)
-	hasher := crypto.NewBcryptHasher(12)
 
-	permissionRepo := data.NewPermissionRepo(logger, db, enforcer)
-	menuRepo := data.NewMenuRepo(logger, db, enforcer)
-	buttonRepo := data.NewButtonRepo(logger, db, enforcer)
-	roleRepo := data.NewRoleRepo(logger, db, enforcer)
-	userRepo := data.NewUserRepo(logger, db)
-	recordRepo := data.NewRecordRepo(logger, db,
-		time.Duration(conf.Security.LoginFailLockMinutes)*time.Minute,
-		time.Duration(conf.Security.TokenClearMinutes)*time.Minute,
-		conf.Security.LoginFailMaxTimes,
+	permissionRepo := data.NewPermissionRepo(loggers.Data, db, dbTimeout, enforcer)
+	menuRepo := data.NewMenuRepo(loggers.Data, db, dbTimeout, enforcer)
+	buttonRepo := data.NewButtonRepo(loggers.Data, db, dbTimeout, enforcer)
+	roleRepo := data.NewRoleRepo(loggers.Data, db, dbTimeout, enforcer)
+	userRepo := data.NewUserRepo(loggers.Data, db, dbTimeout)
+	recordRepo := data.NewRecordRepo(loggers.Data, db, dbTimeout,
+		time.Duration(conf.Security.Login.LockMinutes)*time.Minute,
+		time.Duration(conf.Security.Token.ClearMinutes)*time.Minute,
+		conf.Security.Login.MaxFailedAttempts,
 	)
 
-	permissionUsecase := biz.NewPermissionUsecase(logger, permissionRepo)
-	menuUsecase := biz.NewMenuUsecase(logger, permissionRepo, menuRepo)
-	buttonUsecase := biz.NewButtonUsecase(logger, permissionRepo, menuRepo, buttonRepo)
-	roleUsecase := biz.NewRoleUsecase(logger, permissionRepo, menuRepo, buttonRepo, roleRepo)
-	userUsecase := biz.NewUserUsecase(logger, roleRepo, userRepo, recordRepo, hasher, conf.Security)
-	recordUsecase := biz.NewRecordUsecase(logger, recordRepo)
+	permissionUsecase := biz.NewPermissionUsecase(loggers.Biz, permissionRepo)
+	menuUsecase := biz.NewMenuUsecase(loggers.Biz, permissionRepo, menuRepo)
+	buttonUsecase := biz.NewButtonUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo)
+	roleUsecase := biz.NewRoleUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo, roleRepo)
+	userUsecase := biz.NewUserUsecase(loggers.Biz, roleRepo, userRepo, recordRepo, crypto.NewBcryptHasher(12), conf.Security)
+	recordUsecase := biz.NewRecordUsecase(loggers.Biz, recordRepo)
 
-	permissionUsecase.LoadPermissionPolicy(ctx)
-	menuUsecase.LoadMenuPolicy(ctx)
-	buttonUsecase.LoadButtonPolicy(ctx)
-	roleUsecase.LoadRolePolicy(ctx)
-	router.Use(auth.AuthMiddleware(enforcer, logger, loginURL))
+	ctx := context.Background()
+	if pErr := permissionUsecase.LoadPermissionPolicy(ctx); pErr != nil {
+		panic(pErr.Error())
+	}
+	if pErr := menuUsecase.LoadMenuPolicy(ctx); pErr != nil {
+		panic(pErr.Error())
+	}
+	if pErr := buttonUsecase.LoadButtonPolicy(ctx); pErr != nil {
+		panic(pErr.Error())
+	}
+	if pErr := roleUsecase.LoadRolePolicy(ctx); pErr != nil {
+		panic(pErr.Error())
+	}
+	router.Use(auth.AuthMiddleware(enforcer, loggers.Service, "/api/v1/customer/login"))
 
-	permissionService := service.NewPermissionService(logger, permissionUsecase)
-	menuService := service.NewMenuService(logger, menuUsecase)
-	buttonService := service.NewButtonService(logger, buttonUsecase)
-	roleService := service.NewRoleService(logger, roleUsecase)
-	userService := service.NewUserService(logger, userUsecase, recordUsecase)
-	recordService := service.NewRecordService(logger, recordUsecase)
+	permissionService := service.NewPermissionService(loggers.Service, permissionUsecase)
+	menuService := service.NewMenuService(loggers.Service, menuUsecase)
+	buttonService := service.NewButtonService(loggers.Service, buttonUsecase)
+	roleService := service.NewRoleService(loggers.Service, roleUsecase)
+	userService := service.NewUserService(loggers.Service, userUsecase, recordUsecase)
+	recordService := service.NewRecordService(loggers.Service, recordUsecase)
 
 	appRouter := router.Group("/v1/customer")
 	permissionService.LoadRouter(appRouter)

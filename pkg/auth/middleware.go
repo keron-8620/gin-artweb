@@ -52,7 +52,7 @@ func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string)
 		}
 
 		// 身份认证
-		info, err := enforcer.Authentication(token)
+		info, err := enforcer.Authentication(c, token)
 		if err != nil {
 			c.JSON(err.Code, err.Reply())
 			c.Abort()
@@ -61,7 +61,7 @@ func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string)
 		role := RoleToSubject(info.RoleID)
 
 		// 访问鉴权
-		hasPerm, err := enforcer.Authorization(role, fullPath, c.Request.Method)
+		hasPerm, err := enforcer.Authorization(c, role, fullPath, c.Request.Method)
 		if err != nil {
 			c.JSON(err.Code, err.Reply())
 			c.Abort()

@@ -10,6 +10,7 @@ import (
 	pbButton "gin-artweb/api/customer/button"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -43,11 +44,24 @@ func NewButtonService(
 func (s *ButtonService) CreateButton(ctx *gin.Context) {
 	var req pbButton.CreateButtonRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定创建按钮请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始创建按钮",
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucButton.CreateButton(ctx, req.PermissionIDs, biz.ButtonModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: req.ID},
@@ -59,12 +73,27 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 		MenuID:       req.MenuID,
 	})
 	if err != nil {
+		s.log.Error(
+			"创建按钮失败",
+			zap.Error(err),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"创建按钮成功",
+		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(http.StatusCreated, &pbButton.ButtonReply{
 		Code: http.StatusCreated,
-		Data: *ButtonModelToOut(*m),
+		Data: ButtonModelToOut(*m),
 	})
 }
 
@@ -84,35 +113,75 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定按钮ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
 	var req pbButton.UpdateButtonRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定更新按钮请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始更新按钮",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucButton.UpdateButtonByID(ctx, uri.PK, req.PermissionIDs, map[string]any{
 		"name":          req.Name,
 		"arrange_order": req.ArrangeOrder,
 		"is_active":     req.IsActive,
 		"descr":         req.Descr,
 	}); err != nil {
+		s.log.Error(
+			"更新按钮失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"更新按钮成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucButton.FindButtonByID(ctx, []string{"Permissions", "Menu"}, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询更新后的按钮信息失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
 	ctx.JSON(http.StatusOK, &pbButton.ButtonReply{
 		Code: http.StatusOK,
-		Data: *ButtonModelToOut(*m),
+		Data: ButtonModelToOut(*m),
 	})
 }
 
@@ -131,15 +200,40 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定删除按钮ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始删除按钮",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucButton.DeleteButtonByID(ctx, uri.PK); err != nil {
+		s.log.Error(
+			"删除按钮失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"删除按钮成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
@@ -158,19 +252,44 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 func (s *ButtonService) GetButton(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询按钮ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询按钮详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucButton.FindButtonByID(ctx, []string{"Permissions", "Menu"}, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询按钮详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询按钮详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(http.StatusOK, &pbButton.ButtonReply{
 		Code: http.StatusOK,
-		Data: *ButtonModelToOut(*m),
+		Data: ButtonModelToOut(*m),
 	})
 }
 
@@ -193,17 +312,42 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 func (s *ButtonService) ListButton(ctx *gin.Context) {
 	var req pbButton.ListButtonRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询按钮列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询按钮列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
 	total, ms, err := s.ucButton.ListButton(ctx, page, size, query, []string{"id"}, true, nil)
 	if err != nil {
+		s.log.Error(
+			"查询按钮列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询按钮列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListButtonModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbButton.PagButtonBaseReply{
 		Code: http.StatusOK,
@@ -234,16 +378,20 @@ func ButtonModelToOutBase(
 }
 
 func ListButtonModelToOutBase(
-	ms []biz.ButtonModel,
-) []*pbButton.ButtonOutBase {
-	mso := make([]*pbButton.ButtonOutBase, 0, len(ms))
+	bms *[]biz.ButtonModel,
+) *[]pbButton.ButtonOutBase {
+	if bms == nil {
+		return &[]pbButton.ButtonOutBase{}
+	}
+	ms := *bms
+	mso := make([]pbButton.ButtonOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := ButtonModelToOutBase(m)
-			mso = append(mso, mo)
+			mso = append(mso, *mo)
 		}
 	}
-	return mso
+	return &mso
 }
 
 func ButtonModelToOut(
@@ -256,6 +404,6 @@ func ButtonModelToOut(
 	return &pbButton.ButtonOut{
 		ButtonOutBase: *ButtonModelToOutBase(m),
 		Menu:          menu,
-		Permissions:   ListPermModelToOut(m.Permissions),
+		Permissions:   ListPermModelToOut(&m.Permissions),
 	}
 }

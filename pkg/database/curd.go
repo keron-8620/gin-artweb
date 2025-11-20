@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
@@ -14,6 +15,7 @@ import (
 	"gin-artweb/pkg/errors"
 )
 
+// zap日志中数据库相关常用key
 const (
 	UpdateDataKey  = "data"         // 更新数据字段
 	ConditionKey   = "conds"        // 查询条件参数
@@ -22,48 +24,11 @@ const (
 	QueryParamsKey = "query_params" // 查询参数
 )
 
-// QueryParams 查询参数结构体，用于配置列表查询的各种参数
-type QueryParams struct {
-	Preloads []string       // 需要预加载的关联关系列表
-	Query    map[string]any // 查询条件映射
-	OrderBy  []string       // 排序字段列表
-	Limit    int            // 限制返回记录数
-	Offset   int            // 偏移量
-	IsCount  bool           // 是否只查询总数
-}
-
-func NewPksQueryParams(pks []uint32) QueryParams {
-	return QueryParams{
-		Preloads: []string{},
-		Query:    map[string]any{"id in ?": pks},
-		OrderBy:  []string{"id"},
-		IsCount:  false,
-		Limit:    0,
-		Offset:   0,
-	}
-}
-
-func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	// 记录预加载字段
-	if len(q.Preloads) > 0 {
-		enc.AddString(PreloadKey, strings.Join(q.Preloads, ","))
-	} else {
-		enc.AddString(PreloadKey, "")
-	}
-	// 记录查询条件
-	enc.AddReflected("query", q.Query)
-	// 记录排序字段
-	if len(q.OrderBy) > 0 {
-		enc.AddString("order_by", strings.Join(q.OrderBy, ","))
-	} else {
-		enc.AddString("order_by", "")
-	}
-	// 记录分页参数
-	enc.AddInt("limit", q.Limit)
-	enc.AddInt("offset", q.Offset)
-	// 记录是否查询总数
-	enc.AddBool("is_count", q.IsCount)
-	return nil
+// DBTimeout 数据库操作超时参数
+type DBTimeout struct {
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	ListTimeout  time.Duration
 }
 
 // DBPanic 处理数据库操作中的panic异常，自动回滚事务并记录错误日志
@@ -307,4 +272,48 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	}
 
 	return count, nil
+}
+
+// QueryParams 查询参数结构体，用于配置列表查询的各种参数
+type QueryParams struct {
+	Preloads []string       // 需要预加载的关联关系列表
+	Query    map[string]any // 查询条件映射
+	OrderBy  []string       // 排序字段列表
+	Limit    int            // 限制返回记录数
+	Offset   int            // 偏移量
+	IsCount  bool           // 是否只查询总数
+}
+
+func NewPksQueryParams(pks []uint32) QueryParams {
+	return QueryParams{
+		Preloads: []string{},
+		Query:    map[string]any{"id in ?": pks},
+		OrderBy:  []string{"id"},
+		IsCount:  false,
+		Limit:    0,
+		Offset:   0,
+	}
+}
+
+func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	// 记录预加载字段
+	if len(q.Preloads) > 0 {
+		enc.AddString(PreloadKey, strings.Join(q.Preloads, ","))
+	} else {
+		enc.AddString(PreloadKey, "")
+	}
+	// 记录查询条件
+	enc.AddReflected("query", q.Query)
+	// 记录排序字段
+	if len(q.OrderBy) > 0 {
+		enc.AddString("order_by", strings.Join(q.OrderBy, ","))
+	} else {
+		enc.AddString("order_by", "")
+	}
+	// 记录分页参数
+	enc.AddInt("limit", q.Limit)
+	enc.AddInt("offset", q.Offset)
+	// 记录是否查询总数
+	enc.AddBool("is_count", q.IsCount)
+	return nil
 }

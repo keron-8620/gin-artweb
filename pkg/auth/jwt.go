@@ -5,6 +5,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	UserIDKey     = "user_id"
+	UserClaimsKey = "user_claims"
+)
+
 type UserClaims struct {
 	jwt.RegisteredClaims
 	IsStaff bool   `json:"isf"` // 是否是工作人员

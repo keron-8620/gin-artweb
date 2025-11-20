@@ -408,7 +408,7 @@ const docTemplate = `{
             }
         },
         "/api/v1/customer/me/password": {
-            "put": {
+            "patch": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -1565,7 +1565,7 @@ const docTemplate = `{
             }
         },
         "/api/v1/customer/user/password/{pk}": {
-            "put": {
+            "patch": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -2178,6 +2178,269 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/resource/package": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询程序包列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "程序包管理"
+                ],
+                "summary": "查询程序包列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认为1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认为10",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键字",
+                        "name": "query",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回程序包列表",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.PagPackageReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "上传一个新的程序包文件并创建记录",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "程序包管理"
+                ],
+                "summary": "上传程序包",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "程序包标签，长度限制：1-50个字符",
+                        "name": "label",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "程序包版本，长度限制：1-50个字符",
+                        "name": "version",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "程序包文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "成功返回程序包信息",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.PackageReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/resource/package/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的程序包详细信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "程序包管理"
+                ],
+                "summary": "查询程序包详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "程序包唯一标识符",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回程序包详情",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.PackageReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的程序包",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "程序包管理"
+                ],
+                "summary": "删除程序包",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "程序包唯一标识符",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/resource/package/{pk}/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于下载指定ID的程序包文件",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "程序包管理"
+                ],
+                "summary": "下载程序包",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "程序包唯一标识符",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功下载程序包文件",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "文件未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -2519,6 +2782,38 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/permission.PermissionOutBase"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-pkg_PackageOutBase": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pkg.PackageOutBase"
                     }
                 },
                 "page": {
@@ -3326,6 +3621,78 @@ const docTemplate = `{
                 }
             }
         },
+        "pkg.PackageOutBase": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "oes.tar.gz"
+                },
+                "id": {
+                    "description": "主机ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "artweb"
+                },
+                "uploaded_at": {
+                    "description": "上传时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "version": {
+                    "description": "IP地址",
+                    "type": "string",
+                    "example": "0.17.0.0.1"
+                }
+            }
+        },
+        "pkg.PackageReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/pkg.PackageOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "pkg.PagPackageReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-pkg_PackageOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
         "record.LoginRecordOutBase": {
             "type": "object",
             "properties": {
@@ -3677,9 +4044,9 @@ const docTemplate = `{
             "required": [
                 "is_active",
                 "is_staff",
-                "name",
                 "password",
-                "role_id"
+                "role_id",
+                "username"
             ],
             "properties": {
                 "is_active": {
@@ -3690,11 +4057,6 @@ const docTemplate = `{
                     "description": "是否是工作人员，必填",
                     "type": "boolean"
                 },
-                "name": {
-                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
-                    "type": "string",
-                    "maxLength": 50
-                },
                 "password": {
                     "description": "密码，最大长度20\nRequired: true\nMax length: 20",
                     "type": "string"
@@ -3702,6 +4064,11 @@ const docTemplate = `{
                 "role_id": {
                     "description": "角色ID，必填",
                     "type": "integer"
+                },
+                "username": {
+                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
                 }
             }
         },

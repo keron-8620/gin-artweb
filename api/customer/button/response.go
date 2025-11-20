@@ -27,11 +27,11 @@ type ButtonOutBase struct {
 type ButtonOut struct {
 	ButtonOutBase
 	Menu        *menu.MenuOutBase               `json:"menu"`
-	Permissions []*permission.PermissionOutBase `json:"permissions"`
+	Permissions *[]permission.PermissionOutBase `json:"permissions"`
 }
 
 // ButtonBaseReply 按钮响应结构
-type ButtonReply = common.APIReply[ButtonOut]
+type ButtonReply = common.APIReply[*ButtonOut]
 
 // PagButtonBaseReply 按钮的分页响应结构
-type PagButtonBaseReply = common.APIReply[*common.Pag[*ButtonOutBase]]
+type PagButtonBaseReply = common.APIReply[*common.Pag[ButtonOutBase]]

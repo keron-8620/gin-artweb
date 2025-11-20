@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -38,7 +39,7 @@ func (m *LoginRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 type RecordRepo interface {
 	CreateModel(context.Context, *LoginRecordModel) error
-	ListModel(context.Context, database.QueryParams) (int64, []LoginRecordModel, error)
+	ListModel(context.Context, database.QueryParams) (int64, *[]LoginRecordModel, error)
 	GetLoginFailNum(context.Context, string) (int, error)
 	SetLoginFailNum(context.Context, string, int) error
 }
@@ -62,9 +63,31 @@ func (uc *RecordUsecase) CreateLoginRecord(
 	ctx context.Context,
 	m LoginRecordModel,
 ) (*LoginRecordModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始创建用户登录记录",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := uc.recordRepo.CreateModel(ctx, &m); err != nil {
+		uc.log.Error(
+			"创建用户登录记录失败",
+			zap.Error(err),
+			zap.Object(database.ModelKey, &m),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"用户登录记录创建成功",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return &m, nil
 }
 
@@ -72,7 +95,23 @@ func (uc *RecordUsecase) ListLoginRecord(
 	ctx context.Context,
 	page, size int,
 	query map[string]any,
-) (int64, []LoginRecordModel, *errors.Error) {
+	orderBy []string,
+	isCount bool,
+) (int64, *[]LoginRecordModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return 0, nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询用户登录记录列表",
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Any("query", query),
+		zap.Strings("order_by", orderBy),
+		zap.Bool("is_count", isCount),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	qp := database.QueryParams{
 		Preloads: []string{},
 		Query:    query,
@@ -81,9 +120,22 @@ func (uc *RecordUsecase) ListLoginRecord(
 		Offset:   max(page-1, 0),
 		IsCount:  true,
 	}
+
 	count, ms, err := uc.recordRepo.ListModel(ctx, qp)
 	if err != nil {
+		uc.log.Error(
+			"查询用户登录记录列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"查询用户登录记录列表成功",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return count, ms, nil
 }

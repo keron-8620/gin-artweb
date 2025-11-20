@@ -13,6 +13,7 @@ import (
 	pbRole "gin-artweb/api/customer/role"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/errors"
 )
 
@@ -45,11 +46,24 @@ func NewRoleService(
 func (s *RoleService) CreateRole(ctx *gin.Context) {
 	var req pbRole.CreateRoleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定创建角色请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始创建角色",
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucRole.CreateRole(
 		ctx,
 		req.PermissionIDs,
@@ -61,12 +75,27 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 		},
 	)
 	if err != nil {
+		s.log.Error(
+			"创建角色失败",
+			zap.Error(err),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"创建角色成功",
+		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(http.StatusCreated, &pbRole.RoleReply{
 		Code: http.StatusCreated,
-		Data: *RoleModelToOut(*m),
+		Data: RoleModelToOut(*m),
 	})
 }
 
@@ -86,18 +115,36 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 func (s *RoleService) UpdateRole(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定角色ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
 	var req pbRole.UpdateRoleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定更新角色请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始更新角色",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucRole.UpdateRoleByID(
 		ctx, uri.PK,
 		req.PermissionIDs,
@@ -108,17 +155,37 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			"descr": req.Descr,
 		},
 	); err != nil {
+		s.log.Error(
+			"更新角色失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"更新角色成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询更新后的角色信息失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
 		Code: http.StatusOK,
-		Data: *RoleModelToOut(*m),
+		Data: RoleModelToOut(*m),
 	})
 }
 
@@ -137,15 +204,40 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 func (s *RoleService) DeleteRole(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定删除角色ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始删除角色",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucRole.DeleteRoleByID(ctx, uri.PK); err != nil {
+		s.log.Error(
+			"删除角色失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"删除角色成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
@@ -164,19 +256,44 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 func (s *RoleService) GetRole(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询角色ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询角色详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询角色详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询角色详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
 		Code: http.StatusOK,
-		Data: *RoleModelToOut(*m),
+		Data: RoleModelToOut(*m),
 	})
 }
 
@@ -196,17 +313,42 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 func (s *RoleService) ListRole(ctx *gin.Context) {
 	var req pbRole.ListRoleRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询角色列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询角色列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
 	total, ms, err := s.ucRole.ListRole(ctx, page, size, query, []string{"id"}, true, nil)
 	if err != nil {
+		s.log.Error(
+			"查询角色列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询角色列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListRoleModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbRole.PagRoleBaseReply{
 		Code: http.StatusOK,
@@ -227,24 +369,46 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 	claims := auth.GetGinUserClaims(ctx)
 	if claims == nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
 		return
 	}
+	s.log.Info(
+		"开始获取当前用户菜单树",
+		zap.Uint32(auth.UserIDKey, claims.UserID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	menuTree, err := s.ucRole.GetRoleMenuTree(ctx, claims.RoleID)
 	if err != nil {
+		s.log.Error(
+			"获取当前用户菜单树失败",
+			zap.Error(err),
+			zap.Uint32(auth.UserIDKey, claims.UserID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
-	roleMenuPerms := make([]*pbRole.RoleMenuPerm, 0)
+	s.log.Info(
+		"当前用户菜单树获取成功",
+		zap.Uint32(auth.UserIDKey, claims.UserID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+	roleMenuPerms := make([]pbRole.RoleMenuPerm, 0)
 	for _, node := range menuTree {
 		perm := RoleMenuTreeToOut(node)
 		if perm != nil {
-			roleMenuPerms = append(roleMenuPerms, perm)
+			roleMenuPerms = append(roleMenuPerms, *perm)
 		}
 	}
 	ctx.JSON(http.StatusOK, &pbRole.RoleMenuTreeReply{
 		Code: http.StatusOK,
-		Data: roleMenuPerms,
+		Data: &roleMenuPerms,
 	})
 }
 
@@ -270,35 +434,38 @@ func RoleModelToOutBase(
 }
 
 func ListRoleModelToOutBase(
-	ms []biz.RoleModel,
-) []*pbRole.RoleOutBase {
-	mso := make([]*pbRole.RoleOutBase, 0, len(ms))
+	rms *[]biz.RoleModel,
+) *[]pbRole.RoleOutBase {
+	if rms == nil {
+		return &[]pbRole.RoleOutBase{}
+	}
+	ms := *rms
+	mso := make([]pbRole.RoleOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := RoleModelToOutBase(m)
-			mso = append(mso, mo)
+			mso = append(mso, *mo)
 		}
 	}
-	return mso
+	return &mso
 }
 
 func RoleModelToOut(
 	m biz.RoleModel,
 ) *pbRole.RoleOut {
-	permissions := make([]*pbPerm.PermissionOutBase, 0)
-	menus := make([]*pbMenu.MenuOutBase, 0)
-	buttons := make([]*pbButton.ButtonOutBase, 0)
-
+	var permissions *[]pbPerm.PermissionOutBase
 	if m.Permissions != nil {
-		permissions = ListPermModelToOut(m.Permissions)
+		permissions = ListPermModelToOut(&m.Permissions)
 	}
 
+	var menus *[]pbMenu.MenuOutBase
 	if m.Menus != nil {
-		menus = ListMenuModelToOutBase(m.Menus)
+		menus = ListMenuModelToOutBase(&m.Menus)
 	}
 
+	var buttons *[]pbButton.ButtonOutBase
 	if m.Buttons != nil {
-		buttons = ListButtonModelToOutBase(m.Buttons)
+		buttons = ListButtonModelToOutBase(&m.Buttons)
 	}
 	return &pbRole.RoleOut{
 		RoleOutBase: *RoleModelToOutBase(m),

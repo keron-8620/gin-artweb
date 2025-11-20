@@ -32,4 +32,4 @@ type HostOutBase struct {
 type HostReply = common.APIReply[HostOutBase]
 
 // PagHostReply 主机的分页响应结构
-type PagHostReply = common.APIReply[*common.Pag[*HostOutBase]]
+type PagHostReply = common.APIReply[*common.Pag[HostOutBase]]

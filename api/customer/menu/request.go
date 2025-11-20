@@ -1,6 +1,8 @@
 package menu
 
 import (
+	"go.uber.org/zap/zapcore"
+
 	"gin-artweb/api/common"
 )
 
@@ -48,6 +50,27 @@ type CreateMenuRequest struct {
 	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
+func (req *CreateMenuRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("id", req.ID)
+	enc.AddString("path", req.Path)
+	enc.AddString("component", req.Component)
+	enc.AddObject("meta", &req.Meta)
+	enc.AddString("name", req.Name)
+	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddBool("is_active", req.IsActive)
+	enc.AddString("descr", req.Descr)
+	if req.ParentID != nil {
+		enc.AddUint32("parent_id", *req.ParentID)
+	}
+	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.PermissionIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	return nil
+}
+
 // UpdateMenuRequest 用于更新菜单的请求结构体
 //
 // swagger:model UpdateMenuRequest
@@ -85,6 +108,26 @@ type UpdateMenuRequest struct {
 
 	// 关联权限ID列表，可选
 	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
+}
+
+func (req *UpdateMenuRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("path", req.Path)
+	enc.AddString("component", req.Component)
+	enc.AddObject("meta", &req.Meta)
+	enc.AddString("name", req.Name)
+	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddBool("is_active", req.IsActive)
+	enc.AddString("descr", req.Descr)
+	if req.ParentID != nil {
+		enc.AddUint32("parent_id", *req.ParentID)
+	}
+	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.PermissionIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	return nil
 }
 
 // ListMenuRequest 用于获取菜单列表的请求结构体

@@ -1,4 +1,4 @@
-package config
+package common
 
 import (
 	"fmt"
@@ -8,12 +8,13 @@ import (
 )
 
 type PathConf struct {
-	BaseDir    string
-	ConfigDir  string
-	HtmlDir    string
-	LogsDir    string
-	TmpDir     string
-	StorageDir string
+	BaseDir     string
+	ConfigDir   string
+	HtmlDir     string
+	LogsDir     string
+	TmpDir      string
+	StorageDir  string
+	ResourceDir string
 }
 
 func getBaseDir() string {
@@ -43,10 +44,10 @@ func getBaseDir() string {
 }
 
 var (
-	BaseDir    = getBaseDir()
-	ConfigDir  = filepath.Join(BaseDir, "config")
-	LogDir     = filepath.Join(BaseDir, "logs")
-	TmpDir     = filepath.Join(BaseDir, ".tmp")
-	StorageDir = filepath.Join(BaseDir, "storage")
+	BaseDir     = getBaseDir()
+	ConfigDir   = filepath.Join(BaseDir, "config")
+	LogDir      = filepath.Join(BaseDir, "logs")
+	TmpDir      = filepath.Join(BaseDir, ".tmp")
+	StorageDir  = filepath.Join(BaseDir, "storage")
+	ResourceDir = filepath.Join(BaseDir, "resource")
 )
-

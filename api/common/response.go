@@ -36,10 +36,10 @@ type Pag[T any] struct {
 	// Example: 10
 	Pages int64 `json:"pages" example:"10"`
 	// 对象数组
-	Items []T `json:"items"`
+	Items *[]T `json:"items"`
 }
 
-func NewPag[T any](page, size int, total int64, items []T) *Pag[T] {
+func NewPag[T any](page, size int, total int64, items *[]T) *Pag[T] {
 	var pages int64
 	if total == 0 || size <= 0 {
 		pages = 0

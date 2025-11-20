@@ -13,9 +13,15 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/crypto/ssh"
 
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 	"gin-artweb/pkg/file"
+)
+
+const (
+	HostIDKey  = "host_id"
+	HostIDsKey = "host_ids"
 )
 
 type AnsibleHostVars struct {
@@ -78,9 +84,9 @@ type HostRepo interface {
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*HostModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, []HostModel, error)
+	ListModel(context.Context, database.QueryParams) (int64, *[]HostModel, error)
 	NewSSHClient(context.Context, string, ssh.ClientConfig) (*ssh.Client, error)
-	DeployPublicKey(*ssh.Client, ssh.PublicKey) error
+	DeployPublicKey(context.Context, *ssh.Client, ssh.PublicKey) error
 }
 
 type HostUsecase struct {
@@ -112,15 +118,39 @@ func (uc *HostUsecase) CreateHost(
 	m HostModel,
 	password string,
 ) (*HostModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始创建主机",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := uc.TestSSHConnection(ctx, m.IPAddr, m.Port, m.Username, password); err != nil {
 		return nil, err
 	}
+
 	if err := uc.hostRepo.CreateModel(ctx, &m); err != nil {
+		uc.log.Error(
+			"创建主机失败",
+			zap.Error(err),
+			zap.Object(database.ModelKey, &m),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, nil)
 	}
-	if err := uc.ExportHost(m); err != nil {
+
+	if err := uc.ExportHost(ctx, m); err != nil {
 		return nil, err
 	}
+
+	uc.log.Info(
+		"主机创建成功",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return &m, nil
 }
 
@@ -130,9 +160,21 @@ func (uc *HostUsecase) UpdateHostById(
 	m HostModel,
 	password string,
 ) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始更新主机",
+		zap.Uint32(HostIDKey, hostId),
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := uc.TestSSHConnection(ctx, m.IPAddr, m.Port, m.Username, password); err != nil {
 		return err
 	}
+
 	data := map[string]any{
 		"name":     m.Name,
 		"label":    m.Label,
@@ -143,18 +185,53 @@ func (uc *HostUsecase) UpdateHostById(
 		"remark":   m.Remark,
 	}
 	if err := uc.hostRepo.UpdateModel(ctx, data, "id = ?", hostId); err != nil {
+		uc.log.Error(
+			"更新主机失败",
+			zap.Error(err),
+			zap.Uint32(HostIDKey, hostId),
+			zap.Any(database.UpdateDataKey, data),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return database.NewGormError(err, data)
 	}
-	return uc.ExportHost(m)
+
+	if err := uc.ExportHost(ctx, m); err != nil {
+		return err
+	}
+
+	uc.log.Info(
+		"更新主机成功",
+		zap.Uint32(HostIDKey, hostId),
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+	return nil
 }
 
 func (uc *HostUsecase) DeleteHostById(
 	ctx context.Context,
 	hostId uint32,
 ) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始删除主机",
+		zap.Uint32(HostIDKey, hostId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := uc.hostRepo.DeleteModel(ctx, hostId); err != nil {
+		uc.log.Error(
+			"删除主机失败",
+			zap.Error(err),
+			zap.Uint32(HostIDKey, hostId),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return database.NewGormError(err, map[string]any{"id": hostId})
 	}
+
 	path := uc.HostPath(hostId)
 	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
 		uc.log.Error(
@@ -165,6 +242,12 @@ func (uc *HostUsecase) DeleteHostById(
 		)
 		return ErrDeleteHostFileFailed.WithCause(err)
 	}
+
+	uc.log.Info(
+		"删除主机成功",
+		zap.Uint32(HostIDKey, hostId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }
 
@@ -172,10 +255,32 @@ func (uc *HostUsecase) FindHostById(
 	ctx context.Context,
 	hostId uint32,
 ) (*HostModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询主机",
+		zap.Uint32(HostIDKey, hostId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := uc.hostRepo.FindModel(ctx, nil, hostId)
 	if err != nil {
+		uc.log.Error(
+			"查询主机失败",
+			zap.Error(err),
+			zap.Uint32(HostIDKey, hostId),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, map[string]any{"id": hostId})
 	}
+
+	uc.log.Info(
+		"查询主机成功",
+		zap.Uint32(HostIDKey, hostId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return m, nil
 }
 
@@ -185,7 +290,21 @@ func (uc *HostUsecase) ListHost(
 	query map[string]any,
 	orderBy []string,
 	isCount bool,
-) (int64, []HostModel, *errors.Error) {
+) (int64, *[]HostModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return 0, nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询主机列表",
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Any("query", query),
+		zap.Strings("order_by", orderBy),
+		zap.Bool("is_count", isCount),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	qp := database.QueryParams{
 		Preloads: []string{},
 		Query:    query,
@@ -196,12 +315,41 @@ func (uc *HostUsecase) ListHost(
 	}
 	count, ms, err := uc.hostRepo.ListModel(ctx, qp)
 	if err != nil {
+		uc.log.Error(
+			"查询主机列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"查询主机列表成功",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return count, ms, nil
 }
 
-func (uc *HostUsecase) TestSSHConnection(ctx context.Context, ip string, port uint16, user, password string) *errors.Error {
+func (uc *HostUsecase) TestSSHConnection(
+	ctx context.Context,
+	ip string,
+	port uint16,
+	user, password string,
+) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始测试ssh连接",
+		zap.String("ip_addr", ip),
+		zap.Uint16("port", port),
+		zap.String("username", user),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	sshConfig := ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
@@ -217,23 +365,33 @@ func (uc *HostUsecase) TestSSHConnection(ctx context.Context, ip string, port ui
 	if err != nil {
 		uc.log.Error(
 			"创建ssh连接失败",
+			zap.Error(err),
 			zap.String("ip_addr", ip),
 			zap.Uint16("port", port),
 			zap.String("username", user),
-			zap.Error(err),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
 	}
-	if err := uc.hostRepo.DeployPublicKey(client, uc.signer.PublicKey()); err != nil {
+	defer client.Close()
+	if err := uc.hostRepo.DeployPublicKey(ctx, client, uc.signer.PublicKey()); err != nil {
 		uc.log.Error(
 			"部署ssh公钥失败",
+			zap.Error(err),
 			zap.String("ip_addr", ip),
 			zap.Uint16("port", port),
 			zap.String("username", user),
-			zap.Error(err),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHKeyDeployment.WithCause(err)
 	}
+	uc.log.Info(
+		"测试ssh连接通过",
+		zap.String("ip_addr", ip),
+		zap.Uint16("port", port),
+		zap.String("username", user),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }
 
@@ -242,7 +400,17 @@ func (uc *HostUsecase) HostPath(pk uint32) string {
 	return filepath.Join(uc.dir, filename)
 }
 
-func (uc *HostUsecase) ExportHost(m HostModel) *errors.Error {
+func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始导出ansible主机变量文件",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	path := uc.HostPath(m.ID)
 	ansibleHost := AnsibleHostVars{
 		ID:                       m.ID,
@@ -251,14 +419,23 @@ func (uc *HostUsecase) ExportHost(m HostModel) *errors.Error {
 		AnsibleUser:              m.Username,
 		AnsiblePythonInterpreter: m.PyPath,
 	}
+
 	if err := file.WriteJSON(path, ansibleHost, 4); err != nil {
 		uc.log.Error(
-			"写入ansible主机变量文件失败",
+			"导出ansible主机变量文件失败",
+			zap.Error(err),
 			zap.String("path", path),
 			zap.Object("ansible_host", &ansibleHost),
-			zap.Error(err),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrExportHostFailed.WithCause(err)
 	}
+
+	uc.log.Info(
+		"导出ansible主机变量文件成功",
+		zap.String("path", path),
+		zap.Object("ansible_host", &ansibleHost),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }

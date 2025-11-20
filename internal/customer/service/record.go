@@ -10,6 +10,7 @@ import (
 	pbRecord "gin-artweb/api/customer/record"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/errors"
 )
 
@@ -48,17 +49,42 @@ func NewRecordService(
 func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 	var req pbRecord.ListLoginRecordRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询用户登录记录列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询用户登录记录列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
-	total, ms, err := s.ucRecord.ListLoginRecord(ctx, page, size, query)
+	total, ms, err := s.ucRecord.ListLoginRecord(ctx, page, size, query, []string{"-id"}, true)
 	if err != nil {
+		s.log.Error(
+			"查询用户登录记录列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询用户登录记录列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListLoginRecordModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbRecord.PagLoginRecordReply{
 		Code: http.StatusOK,
@@ -86,23 +112,57 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 	var req pbRecord.ListLoginRecordRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询个人登录记录列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
 	claims := auth.GetGinUserClaims(ctx)
 	if claims == nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
 		return
 	}
 	req.Username = claims.Subject
+
+	s.log.Info(
+		"开始查询个人登录记录列表",
+		zap.Uint32(auth.UserIDKey, claims.UserID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
-	total, ms, err := s.ucRecord.ListLoginRecord(ctx, page, size, query)
+	total, ms, err := s.ucRecord.ListLoginRecord(ctx, page, size, query, []string{"-id"}, true)
 	if err != nil {
+		s.log.Error(
+			"查询个人登录记录列表失败",
+			zap.Error(err),
+			zap.Uint32(auth.UserIDKey, claims.UserID),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询个人登录记录列表成功",
+		zap.Uint32(auth.UserIDKey, claims.UserID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListLoginRecordModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbRecord.PagLoginRecordReply{
 		Code: http.StatusOK,
@@ -129,14 +189,18 @@ func LoginRecordModelToOutBase(
 }
 
 func ListLoginRecordModelToOutBase(
-	ms []biz.LoginRecordModel,
-) []*pbRecord.LoginRecordOutBase {
-	mso := make([]*pbRecord.LoginRecordOutBase, 0, len(ms))
+	lms *[]biz.LoginRecordModel,
+) *[]pbRecord.LoginRecordOutBase {
+	if lms == nil {
+		return &[]pbRecord.LoginRecordOutBase{}
+	}
+	ms := *lms
+	mso := make([]pbRecord.LoginRecordOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := LoginRecordModelToOutBase(m)
-			mso = append(mso, mo)
+			mso = append(mso, *mo)
 		}
 	}
-	return mso
+	return &mso
 }

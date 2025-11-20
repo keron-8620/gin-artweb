@@ -31,9 +31,27 @@ var (
 		"时间戳已过期, 请检查客户端时间同步",
 		nil,
 	)
+	ErrTimestampInFuture = errors.New(
+		http.StatusBadRequest,
+		"timestamp_in_future",
+		"时间戳指向未来时间，请检查客户端时间同步",
+		nil,
+	)
 )
 
-func AuthMiddleware(logger *zap.Logger, t int64) gin.HandlerFunc {
+// TimestampMiddleware 创建防重放攻击中间件
+// logger: 日志记录器
+// tolerance: 时间容忍度（毫秒），默认300000（5分钟）
+// futureTolerance: 允许未来时间的容忍度（毫秒），默认60000（1分钟）
+func TimestampMiddleware(logger *zap.Logger, tolerance, futureTolerance int64) gin.HandlerFunc {
+	// 设置默认值
+	if tolerance <= 0 {
+		tolerance = 300000 // 默认5分钟
+	}
+	if futureTolerance <= 0 {
+		futureTolerance = 60000 // 默认1分钟
+	}
+
 	return func(c *gin.Context) {
 		// 检查是否是 API 请求
 		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
@@ -63,12 +81,27 @@ func AuthMiddleware(logger *zap.Logger, t int64) gin.HandlerFunc {
 			return
 		}
 
+		// 获取当前时间（毫秒）
+		now := time.Now().UnixMilli()
+
+		// 检查时间戳是否指向过于遥远的未来
+		if timestamp > now+futureTolerance {
+			logger.Error("X-Timestamp is too far in the future",
+				zap.Int64("current", now),
+				zap.Int64("received", timestamp),
+				zap.Int64("difference", timestamp-now))
+			c.JSON(ErrTimestampInFuture.Code, ErrTimestampInFuture.Reply())
+			c.Abort()
+			return
+		}
+
 		// 检查时间戳是否过期
-		now := time.Now().Unix()
-		if abs(now-timestamp) > t { // 300 秒 = 5 分钟
+		if abs(now-timestamp) > tolerance {
 			logger.Error("X-Timestamp expired",
 				zap.Int64("current", now),
-				zap.Int64("received", timestamp))
+				zap.Int64("received", timestamp),
+				zap.Int64("tolerance", tolerance),
+				zap.Int64("difference", abs(now-timestamp)))
 			c.JSON(ErrTimestampExpired.Code, ErrTimestampExpired.Reply())
 			c.Abort()
 			return

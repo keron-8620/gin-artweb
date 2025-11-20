@@ -6,11 +6,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+const (
+	PackageIDKey = "package_id"
 )
 
 type PackageModel struct {
@@ -42,7 +47,7 @@ type PackageRepo interface {
 	CreateModel(context.Context, *PackageModel) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*PackageModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, []PackageModel, error)
+	ListModel(context.Context, database.QueryParams) (int64, *[]PackageModel, error)
 }
 
 type PackageUsecase struct {
@@ -67,9 +72,31 @@ func (uc *PackageUsecase) CreatePackage(
 	ctx context.Context,
 	m PackageModel,
 ) (*PackageModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始创建程序包",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := uc.pkgRepo.CreateModel(ctx, &m); err != nil {
+		uc.log.Error(
+			"创建程序包失败",
+			zap.Error(err),
+			zap.Object(database.ModelKey, &m),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"创建程序包成功",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return &m, nil
 }
 
@@ -77,6 +104,16 @@ func (uc *PackageUsecase) DeletePackageById(
 	ctx context.Context,
 	pkgId uint32,
 ) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始删除程序包",
+		zap.Uint32(PackageIDKey, pkgId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := uc.FindPackageById(ctx, pkgId)
 	if err != nil {
 		return err
@@ -84,15 +121,25 @@ func (uc *PackageUsecase) DeletePackageById(
 
 	// 先从数据库删除
 	if err := uc.pkgRepo.DeleteModel(ctx, pkgId); err != nil {
+		uc.log.Error(
+			"删除程序包失败",
+			zap.Error(err),
+			zap.Uint32(PackageIDKey, pkgId),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return database.NewGormError(err, map[string]any{"id": pkgId})
 	}
 
 	// 再删除物理文件
 	if rmErr := uc.RemovePackage(ctx, *m); rmErr != nil {
-		uc.log.Warn("程序包数据库记录已删除，但物理文件删除失败",
-			zap.Uint32("id", pkgId),
-			zap.String("storage_filename", m.StorageFilename))
+		return rmErr
 	}
+
+	uc.log.Info(
+		"删除程序包成功",
+		zap.Uint32(PackageIDKey, pkgId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return nil
 }
 
@@ -100,10 +147,32 @@ func (uc *PackageUsecase) FindPackageById(
 	ctx context.Context,
 	pkgId uint32,
 ) (*PackageModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询程序包",
+		zap.Uint32(PackageIDKey, pkgId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := uc.pkgRepo.FindModel(ctx, nil, pkgId)
 	if err != nil {
+		uc.log.Error(
+			"查询程序包失败",
+			zap.Error(err),
+			zap.Uint32(PackageIDKey, pkgId),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil, database.NewGormError(err, map[string]any{"id": pkgId})
 	}
+
+	uc.log.Info(
+		"查询程序包成功",
+		zap.Uint32(PackageIDKey, pkgId),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return m, nil
 }
 
@@ -113,7 +182,21 @@ func (uc *PackageUsecase) ListPackage(
 	query map[string]any,
 	orderBy []string,
 	isCount bool,
-) (int64, []PackageModel, *errors.Error) {
+) (int64, *[]PackageModel, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return 0, nil, errors.FromError(err)
+	}
+
+	uc.log.Info(
+		"开始查询程序包列表",
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Any("query", query),
+		zap.Strings("order_by", orderBy),
+		zap.Bool("is_count", isCount),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	qp := database.QueryParams{
 		Preloads: []string{},
 		Query:    query,
@@ -124,8 +207,20 @@ func (uc *PackageUsecase) ListPackage(
 	}
 	count, ms, err := uc.pkgRepo.ListModel(ctx, qp)
 	if err != nil {
+		uc.log.Error(
+			"查询程序包列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
+
+	uc.log.Info(
+		"查询程序包列表成功",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 	return count, ms, nil
 }
 
@@ -134,31 +229,49 @@ func (uc *PackageUsecase) PackagePath(filename string) string {
 }
 
 func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
 	savePath := uc.PackagePath(m.StorageFilename)
+
+	uc.log.Info(
+		"开始删除程序包文件",
+		zap.String("path", savePath),
+		zap.Uint32(PackageIDKey, m.ID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 
 	// 检查文件是否存在
 	if _, statErr := os.Stat(savePath); os.IsNotExist(statErr) {
 		// 文件不存在，视为删除成功
-		uc.log.Debug(
+		uc.log.Warn(
 			"程序包文件不存在，无需删除",
 			zap.String("path", savePath),
-			zap.Uint32("package_id", m.ID))
+			zap.Uint32(PackageIDKey, m.ID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return nil
 	} else if statErr != nil {
 		// 其他 stat 错误
 		uc.log.Error(
 			"检查程序包文件状态失败",
+			zap.Error(statErr),
 			zap.String("path", savePath),
-			zap.Error(statErr))
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return errors.FromError(statErr)
 	}
 
 	// 执行删除操作
 	if rmErr := os.Remove(savePath); rmErr != nil {
-		uc.log.Error("删除程序包失败",
+		uc.log.Error(
+			"删除程序包失败",
+			zap.Error(rmErr),
 			zap.String("path", savePath),
-			zap.Uint32("package_id", m.ID),
-			zap.Error(rmErr))
+			zap.Uint32(PackageIDKey, m.ID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		return errors.FromError(rmErr)
 	}
 

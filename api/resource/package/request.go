@@ -5,12 +5,20 @@ import (
 	"time"
 
 	"gin-artweb/api/common"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type UploadPackageRequest struct {
 	Label   string                `form:"label" binding:"required" json:"label"`
 	Version string                `form:"version" binding:"required" json:"version"`
 	File    *multipart.FileHeader `form:"file" binding:"required" json:"file"`
+}
+
+func (req *UploadPackageRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("label", req.Label)
+	enc.AddString("version", req.Version)
+	return nil
 }
 
 type ListPackageRequest struct {

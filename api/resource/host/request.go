@@ -1,6 +1,10 @@
 package host
 
-import "gin-artweb/api/common"
+import (
+	"gin-artweb/api/common"
+
+	"go.uber.org/zap/zapcore"
+)
 
 // CreateHosrRequest 用于创建主机的请求结构体
 //
@@ -45,6 +49,17 @@ type CreateHosrRequest struct {
 	Remark string `json:"remark" binding:"max=254"`
 }
 
+func (req *CreateHosrRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", req.Name)
+	enc.AddString("label", req.Label)
+	enc.AddString("ip_addr", req.IPAddr)
+	enc.AddUint16("port", req.Port)
+	enc.AddString("username", req.Username)
+	enc.AddString("py_path", req.PyPath)
+	enc.AddString("remark", req.Remark)
+	return nil
+}
+
 // UpdateHostRequest 用于更新主机的请求结构体
 // 包含主机主键、HTTP URL、请求方法和描述信息
 //
@@ -87,6 +102,17 @@ type UpdateHostRequest struct {
 	// 备注，最大长度254
 	// Max length: 254
 	Remark string `json:"remark" binding:"max=254"`
+}
+
+func (req *UpdateHostRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", req.Name)
+	enc.AddString("label", req.Label)
+	enc.AddString("ip_addr", req.IPAddr)
+	enc.AddUint16("port", req.Port)
+	enc.AddString("username", req.Username)
+	enc.AddString("py_path", req.PyPath)
+	enc.AddString("remark", req.Remark)
+	return nil
 }
 
 // ListHostRequest 用于获取主机列表的请求结构体

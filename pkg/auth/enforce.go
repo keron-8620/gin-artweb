@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	goerrors "errors"
 
 	"github.com/casbin/casbin/v2"
@@ -40,7 +41,11 @@ func NewAuthEnforcer(enforcer *casbin.Enforcer, key string) *AuthEnforcer {
 // Authentication 验证给定令牌的有效性并返回相应的用户认证信息
 // token：待验证的JWT令牌字符串
 // 返回用户认证信息和可能发生的错误（如无效令牌、已过期等）
-func (c *AuthEnforcer) Authentication(token string) (*UserClaims, *errors.Error) {
+func (c *AuthEnforcer) Authentication(ctx context.Context, token string) (*UserClaims, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
 	// 解析token
 	parsedToken, err := jwt.ParseWithClaims(token, &UserClaims{}, func(token *jwt.Token) (any, error) {
 		return c.key, nil
@@ -70,7 +75,10 @@ func (c *AuthEnforcer) Authentication(token string) (*UserClaims, *errors.Error)
 // url：请求的目标URL路径
 // method：HTTP请求方法（GET/POST等）
 // 返回是否有访问权限的布尔结果
-func (c *AuthEnforcer) Authorization(role, url, method string) (bool, *errors.Error) {
+func (c *AuthEnforcer) Authorization(ctx context.Context, role, url, method string) (bool, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return false, errors.FromError(err)
+	}
 	ok, err := c.Enforcer.Enforce(role, url, method)
 	if err != nil {
 		return false, errors.FromError(err)
@@ -81,7 +89,10 @@ func (c *AuthEnforcer) Authorization(role, url, method string) (bool, *errors.Er
 // AddPolicies 批量添加授权策略规则
 // rules: 要添加的策略规则列表，每个规则是一个字符串切片
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
-func (c *AuthEnforcer) AddPolicy(sub, obj, act string) error {
+func (c *AuthEnforcer) AddPolicy(ctx context.Context, sub, obj, act string) error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
+	}
 	if _, err := c.Enforcer.AddPolicy(sub, obj, act); err != nil {
 		return err
 	}
@@ -91,7 +102,10 @@ func (c *AuthEnforcer) AddPolicy(sub, obj, act string) error {
 // // RemovePolicies 批量移除授权策略规则
 // // rules: 要移除的策略规则列表，每个规则是一个字符串切片
 // // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
-func (c *AuthEnforcer) RemovePolicy(sub, obj, act string) error {
+func (c *AuthEnforcer) RemovePolicy(ctx context.Context, sub, obj, act string) error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
+	}
 	if _, err := c.Enforcer.RemovePolicy(sub, obj, act); err != nil {
 		return err
 	}
@@ -100,7 +114,10 @@ func (c *AuthEnforcer) RemovePolicy(sub, obj, act string) error {
 
 // AddGroupPolicies 批量添加用户组策略规则
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
-func (c *AuthEnforcer) AddGroupPolicy(sub, obj string) error {
+func (c *AuthEnforcer) AddGroupPolicy(ctx context.Context, sub, obj string) error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
+	}
 	if _, err := c.Enforcer.AddGroupingPolicy(sub, obj); err != nil {
 		return err
 	}
@@ -109,7 +126,10 @@ func (c *AuthEnforcer) AddGroupPolicy(sub, obj string) error {
 
 // RemoveGroupPolicies 批量移除用户组策略规则
 // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
-func (c *AuthEnforcer) RemoveGroupPolicy(index int, value string) error {
+func (c *AuthEnforcer) RemoveGroupPolicy(ctx context.Context, index int, value string) error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return err
+	}
 	if _, err := c.Enforcer.RemoveFilteredGroupingPolicy(index, value); err != nil {
 		return err
 	}

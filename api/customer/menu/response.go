@@ -1,8 +1,8 @@
 package menu
 
 import (
-	"gin-artweb/api/customer/permission"
 	"gin-artweb/api/common"
+	"gin-artweb/api/customer/permission"
 )
 
 // MenuOutBase 菜单基础信息
@@ -32,11 +32,11 @@ type MenuOutBase struct {
 type MenuOut struct {
 	MenuOutBase
 	Parent      *MenuOutBase                    `json:"parent,omitempty"`
-	Permissions []*permission.PermissionOutBase `json:"permissions"`
+	Permissions *[]permission.PermissionOutBase `json:"permissions"`
 }
 
 // MenuBaseReply 菜单响应结构
-type MenuReply = common.APIReply[MenuOut]
+type MenuReply = common.APIReply[*MenuOut]
 
 // PagMenuBaseReply 菜单的分页响应结构
-type PagMenuBaseReply = common.APIReply[*common.Pag[*MenuOutBase]]
+type PagMenuBaseReply = common.APIReply[*common.Pag[MenuOutBase]]

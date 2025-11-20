@@ -22,4 +22,4 @@ type PackageOutBase struct {
 type PackageReply = common.APIReply[PackageOutBase]
 
 // PagPackageReply程序包的分页响应结构
-type PagPackageReply = common.APIReply[*common.Pag[*PackageOutBase]]
+type PagPackageReply = common.APIReply[*common.Pag[PackageOutBase]]

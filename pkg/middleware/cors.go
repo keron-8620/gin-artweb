@@ -21,7 +21,7 @@ func CorsMiddleware(cfg *config.AllowConfig) gin.HandlerFunc {
 		}
 	}
 
-	// 预处理允许的源，提高运行时性能
+	// 预处理允许的源
 	allowAllOrigins := false
 	specificOrigins := make(map[string]bool)
 
@@ -36,7 +36,7 @@ func CorsMiddleware(cfg *config.AllowConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 
-		// 如果没有 Origin 头或者 Origin 为空，跳过 CORS 处理
+		// 如果没有 Origin 头，跳过 CORS 处理
 		if origin == "" {
 			c.Next()
 			return
@@ -45,26 +45,19 @@ func CorsMiddleware(cfg *config.AllowConfig) gin.HandlerFunc {
 		// 检查是否允许该源
 		allowed := allowAllOrigins || specificOrigins[origin]
 
-		if allowed {
-			c.Header("Access-Control-Allow-Origin", origin)
-		} else if len(specificOrigins) > 0 {
-			// 检查是否匹配通配符模式（如果有需要的话）
-			for allowedOrigin := range specificOrigins {
-				if matchOriginPattern(allowedOrigin, origin) {
-					c.Header("Access-Control-Allow-Origin", origin)
-					allowed = true
-					break
-				}
-			}
-		}
-
 		// 如果不允许该源，跳过 CORS 头设置
 		if !allowed {
 			c.Next()
 			return
 		}
 
-		// 设置其他 CORS 头
+		// 设置 CORS 头
+		if allowAllOrigins {
+			c.Header("Access-Control-Allow-Origin", "*")
+		} else {
+			c.Header("Access-Control-Allow-Origin", origin)
+		}
+
 		if len(cfg.AllowMethods) > 0 {
 			c.Header("Access-Control-Allow-Methods", strings.Join(cfg.AllowMethods, ", "))
 		}
@@ -86,11 +79,4 @@ func CorsMiddleware(cfg *config.AllowConfig) gin.HandlerFunc {
 
 		c.Next()
 	}
-}
-
-// matchOriginPattern 简单的源模式匹配（可选）
-func matchOriginPattern(pattern, origin string) bool {
-	// 这里可以实现更复杂的模式匹配逻辑
-	// 例如支持 *.example.com 这样的通配符
-	return pattern == origin
 }

@@ -1,6 +1,10 @@
 package role
 
-import "gin-artweb/api/common"
+import (
+	"gin-artweb/api/common"
+
+	"go.uber.org/zap/zapcore"
+)
 
 // CreateRoleRequest 用于创建角色的请求结构体
 //
@@ -25,6 +29,30 @@ type CreateRoleRequest struct {
 	ButtonIDs []uint32 `json:"button_ids" binding:"omitempty"`
 }
 
+func (req *CreateRoleRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", req.Name)
+	enc.AddString("descr", req.Descr)
+	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.PermissionIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	enc.AddArray("menu_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.MenuIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	enc.AddArray("button_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ButtonIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	return nil
+}
+
 // UpdateRoleRequest 用于更新角色的请求结构体
 //
 // swagger:model UpdateRoleRequest
@@ -46,6 +74,30 @@ type UpdateRoleRequest struct {
 
 	// 关联按钮ID列表，可选
 	ButtonIDs []uint32 `json:"button_ids" binding:"omitempty"`
+}
+
+func (req *UpdateRoleRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", req.Name)
+	enc.AddString("descr", req.Descr)
+	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.PermissionIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	enc.AddArray("menu_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.MenuIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	enc.AddArray("button_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ButtonIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	return nil
 }
 
 // ListRoleRequest 用于获取角色列表的请求结构体

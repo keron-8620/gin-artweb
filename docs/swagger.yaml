@@ -329,6 +329,38 @@ definitions:
         example: 100
         type: integer
     type: object
+  common.Pag-pkg_PackageOutBase:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/pkg.PackageOutBase'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
   common.Pag-record_LoginRecordOutBase:
     properties:
       items:
@@ -1058,6 +1090,67 @@ definitions:
     - method
     - url
     type: object
+  pkg.PackageOutBase:
+    properties:
+      filename:
+        description: 名称
+        example: oes.tar.gz
+        type: string
+      id:
+        description: 主机ID
+        example: 1
+        type: integer
+      label:
+        description: 标签
+        example: artweb
+        type: string
+      uploaded_at:
+        description: 上传时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      version:
+        description: IP地址
+        example: 0.17.0.0.1
+        type: string
+    type: object
+  pkg.PackageReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/pkg.PackageOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  pkg.PagPackageReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-pkg_PackageOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
   record.LoginRecordOutBase:
     properties:
       id:
@@ -1348,13 +1441,6 @@ definitions:
       is_staff:
         description: 是否是工作人员，必填
         type: boolean
-      name:
-        description: |-
-          用户名，最大长度50
-          Required: true
-          Max length: 50
-        maxLength: 50
-        type: string
       password:
         description: |-
           密码，最大长度20
@@ -1364,12 +1450,19 @@ definitions:
       role_id:
         description: 角色ID，必填
         type: integer
+      username:
+        description: |-
+          用户名，最大长度50
+          Required: true
+          Max length: 50
+        maxLength: 50
+        type: string
     required:
     - is_active
     - is_staff
-    - name
     - password
     - role_id
+    - username
     type: object
   user.LoginOut:
     properties:
@@ -1809,7 +1902,7 @@ paths:
       tags:
       - 角色管理
   /api/v1/customer/me/password:
-    put:
+    patch:
       consumes:
       - application/json
       description: 本接口用于修改当前登录用户的密码
@@ -2664,7 +2757,7 @@ paths:
       tags:
       - 用户管理
   /api/v1/customer/user/password/{pk}:
-    put:
+    patch:
       consumes:
       - application/json
       description: 本接口用于重置指定ID的用户密码
@@ -2950,6 +3043,175 @@ paths:
       summary: 更新主机
       tags:
       - 主机管理
+  /api/v1/resource/package:
+    get:
+      description: 本接口用于查询程序包列表
+      parameters:
+      - description: 页码，默认为1
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量，默认为10
+        in: query
+        name: size
+        type: integer
+      - description: 搜索关键字
+        in: query
+        name: query
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回程序包列表
+          schema:
+            $ref: '#/definitions/pkg.PagPackageReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询程序包列表
+      tags:
+      - 程序包管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传一个新的程序包文件并创建记录
+      parameters:
+      - description: 程序包标签，长度限制：1-50个字符
+        in: formData
+        name: label
+        required: true
+        type: string
+      - description: 程序包版本，长度限制：1-50个字符
+        in: formData
+        name: version
+        required: true
+        type: string
+      - description: 程序包文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 成功返回程序包信息
+          schema:
+            $ref: '#/definitions/pkg.PackageReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传程序包
+      tags:
+      - 程序包管理
+  /api/v1/resource/package/{pk}:
+    delete:
+      description: 本接口用于删除指定ID的程序包
+      parameters:
+      - description: 程序包唯一标识符
+        format: int32
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除程序包
+      tags:
+      - 程序包管理
+    get:
+      description: 本接口用于查询指定ID的程序包详细信息
+      parameters:
+      - description: 程序包唯一标识符
+        format: int32
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回程序包详情
+          schema:
+            $ref: '#/definitions/pkg.PackageReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询程序包详情
+      tags:
+      - 程序包管理
+  /api/v1/resource/package/{pk}/download:
+    get:
+      description: 本接口用于下载指定ID的程序包文件
+      parameters:
+      - description: 程序包唯一标识符
+        format: int32
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 成功下载程序包文件
+          schema:
+            type: file
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 文件未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载程序包
+      tags:
+      - 程序包管理
 securityDefinitions:
   ApiKeyAuth:
     in: header

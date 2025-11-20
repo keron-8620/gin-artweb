@@ -27,10 +27,10 @@ type UserOut struct {
 }
 
 // UserBaseReply 用户响应结构
-type UserReply = common.APIReply[UserOut]
+type UserReply = common.APIReply[*UserOut]
 
 // PagUserReply 用户的分页响应结构
-type PagUserReply = common.APIReply[*common.Pag[*UserOut]]
+type PagUserReply = common.APIReply[*common.Pag[UserOut]]
 
 type LoginOut struct {
 	Token string `json:"token"`

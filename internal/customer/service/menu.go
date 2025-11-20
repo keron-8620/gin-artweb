@@ -9,6 +9,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -42,14 +43,28 @@ func NewMenuService(
 func (s *MenuService) CreateMenu(ctx *gin.Context) {
 	var req pbMenu.CreateMenuRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定创建菜单请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
 	if req.ParentID != nil && *req.ParentID == 0 {
 		req.ParentID = nil
 	}
+
+	s.log.Info(
+		"开始创建菜单",
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucMenu.CreateMenu(ctx, req.PermissionIDs, biz.MenuModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: req.ID},
@@ -67,13 +82,28 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 		ParentID:     req.ParentID,
 	})
 	if err != nil {
+		s.log.Error(
+			"创建菜单失败",
+			zap.Error(err),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"创建菜单成功",
+		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mo := MenuModelToOut(*m)
 	ctx.JSON(http.StatusCreated, &pbMenu.MenuReply{
 		Code: http.StatusCreated,
-		Data: *mo,
+		Data: mo,
 	})
 }
 
@@ -93,47 +123,84 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定菜单ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
 	var req pbMenu.UpdateMenuRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定更新菜单请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	meta := biz.Meta{
-		Icon:  req.Meta.Icon,
-		Title: req.Meta.Title,
-	}
+
+	s.log.Info(
+		"开始更新菜单",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	data := map[string]any{
 		"path":          req.Path,
 		"component":     req.Component,
 		"name":          req.Name,
-		"meta":          meta.Json(),
+		"meta":          req.Meta.Json(),
 		"arrange_order": req.ArrangeOrder,
 		"is_active":     req.IsActive,
 		"descr":         req.Descr,
 	}
-	if req.ParentID != nil && *req.ParentID == 0 {
-		data["ParentId"] = nil
+	if req.ParentID != nil && *req.ParentID != 0 {
+		data["ParentId"] = req.ParentID
 	}
+
 	if err := s.ucMenu.UpdateMenuByID(ctx, uri.PK, req.PermissionIDs, data); err != nil {
+		s.log.Error(
+			"更新菜单失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"更新菜单成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询更新后的菜单信息失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
 	mo := MenuModelToOut(*m)
 	ctx.JSON(http.StatusOK, &pbMenu.MenuReply{
 		Code: http.StatusOK,
-		Data: *mo,
+		Data: mo,
 	})
 }
 
@@ -152,15 +219,40 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定删除菜单ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始删除菜单",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucMenu.DeleteMenuByID(ctx, uri.PK); err != nil {
+		s.log.Error(
+			"删除菜单失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"删除菜单成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
@@ -179,20 +271,45 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 func (s *MenuService) GetMenu(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询菜单ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询菜单详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询菜单详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询菜单详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mo := MenuModelToOut(*m)
 	ctx.JSON(http.StatusOK, &pbMenu.MenuReply{
 		Code: http.StatusOK,
-		Data: *mo,
+		Data: mo,
 	})
 }
 
@@ -215,17 +332,42 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 func (s *MenuService) ListMenu(ctx *gin.Context) {
 	var req pbMenu.ListMenuRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询菜单列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询菜单列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
 	total, ms, err := s.ucMenu.ListMenu(ctx, page, size, query, []string{"id"}, true, nil)
 	if err != nil {
+		s.log.Error(
+			"查询菜单列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询菜单列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListMenuModelToOutBase(ms)
 	ctx.JSON(http.StatusOK, &pbMenu.PagMenuBaseReply{
 		Code: http.StatusOK,
@@ -262,16 +404,18 @@ func MenuModelToOutBase(
 }
 
 func ListMenuModelToOutBase(
-	ms []*biz.MenuModel,
-) []*pbMenu.MenuOutBase {
-	mso := make([]*pbMenu.MenuOutBase, 0, len(ms))
-	if len(ms) > 0 {
-		for _, m := range ms {
-			mo := MenuModelToOutBase(*m)
-			mso = append(mso, mo)
-		}
+	mms *[]biz.MenuModel,
+) *[]pbMenu.MenuOutBase {
+	if mms == nil {
+		return &[]pbMenu.MenuOutBase{}
 	}
-	return mso
+	ms := *mms
+	mso := make([]pbMenu.MenuOutBase, 0, len(ms))
+	for _, m := range ms {
+		mo := MenuModelToOutBase(m)
+		mso = append(mso, *mo)
+	}
+	return &mso
 }
 
 func MenuModelToOut(
@@ -284,6 +428,6 @@ func MenuModelToOut(
 	return &pbMenu.MenuOut{
 		MenuOutBase: *MenuModelToOutBase(m),
 		Parent:      parent,
-		Permissions: ListPermModelToOut(m.Permissions),
+		Permissions: ListPermModelToOut(&m.Permissions),
 	}
 }

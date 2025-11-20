@@ -19,4 +19,4 @@ type LoginRecordOutBase struct {
 }
 
 // PagUserReply 用户的分页响应结构
-type PagLoginRecordReply = common.APIReply[*common.Pag[*LoginRecordOutBase]]
+type PagLoginRecordReply = common.APIReply[*common.Pag[LoginRecordOutBase]]

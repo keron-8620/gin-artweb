@@ -9,6 +9,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbHost "gin-artweb/api/resource/host"
 	"gin-artweb/internal/resource/biz"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/errors"
 )
 
@@ -41,11 +42,24 @@ func NewHostService(
 func (s *HostService) CreateHost(ctx *gin.Context) {
 	var req pbHost.CreateHosrRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定创建主机请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始创建主机",
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucHost.CreateHost(ctx, biz.HostModel{
 		Name:     req.Name,
 		Label:    req.Label,
@@ -56,9 +70,23 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 		Remark:   req.Remark,
 	}, req.Password)
 	if err != nil {
+		s.log.Error(
+			"创建主机失败",
+			zap.Error(err),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"创建主机成功",
+		zap.Uint32(biz.HostIDKey, m.ID),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mo := HostModelToOutBase(*m)
 	ctx.JSON(http.StatusCreated, &pbHost.HostReply{
 		Code: http.StatusCreated,
@@ -82,18 +110,37 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 func (s *HostService) UpdateHost(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定主机ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
 	var req pbHost.UpdateHostRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定更新主机请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始更新主机",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucHost.UpdateHostById(ctx, uri.PK, biz.HostModel{
 		Name:     req.Name,
 		Label:    req.Label,
@@ -103,14 +150,35 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		PyPath:   req.PyPath,
 		Remark:   req.Remark,
 	}, req.Password); err != nil {
+		s.log.Error(
+			"更新主机失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"更新主机成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucHost.FindHostById(ctx, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询更新后的主机信息失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
 	mo := HostModelToOutBase(*m)
 	ctx.JSON(http.StatusOK, &pbHost.HostReply{
 		Code: http.StatusOK,
@@ -133,15 +201,40 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 func (s *HostService) DeleteHost(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定删除主机ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始删除主机",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucHost.DeleteHostById(ctx, uri.PK); err != nil {
+		s.log.Error(
+			"删除主机失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"删除主机成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
@@ -160,16 +253,41 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 func (s *HostService) GetHost(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询主机ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询主机详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucHost.FindHostById(ctx, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询主机详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询主机详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mo := HostModelToOutBase(*m)
 	ctx.JSON(http.StatusOK, &pbHost.HostReply{
 		Code: http.StatusOK,
@@ -195,17 +313,42 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 func (s *HostService) ListHost(ctx *gin.Context) {
 	var req pbHost.ListHostRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询主机列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询主机列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
 	total, ms, err := s.ucHost.ListHost(ctx, page, size, query, []string{"id"}, true)
 	if err != nil {
+		s.log.Error(
+			"查询主机列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询主机列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListHostModelToOut(ms)
 	ctx.JSON(http.StatusOK, &pbHost.PagHostReply{
 		Code: http.StatusOK,
@@ -239,14 +382,17 @@ func HostModelToOutBase(
 }
 
 func ListHostModelToOut(
-	ms []biz.HostModel,
-) []*pbHost.HostOutBase {
-	mso := make([]*pbHost.HostOutBase, 0, len(ms))
-	if len(ms) > 0 {
-		for _, m := range ms {
-			mo := HostModelToOutBase(m)
-			mso = append(mso, mo)
-		}
+	hms *[]biz.HostModel,
+) *[]pbHost.HostOutBase {
+	if hms == nil {
+		return &[]pbHost.HostOutBase{}
 	}
-	return mso
+
+	ms := *hms
+	mso := make([]pbHost.HostOutBase, 0, len(ms))
+	for _, m := range ms {
+		mo := HostModelToOutBase(m)
+		mso = append(mso, *mo)
+	}
+	return &mso
 }

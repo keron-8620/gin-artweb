@@ -9,6 +9,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbPerm "gin-artweb/api/customer/permission"
 	"gin-artweb/internal/customer/biz"
+	"gin-artweb/pkg/common"
 	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
@@ -41,11 +42,24 @@ func NewPermissionService(
 func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 	var req pbPerm.CreatePermissionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定创建权限请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始创建权限",
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucPerm.CreatePermission(ctx, biz.PermissionModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: req.ID},
@@ -56,13 +70,27 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 		Descr:  req.Descr,
 	})
 	if err != nil {
+		s.log.Error(
+			"创建权限失败",
+			zap.Error(err),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"创建权限成功",
+		zap.Uint32(biz.PermissionIDKey, m.ID),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mo := PermModelToOutBase(*m)
 	ctx.JSON(http.StatusCreated, &pbPerm.PermissionReply{
 		Code: http.StatusCreated,
-		Data: *mo,
+		Data: mo,
 	})
 }
 
@@ -81,35 +109,76 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定权限ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
 	var req pbPerm.UpdatePermissionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定更新权限请求参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始更新权限",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Object(pbComm.RequestModelKey, &req),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucPerm.UpdatePermissionByID(ctx, uri.PK, map[string]any{
 		"url":    req.URL,
 		"method": req.Method,
+		"label":  req.Label,
 		"descr":  req.Descr,
 	}); err != nil {
+		s.log.Error(
+			"更新权限失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Object(pbComm.RequestModelKey, &req),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"更新权限成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucPerm.FindPermissionByID(ctx, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询更新后的权限信息失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
 	mo := PermModelToOutBase(*m)
 	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{
 		Code: http.StatusOK,
-		Data: *mo,
+		Data: mo,
 	})
 }
 
@@ -127,15 +196,40 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定删除权限ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始删除权限",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	if err := s.ucPerm.DeletePermissionByID(ctx, uri.PK); err != nil {
+		s.log.Error(
+			"删除权限失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"删除权限成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
@@ -153,20 +247,45 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 func (s *PermissionService) GetPermission(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询权限ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询权限详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m, err := s.ucPerm.FindPermissionByID(ctx, uri.PK)
 	if err != nil {
+		s.log.Error(
+			"查询权限详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询权限详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mo := PermModelToOutBase(*m)
 	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{
 		Code: http.StatusOK,
-		Data: *mo,
+		Data: mo,
 	})
 }
 
@@ -192,17 +311,42 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 func (s *PermissionService) ListPermission(ctx *gin.Context) {
 	var req pbPerm.ListPermissionRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询权限列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
+
+	s.log.Info(
+		"开始查询权限列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	page, size, query := req.Query()
 	total, ms, err := s.ucPerm.ListPermission(ctx, page, size, query, []string{"id"}, true)
 	if err != nil {
+		s.log.Error(
+			"查询权限列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
 		ctx.JSON(err.Code, err.Reply())
 		return
 	}
+
+	s.log.Info(
+		"查询权限列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	mbs := ListPermModelToOut(ms)
 	ctx.JSON(http.StatusOK, &pbPerm.PagPermissionReply{
 		Code: http.StatusOK,
@@ -233,16 +377,17 @@ func PermModelToOutBase(
 }
 
 func ListPermModelToOut(
-	ms []*biz.PermissionModel,
-) []*pbPerm.PermissionOutBase {
-	mso := make([]*pbPerm.PermissionOutBase, 0, len(ms))
-	if len(ms) > 0 {
-		for _, m := range ms {
-			if m != nil {
-				mo := PermModelToOutBase(*m)
-				mso = append(mso, mo)
-			}
-		}
+	pms *[]biz.PermissionModel,
+) *[]pbPerm.PermissionOutBase {
+	if pms == nil {
+		return &[]pbPerm.PermissionOutBase{}
 	}
-	return mso
+
+	ms := *pms
+	mso := make([]pbPerm.PermissionOutBase, 0, len(ms))
+	for _, m := range ms {
+		mo := PermModelToOutBase(m)
+		mso = append(mso, *mo)
+	}
+	return &mso
 }

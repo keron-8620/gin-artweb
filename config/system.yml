@@ -11,9 +11,13 @@ server:
 database:
   type: "opengauss"
   dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable"
-  max_open_conns: 10
   max_idle_conns: 10
+  max_open_conns: 10
   conn_max_lifetime: 60
+  log_sql: false
+  read_timeout: 3
+  write_timeout: 10
+  list_timeout: 8
 
 smtp:
   host: "smtphz.qiye.163.com"
@@ -26,7 +30,7 @@ log:
   level: "INFO"
   max_size: 10
   max_age: 7
-  max_bak: 5
+  max_backups: 5
   compress: true
   format: "json"
 
@@ -39,19 +43,37 @@ cors:
   allow_headers:
     - "*"
 
-password:
-  min_len: 8
-  max_len: 16
-  need_upp: true
-  need_low: true
-  need_num: true
-  need_spe: true
-
 security:
-  check_timestamp: true
-  timestamp_range: 600
-  token_expire_minutes: 180
-  login_fail_max_times: 5
-  login_fail_lock_minutes: 30
-  max_upload_file_size: 500
-  secret_key: "sPib_tF49Vpm3JK9Iio8b_uXlSo7mpRPPVrNCKkJ3F4="
+  timeout:
+    request_timeout: 60
+    shutdown_timeout: 30
+  timestamp:
+    check_timestamp: false
+    tolerance: 300000
+    future_tolerance: 60000
+  token:
+    expire_minutes: 180
+    clear_minutes: 60
+    secret_key: "sPib_tF49Vpm3JK9Iio8b_uXlSo7mpRPPVrNCKkJ3F4="
+  login:
+    max_failed_attempts: 5
+    lock_minutes: 30
+  upload:
+    max_file_size: 500
+  password:
+    min_length: 8
+    max_length: 16
+    require_upper: true
+    require_lower: true
+    require_number: true
+    require_special: true
+    strength_level: 3
+
+rate:
+  rps: 10
+  burst: 20
+
+ssh:
+  private_key_path: "/home/zdq/.ssh/id_rsa"
+  public_key_path: "/home/zdq/.ssh/id_rsa.pub"
+  connect_timeout: 5

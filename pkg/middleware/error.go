@@ -1,9 +1,9 @@
 package middleware
 
 import (
+	goerrors "errors"
 	"fmt"
 	"runtime/debug"
-	goerrors "errors"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -48,20 +48,5 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 
 		// 继续处理请求
 		c.Next()
-
-		// 只有在没有panic且存在错误时才处理Gin上下文中的错误
-		if len(c.Errors) > 0 && !c.IsAborted() {
-			err := c.Errors.Last()
-			if err != nil {
-				customErr := errors.FromError(err)
-				logger.Error("server error",
-					zap.String("method", c.Request.Method),
-					zap.String("url", c.Request.URL.String()),
-					zap.Error(err),
-				)
-				c.JSON(customErr.Code, customErr.Reply())
-				c.Abort()
-			}
-		}
 	}
 }

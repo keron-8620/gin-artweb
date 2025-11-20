@@ -1,6 +1,10 @@
 package permission
 
-import "gin-artweb/api/common"
+import (
+	"go.uber.org/zap/zapcore"
+
+	"gin-artweb/api/common"
+)
 
 // CreatePermissionRequest 用于创建权限的请求结构体
 //
@@ -31,6 +35,15 @@ type CreatePermissionRequest struct {
 	Descr string `json:"descr" binding:"max=254"`
 }
 
+func (req *CreatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("id", req.ID)
+	enc.AddString("url", req.URL)
+	enc.AddString("method", req.Method)
+	enc.AddString("label", req.Label)
+	enc.AddString("descr", req.Descr)
+	return nil
+}
+
 // UpdatePermissionRequest 用于更新权限的请求结构体
 // 包含权限主键、HTTP URL、请求方法和描述信息
 //
@@ -54,6 +67,14 @@ type UpdatePermissionRequest struct {
 	// 权限描述信息，可选，最大长度254
 	// Max length: 254
 	Descr string `json:"descr" binding:"omitempty,max=254"`
+}
+
+func (req *UpdatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("url", req.URL)
+	enc.AddString("method", req.Method)
+	enc.AddString("label", req.Label)
+	enc.AddString("descr", req.Descr)
+	return nil
 }
 
 // ListPermissionRequest 用于获取权限列表的请求结构体

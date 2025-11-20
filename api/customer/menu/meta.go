@@ -3,6 +3,8 @@ package menu
 import (
 	"encoding/json"
 	"fmt"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type MetaSchemas struct {
@@ -15,6 +17,12 @@ type MetaSchemas struct {
 func (m *MetaSchemas) Json() string {
 	jd, _ := json.Marshal(m)
 	return string(jd)
+}
+
+func (m *MetaSchemas) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("title", m.Title)
+	enc.AddString("icon", m.Icon)
+	return nil
 }
 
 func NewMetaSchemas(ms string) (*MetaSchemas, error) {

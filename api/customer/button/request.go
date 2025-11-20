@@ -2,6 +2,8 @@ package button
 
 import (
 	"gin-artweb/api/common"
+
+	"go.uber.org/zap/zapcore"
 )
 
 // CreateButtonRequest 用于创建按钮的请求结构体
@@ -35,6 +37,22 @@ type CreateButtonRequest struct {
 	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
 }
 
+func (req *CreateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("id", req.ID)
+	enc.AddString("name", req.Name)
+	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddBool("is_active", req.IsActive)
+	enc.AddString("descr", req.Descr)
+	enc.AddUint32("menu_id", req.MenuID)
+	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.PermissionIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	return nil
+}
+
 // UpdateButtonRequest 用于更新按钮的请求结构体
 //
 // swagger:model UpdateButtonRequest
@@ -59,6 +77,21 @@ type UpdateButtonRequest struct {
 
 	// 关联权限ID列表，可选
 	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
+}
+
+func (req *UpdateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", req.Name)
+	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddBool("is_active", req.IsActive)
+	enc.AddString("descr", req.Descr)
+	enc.AddUint32("menu_id", req.MenuID)
+	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.PermissionIDs {
+			ae.AppendUint32(id)
+		}
+		return nil
+	}))
+	return nil
 }
 
 // ListButtonRequest 用于获取按钮列表的请求结构体

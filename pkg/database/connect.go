@@ -3,7 +3,6 @@
 package database
 
 import (
-	"io"
 	"log"
 	"time"
 
@@ -18,19 +17,20 @@ import (
 )
 
 // NewGormConfig 创建 gorm 配置
-func NewGormConfig(w io.Writer) *gorm.Config {
+func NewGormConfig(dbLog *log.Logger) *gorm.Config {
 	var gc gorm.Config
 	gc.SkipDefaultTransaction = false
 	gc.FullSaveAssociations = false
 	gc.TranslateError = true
-	dbLog := log.New(w, " ", log.LstdFlags)
-	gc.Logger = logger.New(dbLog, logger.Config{
-		SlowThreshold:             time.Second,
-		Colorful:                  false,
-		IgnoreRecordNotFoundError: false,
-		ParameterizedQueries:      false,
-		LogLevel:                  logger.Info,
-	})
+	if dbLog != nil {
+		gc.Logger = logger.New(dbLog, logger.Config{
+			SlowThreshold:             time.Second,
+			Colorful:                  false,
+			IgnoreRecordNotFoundError: false,
+			ParameterizedQueries:      false,
+			LogLevel:                  logger.Info,
+		})
+	}
 	return &gc
 }
 
