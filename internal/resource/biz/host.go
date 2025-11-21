@@ -44,7 +44,7 @@ func (h *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 type HostModel struct {
 	database.StandardModel
 	Name     string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Label    string `gorm:"column:label;type:varchar(50);index:idx_member;comment:标签" json:"label"`
+	Label    string `gorm:"column:label;type:varchar(50);index:idx_host_label;comment:标签" json:"label"`
 	IPAddr   string `gorm:"column:ip_addr;type:varchar(108);comment:IP地址" json:"ip_addr"`
 	Port     uint16 `gorm:"column:port;type:smallint;comment:端口" json:"port"`
 	Username string `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
@@ -286,10 +286,7 @@ func (uc *HostUsecase) FindHostById(
 
 func (uc *HostUsecase) ListHost(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
+	qp database.QueryParams,
 ) (int64, *[]HostModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -297,22 +294,10 @@ func (uc *HostUsecase) ListHost(
 
 	uc.log.Info(
 		"开始查询主机列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.QueryParams{
-		Preloads: []string{},
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 	count, ms, err := uc.hostRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(

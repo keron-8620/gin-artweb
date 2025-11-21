@@ -354,11 +354,7 @@ func (uc *UserUsecase) FindUserByName(
 
 func (uc *UserUsecase) ListUser(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
-	preloads []string,
+	qp database.QueryParams,
 ) (int64, *[]UserModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -366,23 +362,9 @@ func (uc *UserUsecase) ListUser(
 
 	uc.log.Info(
 		"开始查询用户列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
-		zap.Strings(database.PreloadKey, preloads),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	qp := database.QueryParams{
-		Preloads: preloads,
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 
 	count, ms, err := uc.userRepo.ListModel(ctx, qp)
 	if err != nil {

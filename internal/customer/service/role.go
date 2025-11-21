@@ -14,6 +14,7 @@ import (
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
 	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
 
@@ -331,7 +332,14 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucRole.ListRole(ctx, page, size, query, []string{"id"}, true, nil)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucRole.ListRole(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询角色列表失败",

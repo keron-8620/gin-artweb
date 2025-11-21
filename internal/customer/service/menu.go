@@ -350,7 +350,14 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucMenu.ListMenu(ctx, page, size, query, []string{"id"}, true, nil)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucMenu.ListMenu(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询菜单列表失败",

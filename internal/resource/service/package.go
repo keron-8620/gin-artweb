@@ -13,6 +13,7 @@ import (
 	pbPkg "gin-artweb/api/resource/package"
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
 
@@ -290,7 +291,14 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucPkg.ListPackage(ctx, page, size, query, []string{"id"}, true)
+	qp := database.QueryParams{
+		IsCount:  true,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"id"},
+		Query:    query,
+	}
+	total, ms, err := s.ucPkg.ListPackage(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询程序包列表失败",

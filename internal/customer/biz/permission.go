@@ -276,10 +276,7 @@ func (uc *PermissionUsecase) FindPermissionByID(
 
 func (uc *PermissionUsecase) ListPermission(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
+	qp database.QueryParams,
 ) (int64, *[]PermissionModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -287,22 +284,9 @@ func (uc *PermissionUsecase) ListPermission(
 
 	uc.log.Info(
 		"开始查询权限列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	qp := database.QueryParams{
-		Preloads: []string{},
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 
 	count, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -333,7 +317,11 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	_, pms, err := uc.ListPermission(ctx, 0, 0, nil, nil, false)
+	qp := database.QueryParams{
+		Columns: []string{"id", "url", "method"},
+	}
+
+	_, pms, err := uc.ListPermission(ctx, qp)
 	if err != nil {
 		uc.log.Error(
 			"加载权限策略时查询权限列表失败",

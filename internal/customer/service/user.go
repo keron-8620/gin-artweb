@@ -13,6 +13,7 @@ import (
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
 	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
 
@@ -330,7 +331,15 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucUser.ListUser(ctx, page, size, query, []string{"id"}, true, []string{"Role"})
+	qp := database.QueryParams{
+		IsCount:  true,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"id"},
+		Query:    query,
+		Preloads: []string{"Role"},
+	}
+	total, ms, err := s.ucUser.ListUser(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询用户列表失败",

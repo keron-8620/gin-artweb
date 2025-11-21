@@ -168,7 +168,10 @@ func (uc *MenuUsecase) GetPermissions(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.NewPksQueryParams(permIDs)
+	qp := database.QueryParams{
+		Query:   map[string]any{"id in ?": permIDs},
+		Columns: []string{"id"},
+	}
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
@@ -399,11 +402,7 @@ func (uc *MenuUsecase) FindMenuByID(
 
 func (uc *MenuUsecase) ListMenu(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
-	preloads []string,
+	qp database.QueryParams,
 ) (int64, *[]MenuModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -411,23 +410,9 @@ func (uc *MenuUsecase) ListMenu(
 
 	uc.log.Info(
 		"开始查询菜单列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
-		zap.Strings("preloads", preloads),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	qp := database.QueryParams{
-		Preloads: preloads,
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 
 	count, ms, err := uc.menuRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -457,7 +442,12 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 		"开始加载菜单策略",
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	_, mms, err := uc.ListMenu(ctx, 0, 0, nil, nil, false, []string{"Parent", "Permissions"})
+
+	qp := database.QueryParams{
+		Preloads: []string{"Parent", "Permissions"},
+		Columns: []string{"id"},
+	}
+	_, mms, err := uc.ListMenu(ctx, qp)
 	if err != nil {
 		uc.log.Error(
 			"加载菜单策略时查询菜单列表失败",

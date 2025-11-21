@@ -190,18 +190,6 @@ func (r *hostRepo) ListModel(
 	return count, &ms, nil
 }
 
-func (r *hostRepo) ListModelByIds(
-	ctx context.Context,
-	ids []uint32,
-) (*[]biz.HostModel, error) {
-	if len(ids) == 0 {
-		return &[]biz.HostModel{}, nil
-	}
-	qp := database.NewPksQueryParams(ids)
-	_, ms, err := r.ListModel(ctx, qp)
-	return ms, err
-}
-
 func (r *hostRepo) NewSSHClient(
 	ctx context.Context,
 	addr string,

@@ -114,7 +114,10 @@ func (uc *RoleUsecase) GetPermissions(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.NewPksQueryParams(permIDs)
+	qp := database.QueryParams{
+		Query:   map[string]any{"id in ?": permIDs},
+		Columns: []string{"id"},
+	}
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
@@ -152,7 +155,10 @@ func (uc *RoleUsecase) GetMenus(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.NewPksQueryParams(menuIDs)
+	qp := database.QueryParams{
+		Query:   map[string]any{"id in ?": menuIDs},
+		Columns: []string{"id"},
+	}
 	_, ms, err := uc.menuRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
@@ -190,7 +196,10 @@ func (uc *RoleUsecase) GetButtons(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.NewPksQueryParams(buttonIDs)
+	qp := database.QueryParams{
+		Query:   map[string]any{"id in ?": buttonIDs},
+		Columns: []string{"id"},
+	}
 	_, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
@@ -452,11 +461,7 @@ func (uc *RoleUsecase) FindRoleByID(
 
 func (uc *RoleUsecase) ListRole(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
-	preloads []string,
+	qp database.QueryParams,
 ) (int64, *[]RoleModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -464,23 +469,9 @@ func (uc *RoleUsecase) ListRole(
 
 	uc.log.Info(
 		"开始查询角色列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
-		zap.Strings("preloads", preloads),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	qp := database.QueryParams{
-		Preloads: preloads,
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 
 	count, ms, err := uc.roleRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -510,7 +501,12 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	_, rms, err := uc.ListRole(ctx, 0, 0, nil, nil, false, []string{"Permissions", "Menus", "Buttons"})
+	qp := database.QueryParams{
+		Preloads: []string{"Permissions", "Menus", "Buttons"},
+		Columns:  []string{"id"},
+	}
+
+	_, rms, err := uc.ListRole(ctx, qp)
 	if err != nil {
 		uc.log.Error(
 			"加载角色策略时查询角色列表失败",

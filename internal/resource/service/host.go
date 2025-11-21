@@ -10,6 +10,7 @@ import (
 	pbHost "gin-artweb/api/resource/host"
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
 
@@ -331,7 +332,14 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucHost.ListHost(ctx, page, size, query, []string{"id"}, true)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucHost.ListHost(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询主机列表失败",

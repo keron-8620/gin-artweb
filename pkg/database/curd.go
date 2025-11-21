@@ -227,23 +227,22 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, err
 	}
+
 	// 初始化查询构建器
 	mdb := db.Model(model)
 
-	// 预加载关联关系
-	for _, preload := range query.Preloads {
-		mdb = mdb.Preload(preload)
+	// 指定查询字段和忽略字段（如果有同时指定了Select和Omit，Select优先）
+	if len(query.Columns) > 0 {
+		mdb = mdb.Select(query.Columns)
+	} else {
+		if len(query.Omit) > 0 {
+			mdb = mdb.Omit(query.Omit...)
+		}
 	}
 
 	// 添加查询条件
 	for k, v := range query.Query {
 		mdb = mdb.Where(k, v)
-	}
-
-	// 查询总数
-	var count int64 = 0
-	if query.IsCount {
-		mdb = mdb.Count(&count)
 	}
 
 	// 添加排序条件
@@ -258,6 +257,17 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	}
 	if query.Offset > 0 {
 		mdb = mdb.Offset(query.Offset)
+	}
+
+	// 预加载关联关系
+	for _, preload := range query.Preloads {
+		mdb = mdb.Preload(preload)
+	}
+
+	// 查询总数
+	var count int64 = 0
+	if query.IsCount {
+		mdb = mdb.Count(&count)
 	}
 
 	// 执行查询
@@ -282,18 +292,22 @@ type QueryParams struct {
 	Limit    int            // 限制返回记录数
 	Offset   int            // 偏移量
 	IsCount  bool           // 是否只查询总数
+	Omit     []string       // 需要忽略的字段列表
+	Columns  []string       // 查询字段列表
 }
 
-func NewPksQueryParams(pks []uint32) QueryParams {
-	return QueryParams{
-		Preloads: []string{},
-		Query:    map[string]any{"id in ?": pks},
-		OrderBy:  []string{"id"},
-		IsCount:  false,
-		Limit:    0,
-		Offset:   0,
-	}
-}
+// func NewPksQueryParams(pks []uint32) QueryParams {
+// 	return QueryParams{
+// 		Preloads: []string{},
+// 		Query:    map[string]any{"id in ?": pks},
+// 		OrderBy:  []string{"id"},
+// 		IsCount:  false,
+// 		Limit:    0,
+// 		Offset:   0,
+// 		Omit:     []string{},
+// 		Columns:  []string{},
+// 	}
+// }
 
 func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	// 记录预加载字段
@@ -315,5 +329,19 @@ func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddInt("offset", q.Offset)
 	// 记录是否查询总数
 	enc.AddBool("is_count", q.IsCount)
+
+	// 忽略字段
+	if len(q.Omit) > 0 {
+		enc.AddString("omit", strings.Join(q.Omit, ","))
+	} else {
+		enc.AddString("omit", "")
+	}
+
+	// 查询字段
+	if len(q.Columns) > 0 {
+		enc.AddString("columns", strings.Join(q.Columns, ","))
+	} else {
+		enc.AddString("columns", "")
+	}
 	return nil
 }

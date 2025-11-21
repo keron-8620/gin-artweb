@@ -22,6 +22,7 @@ import (
 	"gorm.io/gorm"
 
 	customer "gin-artweb/internal/customer/server"
+	resource "gin-artweb/internal/resource/server"
 
 	"gin-artweb/docs"
 	"gin-artweb/pkg/common"
@@ -242,6 +243,7 @@ func newRouter(init *initialize) *gin.Engine {
 
 	// 初始化加载业务模块
 	customer.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
+	resource.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	return r
 }
 

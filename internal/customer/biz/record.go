@@ -93,10 +93,7 @@ func (uc *RecordUsecase) CreateLoginRecord(
 
 func (uc *RecordUsecase) ListLoginRecord(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
+	qp database.QueryParams,
 ) (int64, *[]LoginRecordModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -104,22 +101,9 @@ func (uc *RecordUsecase) ListLoginRecord(
 
 	uc.log.Info(
 		"开始查询用户登录记录列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	qp := database.QueryParams{
-		Preloads: []string{},
-		Query:    query,
-		OrderBy:  []string{"id"},
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  true,
-	}
 
 	count, ms, err := uc.recordRepo.ListModel(ctx, qp)
 	if err != nil {

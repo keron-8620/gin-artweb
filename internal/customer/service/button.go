@@ -330,7 +330,14 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucButton.ListButton(ctx, page, size, query, []string{"id"}, true, nil)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucButton.ListButton(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询按钮列表失败",

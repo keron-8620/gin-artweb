@@ -147,7 +147,10 @@ func (uc *ButtonUsecase) GetPermissions(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.NewPksQueryParams(permIDs)
+	qp := database.QueryParams{
+		Query:   map[string]any{"id in ?": permIDs},
+		Columns: []string{"id"},
+	}
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
@@ -377,11 +380,7 @@ func (uc *ButtonUsecase) FindButtonByID(
 
 func (uc *ButtonUsecase) ListButton(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
-	preloads []string,
+	qp database.QueryParams,
 ) (int64, *[]ButtonModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -389,23 +388,9 @@ func (uc *ButtonUsecase) ListButton(
 
 	uc.log.Info(
 		"开始查询角色列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
-		zap.Strings("preloads", preloads),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	qp := database.QueryParams{
-		Preloads: preloads,
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 
 	count, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -436,7 +421,12 @@ func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) *errors.Error {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	_, bms, err := uc.ListButton(ctx, 0, 0, nil, nil, false, []string{"Menu", "Permissions"})
+	qp := database.QueryParams{
+		Preloads: []string{"Menu", "Permissions"},
+		Columns: []string{"id"},
+	}
+
+	_, bms, err := uc.ListButton(ctx, qp)
 	if err != nil {
 		uc.log.Error(
 			"加载按钮策略时查询按钮列表失败",

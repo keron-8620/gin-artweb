@@ -20,7 +20,7 @@ const (
 
 type PackageModel struct {
 	database.BaseModel
-	Label           string    `gorm:"column:label;type:varchar(50);index:idx_member;comment:标签" json:"label"`
+	Label           string    `gorm:"column:label;type:varchar(50);index:idx_package_label;comment:标签" json:"label"`
 	StorageFilename string    `gorm:"column:storage_filename;type:varchar(50);not null;uniqueIndex;comment:磁盘存储文件名" json:"storage_filename"`
 	OriginFilename  string    `gorm:"column:origin_filename;type:varchar(255);comment:原始文件名" json:"origin_filename"`
 	Version         string    `gorm:"column:version;type:varchar(50);comment:版本号" json:"version"`
@@ -178,10 +178,7 @@ func (uc *PackageUsecase) FindPackageById(
 
 func (uc *PackageUsecase) ListPackage(
 	ctx context.Context,
-	page, size int,
-	query map[string]any,
-	orderBy []string,
-	isCount bool,
+	qp database.QueryParams,
 ) (int64, *[]PackageModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
@@ -189,22 +186,10 @@ func (uc *PackageUsecase) ListPackage(
 
 	uc.log.Info(
 		"开始查询程序包列表",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Any("query", query),
-		zap.Strings("order_by", orderBy),
-		zap.Bool("is_count", isCount),
+		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	qp := database.QueryParams{
-		Preloads: []string{},
-		Query:    query,
-		OrderBy:  orderBy,
-		Limit:    max(size, 0),
-		Offset:   max(page-1, 0),
-		IsCount:  isCount,
-	}
 	count, ms, err := uc.pkgRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(

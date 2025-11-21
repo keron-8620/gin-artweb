@@ -11,6 +11,7 @@ import (
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/pkg/auth"
 	"gin-artweb/pkg/common"
+	"gin-artweb/pkg/database"
 	"gin-artweb/pkg/errors"
 )
 
@@ -67,7 +68,14 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucRecord.ListLoginRecord(ctx, page, size, query, []string{"-id"}, true)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"-id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucRecord.ListLoginRecord(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询用户登录记录列表失败",
@@ -143,7 +151,14 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucRecord.ListLoginRecord(ctx, page, size, query, []string{"-id"}, true)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"-id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucRecord.ListLoginRecord(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询个人登录记录列表失败",

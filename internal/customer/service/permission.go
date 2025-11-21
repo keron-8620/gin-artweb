@@ -329,7 +329,14 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 	)
 
 	page, size, query := req.Query()
-	total, ms, err := s.ucPerm.ListPermission(ctx, page, size, query, []string{"id"}, true)
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id"},
+		Query:   query,
+	}
+	total, ms, err := s.ucPerm.ListPermission(ctx, qp)
 	if err != nil {
 		s.log.Error(
 			"查询权限列表失败",
