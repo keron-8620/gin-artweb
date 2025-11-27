@@ -1,4 +1,4 @@
-package pkg
+package script
 
 import (
 	"mime/multipart"
@@ -9,46 +9,58 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type UploadPackageRequest struct {
-	Label   string                `form:"label" binding:"required" json:"label"`
-	Version string                `form:"version" binding:"required" json:"version"`
-	File    *multipart.FileHeader `form:"file" binding:"required" json:"file"`
+type UploadScriptRequest struct {
+	// 名称，最大长度255
+	Name string `form:"name" binding:"required"`
+
+	// 标签，最大长度50
+	// Required: true
+	// Max length: 50
+	Label string `form:"label" binding:"required"`
+
+	// 版本号，最大长度50
+	// Required: true
+	// Max length: 50
+	Version string `form:"version" binding:"required"`
+
+	// 上传的程序包文件
+	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
-func (req *UploadPackageRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (req *UploadScriptRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("label", req.Label)
 	enc.AddString("version", req.Version)
 	return nil
 }
 
-type ListPackageRequest struct {
+type ListScriptRequest struct {
 	common.BaseModelQuery
 
 	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
-	Name string `json:"name" binding:"required,max=50"`
+	Name string `json:"name" binding:"omitempty,max=50"`
 
 	// 标签，最大长度50
 	// Required: true
 	// Max length: 50
-	Label string `json:"label" binding:"required,max=50"`
+	Label string `json:"label" binding:"omitempty,max=50"`
 
 	// 版本号，最大长度50
 	// Required: true
 	// Max length: 50
-	Version string `form:"version" binding:"required" json:"version"`
+	Version string `form:"version" binding:"omitempty" json:"version"`
 
 	// 上传时间之前的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	BeforeUploadedAt string `form:"before_uploaded_at" json:"before_uploaded_at"`
+	BeforeUploadedAt string `form:"before_uploaded_at" binding:"omitempty"`
 
 	// 上传时间之后的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	AfterUploadedAt string `form:"after_uploaded_at" json:"after_uploaded_at"`
+	AfterUploadedAt string `form:"after_uploaded_at" binding:"omitempty"`
 }
 
-func (req *ListPackageRequest) Query() (int, int, map[string]any) {
+func (req *ListScriptRequest) Query() (int, int, map[string]any) {
 	page, size, query := req.BaseModelQuery.QueryMap(13)
 	if req.Label != "" {
 		query["label = ?"] = req.Label

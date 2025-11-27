@@ -13,8 +13,9 @@ database:
   dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable"
   max_idle_conns: 10
   max_open_conns: 10
-  conn_max_lifetime: 60
-  log_sql: false
+  conn_max_lifetime: 3600
+  conn_max_idle_time: 600
+  log_sql: true
   read_timeout: 3
   write_timeout: 10
   list_timeout: 8
@@ -27,7 +28,7 @@ smtp:
   tls: false
 
 log:
-  level: "INFO"
+  level: "DEBUG"
   max_size: 10
   max_age: 7
   max_backups: 5

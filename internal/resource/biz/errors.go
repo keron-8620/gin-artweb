@@ -3,7 +3,7 @@ package biz
 import (
 	"net/http"
 
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/errors"
 )
 
 var (

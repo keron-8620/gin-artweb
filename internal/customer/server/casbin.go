@@ -9,8 +9,8 @@ import (
 	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
 	"go.uber.org/zap"
 
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/config"
 )
 
 func baseRoleMeProlicys() string {
@@ -23,7 +23,7 @@ func baseRoleMeProlicys() string {
 }
 
 func NewCasbinEnforcer(logger *zap.Logger, jwtKey string) (*auth.AuthEnforcer, error) {
-	modelPath := filepath.Join(common.ConfigDir, "model.conf")
+	modelPath := filepath.Join(config.ConfigDir, "model.conf")
 	adapter := stringadapter.NewAdapter(baseRoleMeProlicys())
 	enf, err := casbin.NewEnforcer(modelPath, adapter)
 	if err != nil {

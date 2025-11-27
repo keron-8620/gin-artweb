@@ -13,7 +13,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"gin-artweb/pkg/database/driver/opengauss"
+	"gin-artweb/internal/shared/database/driver/opengauss"
+	"gin-artweb/internal/shared/config"
 )
 
 // NewGormConfig 创建 gorm 配置
@@ -38,24 +39,24 @@ func NewGormConfig(dbLog *log.Logger) *gorm.Config {
 // c: 数据库配置信息
 // gc: GORM配置信息
 // 返回GORM数据库实例和可能的错误
-func NewGormDB(dbType, dbDns string, gc *gorm.Config) (*gorm.DB, error) {
+func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 	var (
 		db      *gorm.DB // GORM数据库实例
 		openErr error    // 数据库打开错误
 	)
 
 	// 根据数据库类型选择相应的驱动并建立连接
-	switch dbType {
+	switch c.Type {
 	case "mysql":
-		db, openErr = gorm.Open(mysql.Open(dbDns), gc)
+		db, openErr = gorm.Open(mysql.Open(c.Dns), gc)
 	case "postgres":
-		db, openErr = gorm.Open(postgres.Open(dbDns), gc)
+		db, openErr = gorm.Open(postgres.Open(c.Dns), gc)
 	case "sqlite":
-		db, openErr = gorm.Open(sqlite.Open(dbDns), gc)
+		db, openErr = gorm.Open(sqlite.Open(c.Dns), gc)
 	case "sqlserver":
-		db, openErr = gorm.Open(sqlserver.Open(dbDns), gc)
+		db, openErr = gorm.Open(sqlserver.Open(c.Dns), gc)
 	case "opengauss":
-		db, openErr = gorm.Open(opengauss.Open(dbDns), gc)
+		db, openErr = gorm.Open(opengauss.Open(c.Dns), gc)
 	default:
 		// 不支持的数据库驱动类型
 		return nil, gorm.ErrUnsupportedDriver
@@ -70,10 +71,10 @@ func NewGormDB(dbType, dbDns string, gc *gorm.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 	// 设置连接池参数
-	sqlDB.SetMaxIdleConns(10)                  // 最大空闲连接数
-	sqlDB.SetMaxOpenConns(100)                 // 最大打开连接数
-	sqlDB.SetConnMaxLifetime(time.Hour)        // 连接最大生命周期
-	sqlDB.SetConnMaxIdleTime(30 * time.Minute) // 空闲连接最大存活时间
+	sqlDB.SetMaxIdleConns(c.MaxIdleConns)                                    // 最大空闲连接数
+	sqlDB.SetMaxOpenConns(c.MaxOpenConns)                                    // 最大打开连接数
+	sqlDB.SetConnMaxLifetime(time.Duration(c.ConnMaxLifetime) * time.Second) // 连接最大生命周期
+	sqlDB.SetConnMaxIdleTime(time.Duration(c.ConnMaxIdleTime) * time.Second) // 空闲连接最大存活时间
 	return db, nil
 }
 

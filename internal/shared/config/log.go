@@ -9,23 +9,3 @@ type LogConfig struct {
 	LocalTime  bool   `mapstructure:"local_time" json:"local_time" yaml:"local_time"`
 	Compress   bool   `mapstructure:"compress" json:"compress" yaml:"compress"`
 }
-
-func (c *LogConfig) GetMaxSize() int {
-	return c.MaxSize
-}
-
-func (c *LogConfig) GetMaxAge() int {
-	return c.MaxAge
-}
-
-func (c *LogConfig) GetMaxBackUps() int {
-	return c.MaxBackups
-}
-
-func (c *LogConfig) GetLocalTime() bool {
-	return c.LocalTime
-}
-
-func (c *LogConfig) GetCompress() bool {
-	return c.Compress
-}

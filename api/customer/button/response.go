@@ -3,7 +3,6 @@ package button
 import (
 	"gin-artweb/api/common"
 	"gin-artweb/api/customer/menu"
-	"gin-artweb/api/customer/permission"
 )
 
 // ButtonOutBase 按钮基础信息
@@ -26,8 +25,8 @@ type ButtonOutBase struct {
 
 type ButtonOut struct {
 	ButtonOutBase
-	Menu        *menu.MenuOutBase               `json:"menu"`
-	Permissions *[]permission.PermissionOutBase `json:"permissions"`
+	Menu        *menu.MenuOutBase `json:"menu"`
+	Permissions []uint32          `json:"permissions"`
 }
 
 // ButtonBaseReply 按钮响应结构

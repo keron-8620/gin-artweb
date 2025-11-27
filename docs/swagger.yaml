@@ -29,7 +29,7 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/permission.PermissionOutBase'
+          type: integer
         type: array
       updated_at:
         description: 更新时间
@@ -124,7 +124,6 @@ definitions:
     required:
     - arrange_order
     - id
-    - is_active
     - menu_id
     - name
     type: object
@@ -177,8 +176,6 @@ definitions:
           type: integer
         type: array
     required:
-    - arrange_order
-    - is_active
     - menu_id
     - name
     type: object
@@ -503,7 +500,6 @@ definitions:
         description: |-
           端口，必填
           Required: true
-        format: int32
         type: integer
       py_path:
         description: |-
@@ -530,6 +526,7 @@ definitions:
     - label
     - name
     - password
+    - port
     - username
     type: object
   host.HostOutBase:
@@ -647,7 +644,6 @@ definitions:
         description: |-
           端口，必填
           Required: true
-        format: int32
         type: integer
       py_path:
         description: |-
@@ -674,6 +670,8 @@ definitions:
     - label
     - name
     - password
+    - port
+    - py_path
     - username
     type: object
   menu.CreateMenuRequest:
@@ -733,7 +731,6 @@ definitions:
     - arrange_order
     - component
     - id
-    - is_active
     - meta
     - name
     - path
@@ -776,7 +773,7 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/permission.PermissionOutBase'
+          type: integer
         type: array
       updated_at:
         description: 更新时间
@@ -929,7 +926,6 @@ definitions:
     required:
     - arrange_order
     - component
-    - is_active
     - meta
     - name
     - path
@@ -1327,7 +1323,7 @@ definitions:
     properties:
       buttons:
         items:
-          $ref: '#/definitions/button.ButtonOutBase'
+          type: integer
         type: array
       created_at:
         description: 创建时间
@@ -1343,7 +1339,7 @@ definitions:
         type: integer
       menus:
         items:
-          $ref: '#/definitions/menu.MenuOutBase'
+          type: integer
         type: array
       name:
         description: 名称
@@ -1351,7 +1347,7 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/permission.PermissionOutBase'
+          type: integer
         type: array
       updated_at:
         description: 更新时间
@@ -1446,6 +1442,7 @@ definitions:
           密码，最大长度20
           Required: true
           Max length: 20
+        maxLength: 20
         type: string
       role_id:
         description: 角色ID，必填
@@ -1458,8 +1455,6 @@ definitions:
         maxLength: 50
         type: string
     required:
-    - is_active
-    - is_staff
     - password
     - role_id
     - username
@@ -1534,7 +1529,6 @@ definitions:
           确认密码，最大长度20
           Required: true
           Max length: 20
-        maxLength: 20
         type: string
       new_password:
         description: |-
@@ -1561,7 +1555,6 @@ definitions:
           确认密码，最大长度20
           Required: true
           Max length: 20
-        maxLength: 20
         type: string
       new_password:
         description: |-
@@ -1582,21 +1575,19 @@ definitions:
       is_staff:
         description: 是否是工作人员，必填
         type: boolean
-      name:
+      role_id:
+        description: 角色ID，必填
+        type: integer
+      username:
         description: |-
           用户名，最大长度50
           Required: true
           Max length: 50
         maxLength: 50
         type: string
-      role_id:
-        description: 角色ID，必填
-        type: integer
     required:
-    - is_active
-    - is_staff
-    - name
     - role_id
+    - username
     type: object
   user.UserOut:
     properties:
@@ -2906,6 +2897,8 @@ paths:
     post:
       consumes:
       - application/json
+      - application/x-www-form-urlencoded
+      - multipart/form-data
       description: 本接口用于创建新的主机配置信息
       parameters:
       - description: 创建主机请求
@@ -3006,6 +2999,8 @@ paths:
     put:
       consumes:
       - application/json
+      - application/x-www-form-urlencoded
+      - multipart/form-data
       description: 本接口用于更新指定ID的主机配置信息
       parameters:
       - description: 主机编号

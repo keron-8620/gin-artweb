@@ -15,7 +15,7 @@ type APIReply[T any] struct {
 	Msg string `json:"msg"`
 	// 数据
 	// 可以是任意类型的数据
-	Data T `json:"data,omitempty"`
+	Data T `json:"data"`
 }
 
 // Pag 分页响应结构体
@@ -65,7 +65,7 @@ type MapAPIReply struct {
 	Msg string `json:"msg"`
 	// 数据
 	// 可以是任意类型的数据
-	Data map[string]any `json:"data,omitempty"`
+	Data map[string]any `json:"data"`
 }
 
 var NoDataReply = MapAPIReply{

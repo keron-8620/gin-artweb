@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/errors"
 )
 
 // zap日志中数据库相关常用key
@@ -58,11 +58,11 @@ func DBPanic(ctx context.Context, tx *gorm.DB) (err error) {
 	return
 }
 
-// DBRollback 回滚数据库事务并记录错误日志
+// dbRollback 回滚数据库事务并记录错误日志
 // ctx: 上下文
 // tx: GORM事务对象
 // 返回回滚操作可能产生的错误
-func DBRollback(ctx context.Context, tx *gorm.DB) error {
+func dbRollback(ctx context.Context, tx *gorm.DB) error {
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
@@ -73,29 +73,55 @@ func DBRollback(ctx context.Context, tx *gorm.DB) error {
 	return nil
 }
 
-// DBCommit 提交数据库事务，如果提交失败则自动回滚
+// dbCommit 提交数据库事务，如果提交失败则自动回滚
 // ctx: 上下文
 // tx: GORM事务对象
 // 返回提交操作可能产生的错误
-func DBCommit(ctx context.Context, tx *gorm.DB) error {
+func dbCommit(ctx context.Context, tx *gorm.DB) error {
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 执行提交操作
 	if err := tx.Commit().Error; err != nil {
-		DBRollback(ctx, tx)
+		dbRollback(ctx, tx)
 		return err
 	}
 	return nil
 }
 
-// DBAssociate 更新模型的关联关系
+// dbAssociateAppend 添加模型的关联关系
 // ctx: 上下文
 // db: GORM数据库实例
 // om: 目标模型对象
 // upmap: 关联关系映射，key为关联字段名，value为关联数据
 // 返回操作可能产生的错误
-func DBAssociate(ctx context.Context, db *gorm.DB, om any, upmap map[string]any) error {
+func dbAssociateAppend(ctx context.Context, db *gorm.DB, om any, upmap map[string]any) error {
+	if len(upmap) == 0 {
+		return nil
+	}
+
+	// 遍历关联关系映射，逐个更新关联字段
+	for k, v := range upmap {
+		if err := errors.CheckContext(ctx); err != nil {
+			return err
+		}
+		if k == "" {
+			continue
+		}
+		if err := db.Model(om).Association(k).Append(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// dbAssociateReplace 更新模型的关联关系
+// ctx: 上下文
+// db: GORM数据库实例
+// om: 目标模型对象
+// upmap: 关联关系映射，key为关联字段名，value为关联数据
+// 返回操作可能产生的错误
+func dbAssociateReplace(ctx context.Context, db *gorm.DB, om any, upmap map[string]any) error {
 	if len(upmap) == 0 {
 		return nil
 	}
@@ -121,12 +147,39 @@ func DBAssociate(ctx context.Context, db *gorm.DB, om any, upmap map[string]any)
 // model: 目标模型
 // value: 要创建的数据
 // 返回操作可能产生的错误
-func DBCreate(ctx context.Context, db *gorm.DB, model, value any) error {
+func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[string]any) error {
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 使用GORM的Create方法创建记录
-	return db.Model(model).Create(value).Error
+	if len(upmap) == 0 {
+		return db.Model(model).Create(value).Error
+	}
+
+	// 开启事务处理
+	tx := db.Begin()
+	if tx.Error != nil {
+		// 事务开启失败时记录错误日志
+		return tx.Error
+	}
+
+	// 设置panic处理
+	defer DBPanic(ctx, tx)
+
+	// 创建主表数据
+	if err := db.Model(model).Create(value).Error; err != nil {
+		return err
+	}
+
+	// 更新关联关系
+	if err := dbAssociateAppend(ctx, tx, value, upmap); err != nil {
+		dbRollback(ctx, tx)
+		return err
+	}
+
+	// 提交事务
+	return dbCommit(ctx, tx)
+
 }
 
 // DBUpdate 更新数据库记录，支持关联关系更新
@@ -163,18 +216,18 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 
 	// 更新主表数据
 	if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
-		DBRollback(ctx, tx)
+		dbRollback(ctx, tx)
 		return err
 	}
 
 	// 更新关联关系
-	if err := DBAssociate(ctx, tx, m, upmap); err != nil {
-		DBRollback(ctx, tx)
+	if err := dbAssociateReplace(ctx, tx, m, upmap); err != nil {
+		dbRollback(ctx, tx)
 		return err
 	}
 
 	// 提交事务
-	return DBCommit(ctx, tx)
+	return dbCommit(ctx, tx)
 }
 
 // DBDelete 删除数据库记录
@@ -295,19 +348,6 @@ type QueryParams struct {
 	Omit     []string       // 需要忽略的字段列表
 	Columns  []string       // 查询字段列表
 }
-
-// func NewPksQueryParams(pks []uint32) QueryParams {
-// 	return QueryParams{
-// 		Preloads: []string{},
-// 		Query:    map[string]any{"id in ?": pks},
-// 		OrderBy:  []string{"id"},
-// 		IsCount:  false,
-// 		Limit:    0,
-// 		Offset:   0,
-// 		Omit:     []string{},
-// 		Columns:  []string{},
-// 	}
-// }
 
 func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	// 记录预加载字段

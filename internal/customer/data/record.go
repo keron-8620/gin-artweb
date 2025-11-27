@@ -10,13 +10,13 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+	"gin-artweb/internal/shared/log"
 )
 
-type recordRepo struct {
+type loginRecordRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
 	timeouts *database.DBTimeout
@@ -25,15 +25,15 @@ type recordRepo struct {
 	ttl      time.Duration
 }
 
-func NewRecordRepo(
+func NewLoginRecordRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *database.DBTimeout,
 	lockTime time.Duration,
 	clearTime time.Duration,
 	num int,
-) biz.RecordRepo {
-	return &recordRepo{
+) biz.LoginRecordRepo {
+	return &loginRecordRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
@@ -43,7 +43,7 @@ func NewRecordRepo(
 	}
 }
 
-func (r *recordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) error {
+func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) error {
 	// 检查参数
 	if m == nil {
 		return goerrors.New("创建登录记录模型失败: 登录记录模型不能为空")
@@ -56,7 +56,7 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) e
 	)
 	now := time.Now()
 	m.LoginAt = now
-	if err := database.DBCreate(ctx, r.gormDB, &biz.LoginRecordModel{}, m); err != nil {
+	if err := database.DBCreate(ctx, r.gormDB, &biz.LoginRecordModel{}, m, nil); err != nil {
 		r.log.Error(
 			"新增登陆记录模型失败",
 			zap.Object(database.ModelKey, m),
@@ -75,7 +75,7 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) e
 	return nil
 }
 
-func (r *recordRepo) ListModel(
+func (r *loginRecordRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]biz.LoginRecordModel, error) {
@@ -106,7 +106,7 @@ func (r *recordRepo) ListModel(
 	return count, &ms, nil
 }
 
-func (r *recordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
+func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
 	// 检查上下文
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, err
@@ -145,7 +145,7 @@ func (r *recordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error
 	return n, nil
 }
 
-func (r *recordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
+func (r *loginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
 	// 检查上下文
 	if err := errors.CheckContext(ctx); err != nil {
 		return err

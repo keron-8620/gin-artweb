@@ -9,11 +9,11 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+	"gin-artweb/internal/shared/log"
 )
 
 const (
@@ -41,7 +41,11 @@ func NewButtonRepo(
 	}
 }
 
-func (r *buttonRepo) CreateModel(ctx context.Context, m *biz.ButtonModel) error {
+func (r *buttonRepo) CreateModel(
+	ctx context.Context, 
+	m *biz.ButtonModel,
+	perms *[]biz.PermissionModel,
+) error {
 	// 检查参数
 	if m == nil {
 		return goerrors.New("创建按钮模型失败: 按钮模型不能为空")
@@ -52,10 +56,19 @@ func (r *buttonRepo) CreateModel(ctx context.Context, m *biz.ButtonModel) error 
 		zap.Object(database.ModelKey, m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
-	if err := database.DBCreate(ctx, r.gormDB, &biz.ButtonModel{}, m); err != nil {
+
+	upmap := make(map[string]any, 1)
+	if perms != nil {
+		if len(*perms) > 0 {
+			upmap["Permissions"] = *perms
+		}
+	}
+
+	if err := database.DBCreate(ctx, r.gormDB, &biz.ButtonModel{}, m, upmap); err != nil {
 		r.log.Error(
 			"创建按钮模型失败",
 			zap.Error(err),
@@ -65,6 +78,7 @@ func (r *buttonRepo) CreateModel(ctx context.Context, m *biz.ButtonModel) error 
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"创建按钮模型成功",
 		zap.Object(database.ModelKey, m),
@@ -87,6 +101,7 @@ func (r *buttonRepo) UpdateModel(
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	upmap := make(map[string]any, 1)
 	if perms != nil {
@@ -94,6 +109,7 @@ func (r *buttonRepo) UpdateModel(
 			upmap["Permissions"] = *perms
 		}
 	}
+
 	if err := database.DBUpdate(ctx, r.gormDB, &biz.ButtonModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
 			"更新按钮模型失败",
@@ -106,6 +122,7 @@ func (r *buttonRepo) UpdateModel(
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"更新按钮模型成功",
 		zap.Any(database.UpdateDataKey, data),
@@ -123,6 +140,7 @@ func (r *buttonRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	if err := database.DBDelete(ctx, r.gormDB, &biz.ButtonModel{}, conds...); err != nil {
 		r.log.Error(
@@ -134,6 +152,7 @@ func (r *buttonRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"删除按钮模型成功",
 		zap.Any(database.ConditionKey, conds),
@@ -154,6 +173,7 @@ func (r *buttonRepo) FindModel(
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	var m biz.ButtonModel
 	if err := database.DBFind(ctx, r.gormDB, preloads, &m, conds...); err != nil {
@@ -167,6 +187,7 @@ func (r *buttonRepo) FindModel(
 		)
 		return nil, err
 	}
+
 	r.log.Debug(
 		"查询按钮模型成功",
 		zap.Object(database.ModelKey, &m),
@@ -187,6 +208,7 @@ func (r *buttonRepo) ListModel(
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	var ms []biz.ButtonModel
 	count, err := database.DBList(ctx, r.gormDB, &biz.ButtonModel{}, &ms, qp)
@@ -200,6 +222,7 @@ func (r *buttonRepo) ListModel(
 		)
 		return 0, nil, err
 	}
+	
 	r.log.Debug(
 		"查询按钮模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
@@ -223,7 +246,14 @@ func (r *buttonRepo) AddGroupPolicy(
 		return goerrors.New("AddGroupPolicy操作失败: 按钮模型不能为空")
 	}
 
+	r.log.Debug(
+		"AddGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, button),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m := *button
+	
 	// 检查必要字段
 	if m.ID == 0 {
 		return goerrors.New("AddGroupPolicy操作失败: 按钮ID不能为0")
@@ -322,7 +352,15 @@ func (r *buttonRepo) RemoveGroupPolicy(
 		return goerrors.New("RemoveGroupPolicy操作失败: 按钮模型不能为空")
 	}
 
+	r.log.Debug(
+		"RemoveGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, button),
+		zap.Bool("removeInherited", removeInherited),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m := *button
+	
 	// 检查必要字段
 	if m.ID == 0 {
 		return goerrors.New("RemoveGroupPolicy操作失败: 按钮ID不能为0")

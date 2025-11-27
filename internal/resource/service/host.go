@@ -9,9 +9,9 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbHost "gin-artweb/api/resource/host"
 	"gin-artweb/internal/resource/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type HostService struct {
@@ -32,7 +32,7 @@ func NewHostService(
 // @Summary 创建主机
 // @Description 本接口用于创建新的主机配置信息
 // @Tags 主机管理
-// @Accept json
+// @Accept json,application/x-www-form-urlencoded,multipart/form-data
 // @Produce json
 // @Param request body pbHost.CreateHosrRequest true "创建主机请求"
 // @Success 201 {object} pbHost.HostReply "创建主机成功"
@@ -42,7 +42,7 @@ func NewHostService(
 // @Security ApiKeyAuth
 func (s *HostService) CreateHost(ctx *gin.Context) {
 	var req pbHost.CreateHosrRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建主机请求参数失败",
 			zap.Error(err),
@@ -98,7 +98,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 // @Summary 更新主机
 // @Description 本接口用于更新指定ID的主机配置信息
 // @Tags 主机管理
-// @Accept json
+// @Accept json,application/x-www-form-urlencoded,multipart/form-data
 // @Produce json
 // @Param pk path uint true "主机编号"
 // @Param request body pbHost.UpdateHostRequest true "更新主机请求"
@@ -123,7 +123,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 	}
 
 	var req pbHost.UpdateHostRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新主机请求参数失败",
 			zap.Error(err),
@@ -336,7 +336,7 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"id"},
+		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucHost.ListHost(ctx, qp)

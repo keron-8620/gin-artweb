@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gin-artweb/pkg/config"
+	"gin-artweb/internal/shared/config"
 )
 
 // CorsMiddleware 跨域中间件

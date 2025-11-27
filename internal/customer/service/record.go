@@ -9,20 +9,20 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbRecord "gin-artweb/api/customer/record"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type RecordService struct {
 	log      *zap.Logger
-	ucRecord *biz.RecordUsecase
+	ucRecord *biz.LoginRecordUsecase
 }
 
 func NewRecordService(
 	log *zap.Logger,
-	ucRecord *biz.RecordUsecase,
+	ucRecord *biz.LoginRecordUsecase,
 ) *RecordService {
 	return &RecordService{
 		log:      log,
@@ -72,7 +72,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"-id"},
+		OrderBy: []string{"id DESC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucRecord.ListLoginRecord(ctx, qp)
@@ -155,7 +155,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"-id"},
+		OrderBy: []string{"id DESC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucRecord.ListLoginRecord(ctx, qp)

@@ -8,12 +8,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/config"
-	"gin-artweb/pkg/crypto"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/crypto"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 const (
@@ -58,7 +58,7 @@ type UserUsecase struct {
 	log        *zap.Logger
 	roleRepo   RoleRepo
 	userRepo   UserRepo
-	recordRepo RecordRepo
+	recordRepo LoginRecordRepo
 	hasher     crypto.Hasher
 	conf       *config.SecurityConfig
 }
@@ -67,7 +67,7 @@ func NewUserUsecase(
 	log *zap.Logger,
 	roleRepo RoleRepo,
 	userRepo UserRepo,
-	recordRepo RecordRepo,
+	recordRepo LoginRecordRepo,
 	hasher crypto.Hasher,
 	conf *config.SecurityConfig,
 ) *UserUsecase {

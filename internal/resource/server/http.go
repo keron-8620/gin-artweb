@@ -10,10 +10,9 @@ import (
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/resource/data"
 	"gin-artweb/internal/resource/service"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/config"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 func NewServer(
@@ -35,13 +34,13 @@ func NewServer(
 	hostRepo := data.NewHostRepo(loggers.Data, db, dbTimeout)
 	pkgRepo := data.NewpackageRepo(loggers.Data, db, dbTimeout)
 
-	hostDir := filepath.Join(common.StorageDir, "host")
-	pkgDir := filepath.Join(common.StorageDir, "package")
+	hostDir := filepath.Join(config.StorageDir, "host")
+	pkgDir := filepath.Join(config.StorageDir, "package")
 	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, signer, sshTimeout, hostDir)
 	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo, pkgDir)
 
 	hostService := service.NewHostService(loggers.Service, hostUsecase)
-	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(conf.Security.Upload.MaxFileSize))
+	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(conf.Security.Upload.MaxFileSize)*1024*1024)
 
 	appRouter := router.Group("/v1/resource")
 	hostService.LoadRouter(appRouter)

@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/jobs/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 type scriptRepo struct {
@@ -42,7 +42,7 @@ func (r *scriptRepo) CreateModel(ctx context.Context, m *biz.ScriptModel) error 
 	m.UpdatedAt = now
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.ScriptModel{}, m); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &biz.ScriptModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建脚本模型失败",
 			zap.Error(err),

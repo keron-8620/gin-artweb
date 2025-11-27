@@ -25,11 +25,10 @@ import (
 	resource "gin-artweb/internal/resource/server"
 
 	"gin-artweb/docs"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/config"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
-	"gin-artweb/pkg/middleware"
+	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
+	"gin-artweb/internal/shared/middleware"
 )
 
 const version = "v0.17.6.3.1"
@@ -55,17 +54,17 @@ func newInitialize(path string) (*initialize, func(), error) {
 	conf := config.NewSystemConf(path)
 
 	// 初始化服务器日志记录器
-	write := log.NewLumLogger(conf.Log, filepath.Join(common.LogDir, serverLogName))
+	write := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, serverLogName))
 	logger := log.NewZapLoggerMust(conf.Log.Level, write)
 
 	// 创建GORM数据库配置并连接数据库
 	var dbLog *golog.Logger
 	if conf.Database.LogSQL {
-		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(common.LogDir, databaseLogName))
+		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, databaseLogName))
 		dbLog = golog.New(dbWrite, " ", golog.LstdFlags)
 	}
 	dbConf := database.NewGormConfig(dbLog)
-	db, err := database.NewGormDB(conf.Database.Type, conf.Database.Dns, dbConf)
+	db, err := database.NewGormDB(conf.Database, dbConf)
 	if err != nil {
 		logger.Error("数据库连接失败", zap.Error(err))
 		return nil, nil, err
@@ -127,8 +126,8 @@ func main() {
 		// 判断是否启用 SSL/TLS 加密传输
 		if i.conf.Server.SSL.Enable {
 			// 构造证书和私钥的完整路径
-			crtPath := filepath.Join(common.ConfigDir, i.conf.Server.SSL.CrtPath)
-			keyPath := filepath.Join(common.ConfigDir, i.conf.Server.SSL.KeyPath)
+			crtPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.CrtPath)
+			keyPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.KeyPath)
 
 			// 校验证书文件是否存在
 			if _, statErr := os.Stat(crtPath); os.IsNotExist(statErr) {
@@ -215,17 +214,19 @@ func newRouter(init *initialize) *gin.Engine {
 	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.conf.Rate.RPS), init.conf.Rate.Burst))
 
 	r.GET("/", func(c *gin.Context) {
-		c.File(filepath.Join(common.BaseDir, "html", "index.html"))
+		c.File(filepath.Join(config.BaseDir, "html", "index.html"))
 	})
-	r.Static("/static", filepath.Join(common.BaseDir, "html", "static"))
+	r.Static("/static", filepath.Join(config.BaseDir, "html", "static"))
 
-	// 设置 Swagger 文档信息
-	docs.SwaggerInfo.Title = "gin-artweb"
-	docs.SwaggerInfo.Description = "gin-artweb自动化运维平台"
-	docs.SwaggerInfo.Version = version
-	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)
-	docs.SwaggerInfo.Schemes = []string{"http", "https"}
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// 配置 Swagger 文档
+	if init.conf.Server.EnableSwagger {
+		docs.SwaggerInfo.Title = "gin-artweb"
+		docs.SwaggerInfo.Description = "gin-artweb自动化运维平台"
+		docs.SwaggerInfo.Version = version
+		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)
+		docs.SwaggerInfo.Schemes = []string{"http", "https"}
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
@@ -248,9 +249,9 @@ func newRouter(init *initialize) *gin.Engine {
 }
 
 func NewLoggers(conf *config.LogConfig) *log.Loggers {
-	serviceWrire := log.NewLumLogger(conf, filepath.Join(common.LogDir, "service.log"))
-	bizWrire := log.NewLumLogger(conf, filepath.Join(common.LogDir, "biz.log"))
-	dataWrire := log.NewLumLogger(conf, filepath.Join(common.LogDir, "data.log"))
+	serviceWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "service.log"))
+	bizWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "biz.log"))
+	dataWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "data.log"))
 	return &log.Loggers{
 		Service: log.NewZapLoggerMust(conf.Level, serviceWrire),
 		Biz:     log.NewZapLoggerMust(conf.Level, bizWrire),

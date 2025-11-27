@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 type roleRepo struct {
@@ -36,7 +36,13 @@ func NewRoleRepo(
 	}
 }
 
-func (r *roleRepo) CreateModel(ctx context.Context, m *biz.RoleModel) error {
+func (r *roleRepo) CreateModel(
+	ctx context.Context, 
+	m *biz.RoleModel,
+	perms *[]biz.PermissionModel,
+	menus *[]biz.MenuModel,
+	buttons *[]biz.ButtonModel,
+) error {
 	// 检查参数
 	if m == nil {
 		return goerrors.New("创建角色模型失败: 角色模型不能为空")
@@ -47,10 +53,29 @@ func (r *roleRepo) CreateModel(ctx context.Context, m *biz.RoleModel) error {
 		zap.Object(database.ModelKey, m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
-	if err := database.DBCreate(ctx, r.gormDB, &biz.RoleModel{}, m); err != nil {
+
+	upmap := make(map[string]any, 3)
+	if perms != nil {
+		if len(*perms) > 0 {
+			upmap["Permissions"] = *perms
+		}
+	}
+	if menus != nil {
+		if len(*menus) > 0 {
+			upmap["Menus"] = *menus
+		}
+	}
+	if buttons != nil {
+		if len(*buttons) > 0 {
+			upmap["Buttons"] = *buttons
+		}
+	}
+
+	if err := database.DBCreate(ctx, r.gormDB, &biz.RoleModel{}, m, upmap); err != nil {
 		r.log.Error(
 			"创建角色模型失败",
 			zap.Error(err),
@@ -60,6 +85,7 @@ func (r *roleRepo) CreateModel(ctx context.Context, m *biz.RoleModel) error {
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"创建角色模型成功",
 		zap.Object(database.ModelKey, m),
@@ -231,7 +257,14 @@ func (r *roleRepo) AddGroupPolicy(
 		return goerrors.New("AddGroupPolicy操作失败: 角色模型不能为空")
 	}
 
+	r.log.Debug(
+		"AddGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, role),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m := *role
+
 	// 检查必要字段
 	if m.ID == 0 {
 		return goerrors.New("AddGroupPolicy操作失败: 角色ID不能为0")
@@ -406,6 +439,12 @@ func (r *roleRepo) RemoveGroupPolicy(
 	if role == nil {
 		return goerrors.New("RemoveGroupPolicy操作失败: 角色模型不能为空")
 	}
+
+	r.log.Debug(
+		"RemoveGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, role),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 
 	m := *role
 	// 检查必要字段

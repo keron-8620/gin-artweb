@@ -10,11 +10,11 @@ import (
 	"go.uber.org/zap"
 
 	pbComm "gin-artweb/api/common"
-	pbPkg "gin-artweb/api/resource/package"
+	pbPkg "gin-artweb/api/resource/pkg"
 	"gin-artweb/internal/resource/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type PackageService struct {
@@ -49,55 +49,25 @@ func NewPackageService(
 // @Router       /api/v1/resource/package [post]
 // @Security ApiKeyAuth
 func (s *PackageService) UploadPackage(ctx *gin.Context) {
-	label := ctx.PostForm("label")
-	version := ctx.PostForm("version")
-
-	// 校验必要参数
-	if label == "" || version == "" {
-		s.log.Error(
-			"参数缺失",
-			zap.String("label", label),
-			zap.String("version", version),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
+	var req pbPkg.UploadPackageRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		rErr := errors.ValidateError.WithCause(err)
+		s.log.Error(rErr.Error())
+		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
 
-	// 校验参数长度
-	if len(label) > 50 || len(version) > 50 {
-		s.log.Error(
-			"参数长度超出限制",
-			zap.Int("label_length", len(label)),
-			zap.Int("version_length", len(version)),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
-		return
-	}
-
-	file, err := ctx.FormFile("file")
-	if err != nil {
-		s.log.Error(
-			"从表单中获取上传的程序包文件失败",
-			zap.Error(err),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(errors.ErrNoUploadedFileFound.Code, errors.ErrNoUploadedFileFound.WithCause(err).Reply())
-		return
-	}
-
-	if file.Size > s.maxSize {
+	if req.File.Size > s.maxSize {
 		s.log.Error(
 			"上传的程序包文件过大",
-			zap.Int64("file_size", file.Size),
+			zap.Int64("file_size", req.File.Size),
 			zap.Int64("max_size", s.maxSize),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.JSON(
 			errors.ErrFileTooLarge.Code,
 			errors.ErrFileTooLarge.WithData(map[string]any{
-				"file_size": file.Size,
+				"file_size": req.File.Size,
 				"max_size":  s.maxSize,
 			}).Reply(),
 		)
@@ -105,24 +75,9 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 	}
 
 	// 用 UUID 保证文件名唯一防止并发冲突
-	uuidFilename := uuid.NewString() + filepath.Ext(file.Filename)
+	uuidFilename := uuid.NewString() + filepath.Ext(req.File.Filename)
 	savePath := s.ucPkg.PackagePath(uuidFilename)
-
-	defer func() {
-		// 确保无论后续流程如何退出都尝试移除临时文件
-		if _, statErr := os.Stat(savePath); statErr == nil {
-			if rmErr := os.Remove(savePath); rmErr != nil {
-				s.log.Warn(
-					"删除上传文件失败",
-					zap.Error(rmErr),
-					zap.String("path", savePath),
-					zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-				)
-			}
-		}
-	}()
-
-	if err := ctx.SaveUploadedFile(file, savePath); err != nil {
+	if err := ctx.SaveUploadedFile(req.File, savePath); err != nil {
 		s.log.Error(
 			"保存上传程序包失败",
 			zap.Error(err),
@@ -134,8 +89,10 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 	}
 
 	pkg, rErr := s.ucPkg.CreatePackage(ctx, biz.PackageModel{
-		Label:   label,
-		Version: version,
+		Label:           req.Label,
+		Version:         req.Version,
+		StorageFilename: uuidFilename,
+		OriginFilename:  req.File.Filename,
 	})
 
 	if rErr != nil {
@@ -292,11 +249,11 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 
 	page, size, query := req.Query()
 	qp := database.QueryParams{
-		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
-		OrderBy:  []string{"id"},
-		Query:    query,
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"uploaded_at DESC"},
+		Query:   query,
 	}
 	total, ms, err := s.ucPkg.ListPackage(ctx, qp)
 	if err != nil {

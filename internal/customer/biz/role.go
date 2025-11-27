@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 const (
@@ -41,13 +41,13 @@ func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 		}
 		return nil
 	}))
-	enc.AddArray(MenuIDKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	enc.AddArray(MenuIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, menu := range m.Menus {
 			ae.AppendUint32(menu.ID)
 		}
 		return nil
 	}))
-	enc.AddArray(ButtonIDKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	enc.AddArray(ButtonIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, button := range m.Buttons {
 			ae.AppendUint32(button.ID)
 		}
@@ -63,7 +63,7 @@ type MenuTreeNode struct {
 }
 
 type RoleRepo interface {
-	CreateModel(context.Context, *RoleModel) error
+	CreateModel(context.Context, *RoleModel, *[]PermissionModel, *[]MenuModel, *[]ButtonModel) error
 	UpdateModel(context.Context, map[string]any, *[]PermissionModel, *[]MenuModel, *[]ButtonModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*RoleModel, error)
@@ -115,8 +115,7 @@ func (uc *RoleUsecase) GetPermissions(
 	)
 
 	qp := database.QueryParams{
-		Query:   map[string]any{"id in ?": permIDs},
-		Columns: []string{"id"},
+		Query: map[string]any{"id in ?": permIDs},
 	}
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -156,8 +155,7 @@ func (uc *RoleUsecase) GetMenus(
 	)
 
 	qp := database.QueryParams{
-		Query:   map[string]any{"id in ?": menuIDs},
-		Columns: []string{"id"},
+		Query: map[string]any{"id in ?": menuIDs},
 	}
 	_, ms, err := uc.menuRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -197,8 +195,7 @@ func (uc *RoleUsecase) GetButtons(
 	)
 
 	qp := database.QueryParams{
-		Query:   map[string]any{"id in ?": buttonIDs},
-		Columns: []string{"id"},
+		Query: map[string]any{"id in ?": buttonIDs},
 	}
 	_, ms, err := uc.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -241,33 +238,18 @@ func (uc *RoleUsecase) CreateRole(
 	if err != nil {
 		return nil, err
 	}
-	if perms != nil {
-		if len(*perms) > 0 {
-			m.Permissions = *perms
-		}
-	}
 
 	menus, err := uc.GetMenus(ctx, menuIDs)
 	if err != nil {
 		return nil, err
-	}
-	if menus != nil {
-		if len(*menus) > 0 {
-			m.Menus = *menus
-		}
 	}
 
 	buttons, err := uc.GetButtons(ctx, buttonIDs)
 	if err != nil {
 		return nil, err
 	}
-	if buttons != nil {
-		if len(*buttons) > 0 {
-			m.Buttons = *buttons
-		}
-	}
 
-	if err := uc.roleRepo.CreateModel(ctx, &m); err != nil {
+	if err := uc.roleRepo.CreateModel(ctx, &m, perms, menus, buttons); err != nil {
 		uc.log.Error(
 			"创建角色失败",
 			zap.Error(err),
@@ -275,6 +257,22 @@ func (uc *RoleUsecase) CreateRole(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
+	}
+
+	if perms != nil {
+		if len(*perms) > 0 {
+			m.Permissions = *perms
+		}
+	}
+	if menus != nil {
+		if len(*menus) > 0 {
+			m.Menus = *menus
+		}
+	}
+	if buttons != nil {
+		if len(*buttons) > 0 {
+			m.Buttons = *buttons
+		}
 	}
 
 	if err := uc.roleRepo.AddGroupPolicy(ctx, &m); err != nil {

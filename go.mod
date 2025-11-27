@@ -30,13 +30,16 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/glebarez/go-sqlite v1.20.3 // indirect
 	github.com/glebarez/sqlite v1.7.0 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/sftp v1.13.10 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	gorm.io/plugin/dbresolver v1.6.0 // indirect
 	modernc.org/libc v1.22.2 // indirect

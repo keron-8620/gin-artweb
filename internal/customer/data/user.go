@@ -9,9 +9,9 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 type userRepo struct {
@@ -46,7 +46,7 @@ func (r *userRepo) CreateModel(ctx context.Context, m *biz.UserModel) error {
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
-	if err := database.DBCreate(ctx, r.gormDB, &biz.UserModel{}, m); err != nil {
+	if err := database.DBCreate(ctx, r.gormDB, &biz.UserModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建用户模型失败",
 			zap.Error(err),

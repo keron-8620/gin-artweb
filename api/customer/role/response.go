@@ -4,7 +4,6 @@ import (
 	"gin-artweb/api/common"
 	"gin-artweb/api/customer/button"
 	"gin-artweb/api/customer/menu"
-	"gin-artweb/api/customer/permission"
 )
 
 // RoleOutBase 角色基础信息
@@ -23,9 +22,9 @@ type RoleOutBase struct {
 
 type RoleOut struct {
 	RoleOutBase
-	Permissions *[]permission.PermissionOutBase `json:"permissions"`
-	Menus       *[]menu.MenuOutBase             `json:"menus"`
-	Buttons     *[]button.ButtonOutBase         `json:"buttons"`
+	Permissions []uint32 `json:"permissions"`
+	Menus       []uint32 `json:"menus"`
+	Buttons     []uint32 `json:"buttons"`
 }
 
 // RoleBaseReply 角色响应结构

@@ -13,28 +13,28 @@ type CreateButtonRequest struct {
 	// 按钮主键，必须大于0
 	// Required: true
 	// Minimum: 1
-	ID uint32 `json:"id" binding:"required,gt=0"`
+	ID uint32 `json:"id" form:"id" binding:"required,gt=0"`
 
 	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
-	Name string `json:"name" binding:"required,max=50"`
+	Name string `json:"name" form:"name" binding:"required,max=50"`
 
 	// 排序字段，必填
-	ArrangeOrder uint32 `json:"arrange_order" binding:"required"`
+	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"required"`
 
 	// 是否激活，必填
-	IsActive bool `json:"is_active" binding:"required"`
+	IsActive bool `json:"is_active" form:"is_active"`
 
 	// 按钮描述信息，可选，最大长度254
 	// Max length: 254
-	Descr string `json:"descr" binding:"omitempty,max=254"`
+	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuID uint32 `json:"menu_id" binding:"required"`
+	MenuID uint32 `json:"menu_id" form:"menu_id" binding:"required"`
 
 	// 关联权限ID列表，可选
-	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
 }
 
 func (req *CreateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -60,23 +60,23 @@ type UpdateButtonRequest struct {
 	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
-	Name string `json:"name" binding:"required,max=50"`
+	Name string `json:"name" form:"name" binding:"required,max=50"`
 
 	// 排序字段，必填
-	ArrangeOrder uint32 `json:"arrange_order" binding:"required"`
+	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"omitempty"`
 
 	// 是否激活，必填
-	IsActive bool `json:"is_active" binding:"required"`
+	IsActive bool `json:"is_active" form:"is_active"`
 
 	// 按钮描述信息，可选，最大长度254
 	// Max length: 254
-	Descr string `json:"descr" binding:"omitempty,max=254"`
+	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuID uint32 `json:"menu_id" binding:"required"`
+	MenuID uint32 `json:"menu_id" form:"menu_id" binding:"required"`
 
 	// 关联权限ID列表，可选
-	PermissionIDs []uint32 `json:"permission_ids" binding:"omitempty"`
+	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
 }
 
 func (req *UpdateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -113,7 +113,7 @@ type ListButtonRequest struct {
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
 	// 菜单ID，必填
-	MenuID uint32 `json:"menu_id" binding:"omitempty"`
+	MenuID uint32 `form:"menu_id" binding:"omitempty"`
 }
 
 func (req *ListButtonRequest) Query() (int, int, map[string]any) {

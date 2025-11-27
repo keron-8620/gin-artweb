@@ -8,14 +8,12 @@ import (
 
 	pbComm "gin-artweb/api/common"
 	pbButton "gin-artweb/api/customer/button"
-	pbMenu "gin-artweb/api/customer/menu"
-	pbPerm "gin-artweb/api/customer/permission"
 	pbRole "gin-artweb/api/customer/role"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type RoleService struct {
@@ -46,7 +44,7 @@ func NewRoleService(
 // @Security ApiKeyAuth
 func (s *RoleService) CreateRole(ctx *gin.Context) {
 	var req pbRole.CreateRoleRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建角色请求参数失败",
 			zap.Error(err),
@@ -127,7 +125,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 		return
 	}
 	var req pbRole.UpdateRoleRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新角色请求参数失败",
 			zap.Error(err),
@@ -336,7 +334,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"id"},
+		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucRole.ListRole(ctx, qp)
@@ -461,25 +459,34 @@ func ListRoleModelToOutBase(
 func RoleModelToOut(
 	m biz.RoleModel,
 ) *pbRole.RoleOut {
-	var permissions *[]pbPerm.PermissionOutBase
-	if m.Permissions != nil {
-		permissions = ListPermModelToOut(&m.Permissions)
+	var permissionIDs []uint32
+	if len(m.Permissions) > 0 {
+		permissionIDs = make([]uint32, len(m.Permissions))
+		for i, p := range m.Permissions {
+			permissionIDs[i] = p.ID
+		}
 	}
 
-	var menus *[]pbMenu.MenuOutBase
-	if m.Menus != nil {
-		menus = ListMenuModelToOutBase(&m.Menus)
+	var menuIDs []uint32
+	if len(m.Menus) > 0 {
+		menuIDs = make([]uint32, len(m.Menus))
+		for i, p := range m.Menus {
+			menuIDs[i] = p.ID
+		}
 	}
 
-	var buttons *[]pbButton.ButtonOutBase
-	if m.Buttons != nil {
-		buttons = ListButtonModelToOutBase(&m.Buttons)
+	var buttonIDs []uint32
+	if len(m.Buttons) > 0 {
+		buttonIDs = make([]uint32, len(m.Buttons))
+		for i, p := range m.Buttons {
+			buttonIDs[i] = p.ID
+		}
 	}
 	return &pbRole.RoleOut{
 		RoleOutBase: *RoleModelToOutBase(m),
-		Permissions: permissions,
-		Menus:       menus,
-		Buttons:     buttons,
+		Permissions: permissionIDs,
+		Menus:       menuIDs,
+		Buttons:     buttonIDs,
 	}
 }
 

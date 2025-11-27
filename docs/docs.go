@@ -1967,7 +1967,9 @@ const docTemplate = `{
                 ],
                 "description": "本接口用于创建新的主机配置信息",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -2071,7 +2073,9 @@ const docTemplate = `{
                 ],
                 "description": "本接口用于更新指定ID的主机配置信息",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -2483,7 +2487,7 @@ const docTemplate = `{
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/permission.PermissionOutBase"
+                        "type": "integer"
                     }
                 },
                 "updated_at": {
@@ -2559,7 +2563,6 @@ const docTemplate = `{
             "required": [
                 "arrange_order",
                 "id",
-                "is_active",
                 "menu_id",
                 "name"
             ],
@@ -2623,8 +2626,6 @@ const docTemplate = `{
         "button.UpdateButtonRequest": {
             "type": "object",
             "required": [
-                "arrange_order",
-                "is_active",
                 "menu_id",
                 "name"
             ],
@@ -2959,6 +2960,7 @@ const docTemplate = `{
                 "label",
                 "name",
                 "password",
+                "port",
                 "username"
             ],
             "properties": {
@@ -2984,8 +2986,7 @@ const docTemplate = `{
                 },
                 "port": {
                     "description": "端口，必填\nRequired: true",
-                    "type": "integer",
-                    "format": "int32"
+                    "type": "integer"
                 },
                 "py_path": {
                     "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
@@ -3108,6 +3109,8 @@ const docTemplate = `{
                 "label",
                 "name",
                 "password",
+                "port",
+                "py_path",
                 "username"
             ],
             "properties": {
@@ -3133,8 +3136,7 @@ const docTemplate = `{
                 },
                 "port": {
                     "description": "端口，必填\nRequired: true",
-                    "type": "integer",
-                    "format": "int32"
+                    "type": "integer"
                 },
                 "py_path": {
                     "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
@@ -3159,7 +3161,6 @@ const docTemplate = `{
                 "arrange_order",
                 "component",
                 "id",
-                "is_active",
                 "meta",
                 "name",
                 "path"
@@ -3270,7 +3271,7 @@ const docTemplate = `{
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/permission.PermissionOutBase"
+                        "type": "integer"
                     }
                 },
                 "updated_at": {
@@ -3405,7 +3406,6 @@ const docTemplate = `{
             "required": [
                 "arrange_order",
                 "component",
-                "is_active",
                 "meta",
                 "name",
                 "path"
@@ -3907,7 +3907,7 @@ const docTemplate = `{
                 "buttons": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/button.ButtonOutBase"
+                        "type": "integer"
                     }
                 },
                 "created_at": {
@@ -3928,7 +3928,7 @@ const docTemplate = `{
                 "menus": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/menu.MenuOutBase"
+                        "type": "integer"
                     }
                 },
                 "name": {
@@ -3939,7 +3939,7 @@ const docTemplate = `{
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/permission.PermissionOutBase"
+                        "type": "integer"
                     }
                 },
                 "updated_at": {
@@ -4042,8 +4042,6 @@ const docTemplate = `{
         "user.CreateUserRequest": {
             "type": "object",
             "required": [
-                "is_active",
-                "is_staff",
                 "password",
                 "role_id",
                 "username"
@@ -4059,7 +4057,8 @@ const docTemplate = `{
                 },
                 "password": {
                     "description": "密码，最大长度20\nRequired: true\nMax length: 20",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20
                 },
                 "role_id": {
                     "description": "角色ID，必填",
@@ -4151,8 +4150,7 @@ const docTemplate = `{
             "properties": {
                 "confirm_password": {
                     "description": "确认密码，最大长度20\nRequired: true\nMax length: 20",
-                    "type": "string",
-                    "maxLength": 20
+                    "type": "string"
                 },
                 "new_password": {
                     "description": "新密码，最大长度20\nRequired: true\nMax length: 20",
@@ -4174,8 +4172,7 @@ const docTemplate = `{
             "properties": {
                 "confirm_password": {
                     "description": "确认密码，最大长度20\nRequired: true\nMax length: 20",
-                    "type": "string",
-                    "maxLength": 20
+                    "type": "string"
                 },
                 "new_password": {
                     "description": "新密码，最大长度20\nRequired: true\nMax length: 20",
@@ -4187,10 +4184,8 @@ const docTemplate = `{
         "user.UpdateUserRequest": {
             "type": "object",
             "required": [
-                "is_active",
-                "is_staff",
-                "name",
-                "role_id"
+                "role_id",
+                "username"
             ],
             "properties": {
                 "is_active": {
@@ -4201,14 +4196,14 @@ const docTemplate = `{
                     "description": "是否是工作人员，必填",
                     "type": "boolean"
                 },
-                "name": {
-                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
-                    "type": "string",
-                    "maxLength": 50
-                },
                 "role_id": {
                     "description": "角色ID，必填",
                     "type": "integer"
+                },
+                "username": {
+                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "type": "string",
+                    "maxLength": 50
                 }
             }
         },

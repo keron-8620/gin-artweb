@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/resource/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 type packageRepo struct {
@@ -41,7 +41,7 @@ func (r *packageRepo) CreateModel(ctx context.Context, m *biz.PackageModel) erro
 	m.UploadedAt = now
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.PackageModel{}, m); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &biz.PackageModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建程序包模型失败",
 			zap.Error(err),

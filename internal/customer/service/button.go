@@ -10,9 +10,9 @@ import (
 	pbButton "gin-artweb/api/customer/button"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type ButtonService struct {
@@ -43,7 +43,7 @@ func NewButtonService(
 // @Security ApiKeyAuth
 func (s *ButtonService) CreateButton(ctx *gin.Context) {
 	var req pbButton.CreateButtonRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建按钮请求参数失败",
 			zap.Error(err),
@@ -125,7 +125,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 	}
 
 	var req pbButton.UpdateButtonRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新按钮请求参数失败",
 			zap.Error(err),
@@ -149,6 +149,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 		"arrange_order": req.ArrangeOrder,
 		"is_active":     req.IsActive,
 		"descr":         req.Descr,
+		"menu_id":       req.MenuID,
 	}); err != nil {
 		s.log.Error(
 			"更新按钮失败",
@@ -334,7 +335,7 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"id"},
+		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucButton.ListButton(ctx, qp)
@@ -408,9 +409,16 @@ func ButtonModelToOut(
 	if m.Menu.ID != 0 { // 或其他合适的判断条件
 		menu = MenuModelToOutBase(m.Menu)
 	}
+	var permissionIDs []uint32
+	if len(m.Permissions) > 0 {
+		permissionIDs = make([]uint32, len(m.Permissions))
+		for i, p := range m.Permissions {
+			permissionIDs[i] = p.ID
+		}
+	}
 	return &pbButton.ButtonOut{
 		ButtonOutBase: *ButtonModelToOutBase(m),
 		Menu:          menu,
-		Permissions:   ListPermModelToOut(&m.Permissions),
+		Permissions:   permissionIDs,
 	}
 }

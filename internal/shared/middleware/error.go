@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/errors"
 )
 
 // ErrorMiddleware 异常处理中间件
@@ -33,11 +33,12 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 
 				logger.Error("panic recovered",
 					zap.String("error", errMsg),
+					zap.Any("panic", r),
+					zap.String("stack", string(stack)),
 					zap.String("method", c.Request.Method),
 					zap.String("url", c.Request.URL.String()),
 					zap.String("client_ip", c.ClientIP()),
 					zap.String("user_agent", c.Request.UserAgent()),
-					zap.String("stack", string(stack)),
 				)
 				err := errors.FromError(goerrors.New(errMsg))
 				c.JSON(err.Code, err.Reply())

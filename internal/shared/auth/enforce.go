@@ -7,7 +7,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/golang-jwt/jwt/v5"
 
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/errors"
 )
 
 const (

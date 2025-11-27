@@ -13,21 +13,21 @@ type CreateUserRequest struct {
 	// 用户名，最大长度50
 	// Required: true
 	// Max length: 50
-	Username string `json:"username" binding:"required,max=50"`
+	Username string `json:"username" form:"username" binding:"required,max=50"`
 
 	// 密码，最大长度20
 	// Required: true
 	// Max length: 20
-	Password string `json:"password" binding:"required, max=20"`
+	Password string `json:"password" form:"password" binding:"required,max=20"`
 
 	// 是否激活，必填
-	IsActive bool `json:"is_active" binding:"required"`
+	IsActive bool `json:"is_active" form:"is_active"`
 
 	// 是否是工作人员，必填
-	IsStaff bool `json:"is_staff" binding:"required"`
+	IsStaff bool `json:"is_staff" form:"is_staff"`
 
 	// 角色ID，必填
-	RoleID uint32 `json:"role_id" binding:"required"`
+	RoleID uint32 `json:"role_id" form:"role_id" binding:"required"`
 }
 
 func (req *CreateUserRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -46,16 +46,16 @@ type UpdateUserRequest struct {
 	// 用户名，最大长度50
 	// Required: true
 	// Max length: 50
-	Username string `json:"name" binding:"required,max=50"`
+	Username string `json:"username" form:"username" binding:"required,max=50"`
 
 	// 是否激活，必填
-	IsActive bool `json:"is_active" binding:"required"`
+	IsActive bool `json:"is_active" form:"is_active"`
 
 	// 是否是工作人员，必填
-	IsStaff bool `json:"is_staff" binding:"required"`
+	IsStaff bool `json:"is_staff" form:"is_staff"`
 
 	// 角色ID，必填
-	RoleID uint32 `json:"role_id" binding:"required"`
+	RoleID uint32 `json:"role_id" form:"role_id" binding:"required"`
 }
 
 func (req *UpdateUserRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -78,13 +78,13 @@ type ListUserRequest struct {
 	Username string `form:"name" binding:"omitempty,max=50"`
 
 	// 是否激活
-	IsActive *bool `json:"is_active" binding:"omitempty"`
+	IsActive *bool `form:"is_active" binding:"omitempty"`
 
 	// 是否是工作人员
-	IsStaff *bool `json:"is_staff" binding:"omitempty"`
+	IsStaff *bool `form:"is_staff" binding:"omitempty"`
 
 	// 角色ID
-	RoleID uint32 `json:"role_id" binding:"omitempty"`
+	RoleID uint32 `form:"role_id" binding:"omitempty"`
 }
 
 func (req *ListUserRequest) Query() (int, int, map[string]any) {
@@ -111,12 +111,12 @@ type ResetPasswordRequest struct {
 	// 新密码，最大长度20
 	// Required: true
 	// Max length: 20
-	NewPassword string `json:"new_password" binding:"required,max=20"`
+	NewPassword string `json:"new_password" form:"new_password" binding:"required,max=20"`
 
 	// 确认密码，最大长度20
 	// Required: true
 	// Max length: 20
-	ConfirmPassword string `json:"confirm_password" binding:"required,max=20"`
+	ConfirmPassword string `json:"confirm_password" form:"confirm_password" binding:"required,eqfield=NewPassword"`
 }
 
 // PatchPasswordRequest 修改密码
@@ -126,27 +126,27 @@ type PatchPasswordRequest struct {
 	// 原密码，必填,
 	// Required: true
 	// Max length: 20
-	OldPassword string `json:"old_password" binding:"required"`
+	OldPassword string `json:"old_password" form:"old_password" binding:"required"`
 
 	// 新密码，最大长度20
 	// Required: true
 	// Max length: 20
-	NewPassword string `json:"new_password" binding:"required,max=20"`
+	NewPassword string `json:"new_password" form:"new_password" binding:"required,max=20"`
 
 	// 确认密码，最大长度20
 	// Required: true
 	// Max length: 20
-	ConfirmPassword string `json:"confirm_password" binding:"required,max=20"`
+	ConfirmPassword string `json:"confirm_password" form:"confirm_password" binding:"required,eqfield=NewPassword"`
 }
 
 type LoginRequest struct {
 	// 用户名，必填,
 	// Required: true
 	// Max length: 50
-	Username string `json:"username" binding:"required,max=50"`
+	Username string `json:"username" form:"username" binding:"required,max=50"`
 
 	// 密码，最大长度20
 	// Required: true
 	// Max length: 20
-	Password string `json:"password" binding:"required,max=20"`
+	Password string `json:"password" form:"password" binding:"required,max=20"`
 }

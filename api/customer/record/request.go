@@ -26,11 +26,11 @@ type ListLoginRecordRequest struct {
 
 	// 登陆时间之前的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	BeforeLoginAt string `form:"before_login_at" json:"before_login_at"`
+	BeforeLoginAt string `form:"before_login_at" binding:"omitempty"`
 
 	// 登陆时间之后的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	AfterLoginAt string `form:"after_login_at" json:"after_login_at"`
+	AfterLoginAt string `form:"after_login_at" binding:"omitempty"`
 }
 
 func (req *ListLoginRecordRequest) Query() (int, int, map[string]any) {

@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 const (
@@ -85,7 +85,7 @@ func ListMenuModelToUint32s(mms *[]MenuModel) []uint32 {
 }
 
 type MenuRepo interface {
-	CreateModel(context.Context, *MenuModel) error
+	CreateModel(context.Context, *MenuModel, *[]PermissionModel) error
 	UpdateModel(context.Context, map[string]any, *[]PermissionModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*MenuModel, error)
@@ -169,8 +169,7 @@ func (uc *MenuUsecase) GetPermissions(
 	)
 
 	qp := database.QueryParams{
-		Query:   map[string]any{"id in ?": permIDs},
-		Columns: []string{"id"},
+		Query: map[string]any{"id in ?": permIDs},
 	}
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -219,11 +218,8 @@ func (uc *MenuUsecase) CreateMenu(
 	if err != nil {
 		return nil, err
 	}
-	if perms != nil && len(*perms) > 0 {
-		m.Permissions = *perms
-	}
 
-	if err := uc.menuRepo.CreateModel(ctx, &m); err != nil {
+	if err := uc.menuRepo.CreateModel(ctx, &m, perms); err != nil {
 		uc.log.Error(
 			"创建菜单失败",
 			zap.Error(err),
@@ -231,6 +227,10 @@ func (uc *MenuUsecase) CreateMenu(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
+	}
+
+	if perms != nil && len(*perms) > 0 {
+		m.Permissions = *perms
 	}
 
 	if err := uc.menuRepo.AddGroupPolicy(ctx, &m); err != nil {
@@ -444,8 +444,8 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 	)
 
 	qp := database.QueryParams{
-		Preloads: []string{"Parent", "Permissions"},
-		Columns: []string{"id"},
+		Preloads: []string{"Permissions"},
+		Columns:  []string{"id", "parent_id"},
 	}
 	_, mms, err := uc.ListMenu(ctx, qp)
 	if err != nil {

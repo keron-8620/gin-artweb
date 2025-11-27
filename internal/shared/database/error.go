@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/errors"
 )
 
 // 数据库相关错误码定义

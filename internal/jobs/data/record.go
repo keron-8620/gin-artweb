@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/jobs/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 type recordRepo struct {
@@ -23,7 +23,7 @@ func NewRecordRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *database.DBTimeout,
-) biz.RecordRepo {
+) biz.ScriptRecordRepo {
 	return &recordRepo{
 		log:      log,
 		gormDB:   gormDB,
@@ -38,11 +38,9 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.ScriptRecordModel) 
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	m.CreatedAt = now
-	m.UpdatedAt = now
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.ScriptRecordModel{}, m); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &biz.ScriptRecordModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建脚本执行记录模型失败",
 			zap.Error(err),
@@ -185,3 +183,4 @@ func (r *recordRepo) ListModel(
 	)
 	return count, &ms, nil
 }
+

@@ -9,11 +9,11 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+	"gin-artweb/internal/shared/log"
 )
 
 type permissionRepo struct {
@@ -43,12 +43,14 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 		zap.Object(database.ModelKey, m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.PermissionModel{}, m); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &biz.PermissionModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建权限模型失败",
 			zap.Error(err),
@@ -58,6 +60,7 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"创建权限模型成功",
 		zap.Object(database.ModelKey, m),
@@ -74,6 +77,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
@@ -88,6 +92,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"更新权限模型成功",
 		zap.Any(database.UpdateDataKey, data),
@@ -104,6 +109,7 @@ func (r *permissionRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
@@ -117,6 +123,7 @@ func (r *permissionRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"删除权限模型成功",
 		zap.Any(database.ConditionKey, conds),
@@ -135,6 +142,7 @@ func (r *permissionRepo) FindModel(
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	startTime := time.Now()
 	var m biz.PermissionModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
@@ -149,6 +157,7 @@ func (r *permissionRepo) FindModel(
 		)
 		return nil, err
 	}
+
 	r.log.Debug(
 		"查询权限模型成功",
 		zap.Object(database.ModelKey, &m),
@@ -168,6 +177,7 @@ func (r *permissionRepo) ListModel(
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	startTime := time.Now()
 	var ms []biz.PermissionModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
@@ -183,6 +193,7 @@ func (r *permissionRepo) ListModel(
 		)
 		return 0, nil, err
 	}
+	
 	r.log.Debug(
 		"查询权限模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
@@ -200,6 +211,12 @@ func (r *permissionRepo) AddPolicy(
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
+
+	r.log.Debug(
+		"AddPolicy: 传入参数",
+		zap.Object(database.ModelKey, &m),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 
 	// 检查权限模型的有效性
 	if m.ID == 0 {
@@ -250,6 +267,13 @@ func (r *permissionRepo) RemovePolicy(
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
+
+	r.log.Debug(
+		"RemoveGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, &m),
+		zap.Bool("removeInherited", removeInherited),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 
 	// 检查权限模型的有效性
 	if m.ID == 0 {

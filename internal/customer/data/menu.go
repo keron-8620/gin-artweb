@@ -9,11 +9,11 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+	"gin-artweb/internal/shared/log"
 )
 
 type menuRepo struct {
@@ -37,7 +37,11 @@ func NewMenuRepo(
 	}
 }
 
-func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
+func (r *menuRepo) CreateModel(
+	ctx context.Context,
+	m *biz.MenuModel,
+	perms *[]biz.PermissionModel,
+) error {
 	// 检查参数
 	if m == nil {
 		return goerrors.New("创建菜单模型失败: 菜单模型不能为空")
@@ -51,9 +55,17 @@ func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
+
+	upmap := make(map[string]any, 1)
+	if perms != nil {
+		if len(*perms) > 0 {
+			upmap["Permissions"] = *perms
+		}
+	}
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.MenuModel{}, m); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &biz.MenuModel{}, m, upmap); err != nil {
 		r.log.Error(
 			"创建菜单模型失败",
 			zap.Error(err),
@@ -63,6 +75,7 @@ func (r *menuRepo) CreateModel(ctx context.Context, m *biz.MenuModel) error {
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"创建菜单模型成功",
 		zap.Object(database.ModelKey, m),
@@ -85,6 +98,7 @@ func (r *menuRepo) UpdateModel(
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	upmap := make(map[string]any, 1)
 	if perms != nil {
@@ -92,6 +106,7 @@ func (r *menuRepo) UpdateModel(
 			upmap["Permissions"] = *perms
 		}
 	}
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
 	if err := database.DBUpdate(dbCtx, r.gormDB, &biz.MenuModel{}, data, upmap, conds...); err != nil {
@@ -106,6 +121,7 @@ func (r *menuRepo) UpdateModel(
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"更新菜单模型成功",
 		zap.Any(database.UpdateDataKey, data),
@@ -123,6 +139,7 @@ func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
@@ -136,6 +153,7 @@ func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		)
 		return err
 	}
+
 	r.log.Debug(
 		"删除菜单模型成功",
 		zap.Any(database.ConditionKey, conds),
@@ -156,6 +174,7 @@ func (r *menuRepo) FindModel(
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	var m biz.MenuModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
@@ -171,6 +190,7 @@ func (r *menuRepo) FindModel(
 		)
 		return nil, err
 	}
+
 	r.log.Debug(
 		"查询菜单模型成功",
 		zap.Object(database.ModelKey, &m),
@@ -191,6 +211,7 @@ func (r *menuRepo) ListModel(
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+
 	now := time.Now()
 	var ms []biz.MenuModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
@@ -206,6 +227,7 @@ func (r *menuRepo) ListModel(
 		)
 		return 0, nil, err
 	}
+
 	r.log.Debug(
 		"查询菜单模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
@@ -229,6 +251,12 @@ func (r *menuRepo) AddGroupPolicy(
 		return goerrors.New("AddGroupPolicy操作失败: 菜单模型不能为空")
 	}
 
+	r.log.Debug(
+		"AddGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, menu),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
 	m := *menu
 	// 检查必要字段
 	if m.ID == 0 {
@@ -238,7 +266,7 @@ func (r *menuRepo) AddGroupPolicy(
 	sub := auth.MenuToSubject(m.ID)
 
 	// 处理父级关系
-	if m.Parent != nil && m.ParentID != nil {
+	if m.ParentID != nil {
 		obj := auth.MenuToSubject(*m.ParentID)
 		r.log.Debug(
 			"开始添加菜单与父级菜单的继承关系策略",
@@ -327,6 +355,13 @@ func (r *menuRepo) RemoveGroupPolicy(
 	if menu == nil {
 		return goerrors.New("RemoveGroupPolicy操作失败: 菜单模型不能为空")
 	}
+
+	r.log.Debug(
+		"RemoveGroupPolicy: 传入参数",
+		zap.Object(database.ModelKey, menu),
+		zap.Bool("removeInherited", removeInherited),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
 
 	m := *menu
 	// 检查必要字段

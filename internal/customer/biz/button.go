@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 const (
@@ -73,7 +73,7 @@ type ButtonUsecase struct {
 }
 
 type ButtonRepo interface {
-	CreateModel(context.Context, *ButtonModel) error
+	CreateModel(context.Context, *ButtonModel, *[]PermissionModel) error
 	UpdateModel(context.Context, map[string]any, *[]PermissionModel, ...any) error
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*ButtonModel, error)
@@ -148,8 +148,7 @@ func (uc *ButtonUsecase) GetPermissions(
 	)
 
 	qp := database.QueryParams{
-		Query:   map[string]any{"id in ?": permIDs},
-		Columns: []string{"id"},
+		Query: map[string]any{"id in ?": permIDs},
 	}
 	_, ms, err := uc.permRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -196,11 +195,8 @@ func (uc *ButtonUsecase) CreateButton(
 	if err != nil {
 		return nil, err
 	}
-	if len(*perms) > 0 {
-		m.Permissions = *perms
-	}
 
-	if err := uc.buttonRepo.CreateModel(ctx, &m); err != nil {
+	if err := uc.buttonRepo.CreateModel(ctx, &m, perms); err != nil {
 		uc.log.Error(
 			"创建按钮失败",
 			zap.Error(err),
@@ -208,6 +204,10 @@ func (uc *ButtonUsecase) CreateButton(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
+	}
+
+	if len(*perms) > 0 {
+		m.Permissions = *perms
 	}
 
 	if err := uc.buttonRepo.AddGroupPolicy(ctx, &m); err != nil {
@@ -422,8 +422,8 @@ func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) *errors.Error {
 	)
 
 	qp := database.QueryParams{
-		Preloads: []string{"Menu", "Permissions"},
-		Columns: []string{"id"},
+		Preloads: []string{"Permissions"},
+		Columns:  []string{"id", "menu_id"},
 	}
 
 	_, bms, err := uc.ListButton(ctx, qp)

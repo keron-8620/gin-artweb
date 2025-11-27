@@ -2,14 +2,16 @@ package biz
 
 import (
 	"context"
+	"path/filepath"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	bizCustomer "gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 const ScriptIDKey = "script_id"
@@ -44,6 +46,13 @@ func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_builtin", m.IsBuiltin)
 	enc.AddUint32("user_id", m.UserID)
 	return nil
+}
+
+func (m *ScriptModel) ScriptPath() string {
+	if m.IsBuiltin {
+		return filepath.Join(config.ResourceDir, m.Project, m.Label, m.Name)
+	}
+	return filepath.Join(config.StorageDir, m.Project, m.Label, m.Name)
 }
 
 type ScriptRepo interface {
@@ -94,7 +103,7 @@ func (uc *ScriptUsecase) CreateScript(
 	}
 
 	uc.log.Info(
-		"脚本创建成功",
+		"创建脚本成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -129,7 +138,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	}
 
 	uc.log.Info(
-		"脚本更新成功",
+		"更新脚本成功",
 		zap.Uint32(ScriptIDKey, scriptID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -161,7 +170,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 	}
 
 	uc.log.Info(
-		"脚本删除成功",
+		"删除脚本成功",
 		zap.Uint32(ScriptIDKey, scriptID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

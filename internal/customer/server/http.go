@@ -10,11 +10,11 @@ import (
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/customer/data"
 	"gin-artweb/internal/customer/service"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/config"
-	"gin-artweb/pkg/crypto"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/log"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/crypto"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/log"
 )
 
 func NewServer(
@@ -38,7 +38,7 @@ func NewServer(
 	buttonRepo := data.NewButtonRepo(loggers.Data, db, dbTimeout, enforcer)
 	roleRepo := data.NewRoleRepo(loggers.Data, db, dbTimeout, enforcer)
 	userRepo := data.NewUserRepo(loggers.Data, db, dbTimeout)
-	recordRepo := data.NewRecordRepo(loggers.Data, db, dbTimeout,
+	recordRepo := data.NewLoginRecordRepo(loggers.Data, db, dbTimeout,
 		time.Duration(conf.Security.Login.LockMinutes)*time.Minute,
 		time.Duration(conf.Security.Token.ClearMinutes)*time.Minute,
 		conf.Security.Login.MaxFailedAttempts,
@@ -49,7 +49,7 @@ func NewServer(
 	buttonUsecase := biz.NewButtonUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo)
 	roleUsecase := biz.NewRoleUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo, roleRepo)
 	userUsecase := biz.NewUserUsecase(loggers.Biz, roleRepo, userRepo, recordRepo, crypto.NewBcryptHasher(12), conf.Security)
-	recordUsecase := biz.NewRecordUsecase(loggers.Biz, recordRepo)
+	recordUsecase := biz.NewLoginRecordUsecase(loggers.Biz, recordRepo)
 
 	ctx := context.Background()
 	if pErr := permissionUsecase.LoadPermissionPolicy(ctx); pErr != nil {

@@ -9,9 +9,9 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type MenuService struct {
@@ -42,7 +42,7 @@ func NewMenuService(
 // @Security ApiKeyAuth
 func (s *MenuService) CreateMenu(ctx *gin.Context) {
 	var req pbMenu.CreateMenuRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建菜单请求参数失败",
 			zap.Error(err),
@@ -135,7 +135,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 	}
 
 	var req pbMenu.UpdateMenuRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新菜单请求参数失败",
 			zap.Error(err),
@@ -164,7 +164,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 		"descr":         req.Descr,
 	}
 	if req.ParentID != nil && *req.ParentID != 0 {
-		data["ParentId"] = req.ParentID
+		data["parent_id"] = req.ParentID
 	}
 
 	if err := s.ucMenu.UpdateMenuByID(ctx, uri.PK, req.PermissionIDs, data); err != nil {
@@ -354,7 +354,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"id"},
+		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucMenu.ListMenu(ctx, qp)
@@ -432,9 +432,16 @@ func MenuModelToOut(
 	if m.Parent != nil {
 		parent = MenuModelToOutBase(*m.Parent)
 	}
+	var permissionIDs []uint32
+	if len(m.Permissions) > 0 {
+		permissionIDs = make([]uint32, len(m.Permissions))
+		for i, p := range m.Permissions {
+			permissionIDs[i] = p.ID
+		}
+	}
 	return &pbMenu.MenuOut{
 		MenuOutBase: *MenuModelToOutBase(m),
 		Parent:      parent,
-		Permissions: ListPermModelToOut(&m.Permissions),
+		Permissions: permissionIDs,
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/errors"
 )
 
 // ErrRateLimit 限流错误定义

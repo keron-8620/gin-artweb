@@ -18,7 +18,7 @@ type ModelQuerier interface {
 }
 
 var (
-	DefaultPage int = 1
+	DefaultPage int = 0
 	DefaultSize int = 10
 )
 
@@ -69,19 +69,19 @@ type StandardModelQuery struct {
 
 	// 创建时间之前的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	BeforeCreateAt string `form:"before_created_at" json:"before_created_at"`
+	BeforeCreateAt string `form:"before_created_at"`
 
 	// 创建时间之后的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	AfterCreateAt string `form:"after_created_at" json:"after_created_at"`
+	AfterCreateAt string `form:"after_created_at"`
 
 	// 更新时间之前的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	BeforeUpdateAt string `form:"before_updated_at" json:"before_updated_at"`
+	BeforeUpdateAt string `form:"before_updated_at"`
 
 	// 更新时间之后的记录 (RFC3339格式)
 	// example: 2023-01-01T00:00:00Z
-	AfterUpdateAt string `form:"after_updated_at" json:"after_updated_at"`
+	AfterUpdateAt string `form:"after_updated_at"`
 }
 
 func (q *StandardModelQuery) QueryMap(l int) (int, int, map[string]any) {

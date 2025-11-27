@@ -9,9 +9,9 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbPerm "gin-artweb/api/customer/permission"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type PermissionService struct {
@@ -41,7 +41,7 @@ func NewPermissionService(
 // @Security ApiKeyAuth
 func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 	var req pbPerm.CreatePermissionRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建权限请求参数失败",
 			zap.Error(err),
@@ -121,7 +121,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 	}
 
 	var req pbPerm.UpdatePermissionRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新权限请求参数失败",
 			zap.Error(err),
@@ -333,7 +333,7 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 		IsCount: true,
 		Limit:   size,
 		Offset:  page,
-		OrderBy: []string{"id"},
+		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}
 	total, ms, err := s.ucPerm.ListPermission(ctx, qp)

@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 const (
@@ -24,7 +24,7 @@ type PackageModel struct {
 	StorageFilename string    `gorm:"column:storage_filename;type:varchar(50);not null;uniqueIndex;comment:磁盘存储文件名" json:"storage_filename"`
 	OriginFilename  string    `gorm:"column:origin_filename;type:varchar(255);comment:原始文件名" json:"origin_filename"`
 	Version         string    `gorm:"column:version;type:varchar(50);comment:版本号" json:"version"`
-	UploadedAt      time.Time `gorm:"column:uploaded_at;type:varchar(254);comment:上传时间" json:"uploaded_at"`
+	UploadedAt      time.Time `gorm:"column:uploaded_at;autoCreateTime;comment:上传时间" json:"uploaded_at"`
 }
 
 func (m *PackageModel) TableName() string {

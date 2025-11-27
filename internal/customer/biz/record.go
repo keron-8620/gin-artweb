@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type LoginRecordModel struct {
@@ -37,29 +37,29 @@ func (m *LoginRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-type RecordRepo interface {
+type LoginRecordRepo interface {
 	CreateModel(context.Context, *LoginRecordModel) error
 	ListModel(context.Context, database.QueryParams) (int64, *[]LoginRecordModel, error)
 	GetLoginFailNum(context.Context, string) (int, error)
 	SetLoginFailNum(context.Context, string, int) error
 }
 
-type RecordUsecase struct {
+type LoginRecordUsecase struct {
 	log        *zap.Logger
-	recordRepo RecordRepo
+	recordRepo LoginRecordRepo
 }
 
-func NewRecordUsecase(
+func NewLoginRecordUsecase(
 	log *zap.Logger,
-	recordRepo RecordRepo,
-) *RecordUsecase {
-	return &RecordUsecase{
+	recordRepo LoginRecordRepo,
+) *LoginRecordUsecase {
+	return &LoginRecordUsecase{
 		log:        log,
 		recordRepo: recordRepo,
 	}
 }
 
-func (uc *RecordUsecase) CreateLoginRecord(
+func (uc *LoginRecordUsecase) CreateLoginRecord(
 	ctx context.Context,
 	m LoginRecordModel,
 ) (*LoginRecordModel, *errors.Error) {
@@ -91,7 +91,7 @@ func (uc *RecordUsecase) CreateLoginRecord(
 	return &m, nil
 }
 
-func (uc *RecordUsecase) ListLoginRecord(
+func (uc *LoginRecordUsecase) ListLoginRecord(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]LoginRecordModel, *errors.Error) {

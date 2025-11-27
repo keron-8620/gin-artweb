@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"os"
@@ -9,19 +10,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/sftp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/crypto/ssh"
 
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
-	"gin-artweb/pkg/file"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+	"gin-artweb/internal/shared/file"
 )
 
 const (
-	HostIDKey  = "host_id"
-	HostIDsKey = "host_ids"
+	HostIDKey = "host_id"
 )
 
 type AnsibleHostVars struct {
@@ -86,7 +87,11 @@ type HostRepo interface {
 	FindModel(context.Context, []string, ...any) (*HostModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]HostModel, error)
 	NewSSHClient(context.Context, string, ssh.ClientConfig) (*ssh.Client, error)
-	DeployPublicKey(context.Context, *ssh.Client, ssh.PublicKey) error
+	NewSession(context.Context, *ssh.Client) (*ssh.Session, error)
+	ExecuteCommand(context.Context, *ssh.Session, string) error
+	NewSFTPClient(context.Context, *ssh.Client) (*sftp.Client, error)
+	UploadFile(context.Context, *sftp.Client, string, string) error
+	DownloadFile(context.Context, *sftp.Client, string, string) error
 }
 
 type HostUsecase struct {
@@ -236,9 +241,10 @@ func (uc *HostUsecase) DeleteHostById(
 	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
 		uc.log.Error(
 			"删除ansible主机变量文件失败",
+			zap.Error(err),
 			zap.String("path", path),
 			zap.Uint32("host_id", hostId),
-			zap.Error(err),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrDeleteHostFileFailed.WithCause(err)
 	}
@@ -359,7 +365,35 @@ func (uc *HostUsecase) TestSSHConnection(
 		return ErrSSHConnect.WithCause(err)
 	}
 	defer client.Close()
-	if err := uc.hostRepo.DeployPublicKey(ctx, client, uc.signer.PublicKey()); err != nil {
+
+	session, err := uc.hostRepo.NewSession(ctx, client)
+	if err != nil {
+		uc.log.Error(
+			"创建ssh session失败",
+			zap.Error(err),
+			zap.String("ip_addr", ip),
+			zap.Uint16("port", port),
+			zap.String("username", user),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return ErrSSHConnect.WithCause(err)
+	}
+	defer session.Close()
+
+	pubKeyBytes := ssh.MarshalAuthorizedKey(uc.signer.PublicKey())
+	pubKeyB64 := base64.StdEncoding.EncodeToString(pubKeyBytes)
+	script := `
+		mkdir -p ~/.ssh
+		tmp_key=$(mktemp)
+		echo '` + pubKeyB64 + `' | base64 -d > "$tmp_key"
+		if ! grep -Fq "$(cat "$tmp_key")" ~/.ssh/authorized_keys 2>/dev/null; then
+			cat "$tmp_key" >> ~/.ssh/authorized_keys
+		fi
+		rm -f "$tmp_key"
+		chmod 700 ~/.ssh
+		chmod 600 ~/.ssh/authorized_keys
+	`
+	if err := uc.hostRepo.ExecuteCommand(ctx, session, script); err != nil {
 		uc.log.Error(
 			"部署ssh公钥失败",
 			zap.Error(err),

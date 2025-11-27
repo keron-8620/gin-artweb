@@ -11,22 +11,22 @@ import (
 	pbRole "gin-artweb/api/customer/role"
 	pbUser "gin-artweb/api/customer/user"
 	"gin-artweb/internal/customer/biz"
-	"gin-artweb/pkg/auth"
-	"gin-artweb/pkg/common"
-	"gin-artweb/pkg/database"
-	"gin-artweb/pkg/errors"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
 )
 
 type UserService struct {
 	log      *zap.Logger
 	ucUser   *biz.UserUsecase
-	ucRecord *biz.RecordUsecase
+	ucRecord *biz.LoginRecordUsecase
 }
 
 func NewUserService(
 	log *zap.Logger,
 	ucUser *biz.UserUsecase,
-	ucRecord *biz.RecordUsecase,
+	ucRecord *biz.LoginRecordUsecase,
 ) *UserService {
 	return &UserService{
 		log:      log,
@@ -48,7 +48,7 @@ func NewUserService(
 // @Security ApiKeyAuth
 func (s *UserService) CreateUser(ctx *gin.Context) {
 	var req pbUser.CreateUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建用户请求参数失败",
 			zap.Error(err),
@@ -127,7 +127,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 	}
 
 	var req pbUser.UpdateUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新用户请求参数失败",
 			zap.Error(err),
@@ -335,7 +335,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 		IsCount:  true,
 		Limit:    size,
 		Offset:   page,
-		OrderBy:  []string{"id"},
+		OrderBy:  []string{"id ASC"},
 		Query:    query,
 		Preloads: []string{"Role"},
 	}
@@ -391,7 +391,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 		return
 	}
 	var req pbUser.ResetPasswordRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新重置用户密码参数失败",
 			zap.Error(err),
@@ -400,14 +400,6 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.JSON(rErr.Code, rErr.Reply())
-		return
-	}
-	if req.NewPassword != req.ConfirmPassword {
-		s.log.Error(
-			"前后密码不一致",
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
 		return
 	}
 
@@ -450,7 +442,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 // @Security ApiKeyAuth
 func (s *UserService) PatchPassword(ctx *gin.Context) {
 	var req pbUser.PatchPasswordRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新个人密码参数失败",
 			zap.Error(err),
@@ -461,14 +453,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		ctx.JSON(rErr.Code, rErr.Reply())
 		return
 	}
-	if req.NewPassword != req.ConfirmPassword {
-		s.log.Error(
-			"前后密码不一致",
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(errors.ValidateError.Code, errors.ValidateError.Reply())
-		return
-	}
+
 	claims := auth.GetGinUserClaims(ctx)
 	if claims == nil {
 		s.log.Error(
@@ -479,6 +464,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
 		return
 	}
+
 	m, rErr := s.ucUser.FindUserByID(ctx, []string{"Role"}, claims.UserID)
 	if rErr != nil {
 		s.log.Error(
@@ -538,7 +524,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 // @Router /api/v1/customer/login [post]
 func (s *UserService) Login(ctx *gin.Context) {
 	var req pbUser.LoginRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定用户登录参数失败",
 			zap.Error(err),
