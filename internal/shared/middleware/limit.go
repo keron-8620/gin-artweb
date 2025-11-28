@@ -12,7 +12,7 @@ import (
 
 // ErrRateLimit 限流错误定义
 var ErrRateLimit = errors.New(
-	http.StatusTooManyRequests, 
+	http.StatusTooManyRequests,
 	"rate_limit_exceeded",
 	"请求过于频繁，请稍后再试",
 	nil,
@@ -40,7 +40,7 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	i.mu.RLock()
 	limiter, exists := i.limiters[ip]
 	i.mu.RUnlock()
-	
+
 	if !exists {
 		i.mu.Lock()
 		// 双重检查防止并发创建
@@ -51,14 +51,14 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 		}
 		i.mu.Unlock()
 	}
-	
+
 	return limiter
 }
 
 // GlobalRateLimiterMiddleware 全局限流中间件
 func GlobalRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 	limiter := rate.NewLimiter(r, b)
-	
+
 	return func(c *gin.Context) {
 		if !limiter.Allow() {
 			c.Abort()
@@ -72,7 +72,7 @@ func GlobalRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 // IPBasedRateLimiterMiddleware IP限流中间件
 func IPBasedRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 	ipLimiter := NewIPRateLimiter(r, b)
-	
+
 	return func(c *gin.Context) {
 		limiter := ipLimiter.GetLimiter(c.ClientIP())
 		if !limiter.Allow() {

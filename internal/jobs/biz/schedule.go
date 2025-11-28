@@ -23,7 +23,7 @@ type ScheduleModel struct {
 	Specification string                `gorm:"column:specification;type:text;comment:条件" json:"specification"`
 	IsEnabled     bool                  `gorm:"column:is_enabled;type:boolean;comment:是否启用" json:"is_enabled"`
 	EnvVars       string                `gorm:"column:env_vars;type:json;comment:环境变量(JSON对象)" json:"env_vars"`
-	CommandArgs   string                `gorm:"column:command_args;type:varchar(254);comment:命令行参数(JSON数组)" json:"command_args"`
+	CommandArgs   string                `gorm:"column:command_args;type:varchar(254);comment:命令行参数" json:"command_args"`
 	WorkDir       string                `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
 	Timeout       int                   `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
 	ScriptID      uint32                `gorm:"column:script_id;not null;index;comment:计划任务ID" json:"script_id"`
@@ -57,61 +57,50 @@ type ScheduleRepo interface {
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScheduleModel, error)
 }
 
-type Scheduler struct {
-	cron     *cron.Cron
-	entryMap map[uint32]cron.EntryID
-	mutex    sync.RWMutex
-}
-
 type ScheduleUsecase struct {
-	log          *zap.Logger
-	scriptRepo   ScriptRepo
-	scheduleRepo ScheduleRepo
-	schedule     *Scheduler
-	ucRecord     *RecordUsecase
+	log           *zap.Logger
+	scriptRepo    ScriptRepo
+	scheduleRepo  ScheduleRepo
+	recordUsecase *RecordUsecase
+	crontab       *cron.Cron
+	entryMap      map[uint32]cron.EntryID
+	mutex         sync.RWMutex
 }
 
 func NewScheduleUsecase(
 	log *zap.Logger,
 	scriptRepo ScriptRepo,
 	scheduleRepo ScheduleRepo,
-	ucRecord *RecordUsecase,
+	recordUsecase *RecordUsecase,
+	crontab *cron.Cron,
 ) *ScheduleUsecase {
 	return &ScheduleUsecase{
-		log:          log,
-		scriptRepo:   scriptRepo,
-		scheduleRepo: scheduleRepo,
-		ucRecord:     ucRecord,
-		schedule: &Scheduler{
-			cron:     cron.New(),
-			entryMap: make(map[uint32]cron.EntryID),
-		},
+		log:           log,
+		scriptRepo:    scriptRepo,
+		scheduleRepo:  scheduleRepo,
+		recordUsecase: recordUsecase,
+		crontab:       crontab,
+		entryMap:      make(map[uint32]cron.EntryID),
 	}
 }
 
 func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors.Error {
-	uc.schedule.mutex.Lock()
-	defer uc.schedule.mutex.Unlock()
+	uc.mutex.Lock()
+	defer uc.mutex.Unlock()
 
-	entryID, err := uc.schedule.cron.AddJob(m.Specification, cron.FuncJob(func() {
-		uc.log.Info(
-			"开始执行计划任务",
-			zap.Object(database.ModelKey, m),
-		)
-
-		// 执行计划任务
-		_, execErr := uc.ucRecord.ExecuteSchedule(context.Background(), m)
-		if execErr != nil {
-			uc.log.Error(
-				"创建计划任务执行记录失败",
-				zap.Error(execErr),
-				zap.Object(database.ModelKey, m),
-			)
-		} else {
-			uc.log.Info(
-				"计划任务执行记录创建成功，已在后台执行",
-				zap.Object(database.ModelKey, m),
-			)
+	entryID, err := uc.crontab.AddJob(m.Specification, cron.FuncJob(func() {
+		execReq := ExecuteRequest{
+			CommandArgs: m.CommandArgs,
+			EnvVars:     m.EnvVars,
+			ScriptID:    m.ScriptID,
+			Timeout:     m.Timeout,
+			TriggerType: "cron",
+			UserID:      m.UserID,
+			WorkDir:     m.WorkDir,
+		}
+		record, err := uc.recordUsecase.CreateScriptRecord(ctx, execReq)
+		if err == nil {
+			uc.recordUsecase.Execute(record)
 		}
 	}))
 	if err != nil {
@@ -124,22 +113,22 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 		return ErrAddScheduleFailed.WithCause(err)
 	}
 
-	uc.schedule.entryMap[m.ID] = entryID
+	uc.entryMap[m.ID] = entryID
 	return nil
 }
 
 func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) {
-	uc.schedule.mutex.Lock()
-	defer uc.schedule.mutex.Unlock()
+	uc.mutex.Lock()
+	defer uc.mutex.Unlock()
 
 	uc.log.Info(
 		"开始从调度器中移除计划任务",
 		zap.Uint32(ScheduleIDKey, scheduleID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	if entryID, exists := uc.schedule.entryMap[scheduleID]; exists {
-		uc.schedule.cron.Remove(entryID)
-		delete(uc.schedule.entryMap, scheduleID)
+	if entryID, exists := uc.entryMap[scheduleID]; exists {
+		uc.crontab.Remove(entryID)
+		delete(uc.entryMap, scheduleID)
 
 		uc.log.Info(
 			"计划任务从调度器中移除成功",
@@ -359,14 +348,14 @@ func (uc *ScheduleUsecase) ListScheduleJob(
 	}
 
 	// 获取 cron 调度器中的所有条目
-	entries := uc.schedule.cron.Entries()
+	entries := uc.crontab.Entries()
 
 	// 准备返回结果
 	jobs := make([]ScheduleJobInfo, 0, len(entries))
 
 	// 创建反向映射以便查找 schedule ID
 	scheduleToEntry := make(map[cron.EntryID]uint32)
-	for scheduleID, entryID := range uc.schedule.entryMap {
+	for scheduleID, entryID := range uc.entryMap {
 		scheduleToEntry[entryID] = scheduleID
 	}
 

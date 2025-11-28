@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/robfig/cron/v3"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
@@ -26,6 +27,7 @@ import (
 
 	"gin-artweb/docs"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/crontab"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
@@ -36,12 +38,14 @@ const version = "v0.17.6.3.1"
 const (
 	serverLogName   = "server.log"
 	databaseLogName = "database.log"
+	cronLogName     = "cron.log"
 )
 
 type initialize struct {
-	conf *config.SystemConf
-	log  *zap.Logger
-	db   *gorm.DB
+	conf    *config.SystemConf
+	log     *zap.Logger
+	db      *gorm.DB
+	crontab *cron.Cron
 }
 
 // newInitialize 初始化系统组件
@@ -70,23 +74,45 @@ func newInitialize(path string) (*initialize, func(), error) {
 		return nil, nil, err
 	}
 
+	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, cronLogName))
+	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
+	ct := crontab.NewCron(cronLogger)
+
 	// 返回初始化结构体和清理函数
 	return &initialize{
-			conf: conf,
-			db:   db,
-			log:  logger,
+			conf:    conf,
+			db:      db,
+			log:     logger,
+			crontab: ct,
 		}, func() {
-			// 关闭数据库连接
-			conn, err := db.DB()
-			if err != nil {
-				logger.Error(err.Error())
-				panic(err)
+			// 1. 关闭计划任务
+			if ct != nil {
+				cronLogger.Info("正在关闭计划任务...")
+				shutdownTimeout := time.Duration(conf.Security.Timeout.ShutdownTimeout) * time.Second
+				ctx := ct.Stop() // Stop 返回一个 context
+				// 等待最多30秒让任务完成
+				select {
+				case <-ctx.Done():
+					cronLogger.Info("计划任务已全部完成")
+				case <-time.After(shutdownTimeout):
+					cronLogger.Warn("计划任务关闭超时，可能存在未完成的任务")
+				}
 			}
-			if err = conn.Close(); err != nil {
-				logger.Error(err.Error())
-				panic(err)
+
+			// 2. 关闭数据库连接
+			if db != nil {
+				logger.Info("正在释放数据库资源...")
+				conn, err := db.DB()
+				if err != nil {
+					logger.Error("获取数据库连接失败", zap.Error(err))
+				}
+				if err = conn.Close(); err != nil {
+					logger.Error("关闭数据库连接失败", zap.Error(err))
+				} else {
+					logger.Info("数据库资源释放成功")
+				}
 			}
-			logger.Info("资源释放成功")
+			logger.Info("所有资源清理完成")
 		}, nil
 }
 
@@ -113,6 +139,11 @@ func main() {
 
 	// 创建 Gin 路由引擎
 	r := newRouter(i)
+
+	// 启动定时任务
+	if i.crontab != nil {
+		i.crontab.Start()
+	}
 
 	// 构建 HTTP 服务器结构体
 	srv := &http.Server{
@@ -188,6 +219,9 @@ func main() {
 func newRouter(init *initialize) *gin.Engine {
 	loggers := NewLoggers(init.conf.Log)
 	r := gin.New()
+
+	// host请求头防护中间件
+	r.Use(middleware.HostGuard(loggers.Service, init.conf.Server.Host))
 
 	// 注册跨域请求处理中间件
 	r.Use(middleware.CorsMiddleware(init.conf.CORS))

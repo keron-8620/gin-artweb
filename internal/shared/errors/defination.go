@@ -5,6 +5,12 @@ import (
 )
 
 var (
+	ErrHostNotAllowed = New(
+		http.StatusForbidden,
+		"host_not_allowed",
+		"主机不允许访问",
+		nil,
+	)
 	ValidateError = New(
 		http.StatusBadRequest,
 		"validation",
@@ -24,15 +30,15 @@ var (
 		nil,
 	)
 	ErrFileTooLarge = New(
-        http.StatusBadRequest,
-        "file_too_large",
-        "上传文件超出大小限制",
-        nil,
-    )
+		http.StatusBadRequest,
+		"file_too_large",
+		"上传文件超出大小限制",
+		nil,
+	)
 	ErrFileNotFound = New(
-        http.StatusBadRequest,
-        "file_not_found",
-        "未找到文件",
-        nil,
-    )
+		http.StatusBadRequest,
+		"file_not_found",
+		"未找到文件",
+		nil,
+	)
 )

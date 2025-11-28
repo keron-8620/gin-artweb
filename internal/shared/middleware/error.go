@@ -17,6 +17,9 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
+				// 中止请求处理
+				c.Abort()
+
 				// 记录panic信息和堆栈跟踪
 				stack := debug.Stack()
 
@@ -42,8 +45,6 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 				)
 				err := errors.FromError(goerrors.New(errMsg))
 				c.JSON(err.Code, err.Reply())
-				// 中止请求处理
-				c.Abort()
 			}
 		}()
 

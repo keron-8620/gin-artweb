@@ -1,8 +1,8 @@
 package script
 
 import (
+	"errors"
 	"mime/multipart"
-	"time"
 
 	"gin-artweb/api/common"
 
@@ -10,75 +10,103 @@ import (
 )
 
 type UploadScriptRequest struct {
-	// 名称，最大长度255
-	Name string `form:"name" binding:"required"`
+	// 上传的程序包文件
+	File *multipart.FileHeader `form:"file" binding:"required"`
+
+	// 脚本描述，字符串长度限制
+	// Max length: 254
+	Descr string `form:"descr" binding:"omitempty,max=254"`
+
+	// 项目，最大长度50
+	// Required: true
+	// Max length: 50
+	Project string `form:"project" binding:"required"`
 
 	// 标签，最大长度50
 	// Required: true
 	// Max length: 50
 	Label string `form:"label" binding:"required"`
 
-	// 版本号，最大长度50
+	// 语言，最大长度50
 	// Required: true
 	// Max length: 50
-	Version string `form:"version" binding:"required"`
+	Language string `form:"language" binding:"required"`
 
-	// 上传的程序包文件
-	File *multipart.FileHeader `form:"file" binding:"required"`
+	// 状态，必填
+	Status bool `form:"status"`
 }
 
 func (req *UploadScriptRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if req.File == nil {
+		return errors.New("文件不能为空")
+	}
+	enc.AddString("name", req.File.Filename)
+	enc.AddString("descr", req.Descr)
+	enc.AddString("project", req.Project)
 	enc.AddString("label", req.Label)
-	enc.AddString("version", req.Version)
+	enc.AddString("language", req.Language)
+	enc.AddBool("status", req.Status)
 	return nil
 }
 
 type ListScriptRequest struct {
-	common.BaseModelQuery
+	common.StandardModelQuery
 
 	// 名称，最大长度50
-	// Required: true
 	// Max length: 50
 	Name string `json:"name" binding:"omitempty,max=50"`
 
+	// 脚本描述，字符串长度限制
+	// Max length: 254
+	Descr string `form:"descr" binding:"omitempty,max=254"`
+
+	// 项目，最大长度50
+	// Max length: 50
+	Project string `form:"project" binding:"omitempty"`
+
 	// 标签，最大长度50
-	// Required: true
 	// Max length: 50
-	Label string `json:"label" binding:"omitempty,max=50"`
+	Label string `form:"label" binding:"omitempty"`
 
-	// 版本号，最大长度50
-	// Required: true
+	// 语言，最大长度50
 	// Max length: 50
-	Version string `form:"version" binding:"omitempty" json:"version"`
+	Language string `form:"language" binding:"omitempty"`
 
-	// 上传时间之前的记录 (RFC3339格式)
-	// example: 2023-01-01T00:00:00Z
-	BeforeUploadedAt string `form:"before_uploaded_at" binding:"omitempty"`
+	// 状态
+	Status *bool `form:"status"`
 
-	// 上传时间之后的记录 (RFC3339格式)
-	// example: 2023-01-01T00:00:00Z
-	AfterUploadedAt string `form:"after_uploaded_at" binding:"omitempty"`
+	// 是否是内置脚本
+	IsBuiltin *bool `json:"is_builtin" binding:"omitempty"`
+
+	// 最后修改的用户
+	UserID uint32 `json:"user_id" binding:"omitempty"`
 }
 
 func (req *ListScriptRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.BaseModelQuery.QueryMap(13)
+	page, size, query := req.BaseModelQuery.QueryMap(14)
+	if req.Name != "" {
+		query["name like ?"] = "%" + req.Name + "%"
+	}
+	if req.Descr != "" {
+		query["descr like ?"] = "%" + req.Descr + "%"
+	}
+	if req.Project != "" {
+		query["project = ?"] = req.Project
+	}
 	if req.Label != "" {
 		query["label = ?"] = req.Label
 	}
-	if req.Version != "" {
-		query["version like ?"] = "%" + req.Version + "%"
+	if req.Language != "" {
+		query["language = ?"] = req.Language
 	}
-	if req.BeforeUploadedAt != "" {
-		bft, err := time.Parse(time.RFC3339, req.BeforeUploadedAt)
-		if err == nil {
-			query["uploaded_at < ?"] = bft
-		}
+	if req.Status != nil {
+		query["status = ?"] = *req.Status
 	}
-	if req.AfterUploadedAt != "" {
-		act, err := time.Parse(time.RFC3339, req.AfterUploadedAt)
-		if err == nil {
-			query["uploaded_at > ?"] = act
-		}
+	if req.IsBuiltin != nil {
+		query["is_builtin = ?"] = *req.IsBuiltin
+	}
+	if req.UserID != 0 {
+		query["user_id = ?"] = req.UserID
 	}
 	return page, size, query
 }
