@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizCustomer "gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
@@ -18,15 +17,14 @@ const ScriptIDKey = "script_id"
 
 type ScriptModel struct {
 	database.StandardModel
-	Name      string                `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Descr     string                `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	Project   string                `gorm:"column:project;type:varchar(50);comment:项目" json:"project"`
-	Label     string                `gorm:"column:label;type:varchar(50);index:idx_script_label;comment:标签" json:"label"`
-	Language  string                `gorm:"column:language;type:varchar(50);comment:脚本语言" json:"language"`
-	Status    bool                  `gorm:"column:status;type:boolean;comment:是否启用" json:"status"`
-	IsBuiltin bool                  `gorm:"column:is_builtin;type:boolean;comment:是否是内置脚本" json:"is_builtin"`
-	UserID    uint32                `gorm:"column:user_id;not null;comment:用户ID" json:"user_id"`
-	User      bizCustomer.UserModel `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE" json:"user"`
+	Name      string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	Descr     string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
+	Project   string `gorm:"column:project;type:varchar(50);comment:项目" json:"project"`
+	Label     string `gorm:"column:label;type:varchar(50);index:idx_script_label;comment:标签" json:"label"`
+	Language  string `gorm:"column:language;type:varchar(50);comment:脚本语言" json:"language"`
+	Status    bool   `gorm:"column:status;type:boolean;comment:是否启用" json:"status"`
+	IsBuiltin bool   `gorm:"column:is_builtin;type:boolean;comment:是否是内置脚本" json:"is_builtin"`
+	Username  string `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
 }
 
 func (m *ScriptModel) TableName() string {
@@ -44,7 +42,7 @@ func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("language", m.Language)
 	enc.AddBool("status", m.Status)
 	enc.AddBool("is_builtin", m.IsBuiltin)
-	enc.AddUint32("user_id", m.UserID)
+	enc.AddString("username", m.Username)
 	return nil
 }
 

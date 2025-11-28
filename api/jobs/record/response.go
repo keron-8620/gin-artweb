@@ -2,7 +2,6 @@ package record
 
 import (
 	"gin-artweb/api/common"
-	"gin-artweb/api/customer/user"
 	"gin-artweb/api/jobs/script"
 )
 
@@ -29,14 +28,14 @@ type ScriptRecordOutBase struct {
 	Timeout int `json:"timeout" example:"300"`
 	// 错误信息
 	ErrorMessage string `json:"error_message,omitempty" example:""`
+	// 用户名
+	UserName string `json:"user_name" example:"admin"`
 }
 
 type ScriptRecordOut struct {
 	ScriptRecordOutBase
 	// 脚本信息
-	Script script.ScriptOut `json:"script"`
-	// 用户信息
-	User user.UserOutBase `json:"user"`
+	Script script.ScriptOutBase `json:"script"`
 }
 
 // ScriptRecordReply 程序包响应结构

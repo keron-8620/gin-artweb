@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizCustomer "gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
@@ -27,19 +26,18 @@ const ScriptRecordIDKey = "script_record_id"
 
 type ScriptRecordModel struct {
 	database.StandardModel
-	TriggerType  string                `gorm:"column:trigger_type;type:varchar(20);comment:触发类型(cron/api)" json:"trigger_type"`
-	Status       int                   `gorm:"column:status;type:tinyint;not null;default:0;comment:执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)" json:"status"`
-	ExitCode     int                   `gorm:"column:exit_code;comment:退出码" json:"exit_code"`
-	EnvVars      string                `gorm:"column:env_vars;type:json;comment:环境变量(JSON对象)" json:"env_vars"`
-	CommandArgs  string                `gorm:"column:command_args;type:varchar(254);comment:命令行参数(JSON数组)" json:"command_args"`
-	WorkDir      string                `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
-	Timeout      int                   `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
-	LogName      string                `gorm:"column:log_name;type:varchar(255);comment:日志文件路径" json:"log_name"`
-	ErrorMessage string                `gorm:"column:error_message;type:text;comment:错误信息" json:"error_message"`
-	ScriptID     uint32                `gorm:"column:script_id;not null;index;comment:脚本ID" json:"script_id"`
-	Script       ScriptModel           `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
-	UserID       uint32                `gorm:"column:user_id;not null;comment:执行用户ID" json:"user_id"`
-	User         bizCustomer.UserModel `gorm:"foreignKey:UserID;references:ID" json:"user"`
+	TriggerType  string      `gorm:"column:trigger_type;type:varchar(20);comment:触发类型(cron/api)" json:"trigger_type"`
+	Status       int         `gorm:"column:status;type:tinyint;not null;default:0;comment:执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)" json:"status"`
+	ExitCode     int         `gorm:"column:exit_code;comment:退出码" json:"exit_code"`
+	EnvVars      string      `gorm:"column:env_vars;type:json;comment:环境变量(JSON对象)" json:"env_vars"`
+	CommandArgs  string      `gorm:"column:command_args;type:varchar(254);comment:命令行参数(JSON数组)" json:"command_args"`
+	WorkDir      string      `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
+	Timeout      int         `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
+	LogName      string      `gorm:"column:log_name;type:varchar(255);comment:日志文件路径" json:"log_name"`
+	ErrorMessage string      `gorm:"column:error_message;type:text;comment:错误信息" json:"error_message"`
+	Username     string      `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
+	ScriptID     uint32      `gorm:"column:script_id;not null;index;comment:脚本ID" json:"script_id"`
+	Script       ScriptModel `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
 }
 
 func (m *ScriptRecordModel) TableName() string {
@@ -57,8 +55,8 @@ func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("command_args", m.CommandArgs)
 	enc.AddString("work_dir", m.WorkDir)
 	enc.AddString("log_path", m.LogName)
+	enc.AddString("username", m.Username)
 	enc.AddUint32("script_id", m.ScriptID)
-	enc.AddUint32("user_id", m.UserID)
 	return nil
 }
 
@@ -117,7 +115,7 @@ type ExecuteRequest struct {
 	EnvVars     string `json:"env_vars"`
 	Timeout     int    `json:"timeout"`
 	WorkDir     string `json:"work_dir"`
-	UserID      uint32 `json:"user_id"`
+	Username    string `json:"username"`
 }
 
 type RecordUsecase struct {
@@ -408,8 +406,8 @@ func (uc *RecordUsecase) CreateScriptRecord(
 		Timeout:      req.Timeout,
 		LogName:      fmt.Sprintf("%s.log", uuid.NewString()),
 		ErrorMessage: "",
+		Username:     req.Username,
 		ScriptID:     req.ScriptID,
-		UserID:       req.UserID,
 	}
 
 	if err := uc.recordRepo.CreateModel(ctx, record); err != nil {

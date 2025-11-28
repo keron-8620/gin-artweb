@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizCustomer "gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -19,17 +18,16 @@ const ScheduleIDKey = "schedule_id"
 
 type ScheduleModel struct {
 	database.StandardModel
-	Name          string                `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Specification string                `gorm:"column:specification;type:text;comment:条件" json:"specification"`
-	IsEnabled     bool                  `gorm:"column:is_enabled;type:boolean;comment:是否启用" json:"is_enabled"`
-	EnvVars       string                `gorm:"column:env_vars;type:json;comment:环境变量(JSON对象)" json:"env_vars"`
-	CommandArgs   string                `gorm:"column:command_args;type:varchar(254);comment:命令行参数" json:"command_args"`
-	WorkDir       string                `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
-	Timeout       int                   `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
-	ScriptID      uint32                `gorm:"column:script_id;not null;index;comment:计划任务ID" json:"script_id"`
-	Script        ScriptModel           `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
-	UserID        uint32                `gorm:"column:user_id;not null;comment:执行用户ID" json:"user_id"`
-	User          bizCustomer.UserModel `gorm:"foreignKey:UserID;references:ID" json:"user"`
+	Name          string      `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	Specification string      `gorm:"column:specification;type:text;comment:条件" json:"specification"`
+	IsEnabled     bool        `gorm:"column:is_enabled;type:boolean;comment:是否启用" json:"is_enabled"`
+	EnvVars       string      `gorm:"column:env_vars;type:json;comment:环境变量(JSON对象)" json:"env_vars"`
+	CommandArgs   string      `gorm:"column:command_args;type:varchar(254);comment:命令行参数" json:"command_args"`
+	WorkDir       string      `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
+	Timeout       int         `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
+	Username      string      `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
+	ScriptID      uint32      `gorm:"column:script_id;not null;index;comment:计划任务ID" json:"script_id"`
+	Script        ScriptModel `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
 }
 
 func (m *ScheduleModel) TableName() string {
@@ -44,8 +42,8 @@ func (m *ScheduleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("command_args", m.CommandArgs)
 	enc.AddString("work_dir", m.WorkDir)
 	enc.AddInt("timeout", m.Timeout)
+	enc.AddString("username", m.Username)
 	enc.AddUint32("script_id", m.ScriptID)
-	enc.AddUint32("user_id", m.UserID)
 	return nil
 }
 
@@ -95,8 +93,8 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 			ScriptID:    m.ScriptID,
 			Timeout:     m.Timeout,
 			TriggerType: "cron",
-			UserID:      m.UserID,
 			WorkDir:     m.WorkDir,
+			Username:    m.Username,
 		}
 		record, err := uc.recordUsecase.CreateScriptRecord(ctx, execReq)
 		if err == nil {

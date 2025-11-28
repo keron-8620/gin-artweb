@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"gin-artweb/api/common"
-	"gin-artweb/api/customer/user"
 	"gin-artweb/api/jobs/script"
 )
 
@@ -27,14 +26,14 @@ type ScheduleOutBase struct {
 	WorkDir string `json:"work_dir" example:""`
 	// 超时时间(秒)
 	Timeout int `json:"timeout" example:"300"`
+	// 用户名
+	UserName string `json:"user_name" example:"admin"`
 }
 
 type ScheduleOut struct {
 	ScheduleOutBase
 	// 脚本
 	Script *script.ScriptOutBase `json:"script"`
-	// 注册的用户
-	User *user.UserOutBase `json:"user"`
 }
 
 // ScheduleReply 程序包响应结构

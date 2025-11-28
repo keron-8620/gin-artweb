@@ -4,9 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	pbUser "gin-artweb/api/customer/user"
 	pbScript "gin-artweb/api/jobs/script"
-	cs "gin-artweb/internal/customer/service"
 	"gin-artweb/internal/jobs/biz"
 )
 
@@ -78,32 +76,18 @@ func ScriptModelToOutBase(
 	}
 }
 
-func ScriptModelToOut(
-	m biz.ScriptModel,
-) *pbScript.ScriptOut {
-	var uob *pbUser.UserOutBase
-	if m.User.ID != 0 {
-		uob = cs.UserModelToOutBase(m.User)
-	}
-	return &pbScript.ScriptOut{
-		ScriptOutBase: *ScriptModelToOutBase(m),
-		User:          uob,
-	}
-
-}
-
-func ListPkgModelToOut(
+func ListScriptModelToOutBase(
 	pms *[]biz.ScriptModel,
-) *[]pbScript.ScriptOut {
+) *[]pbScript.ScriptOutBase {
 	if pms == nil {
-		return &[]pbScript.ScriptOut{}
+		return &[]pbScript.ScriptOutBase{}
 	}
 
 	ms := *pms
-	mso := make([]pbScript.ScriptOut, 0, len(ms))
+	mso := make([]pbScript.ScriptOutBase, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := ScriptModelToOut(m)
+			mo := ScriptModelToOutBase(m)
 			mso = append(mso, *mo)
 		}
 	}

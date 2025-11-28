@@ -2,7 +2,6 @@ package script
 
 import (
 	"gin-artweb/api/common"
-	"gin-artweb/api/customer/user"
 )
 
 // ScriptOutBase 程序包基础信息
@@ -27,16 +26,12 @@ type ScriptOutBase struct {
 	Status bool `json:"status" example:"true"`
 	// 是否是内置脚本
 	IsBuiltin bool `json:"is_builtin" example:"true"`
-}
-
-type ScriptOut struct {
-	ScriptOutBase
-	// 用户ID
-	User *user.UserOutBase `json:"user"`
+	// 用户名
+	Username string `json:"username" example:"admin"`
 }
 
 // ScriptReply 程序包响应结构
-type ScriptReply = common.APIReply[ScriptOut]
+type ScriptReply = common.APIReply[ScriptOutBase]
 
 // PagScriptReply程序包的分页响应结构
 type PagScriptReply = common.APIReply[*common.Pag[ScriptOutBase]]
