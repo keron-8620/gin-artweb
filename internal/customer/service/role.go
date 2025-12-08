@@ -52,7 +52,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -81,7 +81,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -121,7 +121,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 	var req pbRole.UpdateRoleRequest
@@ -133,7 +133,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -161,7 +161,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -179,7 +179,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
@@ -210,7 +210,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -227,7 +227,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -262,7 +262,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -280,7 +280,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -319,7 +319,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -345,7 +345,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -380,7 +380,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
+		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
 		return
 	}
 	s.log.Info(
@@ -397,7 +397,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 			zap.Uint32(auth.UserIDKey, claims.UserID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 	s.log.Info(
@@ -439,23 +439,6 @@ func RoleModelToOutBase(
 	}
 }
 
-func ListRoleModelToOutBase(
-	rms *[]biz.RoleModel,
-) *[]pbRole.RoleOutBase {
-	if rms == nil {
-		return &[]pbRole.RoleOutBase{}
-	}
-	ms := *rms
-	mso := make([]pbRole.RoleOutBase, 0, len(ms))
-	if len(ms) > 0 {
-		for _, m := range ms {
-			mo := RoleModelToOutBase(m)
-			mso = append(mso, *mo)
-		}
-	}
-	return &mso
-}
-
 func RoleModelToOut(
 	m biz.RoleModel,
 ) *pbRole.RoleOut {
@@ -488,6 +471,23 @@ func RoleModelToOut(
 		Menus:       menuIDs,
 		Buttons:     buttonIDs,
 	}
+}
+
+func ListRoleModelToOutBase(
+	rms *[]biz.RoleModel,
+) *[]pbRole.RoleOutBase {
+	if rms == nil {
+		return &[]pbRole.RoleOutBase{}
+	}
+	ms := *rms
+	mso := make([]pbRole.RoleOutBase, 0, len(ms))
+	if len(ms) > 0 {
+		for _, m := range ms {
+			mo := RoleModelToOutBase(m)
+			mso = append(mso, *mo)
+		}
+	}
+	return &mso
 }
 
 // RoleMenuTreeToOut 将菜单树节点转换为 RoleMenuPerm 输出对象

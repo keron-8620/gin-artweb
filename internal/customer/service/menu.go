@@ -50,7 +50,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -89,7 +89,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -130,7 +130,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -143,7 +143,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -175,7 +175,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -193,7 +193,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -226,7 +226,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -243,7 +243,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -278,7 +278,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -296,7 +296,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -339,7 +339,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -365,7 +365,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -410,21 +410,6 @@ func MenuModelToOutBase(
 	}
 }
 
-func ListMenuModelToOutBase(
-	mms *[]biz.MenuModel,
-) *[]pbMenu.MenuOutBase {
-	if mms == nil {
-		return &[]pbMenu.MenuOutBase{}
-	}
-	ms := *mms
-	mso := make([]pbMenu.MenuOutBase, 0, len(ms))
-	for _, m := range ms {
-		mo := MenuModelToOutBase(m)
-		mso = append(mso, *mo)
-	}
-	return &mso
-}
-
 func MenuModelToOut(
 	m biz.MenuModel,
 ) *pbMenu.MenuOut {
@@ -444,4 +429,19 @@ func MenuModelToOut(
 		Parent:      parent,
 		Permissions: permissionIDs,
 	}
+}
+
+func ListMenuModelToOutBase(
+	mms *[]biz.MenuModel,
+) *[]pbMenu.MenuOutBase {
+	if mms == nil {
+		return &[]pbMenu.MenuOutBase{}
+	}
+	ms := *mms
+	mso := make([]pbMenu.MenuOutBase, 0, len(ms))
+	for _, m := range ms {
+		mo := MenuModelToOutBase(m)
+		mso = append(mso, *mo)
+	}
+	return &mso
 }

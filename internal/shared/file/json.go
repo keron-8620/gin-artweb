@@ -10,8 +10,7 @@ import (
 // WriteJSON 将数据序列化为JSON格式并写入文件
 func WriteJSON(filename string, data any, indent uint8) error {
 	// 确保目录存在
-	dir := filepath.Dir(filename)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
 		return err
 	}
 

@@ -2,7 +2,6 @@ package service
 
 import (
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -51,57 +50,37 @@ func NewPackageService(
 func (s *PackageService) UploadPackage(ctx *gin.Context) {
 	var req pbPkg.UploadPackageRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		rErr := errors.ValidateError.WithCause(err)
-		s.log.Error(rErr.Error())
-		ctx.JSON(rErr.Code, rErr.Reply())
-		return
-	}
-
-	if req.File.Size > s.maxSize {
 		s.log.Error(
-			"上传的程序包文件过大",
-			zap.Int64("file_size", req.File.Size),
-			zap.Int64("max_size", s.maxSize),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(
-			errors.ErrFileTooLarge.Code,
-			errors.ErrFileTooLarge.WithData(map[string]any{
-				"file_size": req.File.Size,
-				"max_size":  s.maxSize,
-			}).Reply(),
-		)
-		return
-	}
-
-	// 用 UUID 保证文件名唯一防止并发冲突
-	uuidFilename := uuid.NewString() + filepath.Ext(req.File.Filename)
-	savePath := s.ucPkg.PackagePath(uuidFilename)
-	if err := ctx.SaveUploadedFile(req.File, savePath); err != nil {
-		s.log.Error(
-			"保存上传程序包失败",
+			"绑定上传程序包参数失败",
 			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		rErr := errors.FromError(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	newFileNameWithExt := uuid.NewString() + filepath.Ext(req.File.Filename)
+	savePath := s.ucPkg.PackagePath(newFileNameWithExt)
+	if rErr := common.UploadFile(ctx, s.log, s.maxSize, savePath, req.File); rErr != nil {
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
 	pkg, rErr := s.ucPkg.CreatePackage(ctx, biz.PackageModel{
 		Label:           req.Label,
 		Version:         req.Version,
-		StorageFilename: uuidFilename,
+		StorageFilename: newFileNameWithExt,
 		OriginFilename:  req.File.Filename,
 	})
-
 	if rErr != nil {
 		s.log.Error(
 			"创建 Package 记录失败",
 			zap.Error(rErr),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -131,7 +110,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -148,7 +127,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -180,7 +159,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -198,7 +177,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -237,7 +216,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -263,7 +242,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -301,7 +280,7 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -314,31 +293,15 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
 	// 构建文件路径
 	filePath := s.ucPkg.PackagePath(pkg.StorageFilename)
-
-	// 检查文件是否存在
-	if _, statErr := os.Stat(filePath); os.IsNotExist(statErr) {
-		s.log.Error(
-			"文件不存在",
-			zap.String("file_path", filePath),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.JSON(errors.ErrFileNotFound.Code, errors.ErrFileNotFound.Reply())
-		return
+	if err := common.DownloadFile(ctx, s.log, filePath, pkg.OriginFilename); err != nil {
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 	}
-
-	// 设置响应头，触发浏览器下载
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Content-Disposition", "attachment; filename="+pkg.OriginFilename)
-	ctx.Header("Content-Transfer-Encoding", "binary")
-
-	// 发送文件
-	ctx.File(filePath)
 }
 
 func (s *PackageService) LoadRouter(r *gin.RouterGroup) {

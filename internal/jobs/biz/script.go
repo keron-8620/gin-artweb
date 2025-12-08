@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 
 	"go.uber.org/zap"
@@ -48,9 +49,9 @@ func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *ScriptModel) ScriptPath() string {
 	if m.IsBuiltin {
-		return filepath.Join(config.ResourceDir, m.Project, m.Label, m.Name)
+		return filepath.Join(config.ResourceDir, "script", m.Project, m.Label, m.Name)
 	}
-	return filepath.Join(config.StorageDir, m.Project, m.Label, m.Name)
+	return filepath.Join(config.StorageDir, "script", m.Project, m.Label, m.Name)
 }
 
 type ScriptRepo interface {
@@ -157,6 +158,11 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
+	m, rErr := uc.FindScriptByID(ctx, scriptID)
+	if rErr != nil {
+		return rErr
+	}
+
 	if err := uc.scriptRepo.DeleteModel(ctx, scriptID); err != nil {
 		uc.log.Error(
 			"删除脚本失败",
@@ -165,6 +171,10 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": scriptID})
+	}
+
+	if rErr := uc.RemoveScript(ctx, *m); rErr != nil {
+		return rErr
 	}
 
 	uc.log.Info(
@@ -239,4 +249,61 @@ func (uc *ScriptUsecase) ListScript(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return count, ms, nil
+}
+
+func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *errors.Error {
+	if err := errors.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
+	savePath := m.ScriptPath()
+
+	uc.log.Info(
+		"开始删除脚本文件",
+		zap.String("path", savePath),
+		zap.Uint32(ScriptIDKey, m.ID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	// 检查文件是否存在
+	if _, statErr := os.Stat(savePath); os.IsNotExist(statErr) {
+		// 文件不存在，视为删除成功
+		uc.log.Warn(
+			"脚本文件不存在，无需删除",
+			zap.String("path", savePath),
+			zap.Uint32(ScriptIDKey, m.ID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return nil
+	} else if statErr != nil {
+		// 其他 stat 错误
+		uc.log.Error(
+			"检查脚本文件状态失败",
+			zap.Error(statErr),
+			zap.String("path", savePath),
+			zap.Uint32(ScriptIDKey, m.ID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return errors.FromError(statErr)
+	}
+
+	// 执行删除操作
+	if rmErr := os.Remove(savePath); rmErr != nil {
+		uc.log.Error(
+			"删除脚本文件失败",
+			zap.Error(rmErr),
+			zap.String("path", savePath),
+			zap.Uint32(ScriptIDKey, m.ID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return errors.FromError(rmErr)
+	}
+
+	uc.log.Info(
+		"删除脚本文件成功",
+		zap.String("path", savePath),
+		zap.Uint32(ScriptIDKey, m.ID),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+	return nil
 }

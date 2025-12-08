@@ -19,7 +19,7 @@ type ScheduleOutBase struct {
 	// 是否启用
 	IsEnabled bool `json:"is_enabled" example:"true"`
 	// 环境变量 (JSON对象字符串)
-	EnvVars map[string]string `json:"env_vars" example:"{}"`
+	EnvVars string `json:"env_vars" example:"{}"`
 	// 命令行参数
 	CommandArgs string `json:"command_args" example:""`
 	// 工作目录
@@ -27,7 +27,7 @@ type ScheduleOutBase struct {
 	// 超时时间(秒)
 	Timeout int `json:"timeout" example:"300"`
 	// 用户名
-	UserName string `json:"user_name" example:"admin"`
+	Username string `json:"username" example:"admin"`
 }
 
 type ScheduleOut struct {

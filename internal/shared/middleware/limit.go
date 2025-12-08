@@ -61,8 +61,7 @@ func GlobalRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		if !limiter.Allow() {
-			c.Abort()
-			c.JSON(ErrRateLimit.Code, ErrRateLimit.Reply())
+			c.AbortWithStatusJSON(ErrRateLimit.Code, ErrRateLimit.Reply())
 			return
 		}
 		c.Next()
@@ -76,8 +75,7 @@ func IPBasedRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limiter := ipLimiter.GetLimiter(c.ClientIP())
 		if !limiter.Allow() {
-			c.Abort()
-			c.JSON(ErrRateLimit.Code, ErrRateLimit.Reply())
+			c.AbortWithStatusJSON(ErrRateLimit.Code, ErrRateLimit.Reply())
 			return
 		}
 		c.Next()

@@ -390,12 +390,108 @@ definitions:
         example: 100
         type: integer
     type: object
+  common.Pag-record_ScriptRecordOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/record.ScriptRecordOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
   common.Pag-role_RoleOutBase:
     properties:
       items:
         description: 对象数组
         items:
           $ref: '#/definitions/role.RoleOutBase'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-schedule_ScheduleOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/schedule.ScheduleOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-script_ScriptOutBase:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/script.ScriptOutBase'
         type: array
       page:
         description: |-
@@ -1147,6 +1243,43 @@ definitions:
           Example: "success"
         type: string
     type: object
+  record.CreateScriptRecordRequest:
+    properties:
+      command_args:
+        description: |-
+          命令行参数 (JSON数组字符串)
+          required: false
+          example: "[\"--verbose\", \"--output=/tmp\"]"
+        type: string
+      env_vars:
+        description: |-
+          环境变量 (JSON对象字符串)
+          required: false
+          example: "{\"ENV\":\"production\"}"
+        type: string
+      script_id:
+        description: |-
+          脚本ID
+          required: true
+          example: 1
+        type: integer
+      timeout:
+        description: |-
+          超时时间(秒)
+          required: false
+          default: 300
+          minimum: 1
+        type: integer
+      work_dir:
+        description: |-
+          工作目录
+          required: false
+          example: "/home/user/work"
+        type: string
+    required:
+    - script_id
+    - timeout
+    type: object
   record.LoginRecordOutBase:
     properties:
       id:
@@ -1185,6 +1318,99 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/common.Pag-record_LoginRecordOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  record.PagScriptRecordReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-record_ScriptRecordOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  record.ScriptRecordOut:
+    properties:
+      command_args:
+        description: 命令行参数(JSON数组)
+        example: '["--verbose"]'
+        type: string
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      env_vars:
+        description: 环境变量(JSON对象)
+        example: '{"ENV":"production"}'
+        type: string
+      error_message:
+        description: 错误信息
+        example: ""
+        type: string
+      exit_code:
+        description: 退出码
+        example: 0
+        type: integer
+      id:
+        description: 脚本执行记录ID
+        example: 1
+        type: integer
+      script:
+        allOf:
+        - $ref: '#/definitions/script.ScriptOutBase'
+        description: 脚本信息
+      status:
+        description: 执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)
+        example: 2
+        type: integer
+      timeout:
+        description: 超时时间(秒)
+        example: 300
+        type: integer
+      trigger_type:
+        description: 触发类型(cron/api)
+        example: cron
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      user_name:
+        description: 用户名
+        example: admin
+        type: string
+      work_dir:
+        description: 工作目录
+        example: /home/user/work
+        type: string
+    type: object
+  record.ScriptRecordReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/record.ScriptRecordOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1428,6 +1654,332 @@ definitions:
         type: array
     required:
     - name
+    type: object
+  schedule.CreateScheduleRequest:
+    properties:
+      command_args:
+        description: |-
+          命令行参数
+          required: false
+          example: "[\"--verbose\", \"--output=/tmp\"]"
+        type: string
+      env_vars:
+        description: |-
+          环境变量 (JSON对象字符串)
+          required: false
+          example: "{\"ENV\":\"production\"}"
+        type: string
+      is_enabled:
+        description: |-
+          是否启用
+          required: false
+          default: true
+        type: boolean
+      is_retry:
+        description: |-
+          是否重试
+          required: false
+          default: false
+        type: boolean
+      max_retries:
+        description: |-
+          最大重试次数
+          required: false
+          default: 3
+        type: integer
+      name:
+        description: |-
+          计划任务名称
+          required: true
+          example: "每日备份"
+        maxLength: 50
+        type: string
+      retry_interval:
+        description: |-
+          重试间隔时间(秒)
+          required: false
+          default: 300
+          minimum: 1
+        type: integer
+      script_id:
+        description: |-
+          脚本ID
+          required: true
+          example: 1
+        type: integer
+      specification:
+        description: |-
+          Cron 表达式
+          required: true
+          example: "0 2 * * *"
+        type: string
+      timeout:
+        description: |-
+          超时时间(秒)
+          required: false
+          default: 300
+          minimum: 1
+        type: integer
+      work_dir:
+        description: |-
+          工作目录
+          required: false
+          example: "/home/user/work"
+        type: string
+    required:
+    - name
+    - script_id
+    - specification
+    type: object
+  schedule.PagScheduleReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-schedule_ScheduleOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  schedule.ScheduleOut:
+    properties:
+      command_args:
+        description: 命令行参数
+        example: ""
+        type: string
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      env_vars:
+        description: 环境变量 (JSON对象字符串)
+        example: '{}'
+        type: string
+      id:
+        description: 计划任务ID
+        example: 1
+        type: integer
+      is_enabled:
+        description: 是否启用
+        example: true
+        type: boolean
+      name:
+        description: 名称
+        example: test
+        type: string
+      script:
+        allOf:
+        - $ref: '#/definitions/script.ScriptOutBase'
+        description: 脚本
+      specification:
+        description: Cron 表达式
+        example: 0 12 * * 1-5
+        type: string
+      timeout:
+        description: 超时时间(秒)
+        example: 300
+        type: integer
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      username:
+        description: 用户名
+        example: admin
+        type: string
+      work_dir:
+        description: 工作目录
+        example: ""
+        type: string
+    type: object
+  schedule.ScheduleReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/schedule.ScheduleOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  schedule.UpdateScheduleRequest:
+    properties:
+      command_args:
+        description: |-
+          命令行参数
+          required: false
+          example: "[\"--verbose\", \"--output=/tmp\"]"
+        type: string
+      env_vars:
+        description: |-
+          环境变量 (JSON对象字符串)
+          required: false
+          example: "{\"ENV\":\"production\"}"
+        type: string
+      is_enabled:
+        description: |-
+          是否启用
+          required: false
+          default: true
+        type: boolean
+      is_retry:
+        description: |-
+          是否重试
+          required: false
+          default: false
+        type: boolean
+      max_retries:
+        description: |-
+          最大重试次数
+          required: false
+          default: 3
+        type: integer
+      name:
+        description: |-
+          计划任务名称
+          required: true
+          example: "每日备份"
+        maxLength: 50
+        type: string
+      retry_interval:
+        description: |-
+          重试间隔时间(秒)
+          required: false
+          default: 300
+          minimum: 1
+        type: integer
+      script_id:
+        description: |-
+          脚本ID
+          required: true
+          example: 1
+        type: integer
+      specification:
+        description: |-
+          Cron 表达式
+          required: true
+          example: "0 2 * * *"
+        type: string
+      timeout:
+        description: |-
+          超时时间(秒)
+          required: false
+          default: 300
+          minimum: 1
+        type: integer
+      work_dir:
+        description: |-
+          工作目录
+          required: false
+          example: "/home/user/work"
+        type: string
+    required:
+    - name
+    - script_id
+    - specification
+    type: object
+  script.PagScriptReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-script_ScriptOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  script.ScriptOutBase:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      descr:
+        description: 描述
+        example: 这是一个测试脚本
+        type: string
+      id:
+        description: 脚本ID
+        example: 1
+        type: integer
+      is_builtin:
+        description: 是否是内置脚本
+        example: true
+        type: boolean
+      label:
+        description: 标签
+        example: cmd
+        type: string
+      language:
+        description: 语言
+        example: bash
+        type: string
+      name:
+        description: 名称
+        example: test.sh
+        type: string
+      project:
+        description: 项目
+        example: artweb
+        type: string
+      status:
+        description: 状态
+        example: true
+        type: boolean
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      username:
+        description: 用户名
+        example: admin
+        type: string
+    type: object
+  script.ScriptReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/script.ScriptOutBase'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
   user.CreateUserRequest:
     properties:
@@ -2845,6 +3397,647 @@ paths:
       summary: 查询用户的登录记录列表
       tags:
       - 用户管理
+  /api/v1/jobs/record:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询脚本执行记录列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: 脚本ID
+        in: query
+        name: script_id
+        type: integer
+      - description: 触发类型
+        in: query
+        name: trigger_type
+        type: string
+      - description: 执行状态
+        in: query
+        name: status
+        type: string
+      - description: 执行用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回执行记录列表
+          schema:
+            $ref: '#/definitions/record.PagScriptRecordReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询脚本执行记录列表
+      tags:
+      - 脚本执行记录
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于执行指定的脚本并记录执行结果
+      parameters:
+      - description: 执行脚本请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/record.CreateScriptRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回执行记录信息
+          schema:
+            $ref: '#/definitions/record.ScriptRecordReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 执行脚本
+      tags:
+      - 脚本执行记录
+  /api/v1/jobs/record/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于通过执行记录的id号,对正在执行的脚本发送终止信号
+      parameters:
+      - description: 执行记录编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 终止信号
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+      security:
+      - ApiKeyAuth: []
+      summary: 对正在执行的脚本发送终止信号
+      tags:
+      - 脚本执行记录
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的脚本执行记录详情
+      parameters:
+      - description: 执行记录编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回执行记录信息
+          schema:
+            $ref: '#/definitions/record.ScriptRecordReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 执行记录未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询脚本执行记录详情
+      tags:
+      - 脚本执行记录
+  /api/v1/jobs/record/{pk}/log:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于下载指定执行记录的日志文件
+      parameters:
+      - description: 执行记录编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 成功下载日志文件
+          schema:
+            type: file
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 执行记录未找到或日志文件不存在
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载脚本执行日志
+      tags:
+      - 脚本执行记录
+  /api/v1/jobs/schedule:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询计划任务列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: 计划任务名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回计划任务列表
+          schema:
+            $ref: '#/definitions/schedule.PagScheduleReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询计划任务列表
+      tags:
+      - 计划任务管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于创建新的计划任务
+      parameters:
+      - description: 创建计划任务请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schedule.CreateScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回计划任务信息
+          schema:
+            $ref: '#/definitions/schedule.ScheduleReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建计划任务
+      tags:
+      - 计划任务管理
+  /api/v1/jobs/schedule/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的计划任务
+      parameters:
+      - description: 计划任务编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 计划任务未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除计划任务
+      tags:
+      - 计划任务管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的计划任务详情
+      parameters:
+      - description: 计划任务编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回计划任务信息
+          schema:
+            $ref: '#/definitions/schedule.ScheduleReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 计划任务未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询计划任务详情
+      tags:
+      - 计划任务管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的计划任务
+      parameters:
+      - description: 计划任务编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新计划任务请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schedule.UpdateScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回计划任务信息
+          schema:
+            $ref: '#/definitions/schedule.ScheduleReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 计划任务未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新计划任务
+      tags:
+      - 计划任务管理
+  /api/v1/jobs/script:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询脚本列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: 项目名称
+        in: query
+        name: project
+        type: string
+      - description: 脚本语言
+        in: query
+        name: language
+        type: string
+      - description: 脚本状态
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回脚本列表
+          schema:
+            $ref: '#/definitions/script.PagScriptReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询脚本列表
+      tags:
+      - 脚本管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 本接口用于上传新的脚本文件
+      parameters:
+      - description: 脚本文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 脚本描述
+        in: formData
+        name: descr
+        type: string
+      - description: 项目名称
+        in: formData
+        name: project
+        required: true
+        type: string
+      - description: 标签
+        in: formData
+        name: label
+        type: string
+      - description: 脚本语言
+        in: formData
+        name: language
+        required: true
+        type: string
+      - description: 脚本状态
+        in: formData
+        name: status
+        required: true
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回脚本信息
+          schema:
+            $ref: '#/definitions/script.ScriptReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "413":
+          description: 文件过大
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传脚本
+      tags:
+      - 脚本管理
+  /api/v1/jobs/script/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的脚本
+      parameters:
+      - description: 脚本编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 脚本未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除脚本
+      tags:
+      - 脚本管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的脚本详情
+      parameters:
+      - description: 脚本编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回脚本信息
+          schema:
+            $ref: '#/definitions/script.ScriptReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 脚本未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询脚本详情
+      tags:
+      - 脚本管理
+    put:
+      consumes:
+      - multipart/form-data
+      description: 本接口用于更新指定ID的脚本文件
+      parameters:
+      - description: 脚本编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 脚本文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 脚本描述
+        in: formData
+        name: descr
+        type: string
+      - description: 项目名称
+        in: formData
+        name: project
+        required: true
+        type: string
+      - description: 标签
+        in: formData
+        name: label
+        type: string
+      - description: 脚本语言
+        in: formData
+        name: language
+        required: true
+        type: string
+      - description: 脚本状态
+        in: formData
+        name: status
+        required: true
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回脚本信息
+          schema:
+            $ref: '#/definitions/script.ScriptReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 脚本未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "413":
+          description: 文件过大
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新脚本
+      tags:
+      - 脚本管理
+  /api/v1/jobs/script/{pk}/download:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于下载指定ID的脚本文件
+      parameters:
+      - description: 脚本编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 成功下载脚本文件
+          schema:
+            type: file
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: 脚本未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载脚本
+      tags:
+      - 脚本管理
   /api/v1/resource/host:
     get:
       consumes:

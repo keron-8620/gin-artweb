@@ -56,9 +56,9 @@ type ListScriptRecordRequest struct {
 	// required: false
 	ScriptID uint32 `json:"script_id" form:"script_id" binding:"omitempty"`
 
-	// 按用户ID筛选
+	// 按用户名筛选
 	// required: false
-	UserID uint32 `json:"user_id" form:"user_id" binding:"omitempty"`
+	Username string `json:"username" binding:"omitempty"`
 }
 
 func (req *ListScriptRecordRequest) Query() (int, int, map[string]any) {
@@ -75,8 +75,8 @@ func (req *ListScriptRecordRequest) Query() (int, int, map[string]any) {
 	if req.ScriptID > 0 {
 		query["script_id = ?"] = req.ScriptID
 	}
-	if req.UserID > 0 {
-		query["user_id = ?"] = req.UserID
+	if req.Username != "" {
+		query["username like ?"] = "%" + req.Username + "%"
 	}
 	return page, size, query
 }

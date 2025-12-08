@@ -56,7 +56,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -82,7 +82,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -122,7 +122,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -135,7 +135,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -159,7 +159,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -177,7 +177,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbUser.UserReply{
@@ -208,7 +208,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -225,7 +225,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -260,7 +260,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -278,7 +278,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -320,7 +320,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -347,7 +347,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -387,7 +387,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 	var req pbUser.ResetPasswordRequest
@@ -399,7 +399,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -417,7 +417,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 	s.log.Info(
@@ -450,7 +450,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -461,7 +461,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
+		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
 		return
 	}
 
@@ -472,7 +472,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 	ok, rErr := s.ucUser.VerifyPassword(ctx, req.OldPassword, m.Password)
@@ -482,7 +482,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 	if !ok {
@@ -490,7 +490,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			"旧密码错误",
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.Reply())
+		ctx.AbortWithStatusJSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.Reply())
 	}
 	if err := s.ucUser.UpdateUserByID(ctx, claims.UserID, map[string]any{
 		"password": req.NewPassword,
@@ -500,7 +500,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.Uint32(auth.UserIDKey, claims.UserID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 	s.log.Info(
@@ -532,7 +532,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -569,7 +569,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
 		}
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 

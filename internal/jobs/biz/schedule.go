@@ -25,6 +25,9 @@ type ScheduleModel struct {
 	CommandArgs   string      `gorm:"column:command_args;type:varchar(254);comment:命令行参数" json:"command_args"`
 	WorkDir       string      `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
 	Timeout       int         `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
+	IsRetry       bool        `gorm:"column:is_retry;type:boolean;default:false;comment:是否启用重试" json:"is_retry"`
+	RetryInterval int         `gorm:"column:retry_interval;type:int;default:60;comment:重试间隔(秒)" json:"retry_interval"`
+	MaxRetries    int         `gorm:"column:max_retries;type:int;default:3;comment:最大重试次数" json:"max_retries"`
 	Username      string      `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
 	ScriptID      uint32      `gorm:"column:script_id;not null;index;comment:计划任务ID" json:"script_id"`
 	Script        ScriptModel `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
@@ -47,11 +50,23 @@ func (m *ScheduleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (m *ScheduleModel) ToExecuteRequest() ExecuteRequest {
+	return ExecuteRequest{
+		CommandArgs: m.CommandArgs,
+		EnvVars:     m.EnvVars,
+		ScriptID:    m.ScriptID,
+		Timeout:     m.Timeout,
+		TriggerType: "cron",
+		WorkDir:     m.WorkDir,
+		Username:    m.Username,
+	}
+}
+
 type ScheduleRepo interface {
 	CreateModel(context.Context, *ScheduleModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, ...any) (*ScheduleModel, error)
+	FindModel(context.Context, []string, ...any) (*ScheduleModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScheduleModel, error)
 }
 
@@ -87,18 +102,45 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 	defer uc.mutex.Unlock()
 
 	entryID, err := uc.crontab.AddJob(m.Specification, cron.FuncJob(func() {
-		execReq := ExecuteRequest{
-			CommandArgs: m.CommandArgs,
-			EnvVars:     m.EnvVars,
-			ScriptID:    m.ScriptID,
-			Timeout:     m.Timeout,
-			TriggerType: "cron",
-			WorkDir:     m.WorkDir,
-			Username:    m.Username,
+		execReq := m.ToExecuteRequest()
+
+		var retryCount int
+		maxRetryCount := 1
+		if m.IsRetry && m.MaxRetries > 0 {
+			maxRetryCount = m.MaxRetries + 1 // 总尝试次数 = 初始执行 + 重试次数
 		}
-		record, err := uc.recordUsecase.CreateScriptRecord(ctx, execReq)
-		if err == nil {
-			uc.recordUsecase.Execute(record)
+
+		for retryCount < maxRetryCount {
+			taskinfo, err := uc.recordUsecase.SyncExecuteScript(context.Background(), execReq)
+			if err == nil && taskinfo.Status == 2 {
+				uc.log.Info(
+					"计划任务执行成功",
+					zap.Uint32(ScheduleIDKey, m.ID),
+					zap.Int("attempt", retryCount+1),
+					zap.Object("taskinfo", taskinfo),
+				)
+				break
+			} else {
+				retryCount++
+				if retryCount < maxRetryCount {
+					waitTime := time.Duration(m.RetryInterval) * time.Second
+					uc.log.Error(
+						"计划任务执行失败，准备重试",
+						zap.Uint32(ScheduleIDKey, m.ID),
+						zap.Int("attempt", retryCount),
+						zap.Int("max_attempts", maxRetryCount),
+						zap.Time("next_execution", time.Now().Add(waitTime)),
+					)
+					time.Sleep(waitTime)
+				} else {
+					uc.log.Error(
+						"计划任务最终执行失败，已达到最大重试次数",
+						zap.Uint32(ScheduleIDKey, m.ID),
+						zap.Int("attempt", retryCount),
+						zap.Int("max_attempts", maxRetryCount),
+					)
+				}
+			}
 		}
 	}))
 	if err != nil {
@@ -208,7 +250,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 		return database.NewGormError(err, data)
 	}
 
-	m, rErr := uc.FindScheduleByID(ctx, scheduleID)
+	m, rErr := uc.FindScheduleByID(ctx, []string{"Script"}, scheduleID)
 	if rErr != nil {
 		return rErr
 	}
@@ -262,6 +304,7 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 
 func (uc *ScheduleUsecase) FindScheduleByID(
 	ctx context.Context,
+	preloads []string,
 	scheduleID uint32,
 ) (*ScheduleModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
@@ -274,7 +317,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := uc.scheduleRepo.FindModel(ctx, scheduleID)
+	m, err := uc.scheduleRepo.FindModel(ctx, preloads, scheduleID)
 	if err != nil {
 		uc.log.Error(
 			"查询计划任务失败",
@@ -330,7 +373,7 @@ func (uc *ScheduleUsecase) ReloadScheduleJob(
 	ctx context.Context,
 	scheduleID uint32,
 ) *errors.Error {
-	schedule, rErr := uc.FindScheduleByID(ctx, scheduleID)
+	schedule, rErr := uc.FindScheduleByID(ctx, []string{""}, scheduleID)
 	if rErr != nil {
 		return rErr
 	}

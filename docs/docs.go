@@ -1885,6 +1885,998 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/jobs/record": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询脚本执行记录列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本执行记录"
+                ],
+                "summary": "查询脚本执行记录列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "脚本ID",
+                        "name": "script_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "触发类型",
+                        "name": "trigger_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "执行状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "执行用户名",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回执行记录列表",
+                        "schema": {
+                            "$ref": "#/definitions/record.PagScriptRecordReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于执行指定的脚本并记录执行结果",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本执行记录"
+                ],
+                "summary": "执行脚本",
+                "parameters": [
+                    {
+                        "description": "执行脚本请求参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/record.CreateScriptRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回执行记录信息",
+                        "schema": {
+                            "$ref": "#/definitions/record.ScriptRecordReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/record/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的脚本执行记录详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本执行记录"
+                ],
+                "summary": "查询脚本执行记录详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "执行记录编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回执行记录信息",
+                        "schema": {
+                            "$ref": "#/definitions/record.ScriptRecordReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "执行记录未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于通过执行记录的id号,对正在执行的脚本发送终止信号",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本执行记录"
+                ],
+                "summary": "对正在执行的脚本发送终止信号",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "执行记录编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "终止信号",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/record/{pk}/log": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于下载指定执行记录的日志文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "脚本执行记录"
+                ],
+                "summary": "下载脚本执行日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "执行记录编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功下载日志文件",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "执行记录未找到或日志文件不存在",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/schedule": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询计划任务列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "计划任务管理"
+                ],
+                "summary": "查询计划任务列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "计划任务名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建用户名",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回计划任务列表",
+                        "schema": {
+                            "$ref": "#/definitions/schedule.PagScheduleReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于创建新的计划任务",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "计划任务管理"
+                ],
+                "summary": "创建计划任务",
+                "parameters": [
+                    {
+                        "description": "创建计划任务请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schedule.CreateScheduleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回计划任务信息",
+                        "schema": {
+                            "$ref": "#/definitions/schedule.ScheduleReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/schedule/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的计划任务详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "计划任务管理"
+                ],
+                "summary": "查询计划任务详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "计划任务编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回计划任务信息",
+                        "schema": {
+                            "$ref": "#/definitions/schedule.ScheduleReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "计划任务未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的计划任务",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "计划任务管理"
+                ],
+                "summary": "更新计划任务",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "计划任务编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新计划任务请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schedule.UpdateScheduleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回计划任务信息",
+                        "schema": {
+                            "$ref": "#/definitions/schedule.ScheduleReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "计划任务未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的计划任务",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "计划任务管理"
+                ],
+                "summary": "删除计划任务",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "计划任务编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "计划任务未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/script": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询脚本列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "查询脚本列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "项目名称",
+                        "name": "project",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本语言",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本状态",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回脚本列表",
+                        "schema": {
+                            "$ref": "#/definitions/script.PagScriptReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于上传新的脚本文件",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "上传脚本",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "脚本文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本描述",
+                        "name": "descr",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "项目名称",
+                        "name": "project",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "标签",
+                        "name": "label",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本语言",
+                        "name": "language",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "脚本状态",
+                        "name": "status",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回脚本信息",
+                        "schema": {
+                            "$ref": "#/definitions/script.ScriptReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "413": {
+                        "description": "文件过大",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/script/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的脚本详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "查询脚本详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "脚本编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回脚本信息",
+                        "schema": {
+                            "$ref": "#/definitions/script.ScriptReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "脚本未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的脚本文件",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "更新脚本",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "脚本编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "脚本文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本描述",
+                        "name": "descr",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "项目名称",
+                        "name": "project",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "标签",
+                        "name": "label",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本语言",
+                        "name": "language",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "脚本状态",
+                        "name": "status",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回脚本信息",
+                        "schema": {
+                            "$ref": "#/definitions/script.ScriptReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "脚本未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "413": {
+                        "description": "文件过大",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的脚本",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "删除脚本",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "脚本编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "脚本未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/script/{pk}/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于下载指定ID的脚本文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "下载脚本",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "脚本编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功下载脚本文件",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "脚本未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/resource/host": {
             "get": {
                 "security": [
@@ -2871,6 +3863,38 @@ const docTemplate = `{
                 }
             }
         },
+        "common.Pag-record_ScriptRecordOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/record.ScriptRecordOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
         "common.Pag-role_RoleOutBase": {
             "type": "object",
             "properties": {
@@ -2879,6 +3903,70 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/role.RoleOutBase"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-schedule_ScheduleOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schedule.ScheduleOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-script_ScriptOutBase": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/script.ScriptOutBase"
                     }
                 },
                 "page": {
@@ -3693,6 +4781,35 @@ const docTemplate = `{
                 }
             }
         },
+        "record.CreateScriptRecordRequest": {
+            "type": "object",
+            "required": [
+                "script_id",
+                "timeout"
+            ],
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数 (JSON数组字符串)\nrequired: false\nexample: \"[\\\"--verbose\\\", \\\"--output=/tmp\\\"]\"",
+                    "type": "string"
+                },
+                "env_vars": {
+                    "description": "环境变量 (JSON对象字符串)\nrequired: false\nexample: \"{\\\"ENV\\\":\\\"production\\\"}\"",
+                    "type": "string"
+                },
+                "script_id": {
+                    "description": "脚本ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "timeout": {
+                    "description": "超时时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "type": "integer"
+                },
+                "work_dir": {
+                    "description": "工作目录\nrequired: false\nexample: \"/home/user/work\"",
+                    "type": "string"
+                }
+            }
+        },
         "record.LoginRecordOutBase": {
             "type": "object",
             "properties": {
@@ -3740,6 +4857,121 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/common.Pag-record_LoginRecordOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "record.PagScriptRecordReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-record_ScriptRecordOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "record.ScriptRecordOut": {
+            "type": "object",
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数(JSON数组)",
+                    "type": "string",
+                    "example": "[\"--verbose\"]"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "env_vars": {
+                    "description": "环境变量(JSON对象)",
+                    "type": "string",
+                    "example": "{\"ENV\":\"production\"}"
+                },
+                "error_message": {
+                    "description": "错误信息",
+                    "type": "string",
+                    "example": ""
+                },
+                "exit_code": {
+                    "description": "退出码",
+                    "type": "integer",
+                    "example": 0
+                },
+                "id": {
+                    "description": "脚本执行记录ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "script": {
+                    "description": "脚本信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/script.ScriptOutBase"
+                        }
+                    ]
+                },
+                "status": {
+                    "description": "执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)",
+                    "type": "integer",
+                    "example": 2
+                },
+                "timeout": {
+                    "description": "超时时间(秒)",
+                    "type": "integer",
+                    "example": 300
+                },
+                "trigger_type": {
+                    "description": "触发类型(cron/api)",
+                    "type": "string",
+                    "example": "cron"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "user_name": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "work_dir": {
+                    "description": "工作目录",
+                    "type": "string",
+                    "example": "/home/user/work"
+                }
+            }
+        },
+        "record.ScriptRecordReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/record.ScriptRecordOut"
                         }
                     ]
                 },
@@ -4036,6 +5268,328 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "schedule.CreateScheduleRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "script_id",
+                "specification"
+            ],
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数\nrequired: false\nexample: \"[\\\"--verbose\\\", \\\"--output=/tmp\\\"]\"",
+                    "type": "string"
+                },
+                "env_vars": {
+                    "description": "环境变量 (JSON对象字符串)\nrequired: false\nexample: \"{\\\"ENV\\\":\\\"production\\\"}\"",
+                    "type": "string"
+                },
+                "is_enabled": {
+                    "description": "是否启用\nrequired: false\ndefault: true",
+                    "type": "boolean"
+                },
+                "is_retry": {
+                    "description": "是否重试\nrequired: false\ndefault: false",
+                    "type": "boolean"
+                },
+                "max_retries": {
+                    "description": "最大重试次数\nrequired: false\ndefault: 3",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "计划任务名称\nrequired: true\nexample: \"每日备份\"",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "retry_interval": {
+                    "description": "重试间隔时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "type": "integer"
+                },
+                "script_id": {
+                    "description": "脚本ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "specification": {
+                    "description": "Cron 表达式\nrequired: true\nexample: \"0 2 * * *\"",
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "超时时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "type": "integer"
+                },
+                "work_dir": {
+                    "description": "工作目录\nrequired: false\nexample: \"/home/user/work\"",
+                    "type": "string"
+                }
+            }
+        },
+        "schedule.PagScheduleReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-schedule_ScheduleOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "schedule.ScheduleOut": {
+            "type": "object",
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数",
+                    "type": "string",
+                    "example": ""
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "env_vars": {
+                    "description": "环境变量 (JSON对象字符串)",
+                    "type": "string",
+                    "example": "{}"
+                },
+                "id": {
+                    "description": "计划任务ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_enabled": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "test"
+                },
+                "script": {
+                    "description": "脚本",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/script.ScriptOutBase"
+                        }
+                    ]
+                },
+                "specification": {
+                    "description": "Cron 表达式",
+                    "type": "string",
+                    "example": "0 12 * * 1-5"
+                },
+                "timeout": {
+                    "description": "超时时间(秒)",
+                    "type": "integer",
+                    "example": 300
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "work_dir": {
+                    "description": "工作目录",
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "schedule.ScheduleReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schedule.ScheduleOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "schedule.UpdateScheduleRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "script_id",
+                "specification"
+            ],
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数\nrequired: false\nexample: \"[\\\"--verbose\\\", \\\"--output=/tmp\\\"]\"",
+                    "type": "string"
+                },
+                "env_vars": {
+                    "description": "环境变量 (JSON对象字符串)\nrequired: false\nexample: \"{\\\"ENV\\\":\\\"production\\\"}\"",
+                    "type": "string"
+                },
+                "is_enabled": {
+                    "description": "是否启用\nrequired: false\ndefault: true",
+                    "type": "boolean"
+                },
+                "is_retry": {
+                    "description": "是否重试\nrequired: false\ndefault: false",
+                    "type": "boolean"
+                },
+                "max_retries": {
+                    "description": "最大重试次数\nrequired: false\ndefault: 3",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "计划任务名称\nrequired: true\nexample: \"每日备份\"",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "retry_interval": {
+                    "description": "重试间隔时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "type": "integer"
+                },
+                "script_id": {
+                    "description": "脚本ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "specification": {
+                    "description": "Cron 表达式\nrequired: true\nexample: \"0 2 * * *\"",
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "超时时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "type": "integer"
+                },
+                "work_dir": {
+                    "description": "工作目录\nrequired: false\nexample: \"/home/user/work\"",
+                    "type": "string"
+                }
+            }
+        },
+        "script.PagScriptReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-script_ScriptOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "script.ScriptOutBase": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "这是一个测试脚本"
+                },
+                "id": {
+                    "description": "脚本ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_builtin": {
+                    "description": "是否是内置脚本",
+                    "type": "boolean",
+                    "example": true
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "cmd"
+                },
+                "language": {
+                    "description": "语言",
+                    "type": "string",
+                    "example": "bash"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "test.sh"
+                },
+                "project": {
+                    "description": "项目",
+                    "type": "string",
+                    "example": "artweb"
+                },
+                "status": {
+                    "description": "状态",
+                    "type": "boolean",
+                    "example": true
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "script.ScriptReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/script.ScriptOutBase"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
                 }
             }
         },

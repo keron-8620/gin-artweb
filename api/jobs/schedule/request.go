@@ -42,6 +42,22 @@ type CreateScheduleRequest struct {
 	// minimum: 1
 	Timeout int `json:"timeout,omitempty"`
 
+	// 是否重试
+	// required: false
+	// default: false
+	IsRetry bool `json:"is_retry"`
+
+	// 重试间隔时间(秒)
+	// required: false
+	// default: 300
+	// minimum: 1
+	RetryInterval int `json:"retry_interval"`
+
+	// 最大重试次数
+	// required: false
+	// default: 3
+	MaxRetries int `json:"max_retries"`
+
 	// 脚本ID
 	// required: true
 	// example: 1
@@ -88,6 +104,22 @@ type UpdateScheduleRequest struct {
 	// minimum: 1
 	Timeout int `json:"timeout,omitempty"`
 
+	// 是否重试
+	// required: false
+	// default: false
+	IsRetry bool `json:"is_retry"`
+
+	// 重试间隔时间(秒)
+	// required: false
+	// default: 300
+	// minimum: 1
+	RetryInterval int `json:"retry_interval"`
+
+	// 最大重试次数
+	// required: false
+	// default: 3
+	MaxRetries int `json:"max_retries"`
+
 	// 脚本ID
 	// required: true
 	// example: 1
@@ -113,9 +145,9 @@ type ListScheduleRequest struct {
 	// required: false
 	ScriptID uint32 `form:"script_id"`
 
-	// 按用户ID筛选
+	// 按用户名筛选
 	// required: false
-	UserID uint32 `json:"user_id" binding:"omitempty"`
+	Username string `json:"username" binding:"omitempty"`
 }
 
 func (req *ListScheduleRequest) Query() (int, int, map[string]any) {
@@ -129,8 +161,8 @@ func (req *ListScheduleRequest) Query() (int, int, map[string]any) {
 	if req.ScriptID > 0 {
 		query["script_id = ?"] = req.ScriptID
 	}
-	if req.UserID > 0 {
-		query["user_id = ?"] = req.UserID
+	if req.Username != "" {
+		query["username like ?"] = "%" + req.Username + "%"
 	}
 	return page, size, query
 }

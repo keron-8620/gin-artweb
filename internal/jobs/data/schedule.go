@@ -119,6 +119,7 @@ func (r *scheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 
 func (r *scheduleRepo) FindModel(
 	ctx context.Context,
+	preloads []string,
 	conds ...any,
 ) (*biz.ScheduleModel, error) {
 	r.log.Debug(
@@ -130,7 +131,7 @@ func (r *scheduleRepo) FindModel(
 	var m biz.ScheduleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBFind(dbCtx, r.gormDB, nil, &m, conds...); err != nil {
+	if err := database.DBFind(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询计划任务模型失败",
 			zap.Error(err),

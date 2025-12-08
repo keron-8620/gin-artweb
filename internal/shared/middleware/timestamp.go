@@ -63,8 +63,7 @@ func TimestampMiddleware(logger *zap.Logger, tolerance, futureTolerance int64) g
 		timestampStr := c.GetHeader("X-Timestamp")
 		if timestampStr == "" {
 			logger.Error("请求缺少 X-Timestamp 头")
-			c.JSON(ErrNoTimestamp.Code, ErrNoTimestamp.Reply())
-			c.Abort()
+			c.AbortWithStatusJSON(ErrNoTimestamp.Code, ErrNoTimestamp.Reply())
 			return
 		}
 
@@ -76,8 +75,7 @@ func TimestampMiddleware(logger *zap.Logger, tolerance, futureTolerance int64) g
 				zap.String("timestamp", timestampStr),
 				zap.String("error", err.Error()),
 			)
-			c.JSON(ErrInvalidTimestamp.Code, ErrInvalidTimestamp.Reply())
-			c.Abort()
+			c.AbortWithStatusJSON(ErrInvalidTimestamp.Code, ErrInvalidTimestamp.Reply())
 			return
 		}
 
@@ -90,8 +88,7 @@ func TimestampMiddleware(logger *zap.Logger, tolerance, futureTolerance int64) g
 				zap.Int64("current", now),
 				zap.Int64("received", timestamp),
 				zap.Int64("difference", timestamp-now))
-			c.JSON(ErrTimestampInFuture.Code, ErrTimestampInFuture.Reply())
-			c.Abort()
+			c.AbortWithStatusJSON(ErrTimestampInFuture.Code, ErrTimestampInFuture.Reply())
 			return
 		}
 
@@ -102,8 +99,7 @@ func TimestampMiddleware(logger *zap.Logger, tolerance, futureTolerance int64) g
 				zap.Int64("received", timestamp),
 				zap.Int64("tolerance", tolerance),
 				zap.Int64("difference", abs(now-timestamp)))
-			c.JSON(ErrTimestampExpired.Code, ErrTimestampExpired.Reply())
-			c.Abort()
+			c.AbortWithStatusJSON(ErrTimestampExpired.Code, ErrTimestampExpired.Reply())
 			return
 		}
 

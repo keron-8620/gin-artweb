@@ -1,25 +1,410 @@
 package service
 
 import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/jobs/biz"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+
+	pbComm "gin-artweb/api/common"
+	pbSchedule "gin-artweb/api/jobs/schedule"
+	pbScript "gin-artweb/api/jobs/script"
 )
 
 type ScheduleService struct {
 	log        *zap.Logger
 	ucSchedule *biz.ScheduleUsecase
-	maxSize    int64
 }
 
 func NewScheduleService(
 	logger *zap.Logger,
 	ucSchedule *biz.ScheduleUsecase,
-	maxSize int64,
 ) *ScheduleService {
 	return &ScheduleService{
 		log:        logger,
 		ucSchedule: ucSchedule,
-		maxSize:    maxSize,
 	}
+}
+
+// @Summary 创建计划任务
+// @Description 本接口用于创建新的计划任务
+// @Tags 计划任务管理
+// @Accept json
+// @Produce json
+// @Param request body pbSchedule.CreateScheduleRequest true "创建计划任务请求"
+// @Success 200 {object} pbSchedule.ScheduleReply "成功返回计划任务信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/schedule [post]
+// @Security ApiKeyAuth
+func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
+	var req pbSchedule.CreateScheduleRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定创建计划任务参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	uc := auth.GetGinUserClaims(ctx)
+	schedule := biz.ScheduleModel{
+		Name:          req.Name,
+		Specification: req.Specification,
+		IsEnabled:     req.IsEnabled,
+		EnvVars:       req.EnvVars,
+		CommandArgs:   req.CommandArgs,
+		WorkDir:       req.WorkDir,
+		Timeout:       req.Timeout,
+		Username:      uc.Subject,
+		ScriptID:      req.ScriptID,
+	}
+
+	m, rErr := s.ucSchedule.CreateSchedule(ctx, schedule)
+	if rErr != nil {
+		s.log.Error(
+			"创建计划任务失败",
+			zap.Error(rErr),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, &pbSchedule.ScheduleReply{
+		Code: http.StatusOK,
+		Data: *ScheduleToOut(*m),
+	})
+}
+
+// @Summary 更新计划任务
+// @Description 本接口用于更新指定ID的计划任务
+// @Tags 计划任务管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "计划任务编号"
+// @Param request body pbSchedule.UpdateScheduleRequest true "更新计划任务请求"
+// @Success 200 {object} pbSchedule.ScheduleReply "成功返回计划任务信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "计划任务未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/schedule/{pk} [put]
+// @Security ApiKeyAuth
+func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定更新计划任务ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	var req pbSchedule.UpdateScheduleRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.log.Error(
+			"绑定更新计划任务参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	uc := auth.GetGinUserClaims(ctx)
+	data := map[string]any{
+		"name":          req.Name,
+		"specification": req.Specification,
+		"is_enabled":    req.IsEnabled,
+		"env_vars":      req.EnvVars,
+		"command_args":  req.CommandArgs,
+		"work_dir":      req.WorkDir,
+		"timeout":       req.Timeout,
+		"is_retry":      req.IsRetry,
+		"retry_interval": req.RetryInterval,
+		"max_retries":   req.MaxRetries,
+		"username":      uc.Subject,
+		"script_id":     req.ScriptID,
+	}
+
+	if err := s.ucSchedule.UpdateScheduleByID(ctx, uri.PK, data); err != nil {
+		s.log.Error(
+			"更新计划任务失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	m, err := s.ucSchedule.FindScheduleByID(ctx, []string{"Script"}, uri.PK)
+	if err != nil {
+		s.log.Error(
+			"查询更新后的计划任务信息失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, &pbSchedule.ScheduleReply{
+		Code: http.StatusOK,
+		Data: *ScheduleToOut(*m),
+	})
+}
+
+// @Summary 删除计划任务
+// @Description 本接口用于删除指定ID的计划任务
+// @Tags 计划任务管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "计划任务编号"
+// @Success 200 {object} pbComm.MapAPIReply "删除成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "计划任务未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/schedule/{pk} [delete]
+// @Security ApiKeyAuth
+func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定删除计划任务ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	s.log.Info(
+		"开始删除计划任务",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	if err := s.ucSchedule.DeleteScheduleByID(ctx, uri.PK); err != nil {
+		s.log.Error(
+			"删除计划任务失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	s.log.Info(
+		"删除计划任务成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
+}
+
+// @Summary 查询计划任务详情
+// @Description 本接口用于查询指定ID的计划任务详情
+// @Tags 计划任务管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "计划任务编号"
+// @Success 200 {object} pbSchedule.ScheduleReply "成功返回计划任务信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "计划任务未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/schedule/{pk} [get]
+// @Security ApiKeyAuth
+func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询计划任务ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	s.log.Info(
+		"开始查询计划任务详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	m, err := s.ucSchedule.FindScheduleByID(ctx, []string{"Script"}, uri.PK)
+	if err != nil {
+		s.log.Error(
+			"查询计划任务详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	s.log.Info(
+		"查询计划任务详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	mo := ScheduleToOut(*m)
+	ctx.JSON(http.StatusOK, &pbSchedule.ScheduleReply{
+		Code: http.StatusOK,
+		Data: *mo,
+	})
+}
+
+// @Summary 查询计划任务列表
+// @Description 本接口用于查询计划任务列表
+// @Tags 计划任务管理
+// @Accept json
+// @Produce json
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param name query string false "计划任务名称"
+// @Param is_enabled query bool false "是否启用"
+// @Param username query string false "创建用户名"
+// @Success 200 {object} pbSchedule.PagScheduleReply "成功返回计划任务列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/schedule [get]
+// @Security ApiKeyAuth
+func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
+	var req pbSchedule.ListScheduleRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询计划任务列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	s.log.Info(
+		"开始查询计划任务列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	page, size, query := req.Query()
+	qp := database.QueryParams{
+		Preloads: []string{"Script"},
+		IsCount:  true,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"id DESC"},
+		Query:    query,
+	}
+	total, ms, err := s.ucSchedule.ListSchedule(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询计划任务列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	s.log.Info(
+		"查询计划任务列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	mbs := ListScheduledToOut(ms)
+	ctx.JSON(http.StatusOK, &pbSchedule.PagScheduleReply{
+		Code: http.StatusOK,
+		Data: pbComm.NewPag(page, size, total, mbs),
+	})
+}
+
+func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
+	r.POST("/schedule", s.CreateSchedule)
+	r.PUT("/schedule/:pk", s.UpdateSchedule)
+	r.DELETE("/schedule/:pk", s.DeleteSchedule)
+	r.GET("/schedule/:pk", s.GetSchedule)
+	r.GET("/schedule", s.ListSchedule)
+}
+
+func ScheduleToOutBase(
+	m biz.ScheduleModel,
+) *pbSchedule.ScheduleOutBase {
+	return &pbSchedule.ScheduleOutBase{
+		ID:            m.ID,
+		CreatedAt:     m.CreatedAt.String(),
+		UpdatedAt:     m.UpdatedAt.String(),
+		Name:          m.Name,
+		Specification: m.Specification,
+		IsEnabled:     m.IsEnabled,
+		EnvVars:       m.EnvVars,
+		CommandArgs:   m.CommandArgs,
+		WorkDir:       m.WorkDir,
+		Timeout:       m.Timeout,
+		Username:      m.Username,
+	}
+}
+
+func ScheduleToOut(
+	m biz.ScheduleModel,
+) *pbSchedule.ScheduleOut {
+	var script *pbScript.ScriptOutBase
+	if m.Script.ID != 0 {
+		script = ScriptModelToOutBase(m.Script)
+	}
+	return &pbSchedule.ScheduleOut{
+		ScheduleOutBase: *ScheduleToOutBase(m),
+		Script:          script,
+	}
+}
+
+func ListScheduledToOut(
+	rms *[]biz.ScheduleModel,
+) *[]pbSchedule.ScheduleOut {
+	if rms == nil {
+		return &[]pbSchedule.ScheduleOut{}
+	}
+
+	ms := *rms
+	mso := make([]pbSchedule.ScheduleOut, 0, len(ms))
+	if len(ms) > 0 {
+		for _, m := range ms {
+			mo := ScheduleToOut(m)
+			mso = append(mso, *mo)
+		}
+	}
+	return &mso
 }

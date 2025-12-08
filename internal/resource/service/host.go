@@ -50,7 +50,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -77,7 +77,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -118,7 +118,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -131,7 +131,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -142,7 +142,10 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucHost.UpdateHostById(ctx, uri.PK, biz.HostModel{
+	if err := s.ucHost.UpdateHostById(ctx, biz.HostModel{
+		StandardModel: database.StandardModel{
+			BaseModel: database.BaseModel{ID: uri.PK},
+		},
 		Name:     req.Name,
 		Label:    req.Label,
 		IPAddr:   req.IPAddr,
@@ -158,7 +161,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -176,7 +179,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -209,7 +212,7 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -226,7 +229,7 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -261,7 +264,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -279,7 +282,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -321,7 +324,7 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -347,7 +350,7 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 

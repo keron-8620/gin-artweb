@@ -51,7 +51,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -80,7 +80,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -120,7 +120,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -158,7 +158,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -176,7 +176,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -208,7 +208,7 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -225,7 +225,7 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -260,7 +260,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -278,7 +278,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -320,7 +320,7 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
 		return
 	}
 
@@ -346,7 +346,7 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.JSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
 		return
 	}
 
@@ -385,23 +385,6 @@ func ButtonModelToOutBase(
 	}
 }
 
-func ListButtonModelToOutBase(
-	bms *[]biz.ButtonModel,
-) *[]pbButton.ButtonOutBase {
-	if bms == nil {
-		return &[]pbButton.ButtonOutBase{}
-	}
-	ms := *bms
-	mso := make([]pbButton.ButtonOutBase, 0, len(ms))
-	if len(ms) > 0 {
-		for _, m := range ms {
-			mo := ButtonModelToOutBase(m)
-			mso = append(mso, *mo)
-		}
-	}
-	return &mso
-}
-
 func ButtonModelToOut(
 	m biz.ButtonModel,
 ) *pbButton.ButtonOut {
@@ -421,4 +404,21 @@ func ButtonModelToOut(
 		Menu:          menu,
 		Permissions:   permissionIDs,
 	}
+}
+
+func ListButtonModelToOutBase(
+	bms *[]biz.ButtonModel,
+) *[]pbButton.ButtonOutBase {
+	if bms == nil {
+		return &[]pbButton.ButtonOutBase{}
+	}
+	ms := *bms
+	mso := make([]pbButton.ButtonOutBase, 0, len(ms))
+	if len(ms) > 0 {
+		for _, m := range ms {
+			mo := ButtonModelToOutBase(m)
+			mso = append(mso, *mo)
+		}
+	}
+	return &mso
 }

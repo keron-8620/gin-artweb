@@ -34,7 +34,7 @@ func NewServer(
 	hostRepo := data.NewHostRepo(loggers.Data, db, dbTimeout)
 	pkgRepo := data.NewpackageRepo(loggers.Data, db, dbTimeout)
 
-	hostDir := filepath.Join(config.StorageDir, "host")
+	hostDir := filepath.Join(config.StorageDir, "inventory", "host_vars")
 	pkgDir := filepath.Join(config.StorageDir, "package")
 	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, signer, sshTimeout, hostDir)
 	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo, pkgDir)

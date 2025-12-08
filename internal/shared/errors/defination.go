@@ -35,10 +35,28 @@ var (
 		"上传文件超出大小限制",
 		nil,
 	)
+	ErrFileStatusCheckFailed = New(
+		http.StatusInternalServerError,
+		"file_status_check_failed",
+		"文件状态检查失败",
+		nil,
+	)
 	ErrFileNotFound = New(
 		http.StatusBadRequest,
 		"file_not_found",
 		"未找到文件",
+		nil,
+	)
+	ErrUploadFile = New(
+		http.StatusInternalServerError,
+		"upload_file",
+		"上传文件错误",
+		nil,
+	)
+	ErrRemoveFile = New(
+		http.StatusInternalServerError,
+		"remove_file",
+		"删除文件错误",
 		nil,
 	)
 )

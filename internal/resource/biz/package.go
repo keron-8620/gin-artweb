@@ -261,8 +261,8 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 	}
 
 	uc.log.Info(
-		"成功删除程序包文件",
+		"删除程序包文件成功",
 		zap.String("path", savePath),
-		zap.Uint32("package_id", m.ID))
+		zap.Uint32(PackageIDKey, m.ID))
 	return nil
 }

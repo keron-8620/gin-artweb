@@ -17,8 +17,6 @@ func HostGuard(logger *zap.Logger, allowedHosts ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		host := c.Request.Host
 		if !allowed[host] {
-			c.Abort()
-
 			logger.Warn(
 				"请求头不被允许",
 				zap.String("host", host),
@@ -27,7 +25,7 @@ func HostGuard(logger *zap.Logger, allowedHosts ...string) gin.HandlerFunc {
 				zap.String("path", c.Request.URL.Path),
 				zap.Strings("allowed_hosts", allowedHosts),
 			)
-			c.JSON(errors.ErrHostNotAllowed.Code, errors.ErrHostNotAllowed.Reply())
+			c.AbortWithStatusJSON(errors.ErrHostNotAllowed.Code, errors.ErrHostNotAllowed.Reply())
 		}
 		c.Next()
 	}

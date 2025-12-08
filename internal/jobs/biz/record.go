@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -81,7 +82,7 @@ type ScriptRecordRepo interface {
 	CreateModel(context.Context, *ScriptRecordModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, ...any) (*ScriptRecordModel, error)
+	FindModel(context.Context, []string, ...any) (*ScriptRecordModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScriptRecordModel, error)
 }
 
@@ -160,10 +161,24 @@ func (uc *RecordUsecase) GetCancel(id uint32) context.CancelFunc {
 	return uc.contexts[id]
 }
 
-func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
+func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
+	uc.log.Debug(
+		"开始执行脚本",
+		zap.Object(ScriptRecordIDKey, record),
+	)
 	// 初始化执行任务
 	ctx, cancel := context.WithCancel(context.Background())
 	uc.StoreCancel(record.ID, cancel)
+
+	// 创建带超时的上下文
+	timeout := time.Duration(record.Timeout) * time.Second
+	if timeout <= 0 {
+		timeout = 5 * time.Minute // 默认超时时间
+	}
+	var timeoutCancel context.CancelFunc
+	ctx, timeoutCancel = context.WithTimeout(ctx, timeout)
+	defer timeoutCancel()
+
 	taskinfo := &TaskInfo{
 		ExitCode: -1,
 		Status:   3,
@@ -219,9 +234,15 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 
 		// 清理执行完成的上下文
 		uc.DeleteCancel(record.ID)
+
+		// 输出日志
+		uc.log.Debug(
+			"脚本执行完成",
+			zap.Object(ScriptRecordIDKey, record),
+		)
 	}()
 
-	// 3. 生成日志路径并创建日志目录
+	// 生成日志路径并创建日志目录
 	logDir := filepath.Join(config.LogDir, time.Now().Format(time.DateOnly))
 	if taskinfo.Error = os.MkdirAll(logDir, 0755); taskinfo.Error != nil {
 		taskinfo.Status = 5
@@ -232,10 +253,10 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 			zap.String("path", logDir),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return
+		return taskinfo
 	}
 
-	// 5. 创建并打开日志文件
+	// 创建并打开日志文件
 	logPath := record.LogPath()
 	taskinfo.LogFile, taskinfo.Error = os.Create(logPath)
 	if taskinfo.Error != nil {
@@ -247,7 +268,7 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 			zap.String("path", logPath),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return
+		return taskinfo
 	}
 
 	// 写入开始执行日志
@@ -255,13 +276,12 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 	fmt.Fprintf(taskinfo.LogFile, "[%s] 开始执行脚本 (ID: %d, ScriptID: %d)\n",
 		startTime.Format(time.RFC3339), record.ID, record.ScriptID)
 
-	// 创建带超时的上下文
-	timeout := time.Duration(record.Timeout) * time.Second
-	if timeout <= 0 {
-		timeout = 5 * time.Minute // 默认超时时间
+	// 交验脚本是否存在
+	scriptPath := record.Script.ScriptPath()
+	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+		fmt.Fprintf(taskinfo.LogFile, "脚本文件不存在: %s\n", scriptPath)
+		return taskinfo
 	}
-	ctxExe, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
 
 	// 解析命令参数
 	var cmdArgs []string
@@ -269,13 +289,24 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 		cmdArgs = strings.Fields(record.CommandArgs)
 	}
 
-	// 创建命令
-	scriptPath := record.Script.ScriptPath()
-	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-		fmt.Fprintf(taskinfo.LogFile, "脚本文件不存在: %s\n", scriptPath)
-		return
+	cmd := exec.CommandContext(ctx, scriptPath, cmdArgs...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+		Pgid:    0,
 	}
-	cmd := exec.CommandContext(ctxExe, scriptPath, cmdArgs...)
+	cmd.Cancel = func() error {
+		if cmd.Process == nil {
+			return nil
+		}
+
+		// 获取进程组ID
+		pgid, err := syscall.Getpgid(cmd.Process.Pid)
+		if err == nil {
+			return syscall.Kill(-pgid, syscall.SIGKILL)
+		} else {
+			return cmd.Process.Kill()
+		}
+	}
 
 	// 设置工作目录
 	if record.WorkDir != "" {
@@ -283,16 +314,15 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 			fmt.Fprintf(taskinfo.LogFile, "工作目录不存在，尝试创建: %s\n", record.WorkDir)
 			if err := os.MkdirAll(record.WorkDir, 0755); err != nil {
 				fmt.Fprintf(taskinfo.LogFile, "创建工作目录失败: %s\n", err)
-				return
+				return taskinfo
 			}
 		}
 		cmd.Dir = record.WorkDir
 	}
 
 	// 设置环境变量
-	if record.EnvVars != "" {
-		cmd.Env = record.InitEnv()
-	}
+	cmd.Env = record.InitEnv()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("ANSIBLE_LOG_PATH=%s", logPath))
 
 	// 重定向输出到日志文件
 	cmd.Stdout = taskinfo.LogFile
@@ -302,41 +332,23 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) {
 	fmt.Fprintf(taskinfo.LogFile, "执行命令: %s %s\n", scriptPath, strings.Join(cmdArgs, " "))
 	taskinfo.Error = cmd.Run()
 	endTime := time.Now()
+	duration := endTime.Sub(startTime).Seconds()
 
-	// 计算执行时长
-	duration := endTime.Sub(startTime).Milliseconds()
-
-	select {
-	case <-ctxExe.Done():
-		// 检查是否是超时或手动取消
-		if ctxExe.Err() == context.DeadlineExceeded {
-			taskinfo.ExitCode = 124 // 标准超时退出码
-			taskinfo.Status = 4     // 超时状态
-			fmt.Fprintf(taskinfo.LogFile, "[%s] 脚本执行超时 (耗时: %dms)\n",
-				endTime.Format(time.RFC3339), duration)
-		} else {
-			taskinfo.ExitCode = -1 // 手动取消
-			taskinfo.Status = 3    // 失败状态
-			fmt.Fprintf(taskinfo.LogFile, "[%s] 脚本执行被取消 (耗时: %dms)\n",
-				endTime.Format(time.RFC3339), duration)
+	// 检查执行结果
+	if taskinfo.Error != nil {
+		taskinfo.Status = 3 // 失败状态
+		if exitError, ok := taskinfo.Error.(*exec.ExitError); ok {
+			taskinfo.ExitCode = exitError.ExitCode()
 		}
-	default:
-		if taskinfo.Error != nil {
-			if exitError, ok := taskinfo.Error.(*exec.ExitError); ok {
-				taskinfo.ExitCode = exitError.ExitCode()
-			} else {
-				taskinfo.ExitCode = -1
-			}
-			taskinfo.Status = 3 // 失败状态
-			fmt.Fprintf(taskinfo.LogFile, "[%s] 脚本执行失败 (退出码: %d, 耗时: %dms): %s\n",
-				endTime.Format(time.RFC3339), taskinfo.ExitCode, duration, taskinfo.Error)
-		} else {
-			taskinfo.ExitCode = 0
-			taskinfo.Status = 2 // 成功状态
-			fmt.Fprintf(taskinfo.LogFile, "[%s] 脚本执行成功 (耗时: %dms)\n",
-				endTime.Format(time.RFC3339), duration)
-		}
+		fmt.Fprintf(taskinfo.LogFile, "[%s] 脚本执行失败 (退出码: %d, 耗时: %.3fs): %s\n",
+			endTime.Format(time.RFC3339), taskinfo.ExitCode, duration, taskinfo.Error)
+	} else {
+		taskinfo.ExitCode = 0
+		taskinfo.Status = 2 // 成功状态
+		fmt.Fprintf(taskinfo.LogFile, "[%s] 脚本执行成功 (耗时: %.3fs)\n",
+			endTime.Format(time.RFC3339), duration)
 	}
+	return taskinfo
 }
 
 func (uc *RecordUsecase) Cancel(ctx context.Context, recordID uint32) {
@@ -446,6 +458,7 @@ func (uc *RecordUsecase) UpdateScriptRecord(
 
 func (uc *RecordUsecase) FindScriptRecordByID(
 	ctx context.Context,
+	preloads []string,
 	recordID uint32,
 ) (*ScriptRecordModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
@@ -458,7 +471,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := uc.recordRepo.FindModel(ctx, recordID)
+	m, err := uc.recordRepo.FindModel(ctx, preloads, recordID)
 	if err != nil {
 		uc.log.Error(
 			"查询脚本执行记录失败",
@@ -509,4 +522,27 @@ func (uc *RecordUsecase) ListcriptRecord(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return count, ms, nil
+}
+
+func (uc *RecordUsecase) AsyncExecuteScript(
+	ctx context.Context,
+	req ExecuteRequest,
+) (*ScriptRecordModel, *errors.Error) {
+	record, err := uc.CreateScriptRecord(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	go uc.Execute(record)
+	return record, nil
+}
+
+func (uc *RecordUsecase) SyncExecuteScript(
+	ctx context.Context,
+	req ExecuteRequest,
+) (*TaskInfo, *errors.Error) {
+	record, err := uc.CreateScriptRecord(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return uc.Execute(record), nil
 }

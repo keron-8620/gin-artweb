@@ -23,6 +23,7 @@ import (
 	"gorm.io/gorm"
 
 	customer "gin-artweb/internal/customer/server"
+	jobs "gin-artweb/internal/jobs/server"
 	resource "gin-artweb/internal/resource/server"
 
 	"gin-artweb/docs"
@@ -33,88 +34,11 @@ import (
 	"gin-artweb/internal/shared/middleware"
 )
 
-const version = "v0.17.6.3.1"
-
-const (
-	serverLogName   = "server.log"
-	databaseLogName = "database.log"
-	cronLogName     = "cron.log"
+var (
+	version   string
+	commitID  string
+	buildTime string
 )
-
-type initialize struct {
-	conf    *config.SystemConf
-	log     *zap.Logger
-	db      *gorm.DB
-	crontab *cron.Cron
-}
-
-// newInitialize 初始化系统组件
-// path: 配置文件路径
-// 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
-// 返回值2: 清理函数，用于关闭数据库连接
-// 返回值3: 初始化过程中发生的错误
-func newInitialize(path string) (*initialize, func(), error) {
-	// 加载系统配置
-	conf := config.NewSystemConf(path)
-
-	// 初始化服务器日志记录器
-	write := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, serverLogName))
-	logger := log.NewZapLoggerMust(conf.Log.Level, write)
-
-	// 创建GORM数据库配置并连接数据库
-	var dbLog *golog.Logger
-	if conf.Database.LogSQL {
-		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, databaseLogName))
-		dbLog = golog.New(dbWrite, " ", golog.LstdFlags)
-	}
-	dbConf := database.NewGormConfig(dbLog)
-	db, err := database.NewGormDB(conf.Database, dbConf)
-	if err != nil {
-		logger.Error("数据库连接失败", zap.Error(err))
-		return nil, nil, err
-	}
-
-	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, cronLogName))
-	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
-	ct := crontab.NewCron(cronLogger)
-
-	// 返回初始化结构体和清理函数
-	return &initialize{
-			conf:    conf,
-			db:      db,
-			log:     logger,
-			crontab: ct,
-		}, func() {
-			// 1. 关闭计划任务
-			if ct != nil {
-				cronLogger.Info("正在关闭计划任务...")
-				shutdownTimeout := time.Duration(conf.Security.Timeout.ShutdownTimeout) * time.Second
-				ctx := ct.Stop() // Stop 返回一个 context
-				// 等待最多30秒让任务完成
-				select {
-				case <-ctx.Done():
-					cronLogger.Info("计划任务已全部完成")
-				case <-time.After(shutdownTimeout):
-					cronLogger.Warn("计划任务关闭超时，可能存在未完成的任务")
-				}
-			}
-
-			// 2. 关闭数据库连接
-			if db != nil {
-				logger.Info("正在释放数据库资源...")
-				conn, err := db.DB()
-				if err != nil {
-					logger.Error("获取数据库连接失败", zap.Error(err))
-				}
-				if err = conn.Close(); err != nil {
-					logger.Error("关闭数据库连接失败", zap.Error(err))
-				} else {
-					logger.Info("数据库资源释放成功")
-				}
-			}
-			logger.Info("所有资源清理完成")
-		}, nil
-}
 
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
@@ -122,7 +46,7 @@ func newInitialize(path string) (*initialize, func(), error) {
 func main() {
 	// 定义并解析命令行参数，指定配置文件路径，默认为 "../config/system.yaml"
 	var configPath string
-	flag.StringVar(&configPath, "config", "./config/system.yaml", "Path to config file")
+	flag.StringVar(&configPath, "config", filepath.Join(config.ConfigDir, "system.yml"), "Path to config file")
 	flag.Parse()
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
@@ -189,10 +113,15 @@ func main() {
 	}()
 
 	// 打印服务器启动信息
-	i.log.Info("服务器启动ing ...",
+	i.log.Info(
+		"服务器启动ing ...",
 		zap.String("host", i.conf.Server.Host),
 		zap.Int("port", i.conf.Server.Port),
-		zap.Bool("ssl", i.conf.Server.SSL.Enable))
+		zap.Bool("ssl", i.conf.Server.SSL.Enable),
+		zap.String("version", version),
+		zap.String("commit", commitID),
+		zap.String("build_time", buildTime),
+	)
 
 	// 监听系统中断信号（SIGINT, SIGTERM）来触发优雅关闭流程
 	quit := make(chan os.Signal, 1)
@@ -216,12 +145,87 @@ func main() {
 	i.log.Info("服务器已退出")
 }
 
+type initialize struct {
+	conf    *config.SystemConf
+	log     *zap.Logger
+	db      *gorm.DB
+	crontab *cron.Cron
+}
+
+// newInitialize 初始化系统组件
+// path: 配置文件路径
+// 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
+// 返回值2: 清理函数，用于关闭数据库连接
+// 返回值3: 初始化过程中发生的错误
+func newInitialize(path string) (*initialize, func(), error) {
+	// 加载系统配置
+	conf := config.NewSystemConf(path)
+
+	// 初始化服务器日志记录器
+	write := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "server.log"))
+	logger := log.NewZapLoggerMust(conf.Log.Level, write)
+
+	// 创建GORM数据库配置并连接数据库
+	var dbLog *golog.Logger
+	if conf.Database.LogSQL {
+		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "database.log"))
+		dbLog = golog.New(dbWrite, " ", golog.LstdFlags)
+	}
+	dbConf := database.NewGormConfig(dbLog)
+	db, err := database.NewGormDB(conf.Database, dbConf)
+	if err != nil {
+		logger.Error("数据库连接失败", zap.Error(err))
+		return nil, nil, err
+	}
+
+	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "cron.log"))
+	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
+	ct := crontab.NewCron(cronLogger)
+
+	// 返回初始化结构体和清理函数
+	return &initialize{
+			conf:    conf,
+			db:      db,
+			log:     logger,
+			crontab: ct,
+		}, func() {
+			// 1. 关闭计划任务
+			if ct != nil {
+				cronLogger.Info("正在关闭计划任务...")
+				shutdownTimeout := time.Duration(conf.Security.Timeout.ShutdownTimeout) * time.Second
+				ctx := ct.Stop() // Stop 返回一个 context
+				// 等待最多30秒让任务完成
+				select {
+				case <-ctx.Done():
+					cronLogger.Info("计划任务已全部完成")
+				case <-time.After(shutdownTimeout):
+					cronLogger.Warn("计划任务关闭超时，可能存在未完成的任务")
+				}
+			}
+
+			// 2. 关闭数据库连接
+			if db != nil {
+				logger.Info("正在释放数据库资源...")
+				conn, err := db.DB()
+				if err != nil {
+					logger.Error("获取数据库连接失败", zap.Error(err))
+				}
+				if err = conn.Close(); err != nil {
+					logger.Error("关闭数据库连接失败", zap.Error(err))
+				} else {
+					logger.Info("数据库资源释放成功")
+				}
+			}
+			logger.Info("所有资源清理完成")
+		}, nil
+}
+
 func newRouter(init *initialize) *gin.Engine {
 	loggers := NewLoggers(init.conf.Log)
 	r := gin.New()
 
 	// host请求头防护中间件
-	r.Use(middleware.HostGuard(loggers.Service, init.conf.Server.Host))
+	r.Use(middleware.HostGuard(loggers.Service, init.conf.Server.Host, fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)))
 
 	// 注册跨域请求处理中间件
 	r.Use(middleware.CorsMiddleware(init.conf.CORS))
@@ -279,6 +283,7 @@ func newRouter(init *initialize) *gin.Engine {
 	// 初始化加载业务模块
 	customer.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	resource.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
+	jobs.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers, init.crontab)
 	return r
 }
 

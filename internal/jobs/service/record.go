@@ -1,9 +1,20 @@
 package service
 
 import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/jobs/biz"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/errors"
+
+	pbComm "gin-artweb/api/common"
+	pbRecord "gin-artweb/api/jobs/record"
+	pbScript "gin-artweb/api/jobs/script"
 )
 
 type ScriptRecordService struct {
@@ -19,4 +30,310 @@ func NewScriptRecordService(
 		log:      log,
 		ucRecord: ucRecord,
 	}
+}
+
+// @Summary 执行脚本
+// @Description 本接口用于执行指定的脚本并记录执行结果
+// @Tags 脚本执行记录
+// @Accept json
+// @Produce json
+// @Param request body pbRecord.CreateScriptRecordRequest true "执行脚本请求参数"
+// @Success 200 {object} pbRecord.ScriptRecordReply "成功返回执行记录信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/record [post]
+// @Security ApiKeyAuth
+func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
+	var req pbRecord.CreateScriptRecordRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		s.log.Error(
+			"绑定执行脚本参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	uc := auth.GetGinUserClaims(ctx)
+	m, rErr := s.ucRecord.AsyncExecuteScript(ctx, biz.ExecuteRequest{
+		ScriptID:    req.ScriptID,
+		CommandArgs: req.CommandArgs,
+		EnvVars:     req.EnvVars,
+		Timeout:     req.Timeout,
+		WorkDir:     req.WorkDir,
+		TriggerType: "api",
+		Username:    uc.Subject,
+	})
+	if rErr != nil {
+		s.log.Error(
+			"执行脚本失败",
+			zap.Error(rErr),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+	ctx.JSON(http.StatusOK, &pbRecord.ScriptRecordReply{
+		Code: http.StatusOK,
+		Data: *ScriptRecordToOut(*m),
+	})
+}
+
+// @Summary 查询脚本执行记录详情
+// @Description 本接口用于查询指定ID的脚本执行记录详情
+// @Tags 脚本执行记录
+// @Accept json
+// @Produce json
+// @Param pk path uint true "执行记录编号"
+// @Success 200 {object} pbRecord.ScriptRecordReply "成功返回执行记录信息"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "执行记录未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/record/{pk} [get]
+// @Security ApiKeyAuth
+func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询脚本执行记录ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	s.log.Info(
+		"开始查询脚本执行记录详情",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	m, err := s.ucRecord.FindScriptRecordByID(ctx, []string{"Script"}, uri.PK)
+	if err != nil {
+		s.log.Error(
+			"查询脚本执行记录详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	s.log.Info(
+		"查询脚本执行记录详情成功",
+		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	mo := ScriptRecordToOut(*m)
+	ctx.JSON(http.StatusOK, &pbRecord.ScriptRecordReply{
+		Code: http.StatusOK,
+		Data: *mo,
+	})
+}
+
+// @Summary 查询脚本执行记录列表
+// @Description 本接口用于查询脚本执行记录列表
+// @Tags 脚本执行记录
+// @Accept json
+// @Produce json
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param script_id query int false "脚本ID"
+// @Param trigger_type query string false "触发类型"
+// @Param status query string false "执行状态"
+// @Param username query string false "执行用户名"
+// @Success 200 {object} pbRecord.PagScriptRecordReply "成功返回执行记录列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/record [get]
+// @Security ApiKeyAuth
+func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
+	var req pbRecord.ListScriptRecordRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询脚本执行记录列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	s.log.Info(
+		"开始查询脚本执行记录列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	page, size, query := req.Query()
+	qp := database.QueryParams{
+		Preloads: []string{"Script"},
+		IsCount:  true,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"id DESC"},
+		Query:    query,
+	}
+	total, ms, err := s.ucRecord.ListcriptRecord(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询脚本执行记录列表失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	s.log.Info(
+		"查询脚本执行记录列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+	)
+
+	mbs := ListScriptRecordToOut(ms)
+	ctx.JSON(http.StatusOK, &pbRecord.PagScriptRecordReply{
+		Code: http.StatusOK,
+		Data: pbComm.NewPag(page, size, total, mbs),
+	})
+}
+
+// @Summary 下载脚本执行日志
+// @Description 本接口用于下载指定执行记录的日志文件
+// @Tags 脚本执行记录
+// @Accept json
+// @Produce application/octet-stream
+// @Param pk path uint true "执行记录编号"
+// @Success 200 {file} file "成功下载日志文件"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "执行记录未找到或日志文件不存在"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/record/{pk}/log [get]
+// @Security ApiKeyAuth
+func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定脚本执行记录ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	m, err := s.ucRecord.FindScriptRecordByID(ctx, []string{"Script"}, uri.PK)
+	if err != nil {
+		s.log.Error(
+			"查询脚本执行记录详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		return
+	}
+
+	if err := common.DownloadFile(ctx, s.log, m.LogPath(), m.LogName); err != nil {
+		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+	}
+}
+
+// @Summary 对正在执行的脚本发送终止信号
+// @Description 本接口用于通过执行记录的id号,对正在执行的脚本发送终止信号
+// @Tags 脚本执行记录
+// @Accept json
+// @Produce json
+// @Param pk path uint true "执行记录编号"
+// @Success 200 {object} pbComm.MapAPIReply "终止信号"
+// @Router /api/v1/jobs/record/{pk} [delete]
+// @Security ApiKeyAuth
+func (s *ScriptRecordService) CancelScriptRecord(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询脚本执行记录ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		return
+	}
+
+	s.ucRecord.Cancel(ctx, uri.PK)
+	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
+}
+
+func (s *ScriptRecordService) LoadRouter(r *gin.RouterGroup) {
+	r.POST("/record", s.ExecScriptRecord)
+	r.GET("/record/:pk", s.GetScriptRecord)
+	r.GET("/record", s.ListScriptRecord)
+	r.GET("/record/:pk/log", s.DownloadScriptRecordLog)
+	r.DELETE("/record/:pk", s.CancelScriptRecord)
+}
+
+func ScriptRecordToOutBase(
+	m biz.ScriptRecordModel,
+) *pbRecord.ScriptRecordOutBase {
+	return &pbRecord.ScriptRecordOutBase{
+		ID:           m.ID,
+		CreatedAt:    m.CreatedAt.String(),
+		UpdatedAt:    m.UpdatedAt.String(),
+		TriggerType:  m.TriggerType,
+		Status:       m.Status,
+		ExitCode:     m.ExitCode,
+		EnvVars:      m.EnvVars,
+		CommandArgs:  m.CommandArgs,
+		Timeout:      m.Timeout,
+		WorkDir:      m.WorkDir,
+		ErrorMessage: m.ErrorMessage,
+		UserName:     m.Username,
+	}
+}
+
+func ScriptRecordToOut(
+	m biz.ScriptRecordModel,
+) *pbRecord.ScriptRecordOut {
+	var script *pbScript.ScriptOutBase
+	if m.Script.ID != 0 {
+		script = ScriptModelToOutBase(m.Script)
+	}
+	return &pbRecord.ScriptRecordOut{
+		ScriptRecordOutBase: *ScriptRecordToOutBase(m),
+		Script:              *script,
+	}
+}
+
+func ListScriptRecordToOut(
+	rms *[]biz.ScriptRecordModel,
+) *[]pbRecord.ScriptRecordOut {
+	if rms == nil {
+		return &[]pbRecord.ScriptRecordOut{}
+	}
+
+	ms := *rms
+	mso := make([]pbRecord.ScriptRecordOut, 0, len(ms))
+	if len(ms) > 0 {
+		for _, m := range ms {
+			mo := ScriptRecordToOut(m)
+			mso = append(mso, *mo)
+		}
+	}
+	return &mso
 }

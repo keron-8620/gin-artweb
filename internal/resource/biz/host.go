@@ -161,7 +161,6 @@ func (uc *HostUsecase) CreateHost(
 
 func (uc *HostUsecase) UpdateHostById(
 	ctx context.Context,
-	hostId uint32,
 	m HostModel,
 	password string,
 ) *errors.Error {
@@ -171,7 +170,7 @@ func (uc *HostUsecase) UpdateHostById(
 
 	uc.log.Info(
 		"开始更新主机",
-		zap.Uint32(HostIDKey, hostId),
+		zap.Uint32(HostIDKey, m.ID),
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -189,11 +188,11 @@ func (uc *HostUsecase) UpdateHostById(
 		"py_path":  m.PyPath,
 		"remark":   m.Remark,
 	}
-	if err := uc.hostRepo.UpdateModel(ctx, data, "id = ?", hostId); err != nil {
+	if err := uc.hostRepo.UpdateModel(ctx, data, "id = ?", m.ID); err != nil {
 		uc.log.Error(
 			"更新主机失败",
 			zap.Error(err),
-			zap.Uint32(HostIDKey, hostId),
+			zap.Uint32(HostIDKey, m.ID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -206,7 +205,6 @@ func (uc *HostUsecase) UpdateHostById(
 
 	uc.log.Info(
 		"更新主机成功",
-		zap.Uint32(HostIDKey, hostId),
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -415,7 +413,7 @@ func (uc *HostUsecase) TestSSHConnection(
 }
 
 func (uc *HostUsecase) HostPath(pk uint32) string {
-	filename := fmt.Sprintf("host_%d.json", pk)
+	filename := fmt.Sprintf("db_host_%d.json", pk)
 	return filepath.Join(uc.dir, filename)
 }
 

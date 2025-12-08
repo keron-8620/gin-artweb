@@ -120,6 +120,7 @@ func (r *recordRepo) DeleteModel(ctx context.Context, conds ...any) error {
 
 func (r *recordRepo) FindModel(
 	ctx context.Context,
+	preloads []string,
 	conds ...any,
 ) (*biz.ScriptRecordModel, error) {
 	r.log.Debug(
@@ -131,7 +132,7 @@ func (r *recordRepo) FindModel(
 	var m biz.ScriptRecordModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBFind(dbCtx, r.gormDB, nil, &m, conds...); err != nil {
+	if err := database.DBFind(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询脚本执行记录模型失败",
 			zap.Error(err),
