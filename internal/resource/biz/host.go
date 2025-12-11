@@ -25,23 +25,6 @@ const (
 	HostIDKey = "host_id"
 )
 
-type AnsibleHostVars struct {
-	ID                       uint32 `json:"id"`
-	AnsibleHost              string `json:"ansible_host"`
-	AnsiblePort              uint16 `json:"ansible_port"`
-	AnsibleUser              string `json:"ansible_user"`
-	AnsiblePythonInterpreter string `json:"ansible_python_interpreter,omitempty"`
-}
-
-func (h *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("id", h.ID)
-	enc.AddString("ansible_host", h.AnsibleHost)
-	enc.AddUint16("ansible_port", h.AnsiblePort)
-	enc.AddString("ansible_user", h.AnsibleUser)
-	enc.AddString("ansible_python_interpreter", h.AnsiblePythonInterpreter)
-	return nil
-}
-
 type HostModel struct {
 	database.StandardModel
 	Name     string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
@@ -69,15 +52,6 @@ func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("py_path", m.PyPath)
 	enc.AddString("remark", m.Remark)
 	return nil
-}
-
-func (m *HostModel) ExportAnsibleHostVars() AnsibleHostVars {
-	return AnsibleHostVars{
-		AnsibleHost:              m.IPAddr,
-		AnsiblePort:              m.Port,
-		AnsibleUser:              m.Username,
-		AnsiblePythonInterpreter: m.PyPath,
-	}
 }
 
 type HostRepo interface {
@@ -235,7 +209,7 @@ func (uc *HostUsecase) DeleteHostById(
 		return database.NewGormError(err, map[string]any{"id": hostId})
 	}
 
-	path := uc.HostPath(hostId)
+	path := uc.ExportPath(hostId)
 	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
 		uc.log.Error(
 			"删除ansible主机变量文件失败",
@@ -412,8 +386,8 @@ func (uc *HostUsecase) TestSSHConnection(
 	return nil
 }
 
-func (uc *HostUsecase) HostPath(pk uint32) string {
-	filename := fmt.Sprintf("db_host_%d.json", pk)
+func (uc *HostUsecase) ExportPath(pk uint32) string {
+	filename := fmt.Sprintf("db_host_%d.yaml", pk)
 	return filepath.Join(uc.dir, filename)
 }
 
@@ -428,16 +402,16 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	path := uc.HostPath(m.ID)
 	ansibleHost := AnsibleHostVars{
-		ID:                       m.ID,
+		DBHostID:                 m.ID,
 		AnsibleHost:              m.IPAddr,
 		AnsiblePort:              m.Port,
 		AnsibleUser:              m.Username,
 		AnsiblePythonInterpreter: m.PyPath,
 	}
 
-	if err := file.WriteJSON(path, ansibleHost, 4); err != nil {
+	path := uc.ExportPath(m.ID)
+	if err := file.WriteYAML(path, ansibleHost); err != nil {
 		uc.log.Error(
 			"导出ansible主机变量文件失败",
 			zap.Error(err),
@@ -454,5 +428,22 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 		zap.Object("ansible_host", &ansibleHost),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
+	return nil
+}
+
+type AnsibleHostVars struct {
+	DBHostID                 uint32 `json:"db_host_id" yaml:"db_host_id"`
+	AnsibleHost              string `json:"ansible_host" yaml:"ansible_host"`
+	AnsiblePort              uint16 `json:"ansible_port" yaml:"ansible_port"`
+	AnsibleUser              string `json:"ansible_user" yaml:"ansible_user"`
+	AnsiblePythonInterpreter string `json:"ansible_python_interpreter" yaml:"ansible_python_interpreter"`
+}
+
+func (vs *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("db_host_id", vs.DBHostID)
+	enc.AddString("ansible_host", vs.AnsibleHost)
+	enc.AddUint16("ansible_port", vs.AnsiblePort)
+	enc.AddString("ansible_user", vs.AnsibleUser)
+	enc.AddString("ansible_python_interpreter", vs.AnsiblePythonInterpreter)
 	return nil
 }

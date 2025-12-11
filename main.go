@@ -24,6 +24,7 @@ import (
 
 	customer "gin-artweb/internal/customer/server"
 	jobs "gin-artweb/internal/jobs/server"
+	mon "gin-artweb/internal/mon/server"
 	resource "gin-artweb/internal/resource/server"
 
 	"gin-artweb/docs"
@@ -284,6 +285,7 @@ func newRouter(init *initialize) *gin.Engine {
 	customer.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	resource.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	jobs.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers, init.crontab)
+	mon.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	return r
 }
 

@@ -11,6 +11,7 @@ server:
 database:
   type: "opengauss"
   dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable"
+  # dns: "root@sys:Quant360@tcp(192.168.11.200:2881)/art?charset=utf8mb4"
   max_idle_conns: 10
   max_open_conns: 10
   conn_max_lifetime: 3600

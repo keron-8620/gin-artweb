@@ -1,0 +1,21 @@
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - name: remove mon directory
+      file:
+        path: "{{ slave_path_mon_home }}"
+        state: absent
+
+    - name: create mon directory
+      file:
+        path: "{{ slave_path_mon_home }}"
+        state: directory
+
+    - name: unarchive mon package
+      unarchive:
+        src: "{{ slave_backup_path }}/mon.tar.gz"
+        dest: "{{ slave_path_mon_home }}/.."
+        remote_src: yes

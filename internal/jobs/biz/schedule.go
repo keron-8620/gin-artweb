@@ -199,6 +199,18 @@ func (uc *ScheduleUsecase) CreateSchedule(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
+	script, err := uc.scriptRepo.FindModel(ctx, "id = ?", m.ScriptID)
+	if err != nil {
+		uc.log.Error(
+			"查询脚本失败",
+			zap.Error(err),
+			zap.Uint32(ScriptIDKey, m.ScriptID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return nil, database.NewGormError(err, map[string]any{"id": m.ScriptID})
+	}
+	m.Script = *script
+
 	if err := uc.scheduleRepo.CreateModel(ctx, &m); err != nil {
 		uc.log.Error(
 			"创建计划任务失败",
@@ -261,7 +273,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 	}
 
 	uc.log.Info(
-		"计划任务更新成功",
+		"更新计划任务成功",
 		zap.Uint32(ScheduleIDKey, scheduleID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

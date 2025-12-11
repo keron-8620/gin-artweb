@@ -2877,6 +2877,300 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/mon/node": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询mon节点列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon节点管理"
+                ],
+                "summary": "查询mon节点列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "mon节点名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建用户名",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mon节点列表",
+                        "schema": {
+                            "$ref": "#/definitions/node.PagMonNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于创建新的mon节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon节点管理"
+                ],
+                "summary": "创建mon节点",
+                "parameters": [
+                    {
+                        "description": "创建mon节点请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/node.CreateMonNodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mon节点信息",
+                        "schema": {
+                            "$ref": "#/definitions/node.MonNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/mon/node/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的mon节点详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon节点管理"
+                ],
+                "summary": "查询mon节点详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mon节点信息",
+                        "schema": {
+                            "$ref": "#/definitions/node.MonNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "mon节点未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的mon节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon节点管理"
+                ],
+                "summary": "更新mon节点",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新mon节点请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/node.UpdateMonNodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mon节点信息",
+                        "schema": {
+                            "$ref": "#/definitions/node.MonNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "mon节点未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的mon节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon节点管理"
+                ],
+                "summary": "删除mon节点",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "mon节点未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/resource/host": {
             "get": {
                 "security": [
@@ -3767,6 +4061,38 @@ const docTemplate = `{
                 }
             }
         },
+        "common.Pag-node_MonNodeOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/node.MonNodeOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
         "common.Pag-permission_PermissionOutBase": {
             "type": "object",
             "properties": {
@@ -4545,6 +4871,168 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "node.CreateMonNodeRequest": {
+            "type": "object",
+            "required": [
+                "deploy_path",
+                "host_id",
+                "name",
+                "outport_path"
+            ],
+            "properties": {
+                "deploy_path": {
+                    "description": "部署路径\nrequired: true\nexample: \"/home/monuser/mon\"",
+                    "type": "string"
+                },
+                "host_id": {
+                    "description": "主机ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "java_home": {
+                    "description": "JAVA_HOME\nrequired: true\nexample: \"/home/monuser/jdk-11.0.1\"",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称\nrequired: true\nexample: \"mon上海节点\"",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "outport_path": {
+                    "description": "导出路径\nrequired: true\nexample: \"/mnt/quant360/import/mon\"",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "URL地址\nrequired: true\nexample: \"http://192.168.11.189:8080/mon\"",
+                    "type": "string"
+                }
+            }
+        },
+        "node.MonNodeOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "deploy_path": {
+                    "description": "部署路径",
+                    "type": "string",
+                    "example": ""
+                },
+                "host": {
+                    "$ref": "#/definitions/host.HostOutBase"
+                },
+                "id": {
+                    "description": "计划任务ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "java_home": {
+                    "description": "JAVA_HOME",
+                    "type": "string",
+                    "example": ""
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "test"
+                },
+                "outport_path": {
+                    "description": "导出路径",
+                    "type": "string",
+                    "example": ""
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "url": {
+                    "description": "URL地址",
+                    "type": "string",
+                    "example": "http://192.168.11.189:8080"
+                }
+            }
+        },
+        "node.MonNodeReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/node.MonNodeOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "node.PagMonNodeReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-node_MonNodeOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "node.UpdateMonNodeRequest": {
+            "type": "object",
+            "required": [
+                "deploy_path",
+                "host_id",
+                "name",
+                "outport_path"
+            ],
+            "properties": {
+                "deploy_path": {
+                    "description": "部署路径\nrequired: true\nexample: \"/home/monuser/mon\"",
+                    "type": "string"
+                },
+                "host_id": {
+                    "description": "主机ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "java_home": {
+                    "description": "JAVA_HOME\nrequired: true\nexample: \"/home/monuser/jdk-11.0.1\"",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称\nrequired: true\nexample: \"mon上海节点\"",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "outport_path": {
+                    "description": "导出路径\nrequired: true\nexample: \"/mnt/quant360/import/mon\"",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "URL地址\nrequired: true\nexample: \"http://192.168.11.189:8080/mon\"",
+                    "type": "string"
                 }
             }
         },

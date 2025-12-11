@@ -294,6 +294,38 @@ definitions:
         example: 100
         type: integer
     type: object
+  common.Pag-node_MonNodeOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/node.MonNodeOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
   common.Pag-permission_PermissionOutBase:
     properties:
       items:
@@ -1025,6 +1057,171 @@ definitions:
     - meta
     - name
     - path
+    type: object
+  node.CreateMonNodeRequest:
+    properties:
+      deploy_path:
+        description: |-
+          部署路径
+          required: true
+          example: "/home/monuser/mon"
+        type: string
+      host_id:
+        description: |-
+          主机ID
+          required: true
+          example: 1
+        type: integer
+      java_home:
+        description: |-
+          JAVA_HOME
+          required: true
+          example: "/home/monuser/jdk-11.0.1"
+        type: string
+      name:
+        description: |-
+          名称
+          required: true
+          example: "mon上海节点"
+        maxLength: 50
+        type: string
+      outport_path:
+        description: |-
+          导出路径
+          required: true
+          example: "/mnt/quant360/import/mon"
+        type: string
+      url:
+        description: |-
+          URL地址
+          required: true
+          example: "http://192.168.11.189:8080/mon"
+        type: string
+    required:
+    - deploy_path
+    - host_id
+    - name
+    - outport_path
+    type: object
+  node.MonNodeOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      deploy_path:
+        description: 部署路径
+        example: ""
+        type: string
+      host:
+        $ref: '#/definitions/host.HostOutBase'
+      id:
+        description: 计划任务ID
+        example: 1
+        type: integer
+      java_home:
+        description: JAVA_HOME
+        example: ""
+        type: string
+      name:
+        description: 名称
+        example: test
+        type: string
+      outport_path:
+        description: 导出路径
+        example: ""
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      url:
+        description: URL地址
+        example: http://192.168.11.189:8080
+        type: string
+    type: object
+  node.MonNodeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/node.MonNodeOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  node.PagMonNodeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-node_MonNodeOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  node.UpdateMonNodeRequest:
+    properties:
+      deploy_path:
+        description: |-
+          部署路径
+          required: true
+          example: "/home/monuser/mon"
+        type: string
+      host_id:
+        description: |-
+          主机ID
+          required: true
+          example: 1
+        type: integer
+      java_home:
+        description: |-
+          JAVA_HOME
+          required: true
+          example: "/home/monuser/jdk-11.0.1"
+        type: string
+      name:
+        description: |-
+          名称
+          required: true
+          example: "mon上海节点"
+        maxLength: 50
+        type: string
+      outport_path:
+        description: |-
+          导出路径
+          required: true
+          example: "/mnt/quant360/import/mon"
+        type: string
+      url:
+        description: |-
+          URL地址
+          required: true
+          example: "http://192.168.11.189:8080/mon"
+        type: string
+    required:
+    - deploy_path
+    - host_id
+    - name
+    - outport_path
     type: object
   permission.CreatePermissionRequest:
     properties:
@@ -4038,6 +4235,195 @@ paths:
       summary: 下载脚本
       tags:
       - 脚本管理
+  /api/v1/mon/node:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询mon节点列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: mon节点名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mon节点列表
+          schema:
+            $ref: '#/definitions/node.PagMonNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mon节点列表
+      tags:
+      - mon节点管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于创建新的mon节点
+      parameters:
+      - description: 创建mon节点请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/node.CreateMonNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mon节点信息
+          schema:
+            $ref: '#/definitions/node.MonNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建mon节点
+      tags:
+      - mon节点管理
+  /api/v1/mon/node/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的mon节点
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mon节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除mon节点
+      tags:
+      - mon节点管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的mon节点详情
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mon节点信息
+          schema:
+            $ref: '#/definitions/node.MonNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mon节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mon节点详情
+      tags:
+      - mon节点管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的mon节点
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新mon节点请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/node.UpdateMonNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mon节点信息
+          schema:
+            $ref: '#/definitions/node.MonNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mon节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新mon节点
+      tags:
+      - mon节点管理
   /api/v1/resource/host:
     get:
       consumes:
