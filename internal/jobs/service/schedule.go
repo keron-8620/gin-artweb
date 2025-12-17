@@ -53,11 +53,11 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	uc := auth.GetGinUserClaims(ctx)
+	uc := auth.GetUserClaims(ctx)
 	schedule := biz.ScheduleModel{
 		Name:          req.Name,
 		Specification: req.Specification,
@@ -78,13 +78,13 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
 	ctx.JSON(http.StatusOK, &pbSchedule.ScheduleReply{
 		Code: http.StatusOK,
-		Data: *ScheduleToOut(*m),
+		Data: *ScheduleToDetailOut(*m),
 	})
 }
 
@@ -111,7 +111,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -124,24 +124,24 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	uc := auth.GetGinUserClaims(ctx)
+	uc := auth.GetUserClaims(ctx)
 	data := map[string]any{
-		"name":          req.Name,
-		"specification": req.Specification,
-		"is_enabled":    req.IsEnabled,
-		"env_vars":      req.EnvVars,
-		"command_args":  req.CommandArgs,
-		"work_dir":      req.WorkDir,
-		"timeout":       req.Timeout,
-		"is_retry":      req.IsRetry,
+		"name":           req.Name,
+		"specification":  req.Specification,
+		"is_enabled":     req.IsEnabled,
+		"env_vars":       req.EnvVars,
+		"command_args":   req.CommandArgs,
+		"work_dir":       req.WorkDir,
+		"timeout":        req.Timeout,
+		"is_retry":       req.IsRetry,
 		"retry_interval": req.RetryInterval,
-		"max_retries":   req.MaxRetries,
-		"username":      uc.Subject,
-		"script_id":     req.ScriptID,
+		"max_retries":    req.MaxRetries,
+		"username":       uc.Subject,
+		"script_id":      req.ScriptID,
 	}
 
 	if err := s.ucSchedule.UpdateScheduleByID(ctx, uri.PK, data); err != nil {
@@ -152,7 +152,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -164,13 +164,13 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
 	ctx.JSON(http.StatusOK, &pbSchedule.ScheduleReply{
 		Code: http.StatusOK,
-		Data: *ScheduleToOut(*m),
+		Data: *ScheduleToDetailOut(*m),
 	})
 }
 
@@ -196,7 +196,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -213,7 +213,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -248,7 +248,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -266,7 +266,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -276,7 +276,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := ScheduleToOut(*m)
+	mo := ScheduleToDetailOut(*m)
 	ctx.JSON(http.StatusOK, &pbSchedule.ScheduleReply{
 		Code: http.StatusOK,
 		Data: *mo,
@@ -308,7 +308,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -335,7 +335,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -345,7 +345,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListScheduledToOut(ms)
+	mbs := ListScheduledToDetailOut(ms)
 	ctx.JSON(http.StatusOK, &pbSchedule.PagScheduleReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -360,10 +360,10 @@ func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/schedule", s.ListSchedule)
 }
 
-func ScheduleToOutBase(
+func ScheduleToStandardOut(
 	m biz.ScheduleModel,
-) *pbSchedule.ScheduleOutBase {
-	return &pbSchedule.ScheduleOutBase{
+) *pbSchedule.ScheduleStandardOut {
+	return &pbSchedule.ScheduleStandardOut{
 		ID:            m.ID,
 		CreatedAt:     m.CreatedAt.String(),
 		UpdatedAt:     m.UpdatedAt.String(),
@@ -378,31 +378,31 @@ func ScheduleToOutBase(
 	}
 }
 
-func ScheduleToOut(
+func ScheduleToDetailOut(
 	m biz.ScheduleModel,
-) *pbSchedule.ScheduleOut {
-	var script *pbScript.ScriptOutBase
+) *pbSchedule.ScheduleDetailOut {
+	var script *pbScript.ScriptStandardOut
 	if m.Script.ID != 0 {
-		script = ScriptModelToOutBase(m.Script)
+		script = ScriptModelToStandardOut(m.Script)
 	}
-	return &pbSchedule.ScheduleOut{
-		ScheduleOutBase: *ScheduleToOutBase(m),
-		Script:          script,
+	return &pbSchedule.ScheduleDetailOut{
+		ScheduleStandardOut: *ScheduleToStandardOut(m),
+		Script:              script,
 	}
 }
 
-func ListScheduledToOut(
+func ListScheduledToDetailOut(
 	rms *[]biz.ScheduleModel,
-) *[]pbSchedule.ScheduleOut {
+) *[]pbSchedule.ScheduleDetailOut {
 	if rms == nil {
-		return &[]pbSchedule.ScheduleOut{}
+		return &[]pbSchedule.ScheduleDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbSchedule.ScheduleOut, 0, len(ms))
+	mso := make([]pbSchedule.ScheduleDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := ScheduleToOut(m)
+			mo := ScheduleToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

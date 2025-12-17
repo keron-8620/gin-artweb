@@ -4,8 +4,8 @@ import (
 	"gin-artweb/api/common"
 )
 
-// PermissionOutBase 权限基础信息
-type PermissionOutBase struct {
+// PermissionStandardOut 权限基础信息
+type PermissionStandardOut struct {
 	// 权限ID
 	ID uint32 `json:"id" example:"1"`
 	// 创建时间
@@ -23,7 +23,7 @@ type PermissionOutBase struct {
 }
 
 // PermissionReply 权限响应结构
-type PermissionReply = common.APIReply[*PermissionOutBase]
+type PermissionReply = common.APIReply[*PermissionStandardOut]
 
 // PagPermissionReply 权限的分页响应结构
-type PagPermissionReply = common.APIReply[*common.Pag[PermissionOutBase]]
+type PagPermissionReply = common.APIReply[*common.Pag[PermissionStandardOut]]

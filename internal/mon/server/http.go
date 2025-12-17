@@ -1,8 +1,6 @@
 package server
 
 import (
-	"path/filepath"
-
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -25,10 +23,9 @@ func NewServer(
 		panic(err)
 	}
 
-	nodeRepo := data.NewNodeRepo(loggers.Data, db, dbTimeout)
+	nodeRepo := data.NewMonNodeRepo(loggers.Data, db, dbTimeout)
 
-	nodeDir := filepath.Join(config.StorageDir, "mon", "node")
-	nodeUsecase := biz.NewNodeUsecase(loggers.Biz, nodeRepo, nodeDir)
+	nodeUsecase := biz.NewMonNodeUsecase(loggers.Biz, nodeRepo)
 
 	nodeService := service.NewNodeService(loggers.Service, nodeUsecase)
 

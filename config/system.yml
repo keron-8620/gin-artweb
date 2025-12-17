@@ -1,6 +1,6 @@
 server:
-  host: "127.0.0.1"
-  port: 8000
+  host: "192.168.10.12"
+  port: 8620
   ssl:
     enable: false
     key_path: "server.key"
@@ -76,6 +76,6 @@ rate:
   burst: 20
 
 ssh:
-  private_key_path: "/home/zdq/.ssh/id_rsa"
-  public_key_path: "/home/zdq/.ssh/id_rsa.pub"
+  private_key_path: "id_rsa"
+  public_key_path: "id_rsa.pub"
   connect_timeout: 5

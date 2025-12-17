@@ -36,14 +36,14 @@ func NewRoleService(
 // @Tags 角色管理
 // @Accept json
 // @Produce json
-// @Param request body pbRole.CreateRoleRequest true "创建角色请求"
+// @Param request body pbRole.CreateOrUpdateRoleRequest true "创建角色请求"
 // @Success 201 {object} pbRole.RoleReply "成功返回角色信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role [post]
 // @Security ApiKeyAuth
 func (s *RoleService) CreateRole(ctx *gin.Context) {
-	var req pbRole.CreateRoleRequest
+	var req pbRole.CreateOrUpdateRoleRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建角色请求参数失败",
@@ -52,7 +52,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -81,7 +81,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -94,7 +94,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, &pbRole.RoleReply{
 		Code: http.StatusCreated,
-		Data: RoleModelToOut(*m),
+		Data: RoleModelToDetailOut(*m),
 	})
 }
 
@@ -104,7 +104,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "角色编号"
-// @Param request body pbRole.UpdateRoleRequest true "更新角色请求"
+// @Param request body pbRole.CreateOrUpdateRoleRequest true "更新角色请求"
 // @Success 200 {object} pbRole.RoleReply "成功返回角色信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "角色未找到"
@@ -121,10 +121,10 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
-	var req pbRole.UpdateRoleRequest
+	var req pbRole.CreateOrUpdateRoleRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新角色请求参数失败",
@@ -133,7 +133,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -161,7 +161,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -179,12 +179,12 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
 		Code: http.StatusOK,
-		Data: RoleModelToOut(*m),
+		Data: RoleModelToDetailOut(*m),
 	})
 }
 
@@ -210,7 +210,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -227,7 +227,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -262,7 +262,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -280,7 +280,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -292,7 +292,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
 		Code: http.StatusOK,
-		Data: RoleModelToOut(*m),
+		Data: RoleModelToDetailOut(*m),
 	})
 }
 
@@ -304,7 +304,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 // @Param page query int false "页码" minimum(1)
 // @Param size query int false "每页数量" minimum(1) maximum(100)
 // @Param name query string false "角色名称"
-// @Success 200 {object} pbRole.PagRoleBaseReply "成功返回角色列表"
+// @Success 200 {object} pbRole.PagRoleReply "成功返回角色列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role [get]
@@ -319,7 +319,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -345,7 +345,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -355,8 +355,8 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListRoleModelToOutBase(ms)
-	ctx.JSON(http.StatusOK, &pbRole.PagRoleBaseReply{
+	mbs := ListRoleModelToStandardOut(ms)
+	ctx.JSON(http.StatusOK, &pbRole.PagRoleReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
@@ -373,14 +373,14 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 // @Router /api/v1/customer/me/menu/tree [get]
 // @Security ApiKeyAuth
 func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
-	claims := auth.GetGinUserClaims(ctx)
+	claims := auth.GetUserClaims(ctx)
 	if claims == nil {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
+		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.ToMap())
 		return
 	}
 	s.log.Info(
@@ -397,7 +397,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 			zap.Uint32(auth.UserIDKey, claims.UserID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 	s.log.Info(
@@ -427,21 +427,29 @@ func (s *RoleService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/me/menu/tree", s.GetRoleMenuTree)
 }
 
-func RoleModelToOutBase(
+func RoleModelToBaseOut(
 	m biz.RoleModel,
-) *pbRole.RoleOutBase {
-	return &pbRole.RoleOutBase{
-		ID:        m.ID,
-		CreatedAt: m.CreatedAt.String(),
-		UpdatedAt: m.UpdatedAt.String(),
-		Name:      m.Name,
-		Descr:     m.Descr,
+) *pbRole.RoleBaseOut {
+	return &pbRole.RoleBaseOut{
+		ID:    m.ID,
+		Name:  m.Name,
+		Descr: m.Descr,
 	}
 }
 
-func RoleModelToOut(
+func RoleModelToStandardOut(
 	m biz.RoleModel,
-) *pbRole.RoleOut {
+) *pbRole.RoleStandardOut {
+	return &pbRole.RoleStandardOut{
+		RoleBaseOut: *RoleModelToBaseOut(m),
+		CreatedAt:   m.CreatedAt.String(),
+		UpdatedAt:   m.UpdatedAt.String(),
+	}
+}
+
+func RoleModelToDetailOut(
+	m biz.RoleModel,
+) *pbRole.RoleDetailOut {
 	var permissionIDs []uint32
 	if len(m.Permissions) > 0 {
 		permissionIDs = make([]uint32, len(m.Permissions))
@@ -465,25 +473,25 @@ func RoleModelToOut(
 			buttonIDs[i] = p.ID
 		}
 	}
-	return &pbRole.RoleOut{
-		RoleOutBase: *RoleModelToOutBase(m),
-		Permissions: permissionIDs,
-		Menus:       menuIDs,
-		Buttons:     buttonIDs,
+	return &pbRole.RoleDetailOut{
+		RoleStandardOut: *RoleModelToStandardOut(m),
+		Permissions:     permissionIDs,
+		Menus:           menuIDs,
+		Buttons:         buttonIDs,
 	}
 }
 
-func ListRoleModelToOutBase(
+func ListRoleModelToStandardOut(
 	rms *[]biz.RoleModel,
-) *[]pbRole.RoleOutBase {
+) *[]pbRole.RoleStandardOut {
 	if rms == nil {
-		return &[]pbRole.RoleOutBase{}
+		return &[]pbRole.RoleStandardOut{}
 	}
 	ms := *rms
-	mso := make([]pbRole.RoleOutBase, 0, len(ms))
+	mso := make([]pbRole.RoleStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := RoleModelToOutBase(m)
+			mo := RoleModelToStandardOut(m)
 			mso = append(mso, *mo)
 		}
 	}
@@ -508,18 +516,18 @@ func RoleMenuTreeToOut(
 	}
 
 	// 转换按钮
-	buttons := make([]pbButton.ButtonOutBase, 0, len(mt.Buttons))
+	buttons := make([]pbButton.ButtonBaseOut, 0, len(mt.Buttons))
 	for _, button := range mt.Buttons {
-		buttons = append(buttons, *ButtonModelToOutBase(button))
+		buttons = append(buttons, *ButtonModelToBaseOut(button))
 	}
 
 	// 转换菜单基本信息
-	menuBase := MenuModelToOutBase(mt.MenuModel)
+	menuBase := MenuModelToBaseOut(mt.MenuModel)
 	if menuBase == nil {
 		return nil
 	}
 	return &pbRole.RoleMenuPerm{
-		MenuOutBase: *menuBase,
+		MenuBaseOut: *menuBase,
 		Buttons:     buttons,
 		Children:    children,
 	}

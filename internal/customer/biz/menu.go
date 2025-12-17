@@ -142,7 +142,7 @@ func (uc *MenuUsecase) GetParentMenu(
 	}
 
 	uc.log.Info(
-		"父菜单查询成功",
+		"查询父菜单成功",
 		zap.Uint32("parent_id", *parentID),
 		zap.Object(database.ModelKey, m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -244,7 +244,7 @@ func (uc *MenuUsecase) CreateMenu(
 	}
 
 	uc.log.Info(
-		"菜单创建成功",
+		"创建菜单成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -311,7 +311,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 	}
 
 	uc.log.Info(
-		"菜单更新成功",
+		"更新菜单成功",
 		zap.Uint32(MenuIDKey, menuID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -358,7 +358,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 	}
 
 	uc.log.Info(
-		"菜单删除成功",
+		"删除菜单成功",
 		zap.Uint32(MenuIDKey, menuID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -474,7 +474,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 		}
 	}
 	uc.log.Info(
-		"菜单策略加载成功",
+		"加载菜单策略成功",
 		zap.Int("policy_count", policyCount),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

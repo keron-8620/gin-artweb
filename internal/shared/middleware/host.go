@@ -25,7 +25,10 @@ func HostGuard(logger *zap.Logger, allowedHosts ...string) gin.HandlerFunc {
 				zap.String("path", c.Request.URL.Path),
 				zap.Strings("allowed_hosts", allowedHosts),
 			)
-			c.AbortWithStatusJSON(errors.ErrHostNotAllowed.Code, errors.ErrHostNotAllowed.Reply())
+			c.AbortWithStatusJSON(
+				errors.ErrHostNotAllowed.Code,
+				errors.ErrHostNotAllowed.ToMap(),
+			)
 		}
 		c.Next()
 	}

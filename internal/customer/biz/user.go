@@ -11,9 +11,9 @@ import (
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
-	"gin-artweb/internal/shared/crypto"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/internal/shared/utils/crypto"
 )
 
 const (
@@ -159,7 +159,7 @@ func (uc *UserUsecase) CreateUser(
 	}
 
 	uc.log.Info(
-		"用户创建成功",
+		"创建用户成功",
 		zap.String(UsernameKey, m.Username),
 		zap.Uint32(UserIDKey, m.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -241,7 +241,7 @@ func (uc *UserUsecase) UpdateUserByID(
 	}
 
 	uc.log.Info(
-		"用户更新成功",
+		"更新用户成功",
 		zap.Uint32(UserIDKey, userID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -273,7 +273,7 @@ func (uc *UserUsecase) DeleteUserByID(
 	}
 
 	uc.log.Info(
-		"用户删除成功",
+		"删除用户成功",
 		zap.Uint32(UserIDKey, userID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

@@ -8,7 +8,6 @@ import (
 
 	pbComm "gin-artweb/api/common"
 	pbNode "gin-artweb/api/mon/node"
-	pbHost "gin-artweb/api/resource/host"
 	"gin-artweb/internal/mon/biz"
 	servReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
@@ -18,12 +17,12 @@ import (
 
 type NodeService struct {
 	log    *zap.Logger
-	ucNode *biz.NodeUsecase
+	ucNode *biz.MonNodeUsecase
 }
 
 func NewNodeService(
 	logger *zap.Logger,
-	ucNode *biz.NodeUsecase,
+	ucNode *biz.MonNodeUsecase,
 ) *NodeService {
 	return &NodeService{
 		log:    logger,
@@ -36,15 +35,15 @@ func NewNodeService(
 // @Tags mon节点管理
 // @Accept json
 // @Produce json
-// @Param request body pbNode.CreateMonNodeRequest true "创建mon节点请求"
+// @Param request body pbNode.CreateOrUpdateMonNodeRequest true "创建mon节点请求"
 // @Success 200 {object} pbNode.MonNodeReply "成功返回mon节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node [post]
 // @Security ApiKeyAuth
 func (s *NodeService) CreateMonNode(ctx *gin.Context) {
-	var req pbNode.CreateMonNodeRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	var req pbNode.CreateOrUpdateMonNodeRequest
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建mon节点参数失败",
 			zap.Error(err),
@@ -52,11 +51,11 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	node := biz.NodeModel{
+	node := biz.MonNodeModel{
 		Name:        req.Name,
 		DeployPath:  req.DeployPath,
 		OutportPath: req.OutportPath,
@@ -73,13 +72,13 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
 	ctx.JSON(http.StatusOK, &pbNode.MonNodeReply{
 		Code: http.StatusOK,
-		Data: *MonNodeToOut(*m),
+		Data: *MonNodeToDetailOut(*m),
 	})
 }
 
@@ -89,7 +88,7 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "mon节点编号"
-// @Param request body pbNode.UpdateMonNodeRequest true "更新mon节点请求"
+// @Param request body pbNode.CreateOrUpdateMonNodeRequest true "更新mon节点请求"
 // @Success 200 {object} pbNode.MonNodeReply "成功返回mon节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mon节点未找到"
@@ -106,12 +105,12 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	var req pbNode.UpdateMonNodeRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	var req pbNode.CreateOrUpdateMonNodeRequest
+	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新mon节点参数失败",
 			zap.Error(err),
@@ -119,7 +118,7 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -140,7 +139,7 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -152,13 +151,13 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
 	ctx.JSON(http.StatusOK, &pbNode.MonNodeReply{
 		Code: http.StatusOK,
-		Data: *MonNodeToOut(*m),
+		Data: *MonNodeToDetailOut(*m),
 	})
 }
 
@@ -184,7 +183,7 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -201,7 +200,7 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -236,7 +235,7 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -254,7 +253,7 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -264,7 +263,7 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := MonNodeToOut(*m)
+	mo := MonNodeToDetailOut(*m)
 	ctx.JSON(http.StatusOK, &pbNode.MonNodeReply{
 		Code: http.StatusOK,
 		Data: *mo,
@@ -296,7 +295,7 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -323,7 +322,7 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -333,7 +332,7 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListMonNodeToOut(ms)
+	mbs := ListMonNodeToDetailOut(ms)
 	ctx.JSON(http.StatusOK, &pbNode.PagMonNodeReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -348,13 +347,11 @@ func (s *NodeService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/node", s.ListMonNode)
 }
 
-func MonNodeToOutBase(
-	m biz.NodeModel,
-) *pbNode.MonNodeOutBase {
-	return &pbNode.MonNodeOutBase{
+func MonNodeToBaseOut(
+	m biz.MonNodeModel,
+) *pbNode.MonNodeBaseOut {
+	return &pbNode.MonNodeBaseOut{
 		ID:          m.ID,
-		CreatedAt:   m.CreatedAt.String(),
-		UpdatedAt:   m.UpdatedAt.String(),
 		Name:        m.Name,
 		DeployPath:  m.DeployPath,
 		OutportPath: m.OutportPath,
@@ -363,31 +360,37 @@ func MonNodeToOutBase(
 	}
 }
 
-func MonNodeToOut(
-	m biz.NodeModel,
-) *pbNode.MonNodeOut {
-	var host *pbHost.HostOutBase
-	if m.Host.ID != 0 {
-		host = servReso.HostModelToOutBase(m.Host)
-	}
-	return &pbNode.MonNodeOut{
-		MonNodeOutBase: *MonNodeToOutBase(m),
-		Host:           host,
+func MonNodeToStandardOut(
+	m biz.MonNodeModel,
+) *pbNode.MonNodeStandardOut {
+	return &pbNode.MonNodeStandardOut{
+		MonNodeBaseOut: *MonNodeToBaseOut(m),
+		CreatedAt:      m.CreatedAt.String(),
+		UpdatedAt:      m.UpdatedAt.String(),
 	}
 }
 
-func ListMonNodeToOut(
-	rms *[]biz.NodeModel,
-) *[]pbNode.MonNodeOut {
+func MonNodeToDetailOut(
+	m biz.MonNodeModel,
+) *pbNode.MonNodeDetailOut {
+	return &pbNode.MonNodeDetailOut{
+		MonNodeStandardOut: *MonNodeToStandardOut(m),
+		Host:               servReso.HostModelToBaseOut(m.Host),
+	}
+}
+
+func ListMonNodeToDetailOut(
+	rms *[]biz.MonNodeModel,
+) *[]pbNode.MonNodeDetailOut {
 	if rms == nil {
-		return &[]pbNode.MonNodeOut{}
+		return &[]pbNode.MonNodeDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbNode.MonNodeOut, 0, len(ms))
+	mso := make([]pbNode.MonNodeDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := MonNodeToOut(m)
+			mo := MonNodeToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

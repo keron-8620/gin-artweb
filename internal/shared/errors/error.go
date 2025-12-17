@@ -50,7 +50,7 @@ func (e *Error) WithData(md map[string]any) *Error {
 	return err
 }
 
-func (e *Error) Reply() map[string]any {
+func (e *Error) ToMap() map[string]any {
 	data := e.Data
 	if e.cause != nil {
 		data = make(map[string]any, len(e.Data)+1)

@@ -11,14 +11,15 @@ import (
 
 	bizReso "gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/internal/shared/file"
+	"gin-artweb/internal/shared/utils/serializer"
 )
 
-const NodeIDKey = "node_id"
+const MonNodeIDKey = "node_id"
 
-type NodeModel struct {
+type MonNodeModel struct {
 	database.StandardModel
 	Name        string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
 	DeployPath  string            `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
@@ -29,11 +30,11 @@ type NodeModel struct {
 	Host        bizReso.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
 }
 
-func (m *NodeModel) TableName() string {
+func (m *MonNodeModel) TableName() string {
 	return "mon_node"
 }
 
-func (m *NodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (m *MonNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -45,36 +46,33 @@ func (m *NodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-type NodeRepo interface {
-	CreateModel(context.Context, *NodeModel) error
+type MonNodeRepo interface {
+	CreateModel(context.Context, *MonNodeModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*NodeModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]NodeModel, error)
+	FindModel(context.Context, []string, ...any) (*MonNodeModel, error)
+	ListModel(context.Context, database.QueryParams) (int64, *[]MonNodeModel, error)
 }
 
-type NodeUsecase struct {
+type MonNodeUsecase struct {
 	log      *zap.Logger
-	nodeRepo NodeRepo
-	dir      string
+	nodeRepo MonNodeRepo
 }
 
-func NewNodeUsecase(
+func NewMonNodeUsecase(
 	log *zap.Logger,
-	nodeRepo NodeRepo,
-	dir string,
-) *NodeUsecase {
-	return &NodeUsecase{
+	nodeRepo MonNodeRepo,
+) *MonNodeUsecase {
+	return &MonNodeUsecase{
 		log:      log,
 		nodeRepo: nodeRepo,
-		dir:      dir,
 	}
 }
 
-func (uc *NodeUsecase) CreateMonNode(
+func (uc *MonNodeUsecase) CreateMonNode(
 	ctx context.Context,
-	m NodeModel,
-) (*NodeModel, *errors.Error) {
+	m MonNodeModel,
+) (*MonNodeModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
@@ -107,7 +105,7 @@ func (uc *NodeUsecase) CreateMonNode(
 	return uc.FindMonNodeByID(ctx, []string{"Host"}, m.ID)
 }
 
-func (uc *NodeUsecase) UpdateMonNodeByID(
+func (uc *MonNodeUsecase) UpdateMonNodeByID(
 	ctx context.Context,
 	nodeID uint32,
 	data map[string]any,
@@ -118,7 +116,7 @@ func (uc *NodeUsecase) UpdateMonNodeByID(
 
 	uc.log.Info(
 		"开始更新mon节点",
-		zap.Uint32(NodeIDKey, nodeID),
+		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.Any(database.UpdateDataKey, data),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -127,7 +125,7 @@ func (uc *NodeUsecase) UpdateMonNodeByID(
 		uc.log.Error(
 			"更新mon节点失败",
 			zap.Error(err),
-			zap.Uint32(NodeIDKey, nodeID),
+			zap.Uint32(MonNodeIDKey, nodeID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -145,13 +143,13 @@ func (uc *NodeUsecase) UpdateMonNodeByID(
 
 	uc.log.Info(
 		"更新mon节点成功",
-		zap.Uint32(NodeIDKey, nodeID),
+		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return nil
 }
 
-func (uc *NodeUsecase) DeleteMonNodeByID(
+func (uc *MonNodeUsecase) DeleteMonNodeByID(
 	ctx context.Context,
 	nodeID uint32,
 ) *errors.Error {
@@ -161,7 +159,7 @@ func (uc *NodeUsecase) DeleteMonNodeByID(
 
 	uc.log.Info(
 		"开始删除mon",
-		zap.Uint32(NodeIDKey, nodeID),
+		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -169,13 +167,13 @@ func (uc *NodeUsecase) DeleteMonNodeByID(
 		uc.log.Error(
 			"删除mon失败",
 			zap.Error(err),
-			zap.Uint32(NodeIDKey, nodeID),
+			zap.Uint32(MonNodeIDKey, nodeID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": nodeID})
 	}
 
-	path := uc.ExportPath(nodeID)
+	path := MonNodeExportPath(nodeID)
 	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
 		uc.log.Error(
 			"删除mon节点文件失败",
@@ -189,24 +187,24 @@ func (uc *NodeUsecase) DeleteMonNodeByID(
 
 	uc.log.Info(
 		"mon删除成功",
-		zap.Uint32(NodeIDKey, nodeID),
+		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return nil
 }
 
-func (uc *NodeUsecase) FindMonNodeByID(
+func (uc *MonNodeUsecase) FindMonNodeByID(
 	ctx context.Context,
 	preloads []string,
 	nodeID uint32,
-) (*NodeModel, *errors.Error) {
+) (*MonNodeModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
 		"开始查询mon",
-		zap.Uint32(NodeIDKey, nodeID),
+		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -215,7 +213,7 @@ func (uc *NodeUsecase) FindMonNodeByID(
 		uc.log.Error(
 			"查询mon失败",
 			zap.Error(err),
-			zap.Uint32(NodeIDKey, nodeID),
+			zap.Uint32(MonNodeIDKey, nodeID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": nodeID})
@@ -223,16 +221,16 @@ func (uc *NodeUsecase) FindMonNodeByID(
 
 	uc.log.Info(
 		"查询mon成功",
-		zap.Uint32(NodeIDKey, nodeID),
+		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return m, nil
 }
 
-func (uc *NodeUsecase) ListMonNode(
+func (uc *MonNodeUsecase) ListMonNode(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]NodeModel, *errors.Error) {
+) (int64, *[]MonNodeModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
@@ -262,12 +260,7 @@ func (uc *NodeUsecase) ListMonNode(
 	return count, ms, nil
 }
 
-func (uc *NodeUsecase) ExportPath(pk uint32) string {
-	filename := fmt.Sprintf("db_mon_%d.yaml", pk)
-	return filepath.Join(uc.dir, filename)
-}
-
-func (uc *NodeUsecase) ExportMonNode(ctx context.Context, m NodeModel) *errors.Error {
+func (uc *MonNodeUsecase) ExportMonNode(ctx context.Context, m MonNodeModel) *errors.Error {
 	if err := errors.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
@@ -288,8 +281,8 @@ func (uc *NodeUsecase) ExportMonNode(ctx context.Context, m NodeModel) *errors.E
 		HostID:      m.HostID,
 	}
 
-	path := uc.ExportPath(m.ID)
-	if err := file.WriteYAML(path, monNode); err != nil {
+	path := MonNodeExportPath(m.ID)
+	if _, err := serializer.WriteYAML(path, monNode); err != nil {
 		uc.log.Error(
 			"导出mon节点文件失败",
 			zap.Error(err),
@@ -328,4 +321,9 @@ func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("url", vs.URL)
 	enc.AddUint32("host_id", vs.HostID)
 	return nil
+}
+
+func MonNodeExportPath(pk uint32) string {
+	filename := fmt.Sprintf("mon_%d.yaml", pk)
+	return filepath.Join(config.StorageDir, "mon", filename)
 }

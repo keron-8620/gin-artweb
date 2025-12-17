@@ -46,14 +46,14 @@ func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string)
 		// 从请求头获取token
 		token := extractToken(c)
 		if token == "" {
-			c.AbortWithStatusJSON(ErrNoAuthor.Code, ErrNoAuthor.Reply())
+			c.AbortWithStatusJSON(ErrNoAuthor.Code, ErrNoAuthor.ToMap())
 			return
 		}
 
 		// 身份认证
 		info, err := enforcer.Authentication(c, token)
 		if err != nil {
-			c.AbortWithStatusJSON(err.Code, err.Reply())
+			c.AbortWithStatusJSON(err.Code, err.ToMap())
 			return
 		}
 		role := RoleToSubject(info.RoleID)
@@ -61,7 +61,7 @@ func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string)
 		// 访问鉴权
 		hasPerm, err := enforcer.Authorization(c, role, fullPath, c.Request.Method)
 		if err != nil {
-			c.AbortWithStatusJSON(err.Code, err.Reply())
+			c.AbortWithStatusJSON(err.Code, err.ToMap())
 			return
 		}
 		if !hasPerm {
@@ -71,7 +71,7 @@ func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string)
 				zap.String(ObjKey, fullPath),
 				zap.String(ActKey, c.Request.Method),
 			)
-			c.AbortWithStatusJSON(ErrForbidden.Code, ErrForbidden.Reply())
+			c.AbortWithStatusJSON(ErrForbidden.Code, ErrForbidden.ToMap())
 			return
 		}
 		SetUserClaims(c, *info)

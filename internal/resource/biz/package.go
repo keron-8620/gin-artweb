@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
@@ -53,18 +54,15 @@ type PackageRepo interface {
 type PackageUsecase struct {
 	log     *zap.Logger
 	pkgRepo PackageRepo
-	dir     string
 }
 
 func NewPackageUsecase(
 	log *zap.Logger,
 	pkgRepo PackageRepo,
-	dir string,
 ) *PackageUsecase {
 	return &PackageUsecase{
 		log:     log,
 		pkgRepo: pkgRepo,
-		dir:     dir,
 	}
 }
 
@@ -209,16 +207,12 @@ func (uc *PackageUsecase) ListPackage(
 	return count, ms, nil
 }
 
-func (uc *PackageUsecase) PackagePath(filename string) string {
-	return filepath.Join(uc.dir, filename)
-}
-
 func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *errors.Error {
 	if err := errors.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
-	savePath := uc.PackagePath(m.StorageFilename)
+	savePath := PackageStoragePath(m.StorageFilename)
 
 	uc.log.Info(
 		"开始删除程序包文件",
@@ -265,4 +259,8 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 		zap.String("path", savePath),
 		zap.Uint32(PackageIDKey, m.ID))
 	return nil
+}
+
+func PackageStoragePath(filename string) string {
+	return filepath.Join(config.StorageDir, "packages", filename)
 }

@@ -19,7 +19,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
   -ldflags "\
     -s -w \
     -X 'main.version=${VERSION}' \
-    -X 'main.vommitID=${COMMIT_ID}' \
+    -X 'main.commitID=${COMMIT_ID}' \
     -X 'main.buildTime=${BUILD_TIME}' \
   " \
   -o gin-artweb main.go

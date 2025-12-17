@@ -56,7 +56,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -82,7 +82,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -95,7 +95,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, &pbUser.UserReply{
 		Code: http.StatusCreated,
-		Data: UserModelToOut(*m),
+		Data: UserModelToDetailOut(*m),
 	})
 }
 
@@ -122,7 +122,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -135,7 +135,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -159,7 +159,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -177,12 +177,12 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbUser.UserReply{
 		Code: http.StatusOK,
-		Data: UserModelToOut(*m),
+		Data: UserModelToDetailOut(*m),
 	})
 }
 
@@ -208,7 +208,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -225,7 +225,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -260,7 +260,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -278,7 +278,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -290,7 +290,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, &pbUser.UserReply{
 		Code: http.StatusOK,
-		Data: UserModelToOut(*m),
+		Data: UserModelToDetailOut(*m),
 	})
 }
 
@@ -320,7 +320,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -347,7 +347,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -357,7 +357,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListUserModelToOut(ms)
+	mbs := ListUserModelToDetailOut(ms)
 	ctx.JSON(http.StatusOK, &pbUser.PagUserReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -387,7 +387,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 	var req pbUser.ResetPasswordRequest
@@ -399,7 +399,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -417,7 +417,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 	s.log.Info(
@@ -450,18 +450,18 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	claims := auth.GetGinUserClaims(ctx)
+	claims := auth.GetUserClaims(ctx)
 	if claims == nil {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
+		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.ToMap())
 		return
 	}
 
@@ -472,7 +472,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 	ok, rErr := s.ucUser.VerifyPassword(ctx, req.OldPassword, m.Password)
@@ -482,7 +482,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 	if !ok {
@@ -490,7 +490,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			"旧密码错误",
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.Reply())
+		ctx.AbortWithStatusJSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.ToMap())
 	}
 	if err := s.ucUser.UpdateUserByID(ctx, claims.UserID, map[string]any{
 		"password": req.NewPassword,
@@ -500,7 +500,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.Uint32(auth.UserIDKey, claims.UserID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 	s.log.Info(
@@ -532,7 +532,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -569,7 +569,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
 		}
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -616,43 +616,51 @@ func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/login", s.Login)
 }
 
-func UserModelToOutBase(
+func UserModelToBaseOut(
 	m biz.UserModel,
-) *pbUser.UserOutBase {
-	return &pbUser.UserOutBase{
+) *pbUser.UserBaseOut {
+	return &pbUser.UserBaseOut{
 		ID:        m.ID,
-		CreatedAt: m.CreatedAt.String(),
-		UpdatedAt: m.UpdatedAt.String(),
 		Username:  m.Username,
 		IsActive:  m.IsActive,
 		IsStaff:   m.IsStaff,
 	}
 }
 
-func UserModelToOut(
+func UserModelToStandardOut(
 	m biz.UserModel,
-) *pbUser.UserOut {
-	var role *pbRole.RoleOutBase
-	if m.Role.ID != 0 {
-		role = RoleModelToOutBase(m.Role)
-	}
-	return &pbUser.UserOut{
-		UserOutBase: *UserModelToOutBase(m),
-		Role:        role,
+) *pbUser.UserStandardOut {
+	return &pbUser.UserStandardOut{
+		UserBaseOut: *UserModelToBaseOut(m),
+		CreatedAt: m.CreatedAt.String(),
+		UpdatedAt: m.UpdatedAt.String(),
 	}
 }
 
-func ListUserModelToOut(
+func UserModelToDetailOut(
+	m biz.UserModel,
+) *pbUser.UserDetailOut {
+	var role *pbRole.RoleBaseOut
+	if m.Role.ID != 0 {
+		role = RoleModelToBaseOut(m.Role)
+	}
+	return &pbUser.UserDetailOut{
+		UserStandardOut: *UserModelToStandardOut(m),
+		Role:            role,
+	}
+}
+
+func ListUserModelToDetailOut(
 	ums *[]biz.UserModel,
-) *[]pbUser.UserOut {
+) *[]pbUser.UserDetailOut {
 	if ums == nil {
-		return &[]pbUser.UserOut{}
+		return &[]pbUser.UserDetailOut{}
 	}
 	ms := *ums
-	mso := make([]pbUser.UserOut, 0, len(ms))
+	mso := make([]pbUser.UserDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := UserModelToOut(m)
+			mo := UserModelToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

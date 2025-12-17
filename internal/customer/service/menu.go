@@ -50,7 +50,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -89,7 +89,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -100,7 +100,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := MenuModelToOut(*m)
+	mo := MenuModelToDetailOut(*m)
 	ctx.JSON(http.StatusCreated, &pbMenu.MenuReply{
 		Code: http.StatusCreated,
 		Data: mo,
@@ -130,7 +130,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -143,7 +143,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -175,7 +175,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -193,11 +193,11 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
-	mo := MenuModelToOut(*m)
+	mo := MenuModelToDetailOut(*m)
 	ctx.JSON(http.StatusOK, &pbMenu.MenuReply{
 		Code: http.StatusOK,
 		Data: mo,
@@ -226,7 +226,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -243,7 +243,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -278,7 +278,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -296,7 +296,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -306,7 +306,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := MenuModelToOut(*m)
+	mo := MenuModelToDetailOut(*m)
 	ctx.JSON(http.StatusOK, &pbMenu.MenuReply{
 		Code: http.StatusOK,
 		Data: mo,
@@ -324,7 +324,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 // @Param path query string false "菜单路径"
 // @Param is_active query bool false "是否激活"
 // @Param parent_id query int false "父级菜单ID"
-// @Success 200 {object} pbMenu.PagMenuBaseReply "成功返回菜单列表"
+// @Success 200 {object} pbMenu.PagMenuReply "成功返回菜单列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu [get]
@@ -339,7 +339,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -365,7 +365,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -375,8 +375,8 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListMenuModelToOutBase(ms)
-	ctx.JSON(http.StatusOK, &pbMenu.PagMenuBaseReply{
+	mbs := ListMenuModelToStandardOut(ms)
+	ctx.JSON(http.StatusOK, &pbMenu.PagMenuReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
@@ -390,13 +390,11 @@ func (s *MenuService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/menu", s.ListMenu)
 }
 
-func MenuModelToOutBase(
+func MenuModelToBaseOut(
 	m biz.MenuModel,
-) *pbMenu.MenuOutBase {
-	return &pbMenu.MenuOutBase{
+) *pbMenu.MenuBaseOut {
+	return &pbMenu.MenuBaseOut{
 		ID:        m.ID,
-		CreatedAt: m.CreatedAt.String(),
-		UpdatedAt: m.UpdatedAt.String(),
 		Path:      m.Path,
 		Component: m.Component,
 		Name:      m.Name,
@@ -410,12 +408,22 @@ func MenuModelToOutBase(
 	}
 }
 
-func MenuModelToOut(
+func MenuModelToStandardOut(
 	m biz.MenuModel,
-) *pbMenu.MenuOut {
-	var parent *pbMenu.MenuOutBase
+) *pbMenu.MenuStandardOut {
+	return &pbMenu.MenuStandardOut{
+		MenuBaseOut: *MenuModelToBaseOut(m),
+		CreatedAt:   m.CreatedAt.String(),
+		UpdatedAt:   m.UpdatedAt.String(),
+	}
+}
+
+func MenuModelToDetailOut(
+	m biz.MenuModel,
+) *pbMenu.MenuDetailOut {
+	var parent *pbMenu.MenuStandardOut
 	if m.Parent != nil {
-		parent = MenuModelToOutBase(*m.Parent)
+		parent = MenuModelToStandardOut(*m.Parent)
 	}
 	var permissionIDs []uint32
 	if len(m.Permissions) > 0 {
@@ -424,23 +432,23 @@ func MenuModelToOut(
 			permissionIDs[i] = p.ID
 		}
 	}
-	return &pbMenu.MenuOut{
-		MenuOutBase: *MenuModelToOutBase(m),
-		Parent:      parent,
-		Permissions: permissionIDs,
+	return &pbMenu.MenuDetailOut{
+		MenuStandardOut: *MenuModelToStandardOut(m),
+		Parent:          parent,
+		Permissions:     permissionIDs,
 	}
 }
 
-func ListMenuModelToOutBase(
+func ListMenuModelToStandardOut(
 	mms *[]biz.MenuModel,
-) *[]pbMenu.MenuOutBase {
+) *[]pbMenu.MenuStandardOut {
 	if mms == nil {
-		return &[]pbMenu.MenuOutBase{}
+		return &[]pbMenu.MenuStandardOut{}
 	}
 	ms := *mms
-	mso := make([]pbMenu.MenuOutBase, 0, len(ms))
+	mso := make([]pbMenu.MenuStandardOut, 0, len(ms))
 	for _, m := range ms {
-		mo := MenuModelToOutBase(m)
+		mo := MenuModelToStandardOut(m)
 		mso = append(mso, *mo)
 	}
 	return &mso

@@ -13,7 +13,7 @@ var (
 		"SSH连接失败",
 		nil,
 	)
-	
+
 	ErrSSHKeyDeployment = errors.New(
 		http.StatusBadRequest,
 		"ssh_key_deployment_failed",
@@ -22,19 +22,19 @@ var (
 	)
 
 	ErrExportHostFailed = errors.New(
-        http.StatusInternalServerError,
-        "export_host_failed",
-        "导出主机配置文件失败",
-        nil,
-    )
+		http.StatusInternalServerError,
+		"export_host_failed",
+		"导出主机配置文件失败",
+		nil,
+	)
 
 	ErrDeleteHostFileFailed = errors.New(
-        http.StatusInternalServerError,
-        "delete_host_file_failed",
-        "删除主机配置文件失败",
-        nil,
-    )
-	
+		http.StatusInternalServerError,
+		"delete_host_file_failed",
+		"删除主机配置文件失败",
+		nil,
+	)
+
 	ErrRemovePakage = errors.New(
 		http.StatusBadRequest,
 		"remove_package_failed",

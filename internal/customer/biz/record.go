@@ -84,7 +84,7 @@ func (uc *LoginRecordUsecase) CreateLoginRecord(
 	}
 
 	uc.log.Info(
-		"用户登录记录创建成功",
+		"创建用户登录记录成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

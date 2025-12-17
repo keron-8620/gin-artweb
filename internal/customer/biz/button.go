@@ -221,7 +221,7 @@ func (uc *ButtonUsecase) CreateButton(
 	}
 
 	uc.log.Info(
-		"按钮创建成功",
+		"创建按钮成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -289,7 +289,7 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 	}
 
 	uc.log.Info(
-		"按钮更新成功",
+		"更新按钮成功",
 		zap.Uint32(ButtonIDKey, buttonID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -336,7 +336,7 @@ func (uc *ButtonUsecase) DeleteButtonByID(
 	}
 
 	uc.log.Info(
-		"按钮删除成功",
+		"删除按钮成功",
 		zap.Uint32(ButtonIDKey, buttonID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -454,7 +454,7 @@ func (uc *ButtonUsecase) LoadButtonPolicy(ctx context.Context) *errors.Error {
 	}
 
 	uc.log.Info(
-		"按钮策略加载成功",
+		"加载按钮策略成功",
 		zap.Int("policy_count", policyCount),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

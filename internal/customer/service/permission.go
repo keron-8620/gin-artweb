@@ -49,7 +49,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -76,7 +76,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -87,7 +87,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := PermModelToOutBase(*m)
+	mo := PermModelToStandardOut(*m)
 	ctx.JSON(http.StatusCreated, &pbPerm.PermissionReply{
 		Code: http.StatusCreated,
 		Data: mo,
@@ -116,7 +116,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -129,7 +129,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -153,7 +153,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -171,11 +171,11 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
-	mo := PermModelToOutBase(*m)
+	mo := PermModelToStandardOut(*m)
 	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{
 		Code: http.StatusOK,
 		Data: mo,
@@ -203,7 +203,7 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -220,7 +220,7 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -254,7 +254,7 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -272,7 +272,7 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -282,7 +282,7 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := PermModelToOutBase(*m)
+	mo := PermModelToStandardOut(*m)
 	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{
 		Code: http.StatusOK,
 		Data: mo,
@@ -318,7 +318,7 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -344,7 +344,7 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -354,7 +354,7 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListPermModelToOut(ms)
+	mbs := ListPermModelToStandardOut(ms)
 	ctx.JSON(http.StatusOK, &pbPerm.PagPermissionReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -369,10 +369,10 @@ func (s *PermissionService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/permission", s.ListPermission)
 }
 
-func PermModelToOutBase(
+func PermModelToStandardOut(
 	m biz.PermissionModel,
-) *pbPerm.PermissionOutBase {
-	return &pbPerm.PermissionOutBase{
+) *pbPerm.PermissionStandardOut {
+	return &pbPerm.PermissionStandardOut{
 		ID:        m.ID,
 		CreatedAt: m.CreatedAt.String(),
 		UpdatedAt: m.UpdatedAt.String(),
@@ -383,17 +383,17 @@ func PermModelToOutBase(
 	}
 }
 
-func ListPermModelToOut(
+func ListPermModelToStandardOut(
 	pms *[]biz.PermissionModel,
-) *[]pbPerm.PermissionOutBase {
+) *[]pbPerm.PermissionStandardOut {
 	if pms == nil {
-		return &[]pbPerm.PermissionOutBase{}
+		return &[]pbPerm.PermissionStandardOut{}
 	}
 
 	ms := *pms
-	mso := make([]pbPerm.PermissionOutBase, 0, len(ms))
+	mso := make([]pbPerm.PermissionStandardOut, 0, len(ms))
 	for _, m := range ms {
-		mo := PermModelToOutBase(m)
+		mo := PermModelToStandardOut(m)
 		mso = append(mso, *mo)
 	}
 	return &mso

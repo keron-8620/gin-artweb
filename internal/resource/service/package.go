@@ -57,14 +57,14 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
 	newFileNameWithExt := uuid.NewString() + filepath.Ext(req.File.Filename)
-	savePath := s.ucPkg.PackagePath(newFileNameWithExt)
-	if rErr := common.UploadFile(ctx, s.log, s.maxSize, savePath, req.File); rErr != nil {
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+	savePath := biz.PackageStoragePath(newFileNameWithExt)
+	if rErr := common.UploadFile(ctx, s.log, s.maxSize, savePath, req.File, 0o644); rErr != nil {
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -80,7 +80,7 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -110,7 +110,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -127,7 +127,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -159,7 +159,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -177,7 +177,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -216,7 +216,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -242,7 +242,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -280,7 +280,7 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -293,14 +293,14 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
 	// 构建文件路径
-	filePath := s.ucPkg.PackagePath(pkg.StorageFilename)
+	filePath := biz.PackageStoragePath(pkg.StorageFilename)
 	if err := common.DownloadFile(ctx, s.log, filePath, pkg.OriginFilename); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 	}
 }
 
@@ -314,8 +314,8 @@ func (s *PackageService) LoadRouter(r *gin.RouterGroup) {
 
 func PackageModelToOutBase(
 	m biz.PackageModel,
-) *pbPkg.PackageOutBase {
-	return &pbPkg.PackageOutBase{
+) *pbPkg.PackageStandardOut {
+	return &pbPkg.PackageStandardOut{
 		ID:       m.ID,
 		Filename: m.OriginFilename,
 		Label:    m.Label,
@@ -325,13 +325,13 @@ func PackageModelToOutBase(
 
 func ListPkgModelToOut(
 	pms *[]biz.PackageModel,
-) *[]pbPkg.PackageOutBase {
+) *[]pbPkg.PackageStandardOut {
 	if pms == nil {
-		return &[]pbPkg.PackageOutBase{}
+		return &[]pbPkg.PackageStandardOut{}
 	}
 
 	ms := *pms
-	mso := make([]pbPkg.PackageOutBase, 0, len(ms))
+	mso := make([]pbPkg.PackageStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := PackageModelToOutBase(m)

@@ -1,0 +1,861 @@
+#
+# 主存库配置文件, 用于统一配置系统使用到的共享内存
+# - 使用 8G 内存, 适用于物理内存大于等于 32G 的环境, 预期大页内存: 20G (hugepages=10240)
+# - 开启订单簿重建功能需额外占用 15G 内存, 否则无法支持订单簿重建功能 (@note 该容量无法支撑实盘全天的行情数据, 只能用于测试环境)
+# - 该文件在集群范围内保持一致即可, 不需要分别为主/备/仲裁节点配置不同的内容
+# - @note 启用订单簿重建功能建议配置大于等于 128G 的物理内存, 并使用 40G 的 SDB 配置
+#
+
+############################################################
+# 总体配置 （共享内存列表）
+############################################################
+
+[sdb]
+spaces.1 = Model,       0x51${@@}
+spaces.2 = TxLog,       0x52${@@}
+spaces.3 = TickCache,   0x53${@@}
+spaces.4 = OrderBook,   0x54${@@}
+
+
+############################################################
+# Model（领域模型）共享内存配置
+############################################################
+
+[Model]
+space.maxSize = 6G
+space.maxTableNumber = ${IS_ARBITER:!32}${IS_ARBITER:+4}
+space.maxIndexNumber = 32
+space.useHugePage = ${IS_ARBITER:!${ENABLE_SDB_HUGEPAGE:!no}${ENABLE_SDB_HUGEPAGE:+yes}}${IS_ARBITER:+no}
+#space.cpuset = ${NUMA_NODE0_CPU0}
+
+
+#
+# 系统全局配置信息
+#
+[Model.table]
+record.dataTypeName = GLOBCFG
+record.dataTypeSize = 128K
+
+table.type = Raw
+table.name = GLOBCFG
+table.maxItem = 1
+
+
+#
+# 系统运行时状态信息
+#
+[Model.table]
+record.dataTypeName = SYSSTAT
+record.dataTypeSize = 128K
+
+table.type = Raw
+table.name = SYSSTAT
+table.maxItem = 1
+
+
+#
+# 系统监控信息队列
+#
+[Model.table]
+record.dataTypeName = MONITOR_ENTRY
+record.dataTypeSize = 512
+
+table.type = HashMap
+table.name = MONITOR_MAP
+table.maxItem = 100
+table.maxItemPerChunk = 100
+table.preAllocChunk = 1
+
+# 索引配置
+index.number = 1
+
+index.1.name = moniterKey
+index.1.type = rbtree
+index.1.isUnique = true
+index.1.fieldOffset = 0
+index.1.fieldSize = 64
+index.1.fieldType = icase_string
+
+
+#
+# 任务监控信息队列
+#
+[Model.table]
+record.dataTypeName = TASK_MONITOR_ENTRY
+record.dataTypeSize = 1136
+
+table.type = HashMap
+table.name = TASK_MONITOR_MAP
+table.maxItem = 100
+table.maxItemPerChunk = 100
+table.preAllocChunk = 1
+
+# 索引配置
+index.number = 1
+
+index.1.name = moniterKey
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 0
+index.1.fieldSize = 64
+index.1.fieldType = icase_string
+
+
+#
+# 客户端信息队列
+#
+[Model.table]
+record.dataTypeName = CLIENT
+record.dataTypeSize = 568
+
+table.type = SlotList
+table.name = CLIENT
+table.maxItem = 1w
+table.lowLimit = 1w
+table.maxItemPerChunk = 1w
+table.preAllocChunk = 1
+
+# 索引配置
+index.number = 1
+
+index.1.name = username
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 32
+index.1.fieldSize = 32
+index.1.fieldType = string
+
+
+#
+# 待处理的行情消息队列
+#
+[Model.table]
+record.dataTypeName = MKT_MSG
+record.dataTypeSize = 584
+
+table.type = RingBuf
+table.name = DECODED_MKT_MSG
+table.maxItem = 400w
+
+opFlag.OVER_WRITE_WITH_CHECKER = true   # 当队列已满时, 根据检查函数覆盖末尾元素
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.UNSYNC_WRITE = false             # 使用非同步的写操作, 默认对写操作加锁
+opFlag.DISABLE_POP_METHOD = true        # 禁用队列的Pop()方法
+opFlag.DISABLE_POLL_METHOD = true       # 禁用队列的Poll()方法
+
+
+#
+# 逐笔去重的元数据信息
+#
+[Model.table]
+record.dataTypeName = TICK_DEDUP_METADATA
+record.dataTypeSize = 4k
+
+table.type = Raw
+table.name = TICK_DEDUP_SEQ_METADATA
+table.maxItem = 1
+
+# 相同配置的数据表声明
+extra.uniformTables = TICK_DEDUP_MAP_METADATA
+
+
+#
+# 逐笔去重的映射表队列
+#
+[Model.table]
+record.dataTypeName = TICK_DEDUP_MAP_LIST
+record.dataTypeSize = 16000000
+
+table.type = Array
+table.name = TICK_DEDUP_MAP_LIST
+table.maxItem = 40
+table.lowLimit = 40
+table.maxItemPerChunk = 40
+table.preAllocChunk = 1
+
+
+#
+# 市场状态信息
+#
+[Model.table]
+record.dataTypeName = MKT_STAT
+record.dataTypeSize = 88
+
+table.type = MvccArray
+table.name = MKT_STATS
+table.maxItem = 100
+table.maxItemPerChunk = 100
+table.preAllocChunk = 1
+
+
+#
+# 市场状态信息的历史记录
+#
+[Model.table]
+record.dataTypeName = MKT_STAT
+record.dataTypeSize = 88
+
+table.type = RingBuf
+table.name = MKT_STATS_HIS
+table.maxItem = 1w
+
+opFlag.OVER_WRITE_ON_FULL = true        # 当队列已满时, 覆盖末尾元素
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.UNSYNC_WRITE = false             # 使用非同步的写操作, 默认对写操作加锁
+opFlag.DISABLE_POP_METHOD = true        # 禁用队列的Pop()方法
+opFlag.DISABLE_POLL_METHOD = true       # 禁用队列的Poll()方法
+
+
+#
+# Level2 行情快照数据（股票）
+#
+[Model.table]
+record.dataTypeName = L2_STK_SNAPSHOT
+record.dataTypeSize = 560
+
+table.type = MvccArray
+table.name = L2_STK_SNAPSHOT_SSE
+table.maxSlot = 100w
+table.maxItem = 10w
+table.maxItemPerChunk = 10w
+table.preAllocChunk = 999
+
+# 相同配置的数据表声明
+extra.uniformTables = L2_STK_SNAPSHOT_SZSE
+
+
+#
+# Level2 委托队列信息 (买一／卖一前五十笔委托明细)
+#
+[Model.table]
+record.dataTypeName = L2_BEST_ORDERS
+record.dataTypeSize = 504
+
+table.type = MvccArray
+table.name = L2_BEST_ORDERS_SSE
+table.maxSlot = 100w
+table.maxItem = 10w
+table.maxItemPerChunk = 10w
+table.preAllocChunk = 999
+
+# 相同配置的数据表声明
+extra.uniformTables = L2_BEST_ORDERS_SZSE
+
+
+#
+# Level1 行情快照数据（股票, 以及 L1/L2 指数）
+#
+[Model.table]
+record.dataTypeName = STK_SNAPSHOT
+record.dataTypeSize = 320
+
+table.type = MvccArray
+table.name = STK_SNAPSHOT_SSE
+table.maxSlot = 100w
+table.maxItem = 10w
+table.maxItemPerChunk = 10w
+table.preAllocChunk = 999
+
+# 相同配置的数据表声明
+extra.uniformTables = STK_SNAPSHOT_SZSE, STK_SNAPSHOT_BSE
+
+
+#
+# 行情快照数据（衍生品）
+#
+[Model.table]
+record.dataTypeName = OPT_SNAPSHOT
+record.dataTypeSize = 320
+
+table.type = MvccMap
+table.name = OPT_SNAPSHOT_SSE
+table.maxItem = 10w
+table.maxItemPerChunk = 10w
+table.preAllocChunk = 999
+
+# 索引配置
+index.number = 1
+
+index.1.name = instrId
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 12
+index.1.fieldSize = 4
+index.1.fieldType = int32
+
+# 相同配置的数据表声明
+extra.uniformTables = OPT_SNAPSHOT_SZSE
+
+
+#
+# 证券状态数据
+#
+[Model.table]
+record.dataTypeName = SECURITY_STATUS
+record.dataTypeSize = 184
+
+table.type = MvccMap
+table.name = SECURITY_STATUS_SZSE
+table.maxItem = 6w
+table.maxItemPerChunk = 6w
+table.preAllocChunk = 999
+
+# 索引配置
+index.number = 1
+
+index.1.name = instrId
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 20
+index.1.fieldSize = 4
+index.1.fieldType = int32
+
+# 相同配置的数据表声明
+extra.uniformTables = SECURITY_STATUS_BSE
+
+
+#
+# 深交所基金实时参考净值信息列表
+#
+[Model.table]
+record.dataTypeName = SZSE_IOPV_LIST
+record.dataTypeSize = 4
+
+table.type = Raw
+table.name = SZSE_IOPV_LIST
+table.maxItem = 200w
+
+
+#
+# 证券产品静态信息队列
+#
+[Model.table]
+record.dataTypeName = STOCK_INFO
+record.dataTypeSize = 456
+
+table.type = SlotList
+table.name = STOCK_INFO
+table.maxItem = 20w
+table.lowLimit = 10w
+table.maxItemPerChunk = 2w
+table.preAllocChunk = 5
+
+# 索引配置
+index.number = 2
+
+index.1.name = securityId
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 0
+index.1.fieldSize = 10
+index.1.fieldType = binary
+
+index.2.name = instrId
+index.2.type = DHash
+index.2.isUnique = true
+index.2.fieldOffset = 0
+index.2.fieldSize = 8
+index.2.fieldType = uint64
+
+
+#
+# 期权产品静态信息队列
+#
+[Model.table]
+record.dataTypeName = OPTION_INFO
+record.dataTypeSize = 280
+
+table.type = SlotList
+table.name = OPTION_INFO
+table.maxItem = 5w
+table.lowLimit = 1w
+table.maxItemPerChunk = 1w
+table.preAllocChunk = 1
+
+# 索引配置
+index.number = 2
+
+index.1.name = securityId
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 0
+index.1.fieldSize = 10
+index.1.fieldType = binary
+
+index.2.name = instrId
+index.2.type = DHash
+index.2.isUnique = true
+index.2.fieldOffset = 0
+index.2.fieldSize = 8
+index.2.fieldType = uint64
+
+
+#
+# 待应答的请求事件队列
+#
+[Model.table]
+record.dataTypeName = REQ_EVENT
+record.dataTypeSize = 296
+
+table.type = RingBuf
+table.name = PUB_REQ_EVENT
+table.maxItem = 1w
+
+opFlag.OVER_WRITE_WITH_CHECKER = true   # 当队列已满时, 根据检查函数覆盖末尾元素
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.UNSYNC_WRITE = false             # 使用非同步的写操作, 默认对写操作加锁
+opFlag.DISABLE_POP_METHOD = true        # 禁用队列的Pop()方法
+opFlag.DISABLE_POLL_METHOD = true       # 禁用队列的Poll()方法
+
+# 相同配置的数据表声明
+extra.uniformTables = FORW_REQ_EVENT
+
+
+#
+# 并发服务的服务信息
+#
+[Model.table]
+record.dataTypeName = CONCUR_SERVER
+record.dataTypeSize = 6K
+
+table.type = Raw
+table.name = PUB_CONCUR_SERVER
+table.maxItem = 1
+
+# 相同配置的数据表声明
+extra.uniformTables = FORW_CONCUR_SERVER, QRY_CONCUR_SERVER
+
+
+#
+# 行情推送服务的会话信息池 (maxItem 需要和全系统的最大连接数量相匹配)
+#
+[Model.table]
+record.dataTypeName = SESSION_POOL
+record.dataTypeSize = 616K
+
+table.type = Raw
+table.name = PUB_SESSION_POOL
+table.maxItem = 1030
+
+
+#
+# 行情转发服务的会话信息池 (maxItem 需要和全系统的最大连接数量相匹配)
+#
+[Model.table]
+record.dataTypeName = SESSION_POOL
+record.dataTypeSize = 616K
+
+table.type = Raw
+table.name = FORW_SESSION_POOL
+table.maxItem = 520
+
+
+#
+# 查询服务的会话信息池 (maxItem 需要和全系统的最大连接数量相匹配)
+#
+[Model.table]
+record.dataTypeName = SESSION_POOL
+record.dataTypeSize = 2640
+
+table.type = Raw
+table.name = QRY_SESSION_POOL
+table.maxItem = 520
+
+
+#
+# IP过滤器信息队列
+#
+[Model.table]
+record.dataTypeName = IP_FILTER
+record.dataTypeSize = 56
+
+table.type = SlotList
+table.name = IP_FILTER
+table.maxItem = 1w
+table.maxItemPerChunk = 2k
+table.preAllocChunk = 1
+
+# 索引配置
+index.number = 2
+
+index.1.name = ipFilterKey
+index.1.type = rbtree
+index.1.isUnique = false
+index.1.fieldOffset = 0
+index.1.fieldSize = 32
+index.1.fieldType = string
+
+index.2.name = ipFilterIntKey
+index.2.type = rbtree
+index.2.isUnique = false
+index.2.fieldOffset = 32
+index.2.fieldSize = 4
+index.2.fieldType = int32
+
+
+############################################################
+# TxLog（交易日志）共享内存配置
+############################################################
+
+[TxLog]
+space.maxSize = 1G
+space.maxTableNumber = 4
+space.maxIndexNumber = 1
+space.useHugePage = ${IS_ARBITER:!${ENABLE_SDB_HUGEPAGE:!no}${ENABLE_SDB_HUGEPAGE:+yes}}${IS_ARBITER:+no}
+#space.cpuset = ${NUMA_NODE0_CPU0}
+
+
+#
+# 日志锚点信息
+#
+[TxLog.table]
+record.dataTypeName = ANCHOR
+record.dataTypeSize = 8K
+
+table.type = Raw
+table.name = TLOG_ANCHOR
+table.maxItem = 1
+
+
+#
+# 页面缓存队列
+#
+[TxLog.table]
+record.dataTypeName = PAGE
+record.dataTypeSize = 8K
+
+table.type = PagePool
+table.name = TLOG_PAGE
+table.maxItem = ${IS_ARBITER:!10000}${IS_ARBITER:+10}
+
+opFlag.BLOCK_ON_FULL = true             # 当队列已满时, 阻塞等待
+opFlag.BLOCK_ON_EMPTY = true            # 当队列已空时, 阻塞等待
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.COND_BLOCK_TIMEOUT = 50000       # 条件变量阻塞等待的超时时间 (微秒), 默认为50000微秒
+opFlag.UNSYNC_WRITE = true              # 使用非同步的写操作, 默认对写操作加锁
+
+
+############################################################
+# TickCache（逐笔数据缓存）共享内存配置
+############################################################
+
+[TickCache]
+space.enable = ${IS_ARBITER:!yes}${IS_ARBITER:+no}
+space.maxSize = 5G
+space.maxTableNumber = 16
+space.maxIndexNumber = 16
+space.useHugePage = ${ENABLE_SDB_HUGEPAGE:!no}${ENABLE_SDB_HUGEPAGE:+yes}
+space.cpuset = ${NUMA_NODE1_CPU0}
+
+
+#
+# 逐笔数据缓存的元数据信息
+#
+[TickCache.table]
+record.dataTypeName = TICK_CACHE_METADATA
+record.dataTypeSize = 10M
+
+table.type = Raw
+table.name = TICK_CACHE_METADATA
+table.maxItem = 1
+
+
+#
+# 逐笔数据存储的缓存页池
+#
+[TickCache.table]
+record.dataTypeName = TICK_CACHE_PAGE
+record.dataTypeSize = 1048832
+
+table.type = SlotList
+table.name = TICK_CACHE_PAGE_POOL
+table.maxItem = ${NO_TICK_RESEND:!2000}${NO_TICK_RESEND:+500}
+table.lowLimit = 0
+table.maxItemPerChunk = 1000
+table.preAllocChunk = 999
+
+
+#
+# 逐笔数据重传的缓存页队列
+#
+[TickCache.table]
+record.dataTypeName = TICK_CACHE_PAGE
+record.dataTypeSize = 1048832
+
+table.type = MvccMap
+table.name = TICK_RESEND_PAGE_POOL
+table.maxItem = ${NO_TICK_RESEND:!2000}${NO_TICK_RESEND:+100}
+table.lowLimit = 0
+table.maxItemPerChunk = 1000
+table.preAllocChunk = 999
+
+# 索引配置
+index.number = 1
+
+index.1.name = pageId
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 0
+index.1.fieldSize = 8
+index.1.fieldType = uint64
+
+
+#
+# 存储器逐笔数据缺口信息
+#
+[TickCache.table]
+record.dataTypeName = TICK_GAP_INFO
+record.dataTypeSize = 32
+
+table.type = RingBuf
+table.name = STORER_TICK_GAP_SSE
+table.maxItem = 10w
+
+opFlag.OVER_WRITE_ON_FULL = true        # 当队列已满时, 覆盖末尾元素
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.UNSYNC_WRITE = true              # 使用非同步的写操作, 默认对写操作加锁
+opFlag.DISABLE_POP_METHOD = true        # 禁用队列的Pop()方法
+opFlag.DISABLE_POLL_METHOD = true       # 禁用队列的Poll()方法
+
+# 相同配置的数据表声明
+extra.uniformTables = STORER_TICK_GAP_SZSE
+
+
+#
+# 逐笔重建数据包队列
+#
+[TickCache.table]
+record.dataTypeName = TICK_REBUILDED_PKT
+record.dataTypeSize = 128048
+
+table.type = RingBuf
+table.name = TICK_REBUILDED_PKT
+table.maxItem = ${MDS_ANY_TICK_REBUILD_ADDR:+1000}${MDS_ANY_TICK_REBUILD_ADDR:!100}
+
+opFlag.OVER_WRITE_ON_FULL = true        # 当队列已满时, 覆盖末尾元素
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.UNSYNC_WRITE = false             # 使用非同步的写操作, 默认对写操作加锁
+opFlag.DISABLE_POP_METHOD = true        # 禁用队列的Pop()方法
+opFlag.DISABLE_POLL_METHOD = true       # 禁用队列的Poll()方法
+
+
+############################################################
+# 限价订单簿相关共享内存配置
+############################################################
+
+[OrderBook]
+space.enable = ${IS_ARBITER:!yes}${IS_ARBITER:+no}
+space.maxSize = 15G
+space.maxTableNumber = 16
+space.maxIndexNumber = 16
+space.useHugePage = ${ENABLE_SDB_HUGEPAGE:!no}${ENABLE_SDB_HUGEPAGE:+yes}
+space.cpuset = ${NUMA_NODE1_CPU0}
+
+
+#
+# 订单簿整体统计信息
+#
+[OrderBook.table]
+record.dataTypeName = LOB_TOTAL_STATS
+record.dataTypeSize = 8k
+
+table.type = Raw
+table.name = LOB_TOTAL_STATS
+table.maxItem = 1
+
+
+#
+# 订单簿高频快照行情事件队列
+#
+[OrderBook.table]
+record.dataTypeName = LOB_MKT_EVENT
+record.dataTypeSize = 8
+
+table.type = RingBuf
+table.name = LOB_MKT_EVENT_SSE
+table.maxItem = 10w
+
+opFlag.OVER_WRITE_ON_FULL = true        # 当队列已满时, 覆盖末尾元素
+opFlag.BUSY_WAITING_ABLE = true         # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+opFlag.UNSYNC_WRITE = false             # 使用非同步的写操作, 默认对写操作加锁
+opFlag.DISABLE_POP_METHOD = true        # 禁用队列的Pop()方法
+opFlag.DISABLE_POLL_METHOD = true       # 禁用队列的Poll()方法
+
+# 相同配置的数据表声明
+extra.uniformTables = LOB_MKT_EVENT_SZSE
+
+
+#
+# 订单簿证券信息队列
+#
+[OrderBook.table]
+record.dataTypeName = LOB_SECURITY_INFO
+record.dataTypeSize = 224
+
+table.type = Array
+table.name = LOB_SECURITY_INFO
+table.maxItem = 20w
+table.lowLimit = 10w
+table.maxItemPerChunk = 2w
+table.preAllocChunk = 5
+
+# 索引配置
+index.number = 7
+
+index.1.name = instrId
+index.1.type = DHash
+index.1.isUnique = true
+index.1.fieldOffset = 0
+index.1.fieldSize = 8
+index.1.fieldType = uint64
+
+index.2.name = SSE_InstrId_Map
+index.2.type = Seq
+index.2.isUnique = true
+index.2.fieldOffset = 0
+index.2.fieldSize = 4
+index.2.fieldType = int32
+index.2.isSeparateIndex = true
+index.2.initSize = 100w
+index.2.maxItemPerChunk = 100w
+
+index.3.name = SZSE_InstrId_Map
+index.3.type = Seq
+index.3.isUnique = true
+index.3.fieldOffset = 0
+index.3.fieldSize = 4
+index.3.fieldType = int32
+index.3.isSeparateIndex = true
+index.3.initSize = 100w
+index.3.maxItemPerChunk = 100w
+
+index.4.name = priceLevel
+index.4.type = RBTree_Set
+index.4.isUnique = true
+index.4.fieldOffset = 0
+index.4.fieldSize = 4
+index.4.fieldType = uint32
+index.4.isSeparateIndex = true
+index.4.initSize = 1000w
+index.4.extendedIndexNodeSize = 64
+index.4.subIndexNumber = 20w
+
+index.5.name = SZSE_ApplSeqNum
+index.5.type = Seq_Set
+index.5.isUnique = true
+index.5.fieldOffset = 0
+index.5.fieldSize = 4
+index.5.fieldType = uint32
+index.5.isSeparateIndex = true
+index.5.initSize = 10000w
+index.5.maxItemPerChunk = 100w
+index.5.preAllocChunk = 1
+index.5.extendedIndexNodeSize = 40
+index.5.subIndexNumber = 64
+
+index.6.name = SSE_ApplSeqNum
+index.6.type = Seq_Set
+index.6.isUnique = true
+index.6.fieldOffset = 0
+index.6.fieldSize = 4
+index.6.fieldType = uint32
+index.6.isSeparateIndex = true
+index.6.initSize = 10000w
+index.6.maxItemPerChunk = 100w
+index.6.preAllocChunk = 1
+index.6.extendedIndexNodeSize = 40
+index.6.subIndexNumber = 64
+
+index.7.name = SseOrderNo
+index.7.type = Seq_Set
+index.7.isUnique = true
+index.7.fieldOffset = 0
+index.7.fieldSize = 4
+index.7.fieldType = uint32
+index.7.isSeparateIndex = true
+index.7.initSize = 10000w
+index.7.maxItemPerChunk = 100w
+index.7.preAllocChunk = 1
+index.7.extendedIndexNodeSize = 8
+index.7.subIndexNumber = 64
+
+
+#
+# 订单簿高频快照行情数据
+#
+[OrderBook.table]
+record.dataTypeName = LOB_SNAPSHOT
+record.dataTypeSize = 1016
+
+table.type = MvccArray
+table.name = LOB_SNAPSHOT_SSE
+table.maxSlot = 100w
+table.maxItem = 6w
+table.maxItemPerChunk = 6w
+table.preAllocChunk = 999
+
+# 相同配置的数据表声明
+extra.uniformTables = LOB_SNAPSHOT_SZSE
+
+
+############################################################
+# 配置文件说明
+############################################################
+# ----------------------------------------------------------
+# 1. 支持的长度/数量配置单位
+# ----------------------------------------------------------
+# 1B = 1 Byte               = 1
+# 1K = 1024                 = 1,024
+# 1M = 1024 * 1024          = 1,048,576
+# 1G = 1024 * 1024 * 1024   = 1,073,741,824
+# 1W = 10000                = 10,000
+#
+# ----------------------------------------------------------
+# 2. 数据表类型
+# ----------------------------------------------------------
+# table.type = Array
+# table.type = MvccArray
+# table.type = Queue
+# table.type = RingBuf
+# table.type = PagePool
+# table.type = SlotList
+# table.type = HashMap
+# table.type = MvccMap
+# table.type = Raw
+#
+# ----------------------------------------------------------
+# 3. 索引类型
+# ----------------------------------------------------------
+# index.type = Hash                     # 推荐使用 DHash
+# index.type = DHash
+# index.type = TTree                    # 推荐使用 RBTree
+# index.type = RBTree
+# index.type = RBTree_Set
+# index.type = Seq
+# index.type = Seq_Set
+#
+# ----------------------------------------------------------
+# 4. 操作标志
+# ----------------------------------------------------------
+# opFlag.READONLY = true                # 只读标志, 默认为可写
+# opFlag.ENABLE_VAR = true              # 启用变长数据支持, 默认不支持变长数据
+# opFlag.SYNC_READ = true               # 启用同步的读操作, 默认对读操作不加锁
+# opFlag.UNSYNC_WRITE = true            # 使用非同步的写操作, 默认对写操作加锁
+# opFlag.BLOCK_ON_FULL = true           # 当队列已满时, 阻塞等待
+# opFlag.BLOCK_ON_EMPTY = true          # 当队列已空时, 阻塞等待
+# opFlag.OVER_WRITE_ON_FULL = true      # 当队列已满时, 覆盖末尾元素
+# opFlag.OVER_WRITE_WITH_CHECKER = true # 当队列已满时, 根据检查函数覆盖末尾元素
+# opFlag.BUSY_WAITING_ABLE = true       # 当需要阻塞等待时是否进行忙等待, 默认为关闭
+# opFlag.DISABLE_POP_METHOD = true      # 禁用队列的Pop()方法
+# opFlag.DISABLE_POLL_METHOD = true     # 禁用队列的Poll()方法
+# opFlag.DISABLE_ITERATOR_BLOCK = true  # 禁用迭代器的阻塞方法, 默认允许BlockingNext()方法进行阻塞等待
+# opFlag.ITERATOR_BLOCK_TIMEOUT = 10000 # 迭代器阻塞等待的超时时间 (微秒), 默认为50000微秒
+# opFlag.COND_BLOCK_TIMEOUT = 10000     # 条件变量阻塞等待的超时时间 (微秒), 默认为50000微秒
+#
+# ----------------------------------------------------------
+# 5. 大小写说明
+# ----------------------------------------------------------
+# 1) 区段名称, 形如 "[SHM_TEST3.table]" 或者 "[SHM_TEST3.tables.1]", 区分大小写
+# 2) 配置项关键字, 如 "table.name = ..." 区分大小写
+# 3) 配置项值, 如 "table.name = OC_SET201" 不区分大小写
+############################################################

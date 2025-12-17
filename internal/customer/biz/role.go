@@ -286,7 +286,7 @@ func (uc *RoleUsecase) CreateRole(
 	}
 
 	uc.log.Info(
-		"角色创建成功",
+		"创建角色成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -368,7 +368,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 	}
 
 	uc.log.Info(
-		"角色更新成功",
+		"更新角色成功",
 		zap.Uint32(RoleIDKey, roleID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -532,7 +532,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 	}
 
 	uc.log.Info(
-		"角色策略加载成功",
+		"加载角色策略成功",
 		zap.Int("policy_count", policyCount),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

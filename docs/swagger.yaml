@@ -1,5 +1,28 @@
 definitions:
-  button.ButtonOut:
+  button.ButtonBaseOut:
+    properties:
+      arrange_order:
+        description: 排列顺序
+        example: 1000
+        type: integer
+      descr:
+        description: 描述
+        example: 用户管理
+        type: string
+      id:
+        description: 按钮ID
+        example: 1
+        type: integer
+      is_active:
+        description: 是否激活
+        example: true
+        type: boolean
+      name:
+        description: 名称
+        example: 用户管理
+        type: string
+    type: object
+  button.ButtonDetailOut:
     properties:
       arrange_order:
         description: 排列顺序
@@ -22,7 +45,7 @@ definitions:
         example: true
         type: boolean
       menu:
-        $ref: '#/definitions/menu.MenuOutBase'
+        $ref: '#/definitions/menu.MenuStandardOut'
       name:
         description: 名称
         example: 用户管理
@@ -36,7 +59,26 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
     type: object
-  button.ButtonOutBase:
+  button.ButtonReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/button.ButtonDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  button.ButtonStandardOut:
     properties:
       arrange_order:
         description: 排列顺序
@@ -65,25 +107,6 @@ definitions:
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
-        type: string
-    type: object
-  button.ButtonReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/button.ButtonOut'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
         type: string
     type: object
   button.CreateButtonRequest:
@@ -127,7 +150,7 @@ definitions:
     - menu_id
     - name
     type: object
-  button.PagButtonBaseReply:
+  button.PagButtonReply:
     properties:
       code:
         description: |-
@@ -136,7 +159,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-button_ButtonOutBase'
+        - $ref: '#/definitions/common.Pag-button_ButtonStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -179,6 +202,143 @@ definitions:
     - menu_id
     - name
     type: object
+  colony.CreateOrUpdateMdsColonyRequest:
+    properties:
+      colony_num:
+        description: |-
+          集群号
+          required: true
+          example: "01"
+        maxLength: 2
+        type: string
+      extracted_name:
+        description: |-
+          解压后名称
+          required: true
+          example: "mds"
+        maxLength: 50
+        type: string
+      mon_node_id:
+        description: |-
+          mon节点ID
+          required: true
+          example: 1
+        type: integer
+      package_id:
+        description: |-
+          程序包ID
+          required: true
+          example: 1
+        type: integer
+    required:
+    - colony_num
+    - extracted_name
+    - mon_node_id
+    - package_id
+    type: object
+  colony.MdsColonyBaseOut:
+    properties:
+      colony_num:
+        description: 集群号
+        example: test
+        type: string
+      extracted_name:
+        description: 解压后名称
+        example: ""
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+    type: object
+  colony.MdsColonyDetailOut:
+    properties:
+      colony_num:
+        description: 集群号
+        example: test
+        type: string
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      extracted_name:
+        description: 解压后名称
+        example: ""
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      mon_node:
+        $ref: '#/definitions/node.MonNodeBaseOut'
+      package:
+        $ref: '#/definitions/pkg.PackageStandardOut'
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  colony.MdsColonyReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/colony.MdsColonyDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  colony.MdsColonyStandardOut:
+    properties:
+      colony_num:
+        description: 集群号
+        example: test
+        type: string
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      extracted_name:
+        description: 解压后名称
+        example: ""
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  colony.PagMdsColonyReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-colony_MdsColonyStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
   common.MapAPIReply:
     properties:
       code:
@@ -198,12 +358,12 @@ definitions:
           Example: "success"
         type: string
     type: object
-  common.Pag-button_ButtonOutBase:
+  common.Pag-button_ButtonStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/button.ButtonOutBase'
+          $ref: '#/definitions/button.ButtonStandardOut'
         type: array
       page:
         description: |-
@@ -230,12 +390,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-host_HostOutBase:
+  common.Pag-colony_MdsColonyStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/host.HostOutBase'
+          $ref: '#/definitions/colony.MdsColonyStandardOut'
         type: array
       page:
         description: |-
@@ -262,12 +422,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-menu_MenuOutBase:
+  common.Pag-host_HostStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/menu.MenuOutBase'
+          $ref: '#/definitions/host.HostStandardOut'
         type: array
       page:
         description: |-
@@ -294,12 +454,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-node_MonNodeOut:
+  common.Pag-menu_MenuStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/node.MonNodeOut'
+          $ref: '#/definitions/menu.MenuStandardOut'
         type: array
       page:
         description: |-
@@ -326,12 +486,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-permission_PermissionOutBase:
+  common.Pag-node_MdsNodeStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/permission.PermissionOutBase'
+          $ref: '#/definitions/node.MdsNodeStandardOut'
         type: array
       page:
         description: |-
@@ -358,12 +518,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-pkg_PackageOutBase:
+  common.Pag-node_MonNodeDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/pkg.PackageOutBase'
+          $ref: '#/definitions/node.MonNodeDetailOut'
         type: array
       page:
         description: |-
@@ -390,12 +550,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-record_LoginRecordOutBase:
+  common.Pag-permission_PermissionStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/record.LoginRecordOutBase'
+          $ref: '#/definitions/permission.PermissionStandardOut'
         type: array
       page:
         description: |-
@@ -422,12 +582,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-record_ScriptRecordOut:
+  common.Pag-pkg_PackageStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/record.ScriptRecordOut'
+          $ref: '#/definitions/pkg.PackageStandardOut'
         type: array
       page:
         description: |-
@@ -454,12 +614,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-role_RoleOutBase:
+  common.Pag-record_LoginRecordStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/role.RoleOutBase'
+          $ref: '#/definitions/record.LoginRecordStandardOut'
         type: array
       page:
         description: |-
@@ -486,12 +646,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-schedule_ScheduleOut:
+  common.Pag-record_ScriptRecordDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/schedule.ScheduleOut'
+          $ref: '#/definitions/record.ScriptRecordDetailOut'
         type: array
       page:
         description: |-
@@ -518,12 +678,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-script_ScriptOutBase:
+  common.Pag-role_RoleStandardOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/script.ScriptOutBase'
+          $ref: '#/definitions/role.RoleStandardOut'
         type: array
       page:
         description: |-
@@ -550,12 +710,76 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-user_UserOut:
+  common.Pag-schedule_ScheduleDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/user.UserOut'
+          $ref: '#/definitions/schedule.ScheduleDetailOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-script_ScriptStandardOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/script.ScriptStandardOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-user_UserDetailOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/user.UserDetailOut'
         type: array
       page:
         description: |-
@@ -594,15 +818,8 @@ definitions:
       reason:
         type: string
     type: object
-  host.CreateHosrRequest:
+  host.CreateOrUpdateHosrRequest:
     properties:
-      ip_addr:
-        description: |-
-          ip地址，最大长度108
-          Required: true
-          Max length: 108
-        maxLength: 108
-        type: string
       label:
         description: |-
           标签，最大长度50
@@ -617,18 +834,6 @@ definitions:
           Max length: 50
         maxLength: 50
         type: string
-      password:
-        description: |-
-          密码，最大长度150
-          Required: true
-          Max length: 150
-        maxLength: 150
-        type: string
-      port:
-        description: |-
-          端口，必填
-          Required: true
-        type: integer
       py_path:
         description: |-
           python路径，最大长度254
@@ -642,7 +847,26 @@ definitions:
           Max length: 254
         maxLength: 254
         type: string
-      username:
+      ssh_ip:
+        description: |-
+          ip地址，最大长度108
+          Required: true
+          Max length: 108
+        maxLength: 108
+        type: string
+      ssh_password:
+        description: |-
+          密码，最大长度150
+          Required: true
+          Max length: 150
+        maxLength: 150
+        type: string
+      ssh_port:
+        description: |-
+          端口，必填
+          Required: true
+        type: integer
+      ssh_user:
         description: |-
           用户名，最大长度50
           Required: true
@@ -650,27 +874,19 @@ definitions:
         maxLength: 50
         type: string
     required:
-    - ip_addr
     - label
     - name
-    - password
-    - port
-    - username
+    - ssh_ip
+    - ssh_password
+    - ssh_port
+    - ssh_user
     type: object
-  host.HostOutBase:
+  host.HostBaseOut:
     properties:
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
       id:
         description: 主机ID
         example: 1
         type: integer
-      ip_addr:
-        description: IP地址
-        example: 192.168.1.1
-        type: string
       label:
         description: 标签
         example: artweb
@@ -679,10 +895,6 @@ definitions:
         description: 名称
         example: artweb主机
         type: string
-      port:
-        description: 端口
-        example: 22
-        type: integer
       py_path:
         description: Python路径
         example: /usr/bin/python3
@@ -691,11 +903,15 @@ definitions:
         description: 备注
         example: 测试
         type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
+      ssh_ip:
+        description: IP地址
+        example: 192.168.1.1
         type: string
-      username:
+      ssh_port:
+        description: 端口
+        example: 22
+        type: integer
+      ssh_user:
         description: 用户名
         example: root
         type: string
@@ -709,7 +925,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/host.HostOutBase'
+        - $ref: '#/definitions/host.HostStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -717,6 +933,49 @@ definitions:
         description: |-
           信息
           Example: "success"
+        type: string
+    type: object
+  host.HostStandardOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      id:
+        description: 主机ID
+        example: 1
+        type: integer
+      label:
+        description: 标签
+        example: artweb
+        type: string
+      name:
+        description: 名称
+        example: artweb主机
+        type: string
+      py_path:
+        description: Python路径
+        example: /usr/bin/python3
+        type: string
+      remark:
+        description: 备注
+        example: 测试
+        type: string
+      ssh_ip:
+        description: IP地址
+        example: 192.168.1.1
+        type: string
+      ssh_port:
+        description: 端口
+        example: 22
+        type: integer
+      ssh_user:
+        description: 用户名
+        example: root
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
         type: string
     type: object
   host.PagHostReply:
@@ -728,7 +987,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-host_HostOutBase'
+        - $ref: '#/definitions/common.Pag-host_HostStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -737,70 +996,6 @@ definitions:
           信息
           Example: "success"
         type: string
-    type: object
-  host.UpdateHostRequest:
-    properties:
-      ip_addr:
-        description: |-
-          ip地址，最大长度108
-          Required: true
-          Max length: 108
-        maxLength: 108
-        type: string
-      label:
-        description: |-
-          标签，最大长度50
-          Required: true
-          Max length: 50
-        maxLength: 50
-        type: string
-      name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
-        maxLength: 50
-        type: string
-      password:
-        description: |-
-          密码，最大长度150
-          Required: true
-          Max length: 150
-        maxLength: 150
-        type: string
-      port:
-        description: |-
-          端口，必填
-          Required: true
-        type: integer
-      py_path:
-        description: |-
-          python路径，最大长度254
-          Required: true
-          Max length: 254
-        maxLength: 254
-        type: string
-      remark:
-        description: |-
-          备注，最大长度254
-          Max length: 254
-        maxLength: 254
-        type: string
-      username:
-        description: |-
-          用户名，最大长度50
-          Required: true
-          Max length: 50
-        maxLength: 50
-        type: string
-    required:
-    - ip_addr
-    - label
-    - name
-    - password
-    - port
-    - py_path
-    - username
     type: object
   menu.CreateMenuRequest:
     properties:
@@ -863,7 +1058,7 @@ definitions:
     - name
     - path
     type: object
-  menu.MenuOut:
+  menu.MenuDetailOut:
     properties:
       arrange_order:
         description: 排列顺序
@@ -894,7 +1089,7 @@ definitions:
         example: 用户管理
         type: string
       parent:
-        $ref: '#/definitions/menu.MenuOutBase'
+        $ref: '#/definitions/menu.MenuStandardOut'
       path:
         description: 前端路由
         example: /api/v1/users
@@ -912,7 +1107,26 @@ definitions:
         example: GET
         type: string
     type: object
-  menu.MenuOutBase:
+  menu.MenuReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/menu.MenuDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  menu.MenuStandardOut:
     properties:
       arrange_order:
         description: 排列顺序
@@ -955,25 +1169,6 @@ definitions:
         example: GET
         type: string
     type: object
-  menu.MenuReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/menu.MenuOut'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
   menu.MetaSchemas:
     properties:
       icon:
@@ -985,7 +1180,7 @@ definitions:
         example: 用户管理
         type: string
     type: object
-  menu.PagMenuBaseReply:
+  menu.PagMenuReply:
     properties:
       code:
         description: |-
@@ -994,7 +1189,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-menu_MenuOutBase'
+        - $ref: '#/definitions/common.Pag-menu_MenuStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1058,7 +1253,43 @@ definitions:
     - name
     - path
     type: object
-  node.CreateMonNodeRequest:
+  node.CreateOrUpdateMdsNodeRequest:
+    properties:
+      host_id:
+        description: |-
+          主机ID
+          required: true
+          example: 1
+        type: integer
+      is_enable:
+        description: |-
+          是否启用
+          required: true
+          example: true
+        type: boolean
+      mds_colony_id:
+        description: |-
+          mds集群ID
+          required: true
+          example: 1
+        type: integer
+      node_role:
+        description: |-
+          节点角色
+          required: true
+          example: "01"
+        enum:
+        - master
+        - follow
+        - arbiter
+        type: string
+    required:
+    - host_id
+    - is_enable
+    - mds_colony_id
+    - node_role
+    type: object
+  node.CreateOrUpdateMonNodeRequest:
     properties:
       deploy_path:
         description: |-
@@ -1103,7 +1334,101 @@ definitions:
     - name
     - outport_path
     type: object
-  node.MonNodeOut:
+  node.MdsNodeDetailOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      host:
+        $ref: '#/definitions/host.HostBaseOut'
+      id:
+        description: ID
+        example: 1
+        type: integer
+      is_enable:
+        description: 是否启用
+        type: boolean
+      mds_colony:
+        $ref: '#/definitions/colony.MdsColonyBaseOut'
+      node_role:
+        description: 节点角色
+        example: master
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  node.MdsNodeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/node.MdsNodeDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  node.MdsNodeStandardOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      is_enable:
+        description: 是否启用
+        type: boolean
+      node_role:
+        description: 节点角色
+        example: master
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  node.MonNodeBaseOut:
+    properties:
+      deploy_path:
+        description: 部署路径
+        example: ""
+        type: string
+      id:
+        description: 计划任务ID
+        example: 1
+        type: integer
+      java_home:
+        description: JAVA_HOME
+        example: ""
+        type: string
+      name:
+        description: 名称
+        example: test
+        type: string
+      outport_path:
+        description: 导出路径
+        example: ""
+        type: string
+      url:
+        description: URL地址
+        example: http://192.168.11.189:8080
+        type: string
+    type: object
+  node.MonNodeDetailOut:
     properties:
       created_at:
         description: 创建时间
@@ -1114,7 +1439,7 @@ definitions:
         example: ""
         type: string
       host:
-        $ref: '#/definitions/host.HostOutBase'
+        $ref: '#/definitions/host.HostBaseOut'
       id:
         description: 计划任务ID
         example: 1
@@ -1149,7 +1474,26 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/node.MonNodeOut'
+        - $ref: '#/definitions/node.MonNodeDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  node.PagMdsNodeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-node_MdsNodeStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1168,7 +1512,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-node_MonNodeOut'
+        - $ref: '#/definitions/common.Pag-node_MonNodeDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1177,51 +1521,6 @@ definitions:
           信息
           Example: "success"
         type: string
-    type: object
-  node.UpdateMonNodeRequest:
-    properties:
-      deploy_path:
-        description: |-
-          部署路径
-          required: true
-          example: "/home/monuser/mon"
-        type: string
-      host_id:
-        description: |-
-          主机ID
-          required: true
-          example: 1
-        type: integer
-      java_home:
-        description: |-
-          JAVA_HOME
-          required: true
-          example: "/home/monuser/jdk-11.0.1"
-        type: string
-      name:
-        description: |-
-          名称
-          required: true
-          example: "mon上海节点"
-        maxLength: 50
-        type: string
-      outport_path:
-        description: |-
-          导出路径
-          required: true
-          example: "/mnt/quant360/import/mon"
-        type: string
-      url:
-        description: |-
-          URL地址
-          required: true
-          example: "http://192.168.11.189:8080/mon"
-        type: string
-    required:
-    - deploy_path
-    - host_id
-    - name
-    - outport_path
     type: object
   permission.CreatePermissionRequest:
     properties:
@@ -1279,7 +1578,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-permission_PermissionOutBase'
+        - $ref: '#/definitions/common.Pag-permission_PermissionStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1289,7 +1588,26 @@ definitions:
           Example: "success"
         type: string
     type: object
-  permission.PermissionOutBase:
+  permission.PermissionReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/permission.PermissionStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  permission.PermissionStandardOut:
     properties:
       created_at:
         description: 创建时间
@@ -1318,25 +1636,6 @@ definitions:
       url:
         description: HTTP路径
         example: /api/v1/users
-        type: string
-    type: object
-  permission.PermissionReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/permission.PermissionOutBase'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
         type: string
     type: object
   permission.UpdatePermissionRequest:
@@ -1379,7 +1678,26 @@ definitions:
     - method
     - url
     type: object
-  pkg.PackageOutBase:
+  pkg.PackageReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/pkg.PackageStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  pkg.PackageStandardOut:
     properties:
       filename:
         description: 名称
@@ -1402,25 +1720,6 @@ definitions:
         example: 0.17.0.0.1
         type: string
     type: object
-  pkg.PackageReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/pkg.PackageOutBase'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
   pkg.PagPackageReply:
     properties:
       code:
@@ -1430,7 +1729,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-pkg_PackageOutBase'
+        - $ref: '#/definitions/common.Pag-pkg_PackageStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1477,7 +1776,7 @@ definitions:
     - script_id
     - timeout
     type: object
-  record.LoginRecordOutBase:
+  record.LoginRecordStandardOut:
     properties:
       id:
         description: 用户ID
@@ -1514,7 +1813,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-record_LoginRecordOutBase'
+        - $ref: '#/definitions/common.Pag-record_LoginRecordStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1533,7 +1832,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-record_ScriptRecordOut'
+        - $ref: '#/definitions/common.Pag-record_ScriptRecordDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1543,7 +1842,7 @@ definitions:
           Example: "success"
         type: string
     type: object
-  record.ScriptRecordOut:
+  record.ScriptRecordDetailOut:
     properties:
       command_args:
         description: 命令行参数(JSON数组)
@@ -1571,7 +1870,7 @@ definitions:
         type: integer
       script:
         allOf:
-        - $ref: '#/definitions/script.ScriptOutBase'
+        - $ref: '#/definitions/script.ScriptStandardOut'
         description: 脚本信息
       status:
         description: 执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)
@@ -1607,7 +1906,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/record.ScriptRecordOut'
+        - $ref: '#/definitions/record.ScriptRecordDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1617,7 +1916,7 @@ definitions:
           Example: "success"
         type: string
     type: object
-  role.CreateRoleRequest:
+  role.CreateOrUpdateRoleRequest:
     properties:
       button_ids:
         description: 关联按钮ID列表，可选
@@ -1650,7 +1949,7 @@ definitions:
     required:
     - name
     type: object
-  role.PagRoleBaseReply:
+  role.PagRoleReply:
     properties:
       code:
         description: |-
@@ -1659,7 +1958,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-role_RoleOutBase'
+        - $ref: '#/definitions/common.Pag-role_RoleStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1669,80 +1968,22 @@ definitions:
           Example: "success"
         type: string
     type: object
-  role.RoleMenuPerm:
+  role.RoleBaseOut:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
-      buttons:
-        description: 按钮
-        items:
-          $ref: '#/definitions/button.ButtonOutBase'
-        type: array
-      children:
-        description: 子菜单
-        items:
-          $ref: '#/definitions/role.RoleMenuPerm'
-        type: array
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
       descr:
         description: 描述
         example: 用户管理
         type: string
       id:
-        description: 菜单ID
+        description: 角色ID
         example: 1
         type: integer
-      is_active:
-        description: 是否激活
-        example: true
-        type: boolean
-      meta:
-        allOf:
-        - $ref: '#/definitions/menu.MetaSchemas'
-        description: 菜单信息
       name:
         description: 名称
         example: 用户管理
         type: string
-      path:
-        description: 前端路由
-        example: /api/v1/users
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      xomponent:
-        description: 组件路径
-        example: GET
-        type: string
     type: object
-  role.RoleMenuTreeReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        description: |-
-          数据
-          可以是任意类型的数据
-        items:
-          $ref: '#/definitions/role.RoleMenuPerm'
-        type: array
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
-  role.RoleOut:
+  role.RoleDetailOut:
     properties:
       buttons:
         items:
@@ -1777,7 +2018,91 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
     type: object
-  role.RoleOutBase:
+  role.RoleMenuPerm:
+    properties:
+      arrange_order:
+        description: 排列顺序
+        example: 1000
+        type: integer
+      buttons:
+        description: 按钮
+        items:
+          $ref: '#/definitions/button.ButtonBaseOut'
+        type: array
+      children:
+        description: 子菜单
+        items:
+          $ref: '#/definitions/role.RoleMenuPerm'
+        type: array
+      descr:
+        description: 描述
+        example: 用户管理
+        type: string
+      id:
+        description: 菜单ID
+        example: 1
+        type: integer
+      is_active:
+        description: 是否激活
+        example: true
+        type: boolean
+      meta:
+        allOf:
+        - $ref: '#/definitions/menu.MetaSchemas'
+        description: 菜单信息
+      name:
+        description: 名称
+        example: 用户管理
+        type: string
+      path:
+        description: 前端路由
+        example: /api/v1/users
+        type: string
+      xomponent:
+        description: 组件路径
+        example: GET
+        type: string
+    type: object
+  role.RoleMenuTreeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        description: |-
+          数据
+          可以是任意类型的数据
+        items:
+          $ref: '#/definitions/role.RoleMenuPerm'
+        type: array
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  role.RoleReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/role.RoleDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  role.RoleStandardOut:
     properties:
       created_at:
         description: 创建时间
@@ -1799,58 +2124,6 @@ definitions:
         description: 更新时间
         example: "2023-01-01 12:00:00"
         type: string
-    type: object
-  role.RoleReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/role.RoleOut'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
-  role.UpdateRoleRequest:
-    properties:
-      button_ids:
-        description: 关联按钮ID列表，可选
-        items:
-          type: integer
-        type: array
-      descr:
-        description: |-
-          角色描述信息，可选，最大长度254
-          Max length: 254
-        maxLength: 254
-        type: string
-      menu_ids:
-        description: 关联菜单ID列表，可选
-        items:
-          type: integer
-        type: array
-      name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
-        maxLength: 50
-        type: string
-      permission_ids:
-        description: 关联权限ID列表，可选
-        items:
-          type: integer
-        type: array
-    required:
-    - name
     type: object
   schedule.CreateScheduleRequest:
     properties:
@@ -1937,7 +2210,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-schedule_ScheduleOut'
+        - $ref: '#/definitions/common.Pag-schedule_ScheduleDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1947,7 +2220,7 @@ definitions:
           Example: "success"
         type: string
     type: object
-  schedule.ScheduleOut:
+  schedule.ScheduleDetailOut:
     properties:
       command_args:
         description: 命令行参数
@@ -1975,7 +2248,7 @@ definitions:
         type: string
       script:
         allOf:
-        - $ref: '#/definitions/script.ScriptOutBase'
+        - $ref: '#/definitions/script.ScriptStandardOut'
         description: 脚本
       specification:
         description: Cron 表达式
@@ -2007,7 +2280,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/schedule.ScheduleOut'
+        - $ref: '#/definitions/schedule.ScheduleDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -2102,7 +2375,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-script_ScriptOutBase'
+        - $ref: '#/definitions/common.Pag-script_ScriptStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -2112,7 +2385,26 @@ definitions:
           Example: "success"
         type: string
     type: object
-  script.ScriptOutBase:
+  script.ScriptReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/script.ScriptStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  script.ScriptStandardOut:
     properties:
       created_at:
         description: 创建时间
@@ -2157,25 +2449,6 @@ definitions:
       username:
         description: 用户名
         example: admin
-        type: string
-    type: object
-  script.ScriptReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/script.ScriptOutBase'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
         type: string
     type: object
   user.CreateUserRequest:
@@ -2261,7 +2534,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-user_UserOut'
+        - $ref: '#/definitions/common.Pag-user_UserDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -2338,7 +2611,7 @@ definitions:
     - role_id
     - username
     type: object
-  user.UserOut:
+  user.UserDetailOut:
     properties:
       created_at:
         description: 创建时间
@@ -2357,7 +2630,7 @@ definitions:
         example: false
         type: boolean
       role:
-        $ref: '#/definitions/role.RoleOutBase'
+        $ref: '#/definitions/role.RoleBaseOut'
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -2376,7 +2649,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/user.UserOut'
+        - $ref: '#/definitions/user.UserDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -2428,7 +2701,7 @@ paths:
         "200":
           description: 成功返回按钮列表
           schema:
-            $ref: '#/definitions/button.PagButtonBaseReply'
+            $ref: '#/definitions/button.PagButtonReply'
         "400":
           description: 请求参数错误
           schema:
@@ -2773,7 +3046,7 @@ paths:
         "200":
           description: 成功返回菜单列表
           schema:
-            $ref: '#/definitions/menu.PagMenuBaseReply'
+            $ref: '#/definitions/menu.PagMenuReply'
         "400":
           description: 请求参数错误
           schema:
@@ -3149,7 +3422,7 @@ paths:
         "200":
           description: 成功返回角色列表
           schema:
-            $ref: '#/definitions/role.PagRoleBaseReply'
+            $ref: '#/definitions/role.PagRoleReply'
         "400":
           description: 请求参数错误
           schema:
@@ -3173,7 +3446,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/role.CreateRoleRequest'
+          $ref: '#/definitions/role.CreateOrUpdateRoleRequest'
       produces:
       - application/json
       responses:
@@ -3278,7 +3551,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/role.UpdateRoleRequest'
+          $ref: '#/definitions/role.CreateOrUpdateRoleRequest'
       produces:
       - application/json
       responses:
@@ -4235,6 +4508,384 @@ paths:
       summary: 下载脚本
       tags:
       - 脚本管理
+  /api/v1/mds/colony:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询mds集群列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: mds集群名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds集群列表
+          schema:
+            $ref: '#/definitions/colony.PagMdsColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mds集群列表
+      tags:
+      - mds集群管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于创建新的mds集群
+      parameters:
+      - description: 创建mds集群请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/colony.CreateOrUpdateMdsColonyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds集群信息
+          schema:
+            $ref: '#/definitions/colony.MdsColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建mds集群
+      tags:
+      - mds集群管理
+  /api/v1/mds/colony/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的mds集群
+      parameters:
+      - description: mds集群编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除mds集群
+      tags:
+      - mds集群管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的mds集群详情
+      parameters:
+      - description: mds集群编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds集群信息
+          schema:
+            $ref: '#/definitions/colony.MdsColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mds集群详情
+      tags:
+      - mds集群管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的mds集群
+      parameters:
+      - description: mds集群编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新mds集群请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/colony.CreateOrUpdateMdsColonyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds集群信息
+          schema:
+            $ref: '#/definitions/colony.MdsColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新mds集群
+      tags:
+      - mds集群管理
+  /api/v1/mds/node:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询mds节点列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: mds节点名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds节点列表
+          schema:
+            $ref: '#/definitions/node.PagMdsNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mds节点列表
+      tags:
+      - mds节点管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于创建新的mds节点
+      parameters:
+      - description: 创建mds节点请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/node.CreateOrUpdateMdsNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds节点信息
+          schema:
+            $ref: '#/definitions/node.MdsNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建mds节点
+      tags:
+      - mds节点管理
+  /api/v1/mds/node/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的mds节点
+      parameters:
+      - description: mds节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除mds节点
+      tags:
+      - mds节点管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的mds节点详情
+      parameters:
+      - description: mds节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds节点信息
+          schema:
+            $ref: '#/definitions/node.MdsNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mds节点详情
+      tags:
+      - mds节点管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的mds节点
+      parameters:
+      - description: mds节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新mds节点请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/node.CreateOrUpdateMdsNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds节点信息
+          schema:
+            $ref: '#/definitions/node.MdsNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新mds节点
+      tags:
+      - mds节点管理
   /api/v1/mon/node:
     get:
       consumes:
@@ -4294,7 +4945,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/node.CreateMonNodeRequest'
+          $ref: '#/definitions/node.CreateOrUpdateMonNodeRequest'
       produces:
       - application/json
       responses:
@@ -4399,7 +5050,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/node.UpdateMonNodeRequest'
+          $ref: '#/definitions/node.CreateOrUpdateMonNodeRequest'
       produces:
       - application/json
       responses:
@@ -4485,7 +5136,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/host.CreateHosrRequest'
+          $ref: '#/definitions/host.CreateOrUpdateHosrRequest'
       produces:
       - application/json
       responses:
@@ -4592,7 +5243,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/host.UpdateHostRequest'
+          $ref: '#/definitions/host.CreateOrUpdateHosrRequest'
       produces:
       - application/json
       responses:

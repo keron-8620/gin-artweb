@@ -4,8 +4,8 @@ import (
 	"gin-artweb/api/common"
 )
 
-// PackageOutBase 程序包基础信息
-type PackageOutBase struct {
+// PackageStandardOut 程序包基础信息
+type PackageStandardOut struct {
 	// 主机ID
 	ID uint32 `json:"id" example:"1"`
 	// 名称
@@ -19,7 +19,7 @@ type PackageOutBase struct {
 }
 
 // PackageReply 程序包响应结构
-type PackageReply = common.APIReply[PackageOutBase]
+type PackageReply = common.APIReply[PackageStandardOut]
 
 // PagPackageReply程序包的分页响应结构
-type PagPackageReply = common.APIReply[*common.Pag[PackageOutBase]]
+type PagPackageReply = common.APIReply[*common.Pag[PackageStandardOut]]

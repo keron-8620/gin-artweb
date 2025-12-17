@@ -12,25 +12,25 @@ import (
 	"gorm.io/gorm"
 )
 
-type nodeRepo struct {
+type monNodeRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
 	timeouts *database.DBTimeout
 }
 
-func NewNodeRepo(
+func NewMonNodeRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *database.DBTimeout,
-) biz.NodeRepo {
-	return &nodeRepo{
+) biz.MonNodeRepo {
+	return &monNodeRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
 	}
 }
 
-func (r *nodeRepo) CreateModel(ctx context.Context, m *biz.NodeModel) error {
+func (r *monNodeRepo) CreateModel(ctx context.Context, m *biz.MonNodeModel) error {
 	r.log.Debug(
 		"开始创建mon模型",
 		zap.Object(database.ModelKey, m),
@@ -39,7 +39,7 @@ func (r *nodeRepo) CreateModel(ctx context.Context, m *biz.NodeModel) error {
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.NodeModel{}, m, nil); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &biz.MonNodeModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建mon模型失败",
 			zap.Error(err),
@@ -58,7 +58,7 @@ func (r *nodeRepo) CreateModel(ctx context.Context, m *biz.NodeModel) error {
 	return nil
 }
 
-func (r *nodeRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *monNodeRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
 	r.log.Debug(
 		"开始更新mon模型",
 		zap.Any(database.UpdateDataKey, data),
@@ -68,7 +68,7 @@ func (r *nodeRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &biz.NodeModel{}, data, nil, conds...); err != nil {
+	if err := database.DBUpdate(dbCtx, r.gormDB, &biz.MonNodeModel{}, data, nil, conds...); err != nil {
 		r.log.Error(
 			"更新mon模型失败",
 			zap.Error(err),
@@ -89,7 +89,7 @@ func (r *nodeRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 	return nil
 }
 
-func (r *nodeRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *monNodeRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除mon模型",
 		zap.Any(database.ConditionKey, conds),
@@ -98,7 +98,7 @@ func (r *nodeRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &biz.NodeModel{}, conds...); err != nil {
+	if err := database.DBDelete(dbCtx, r.gormDB, &biz.MonNodeModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除mon模型失败",
 			zap.Error(err),
@@ -117,18 +117,18 @@ func (r *nodeRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	return nil
 }
 
-func (r *nodeRepo) FindModel(
+func (r *monNodeRepo) FindModel(
 	ctx context.Context,
 	preloads []string,
 	conds ...any,
-) (*biz.NodeModel, error) {
+) (*biz.MonNodeModel, error) {
 	r.log.Debug(
 		"开始查询mon模型",
 		zap.Any(database.ConditionKey, conds),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
-	var m biz.NodeModel
+	var m biz.MonNodeModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
 	if err := database.DBFind(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
@@ -151,20 +151,20 @@ func (r *nodeRepo) FindModel(
 	return &m, nil
 }
 
-func (r *nodeRepo) ListModel(
+func (r *monNodeRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]biz.NodeModel, error) {
+) (int64, *[]biz.MonNodeModel, error) {
 	r.log.Debug(
 		"开始查询mon模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
-	var ms []biz.NodeModel
+	var ms []biz.MonNodeModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	count, err := database.DBList(dbCtx, r.gormDB, &biz.NodeModel{}, &ms, qp)
+	count, err := database.DBList(dbCtx, r.gormDB, &biz.MonNodeModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询mon模型列表失败",

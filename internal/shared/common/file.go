@@ -1,16 +1,15 @@
 package common
 
 import (
-	"io/fs"
 	"mime/multipart"
 	"net/url"
 	"os"
 	"path/filepath"
 
-	"gin-artweb/internal/shared/errors"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"gin-artweb/internal/shared/errors"
 )
 
 func UploadFile(
@@ -19,7 +18,7 @@ func UploadFile(
 	maxSize int64,
 	savePath string,
 	upFile *multipart.FileHeader,
-	perm ...fs.FileMode,
+	filePerm os.FileMode,
 ) *errors.Error {
 	if upFile.Size > maxSize {
 		logger.Error(
@@ -35,7 +34,18 @@ func UploadFile(
 			},
 		)
 	}
-	if err := ctx.SaveUploadedFile(upFile, savePath, perm...); err != nil {
+
+	if err := os.MkdirAll(filepath.Dir(savePath), 0o755); err != nil {
+		logger.Error(
+			"创建上传文件目录失败",
+			zap.Error(err),
+			zap.String("save_path", savePath),
+			zap.String(TraceIDKey, GetTraceID(ctx)),
+		)
+		return errors.ErrUploadFile.WithCause(err)
+	}
+
+	if err := ctx.SaveUploadedFile(upFile, savePath); err != nil {
 		logger.Error(
 			"保存上传文件失败",
 			zap.Error(err),
@@ -43,6 +53,17 @@ func UploadFile(
 			zap.String(TraceIDKey, GetTraceID(ctx)),
 		)
 		return errors.ErrUploadFile.WithCause(err)
+	}
+
+	if err := os.Chmod(savePath, filePerm); err != nil {
+		logger.Error(
+			"设置文件权限失败",
+			zap.Error(err),
+			zap.String("save_path", savePath),
+			zap.String("file_perm", filePerm.String()),
+			zap.String(TraceIDKey, GetTraceID(ctx)),
+		)
+		return errors.ErrSetFilePermission.WithCause(err)
 	}
 	return nil
 }

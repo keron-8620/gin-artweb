@@ -9,7 +9,7 @@ import (
 
 func dbAutoMigrate(db *gorm.DB, logger *zap.Logger) error {
 	if err := db.AutoMigrate(
-		&biz.NodeModel{},
+		&biz.MonNodeModel{},
 	); err != nil {
 		logger.Error(
 			"数据库自动迁移resource模型失败",

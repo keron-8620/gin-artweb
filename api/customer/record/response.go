@@ -2,8 +2,8 @@ package record
 
 import "gin-artweb/api/common"
 
-// LoginRecordOutBase登陆记录信息
-type LoginRecordOutBase struct {
+// LoginRecordStandardOut登陆记录信息
+type LoginRecordStandardOut struct {
 	// 用户ID
 	ID uint32 `json:"id" example:"1"`
 	// 名称
@@ -19,4 +19,4 @@ type LoginRecordOutBase struct {
 }
 
 // PagUserReply 用户的分页响应结构
-type PagLoginRecordReply = common.APIReply[*common.Pag[LoginRecordOutBase]]
+type PagLoginRecordReply = common.APIReply[*common.Pag[LoginRecordStandardOut]]

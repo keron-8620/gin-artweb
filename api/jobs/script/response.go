@@ -4,8 +4,8 @@ import (
 	"gin-artweb/api/common"
 )
 
-// ScriptOutBase 程序包基础信息
-type ScriptOutBase struct {
+// ScriptStandardOut 程序包基础信息
+type ScriptStandardOut struct {
 	// 脚本ID
 	ID uint32 `json:"id" example:"1"`
 	// 创建时间
@@ -31,7 +31,7 @@ type ScriptOutBase struct {
 }
 
 // ScriptReply 程序包响应结构
-type ScriptReply = common.APIReply[ScriptOutBase]
+type ScriptReply = common.APIReply[ScriptStandardOut]
 
 // PagScriptReply程序包的分页响应结构
-type PagScriptReply = common.APIReply[*common.Pag[ScriptOutBase]]
+type PagScriptReply = common.APIReply[*common.Pag[ScriptStandardOut]]

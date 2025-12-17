@@ -5,7 +5,7 @@ import (
 	"gin-artweb/api/jobs/script"
 )
 
-type ScheduleOutBase struct {
+type ScheduleStandardOut struct {
 	// 计划任务ID
 	ID uint32 `json:"id" example:"1"`
 	// 创建时间
@@ -30,14 +30,14 @@ type ScheduleOutBase struct {
 	Username string `json:"username" example:"admin"`
 }
 
-type ScheduleOut struct {
-	ScheduleOutBase
+type ScheduleDetailOut struct {
+	ScheduleStandardOut
 	// 脚本
-	Script *script.ScriptOutBase `json:"script"`
+	Script *script.ScriptStandardOut `json:"script"`
 }
 
 // ScheduleReply 程序包响应结构
-type ScheduleReply = common.APIReply[ScheduleOut]
+type ScheduleReply = common.APIReply[ScheduleDetailOut]
 
 // PagScheduleReply 程序包的分页响应结构
-type PagScheduleReply = common.APIReply[*common.Pag[ScheduleOut]]
+type PagScheduleReply = common.APIReply[*common.Pag[ScheduleDetailOut]]

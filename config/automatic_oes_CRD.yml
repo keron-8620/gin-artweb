@@ -1,0 +1,241 @@
+###################### 说明  ####################
+#  带{{}}， 特殊符号和数字的变量的值，需要加英文双引号， 如 正确： a: "b/{{ c }}", 错误： a: b/{{ c }}
+#  集群设置和系统设置后需要执行cmd/configure.sh， 其他配置修改即生效
+#  为了保证生成的定时任务时间格式上统一， 请添加英文双引号
+#  时间设置如下：
+#  {{ curr_date }}      当前程序获取时间， 可在TradingDate.yml中配置，格式%Y%m%d
+#  {{ pre_trd_date }}   当前程序获取时间的上一个交易日， 格式%Y%m%d
+#  {{ next_trd_date }}   当前程序获取时间的下一个交易日， 格式%Y%m%d
+#################################################
+
+
+############### 系统配置 ########################
+broker: xxx                                           # 券商配置
+counter: xxx                                          # 柜台设置 如: HS, DD, JZ_W, JZ_U
+trd_check: yes                                        # 校验当前是否为交易日
+############### 系统配置 ########################
+
+################# mon 相关配置 ##################
+mon_cp_to_conf_files:                                  # mon 拷贝至conf目录下列表， name 支持使用正则
+  - "system.conf.sse_tdgw"
+  - "system.conf.szse_tgw"
+
+mon_check_files:                                       # mon获取检查文件列表
+  - "ClientInfo.csv"
+  - "TradingCalendar.csv"
+  - "BranchInfo.csv"
+  - "TradingDate.txt"
+  - "BrokerParams.conf"
+  - "CrdBrokerParams.conf"
+  - "CrdCommsModel.csv"
+  - "FixedFeeInfo.csv"
+  - "IpFilter.csv"
+  - "SecurityParams.csv"
+  - "SecurityRiskLevel.csv"
+#  - "SecurityShares.csv"
+  - "CrdConcentrateRateRule.csv"
+  - "CrdCustComms.csv"
+  - "ClientQuota.csv"
+  - "CrdConcentrateScaleRule.csv"
+  - "CrdCustConcentrateRateRule.csv"
+  - "CrdCustConcentrateScaleRule.csv"
+#  - "CrdCustInterest.csv"
+#  - "CrdHighLiquiditySecurityList.csv"
+  - "CrdInterestModel.csv"
+  - "CrdSecuritySector.csv"
+  - "CrdSecuritySectorDetail.csv"
+#  - "CustTradingBlocklist.csv"
+################# mon 相关配置 ##################
+
+################# counter 相关配置 ##############
+counter_fetch_cmd_args: "-R"     # 如果 xcounter 0.17.5版本以后此配置项为“-R”, 之前的版本为“”，不可不填！！！
+counter_freeze_cmd_args: "-s1"   # 柜台冻结命令参数,顶点柜台: -CH, 恒生柜台: -s1, 金证柜台 暂无
+counter_thaw_cmd_args: "-Y -s0"  # 柜台解冻命令参数,顶点柜台: -CHY -s0, 恒生柜台: -Y -s0, 金证柜台 暂无
+capital_flow_log_file: "CounterAllot.{{ curr_date }}.falog"  # 两地交易流水日志
+
+#### 主柜柜台两地交易单边冻结配置
+is_enable_counter_unilateral_freeze: no               # 是否启用主柜单边冻结(仅master启用)
+counter_slaves:
+  - slave_host: "xxx.xxx.xxx.xxx"
+    slave_port: 22
+    slave_user: "ansible"
+    slave_path: "/path/to/save"
+
+counter_check_files:                                   # 主柜台获取检查文件列表
+  - "CrdCashAcct{{ curr_date[4:] }}.csv"
+  - "CrdCashAsset{{ curr_date[4:] }}.csv"
+  - "CrdCollateralInfo{{ curr_date[4:] }}.csv"
+  - "CrdCashPosition{{ curr_date[4:] }}.csv"
+  - "CrdCustCollateralInfo{{ curr_date[4:] }}.csv"
+  - "CrdCustMaintenanceParams{{ curr_date[4:] }}.csv"
+  - "CrdCustSpecialPositionFee{{ curr_date[4:] }}.csv"
+  - "CrdCustUnderlyingInfo{{ curr_date[4:] }}.csv"
+  - "CrdSecurityPosition{{ curr_date[4:] }}.csv"
+  - "CrdCompactInfo{{ curr_date[4:] }}.csv"
+  - "CrdDebtContract{{ curr_date[4:] }}.csv"
+  - "CrdExcessStockInfo{{ curr_date[4:] }}.csv"
+  - "CrdHoldingInfo{{ curr_date[4:] }}.csv"
+  - "CrdInvAcctInfo{{ curr_date[4:] }}.csv"
+  - "CrdUnderlyingInfo{{ curr_date[4:] }}.csv"
+  - "CustInfo{{ curr_date[4:] }}.csv"
+  - "MajorStockHolderInfo{{ curr_date[4:] }}.csv"
+  - "SecurityRiskLevel{{ curr_date[4:] }}.csv"
+  - "SecurityShares{{ curr_date[4:] }}.csv"
+  - "CounterSecurityType{{ curr_date[4:] }}.csv"
+  - "CrdInterestModel{{ curr_date[4:] }}.csv"
+  - "CrdCustInterest{{ curr_date[4:] }}.csv"
+################# counter 相关配置 ##############
+
+############### sse 文件配置 ####################
+sse_host: "192.168.11.189"
+sse_port: 22
+sse_user: "monuser"
+gateway_path_root_exchange_sse: /mnt/quant360/import/sse  # 上交所股票文件获取文件网关目录
+gateway_path_root_exchange_sse_etf: /mnt/quant360/import/sse  # 上海etf文件获取文件网关目录
+sse_wait_time_for_complete: 5
+
+sse_cp_files:                                             # 上海产品文件拷贝列表， 支持正则
+  - "cpxx0201{{ curr_date[4:] }}.txt"
+  - "cpxx0202{{ curr_date[4:] }}.txt"
+  - "fjy{{ curr_date }}.txt"
+  - "dbp{{ curr_date[4:] }}.txt"
+  - "gzlx.{{ gzlx_mm.stdout[:-1].lstrip('0') }}{{ curr_date[-2:] }}"
+  - "bondinfo{{ curr_date }}.txt"
+  - "bondinfo{{ curr_date }}.zip"
+  - "archive_bondinfo{{ curr_date }}.zip"
+  - "jckz*.txt"
+  - "dygpdbbl{{ pre_trd_date }}.txt"
+
+sse_check_files:
+  - "cpxx0201{{ curr_date[4:] }}.txt"
+  - "cpxx0202{{ curr_date[4:] }}.txt"
+  - "fjy{{ curr_date }}.txt"
+  - "dbp{{ curr_date[4:] }}.txt"
+  - "gzlx.{{ gzlx_mm.stdout[:-1].lstrip('0') }}{{ curr_date[-2:] }}"
+  - "bondinfo{{ curr_date }}.txt"
+
+sse_etf_cp_files: []                                      # 上海etf产品文件拷贝列表， 支持正则
+sse_etf_check_files: []                                      # 上交所获取etf文件检查列表
+
+sse_etf_check_mon_files: no                                  # 是否校验mon维护的上海etf文件
+sse_etf_check_counter_files: no                              # 是否校验主柜维护的上海etf文件
+
+sse_late_cp_files: []
+sse_late_check_files: []
+############### sse 文件配置 ####################
+
+############# szse 文件配置 #####################
+szse_host: "192.168.11.189"
+szse_port: 22
+szse_user: "monuser"
+
+gateway_path_root_exchange_szse: /mnt/quant360/import/szse  # 深交所股票获取文件网关目录
+gateway_path_root_exchange_szse_etf: /mnt/quant360/import/szse  # 深交所etf文件获取文件网关目录
+
+szse_cp_files:                                              # 深圳产品文件拷贝列表， 支持正则
+  - "cashauctionparams_{{ curr_date }}.xml"
+  - "securities_{{ curr_date }}.xml"
+  - "bondtradingparams_{{ curr_date }}.xml"
+  - "bondrepoparams_{{ curr_date }}.xml"
+  - "issueparams_{{ curr_date }}.xml"
+  - "rightsissueparams_{{ curr_date }}.xml"
+  - "reducequota_*_{{ curr_date }}.csv"
+
+szse_check_files:                                           # 深交所文件检查列表
+  - "cashauctionparams_{{ curr_date }}.xml"
+  - "securities_{{ curr_date }}.xml"
+  - "bondtradingparams_{{ curr_date }}.xml"
+  - "bondrepoparams_{{ curr_date }}.xml"
+  - "issueparams_{{ curr_date }}.xml"
+  - "rightsissueparams_{{ curr_date }}.xml"
+
+szse_etf_check_mon_files: no                                   # 是否校验mon维护的深圳etf文件
+szse_etf_check_counter_files: no                               # 是否校验主柜维护的深圳etf文件
+szse_etf_cp_files: []                                          # 深圳etf产品文件拷贝列表， 支持正则
+szse_etf_check_files: []                                       # 深交所文件检查列表
+
+szse_late_cp_files:
+  - "RZRQDBWBL.csv"
+szse_late_check_files:
+  - "RZRQDBWBL.csv"
+############# szse 文件配置 #####################
+
+################ csdc 文件配置 ##################
+
+############### csdc 文件网关 #
+csdc_host: "192.168.11.189"
+csdc_port: 22
+csdc_user: "monuser"
+gateway_path_root_csdc_sh: /mnt/quant360/import/csdc  # 上海中登清算文件获取文件网关目录
+gateway_path_root_csdc_sz: /mnt/quant360/import/csdc  #　深圳中登清算文件获取文件网关目录
+############## csdc 文件网关 #
+
+############### csdc 文件ftp #
+csdc_ftp_username: sjbf                               # FTP服务获取用户名
+csdc_ftp_password: "test%4022"                        # FTP服务获取密码
+csdc_ftp_addr: 10.8.11.31                             # FTP服务获取地址
+csdc_ftp_root: KSJY                                   # FTP服务获取根目录
+############### csdc 文件ftp #
+# from_way  参数说明
+# dir   远程目录
+# net   wget ftp协议拷贝
+# xter  柜台 脚本生成
+# 文件从远程目录拷贝过来时， 支持正则
+csdc_cp_files:
+  - name: "ipogh.*.txt"
+    se: "sh"
+    from_way: "dir"
+  - name: "zqy.*.dbf"
+    se: "sh"
+    from_way: "dir"
+  - name: "SJSKS.DBF"
+    se: "sz"
+    from_way: "dir"
+  - name: "SJSFX.DBF"
+    se: "sz"
+    from_way: "dir"
+
+csdc_check_files:                                         # 中登清算文件检查列表
+#- ipogh.txt
+#- zqy.dbf
+#- SJSKS.DBF
+#- SJSFX.DBF
+
+################ csdc 文件配置 ##################
+
+################# 备份配置  #####################
+is_clear_old_backup_files: "no"                          # 是否启用清除指定的历史文件
+clear_old_backup_datas: 30                               # 指定的历史文件保留天数
+clear_old_backup_key_word_list:                          # 清除历史文件关键字列表
+  - "txlog"
+
+art_oes_backup_list:                                     # 备份列表
+  - bkup_src: "{{ local_path_oes_home_flag_colodir }}"   # 要备份路径
+    bkup_name: "art_oes_flag"                            # 备份名称后缀
+    src_remove: "yes"
+
+backup_list:                                               # 备份列表
+  - bkup_src: "{{ slave_path_oes_home_conf }}"             # 要备份路径
+    bkup_name: "conf"                                      # 备份名称后缀
+    src_remove: "no"                                       # 是否删除原始路径
+  - bkup_src: "{{ slave_path_oes_home_data }}"
+    bkup_name: "data"
+    src_remove: "yes"
+  - bkup_src: "{{ slave_path_oes_home_logs }}"
+    bkup_name: "logs"
+    src_remove: "yes"
+
+backup_multi_list:
+  - bkup_src: "{{ slave_path_oes_home_txlog }}"
+    bkup_name: "txlog"
+    src_remove: "yes"
+################# 备份配置  #####################
+
+##################### 灾备配置 ##############
+is_enable_zb: "no"                                 # 是否启用灾备环境
+zb_host: "xx.xx.xx.xx"                             # 灾备机器的ip
+zb_port: 22                                        # 灾备机器的连接端口
+zb_user: "oesuser"                                 # 灾备机器的远程用户名
+zb_path: "/home/oesuser/host_01/oes"               # 灾备机器环境部署的路径
+zb_dir: "data,txlog"                               # 需要灾备的文件夹(多个用不能带空格的,隔开)
+###########################################

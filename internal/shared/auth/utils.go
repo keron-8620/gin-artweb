@@ -33,7 +33,7 @@ const (
 	contextUserKey = "claims"
 )
 
-func GetGinUserClaims(ctx *gin.Context) *UserClaims {
+func GetUserClaims(ctx *gin.Context) *UserClaims {
 	if claims, exists := ctx.Get(contextUserKey); exists {
 		if claims, ok := claims.(*UserClaims); ok {
 			return claims

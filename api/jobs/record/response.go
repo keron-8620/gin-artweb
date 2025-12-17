@@ -5,7 +5,7 @@ import (
 	"gin-artweb/api/jobs/script"
 )
 
-type ScriptRecordOutBase struct {
+type ScriptRecordStandardOut struct {
 	// 脚本执行记录ID
 	ID uint32 `json:"id" example:"1"`
 	// 创建时间
@@ -32,14 +32,14 @@ type ScriptRecordOutBase struct {
 	UserName string `json:"user_name" example:"admin"`
 }
 
-type ScriptRecordOut struct {
-	ScriptRecordOutBase
+type ScriptRecordDetailOut struct {
+	ScriptRecordStandardOut
 	// 脚本信息
-	Script script.ScriptOutBase `json:"script"`
+	Script script.ScriptStandardOut `json:"script"`
 }
 
 // ScriptRecordReply 程序包响应结构
-type ScriptRecordReply = common.APIReply[ScriptRecordOut]
+type ScriptRecordReply = common.APIReply[ScriptRecordDetailOut]
 
 // PagScriptRecordReply 程序包的分页响应结构
-type PagScriptRecordReply = common.APIReply[*common.Pag[ScriptRecordOut]]
+type PagScriptRecordReply = common.APIReply[*common.Pag[ScriptRecordDetailOut]]

@@ -36,12 +36,12 @@ type ListPackageRequest struct {
 	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
-	Name string `json:"name" binding:"omitempty,max=50"`
+	Name string `form:"name" binding:"omitempty,max=50"`
 
 	// 标签，最大长度50
 	// Required: true
 	// Max length: 50
-	Label string `json:"label" binding:"omitempty,max=50"`
+	Label string `form:"label" binding:"omitempty,max=50"`
 
 	// 版本号，最大长度50
 	// Required: true

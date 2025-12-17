@@ -34,14 +34,14 @@ func NewHostService(
 // @Tags 主机管理
 // @Accept json,application/x-www-form-urlencoded,multipart/form-data
 // @Produce json
-// @Param request body pbHost.CreateHosrRequest true "创建主机请求"
+// @Param request body pbHost.CreateOrUpdateHosrRequest true "创建主机请求"
 // @Success 201 {object} pbHost.HostReply "创建主机成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host [post]
 // @Security ApiKeyAuth
 func (s *HostService) CreateHost(ctx *gin.Context) {
-	var req pbHost.CreateHosrRequest
+	var req pbHost.CreateOrUpdateHosrRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建主机请求参数失败",
@@ -50,7 +50,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -62,14 +62,14 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 	)
 
 	m, err := s.ucHost.CreateHost(ctx, biz.HostModel{
-		Name:     req.Name,
-		Label:    req.Label,
-		IPAddr:   req.IPAddr,
-		Port:     req.Port,
-		Username: req.Username,
-		PyPath:   req.PyPath,
-		Remark:   req.Remark,
-	}, req.Password)
+		Name:    req.Name,
+		Label:   req.Label,
+		SSHIP:   req.SSHIP,
+		SSHPort: req.SSHPort,
+		SSHUser: req.SSHUser,
+		PyPath:  req.PyPath,
+		Remark:  req.Remark,
+	}, req.SSHPassword)
 	if err != nil {
 		s.log.Error(
 			"创建主机失败",
@@ -77,7 +77,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -88,7 +88,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := HostModelToOutBase(*m)
+	mo := HostModelToStandardOut(*m)
 	ctx.JSON(http.StatusCreated, &pbHost.HostReply{
 		Code: http.StatusCreated,
 		Data: *mo,
@@ -101,7 +101,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 // @Accept json,application/x-www-form-urlencoded,multipart/form-data
 // @Produce json
 // @Param pk path uint true "主机编号"
-// @Param request body pbHost.UpdateHostRequest true "更新主机请求"
+// @Param request body pbHost.CreateOrUpdateHosrRequest true "更新主机请求"
 // @Success 200 {object} pbHost.HostReply "更新主机成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
@@ -118,11 +118,11 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	var req pbHost.UpdateHostRequest
+	var req pbHost.CreateOrUpdateHosrRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新主机请求参数失败",
@@ -131,7 +131,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -146,14 +146,14 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: uri.PK},
 		},
-		Name:     req.Name,
-		Label:    req.Label,
-		IPAddr:   req.IPAddr,
-		Port:     req.Port,
-		Username: req.Username,
-		PyPath:   req.PyPath,
-		Remark:   req.Remark,
-	}, req.Password); err != nil {
+		Name:    req.Name,
+		Label:   req.Label,
+		SSHIP:   req.SSHIP,
+		SSHPort: req.SSHPort,
+		SSHUser: req.SSHUser,
+		PyPath:  req.PyPath,
+		Remark:  req.Remark,
+	}, req.SSHPassword); err != nil {
 		s.log.Error(
 			"更新主机失败",
 			zap.Error(err),
@@ -161,7 +161,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -179,11 +179,11 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
-	mo := HostModelToOutBase(*m)
+	mo := HostModelToStandardOut(*m)
 	ctx.JSON(http.StatusOK, &pbHost.HostReply{
 		Code: http.StatusOK,
 		Data: *mo,
@@ -212,7 +212,7 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -229,7 +229,7 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -264,7 +264,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -282,7 +282,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -292,7 +292,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := HostModelToOutBase(*m)
+	mo := HostModelToStandardOut(*m)
 	ctx.JSON(http.StatusOK, &pbHost.HostReply{
 		Code: http.StatusOK,
 		Data: *mo,
@@ -324,7 +324,7 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -350,7 +350,7 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -360,7 +360,7 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListHostModelToOut(ms)
+	mbs := ListHostModelToStandardOut(ms)
 	ctx.JSON(http.StatusOK, &pbHost.PagHostReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -375,34 +375,42 @@ func (s *HostService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/host", s.ListHost)
 }
 
-func HostModelToOutBase(
+func HostModelToBaseOut(
 	m biz.HostModel,
-) *pbHost.HostOutBase {
-	return &pbHost.HostOutBase{
-		ID:        m.ID,
-		CreatedAt: m.CreatedAt.String(),
-		UpdatedAt: m.UpdatedAt.String(),
-		Name:      m.Name,
-		Label:     m.Label,
-		IPAddr:    m.IPAddr,
-		Port:      m.Port,
-		Username:  m.Username,
-		PyPath:    m.PyPath,
-		Remark:    m.Remark,
+) *pbHost.HostBaseOut {
+	return &pbHost.HostBaseOut{
+		ID:      m.ID,
+		Name:    m.Name,
+		Label:   m.Label,
+		SSHIP:   m.SSHIP,
+		SSHPort: m.SSHPort,
+		SSHUser: m.SSHUser,
+		PyPath:  m.PyPath,
+		Remark:  m.Remark,
 	}
 }
 
-func ListHostModelToOut(
+func HostModelToStandardOut(
+	m biz.HostModel,
+) *pbHost.HostStandardOut {
+	return &pbHost.HostStandardOut{
+		HostBaseOut: *HostModelToBaseOut(m),
+		CreatedAt:   m.CreatedAt.String(),
+		UpdatedAt:   m.UpdatedAt.String(),
+	}
+}
+
+func ListHostModelToStandardOut(
 	hms *[]biz.HostModel,
-) *[]pbHost.HostOutBase {
+) *[]pbHost.HostStandardOut {
 	if hms == nil {
-		return &[]pbHost.HostOutBase{}
+		return &[]pbHost.HostStandardOut{}
 	}
 
 	ms := *hms
-	mso := make([]pbHost.HostOutBase, 0, len(ms))
+	mso := make([]pbHost.HostStandardOut, 0, len(ms))
 	for _, m := range ms {
-		mo := HostModelToOutBase(m)
+		mo := HostModelToStandardOut(m)
 		mso = append(mso, *mo)
 	}
 	return &mso

@@ -53,11 +53,11 @@ func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	uc := auth.GetGinUserClaims(ctx)
+	uc := auth.GetUserClaims(ctx)
 	m, rErr := s.ucRecord.AsyncExecuteScript(ctx, biz.ExecuteRequest{
 		ScriptID:    req.ScriptID,
 		CommandArgs: req.CommandArgs,
@@ -74,12 +74,12 @@ func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbRecord.ScriptRecordReply{
 		Code: http.StatusOK,
-		Data: *ScriptRecordToOut(*m),
+		Data: *ScriptRecordToDetailOut(*m),
 	})
 }
 
@@ -105,7 +105,7 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -123,7 +123,7 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := ScriptRecordToOut(*m)
+	mo := ScriptRecordToDetailOut(*m)
 	ctx.JSON(http.StatusOK, &pbRecord.ScriptRecordReply{
 		Code: http.StatusOK,
 		Data: *mo,
@@ -166,7 +166,7 @@ func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -193,7 +193,7 @@ func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -203,7 +203,7 @@ func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListScriptRecordToOut(ms)
+	mbs := ListScriptRecordToDetailOut(ms)
 	ctx.JSON(http.StatusOK, &pbRecord.PagScriptRecordReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -232,7 +232,7 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -244,12 +244,12 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
 	if err := common.DownloadFile(ctx, s.log, m.LogPath(), m.LogName); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 	}
 }
 
@@ -272,7 +272,7 @@ func (s *ScriptRecordService) CancelScriptRecord(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -288,10 +288,10 @@ func (s *ScriptRecordService) LoadRouter(r *gin.RouterGroup) {
 	r.DELETE("/record/:pk", s.CancelScriptRecord)
 }
 
-func ScriptRecordToOutBase(
+func ScriptRecordToStandardOut(
 	m biz.ScriptRecordModel,
-) *pbRecord.ScriptRecordOutBase {
-	return &pbRecord.ScriptRecordOutBase{
+) *pbRecord.ScriptRecordStandardOut {
+	return &pbRecord.ScriptRecordStandardOut{
 		ID:           m.ID,
 		CreatedAt:    m.CreatedAt.String(),
 		UpdatedAt:    m.UpdatedAt.String(),
@@ -307,31 +307,31 @@ func ScriptRecordToOutBase(
 	}
 }
 
-func ScriptRecordToOut(
+func ScriptRecordToDetailOut(
 	m biz.ScriptRecordModel,
-) *pbRecord.ScriptRecordOut {
-	var script *pbScript.ScriptOutBase
+) *pbRecord.ScriptRecordDetailOut {
+	var script *pbScript.ScriptStandardOut
 	if m.Script.ID != 0 {
-		script = ScriptModelToOutBase(m.Script)
+		script = ScriptModelToStandardOut(m.Script)
 	}
-	return &pbRecord.ScriptRecordOut{
-		ScriptRecordOutBase: *ScriptRecordToOutBase(m),
-		Script:              *script,
+	return &pbRecord.ScriptRecordDetailOut{
+		ScriptRecordStandardOut: *ScriptRecordToStandardOut(m),
+		Script:                  *script,
 	}
 }
 
-func ListScriptRecordToOut(
+func ListScriptRecordToDetailOut(
 	rms *[]biz.ScriptRecordModel,
-) *[]pbRecord.ScriptRecordOut {
+) *[]pbRecord.ScriptRecordDetailOut {
 	if rms == nil {
-		return &[]pbRecord.ScriptRecordOut{}
+		return &[]pbRecord.ScriptRecordDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbRecord.ScriptRecordOut, 0, len(ms))
+	mso := make([]pbRecord.ScriptRecordDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := ScriptRecordToOut(m)
+			mo := ScriptRecordToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

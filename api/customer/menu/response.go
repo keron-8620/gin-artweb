@@ -4,14 +4,10 @@ import (
 	"gin-artweb/api/common"
 )
 
-// MenuOutBase 菜单基础信息
-type MenuOutBase struct {
+// MenuStandardOut 菜单基础输出结构体
+type MenuBaseOut struct {
 	// 菜单ID
 	ID uint32 `json:"id" example:"1"`
-	// 创建时间
-	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
-	// 更新时间
-	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 	// 前端路由
 	Path string `json:"path" example:"/api/v1/users"`
 	// 组件路径
@@ -28,14 +24,24 @@ type MenuOutBase struct {
 	Descr string `json:"descr" example:"用户管理"`
 }
 
-type MenuOut struct {
-	MenuOutBase
-	Parent      *MenuOutBase `json:"parent,omitempty"`
-	Permissions []uint32     `json:"permissions"`
+// MenuStandardOut 菜单标准输出结构体
+type MenuStandardOut struct {
+	MenuBaseOut
+	// 创建时间
+	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
+	// 更新时间
+	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 }
 
-// MenuBaseReply 菜单响应结构
-type MenuReply = common.APIReply[*MenuOut]
+// MenuDetailOut 菜单详情输出结构体
+type MenuDetailOut struct {
+	MenuStandardOut
+	Parent      *MenuStandardOut `json:"parent,omitempty"`
+	Permissions []uint32         `json:"permissions"`
+}
 
-// PagMenuBaseReply 菜单的分页响应结构
-type PagMenuBaseReply = common.APIReply[*common.Pag[MenuOutBase]]
+// MenuReply 菜单响应结构
+type MenuReply = common.APIReply[*MenuDetailOut]
+
+// PagMenuReply 菜单的分页响应结构
+type PagMenuReply = common.APIReply[*common.Pag[MenuStandardOut]]

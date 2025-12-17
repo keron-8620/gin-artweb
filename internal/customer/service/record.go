@@ -57,7 +57,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -83,7 +83,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -93,7 +93,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListLoginRecordModelToOutBase(ms)
+	mbs := ListLoginRecordModelToStandardOut(ms)
 	ctx.JSON(http.StatusOK, &pbRecord.PagLoginRecordReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -127,18 +127,18 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
-	claims := auth.GetGinUserClaims(ctx)
+	claims := auth.GetUserClaims(ctx)
 	if claims == nil {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.Reply())
+		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.ToMap())
 		return
 	}
 	req.Username = claims.Subject
@@ -167,7 +167,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -178,7 +178,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListLoginRecordModelToOutBase(ms)
+	mbs := ListLoginRecordModelToStandardOut(ms)
 	ctx.JSON(http.StatusOK, &pbRecord.PagLoginRecordReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
@@ -190,10 +190,10 @@ func (s *RecordService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/me/record/login", s.ListMeLoginRecord)
 }
 
-func LoginRecordModelToOutBase(
+func LoginRecordModelToStandardOut(
 	m biz.LoginRecordModel,
-) *pbRecord.LoginRecordOutBase {
-	return &pbRecord.LoginRecordOutBase{
+) *pbRecord.LoginRecordStandardOut {
+	return &pbRecord.LoginRecordStandardOut{
 		ID:        m.ID,
 		Username:  m.Username,
 		LoginAt:   m.LoginAt.String(),
@@ -203,17 +203,17 @@ func LoginRecordModelToOutBase(
 	}
 }
 
-func ListLoginRecordModelToOutBase(
+func ListLoginRecordModelToStandardOut(
 	lms *[]biz.LoginRecordModel,
-) *[]pbRecord.LoginRecordOutBase {
+) *[]pbRecord.LoginRecordStandardOut {
 	if lms == nil {
-		return &[]pbRecord.LoginRecordOutBase{}
+		return &[]pbRecord.LoginRecordStandardOut{}
 	}
 	ms := *lms
-	mso := make([]pbRecord.LoginRecordOutBase, 0, len(ms))
+	mso := make([]pbRecord.LoginRecordStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := LoginRecordModelToOutBase(m)
+			mo := LoginRecordModelToStandardOut(m)
 			mso = append(mso, *mo)
 		}
 	}

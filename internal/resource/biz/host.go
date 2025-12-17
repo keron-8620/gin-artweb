@@ -16,9 +16,10 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/internal/shared/file"
+	"gin-artweb/internal/shared/utils/serializer"
 )
 
 const (
@@ -27,13 +28,13 @@ const (
 
 type HostModel struct {
 	database.StandardModel
-	Name     string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Label    string `gorm:"column:label;type:varchar(50);index:idx_host_label;comment:标签" json:"label"`
-	IPAddr   string `gorm:"column:ip_addr;type:varchar(108);comment:IP地址" json:"ip_addr"`
-	Port     uint16 `gorm:"column:port;type:smallint;comment:端口" json:"port"`
-	Username string `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
-	PyPath   string `gorm:"column:py_path;type:varchar(254);comment:python路径" json:"py_path"`
-	Remark   string `gorm:"column:remark;type:varchar(254);comment:备注" json:"remark"`
+	Name    string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	Label   string `gorm:"column:label;type:varchar(50);index:idx_host_label;comment:标签" json:"label"`
+	SSHIP   string `gorm:"column:ssh_ip;type:varchar(108);comment:IP地址" json:"ssh_ip"`
+	SSHPort uint16 `gorm:"column:ssh_port;type:smallint;comment:端口" json:"ssh_port"`
+	SSHUser string `gorm:"column:ssh_user;type:varchar(50);comment:用户名" json:"ssh_user"`
+	PyPath  string `gorm:"column:py_path;type:varchar(254);comment:python路径" json:"py_path"`
+	Remark  string `gorm:"column:remark;type:varchar(254);comment:备注" json:"remark"`
 }
 
 func (m *HostModel) TableName() string {
@@ -46,9 +47,9 @@ func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("name", m.Name)
 	enc.AddString("label", m.Label)
-	enc.AddString("ip_addr", m.IPAddr)
-	enc.AddUint16("port", m.Port)
-	enc.AddString("username", m.Username)
+	enc.AddString("ssh_ip", m.SSHIP)
+	enc.AddUint16("ssh_port", m.SSHPort)
+	enc.AddString("ssh_user", m.SSHUser)
 	enc.AddString("py_path", m.PyPath)
 	enc.AddString("remark", m.Remark)
 	return nil
@@ -73,7 +74,6 @@ type HostUsecase struct {
 	hostRepo HostRepo
 	signer   ssh.Signer
 	timeout  time.Duration
-	dir      string
 }
 
 func NewHostUsecase(
@@ -81,14 +81,12 @@ func NewHostUsecase(
 	hostRepo HostRepo,
 	signer ssh.Signer,
 	timeout time.Duration,
-	dir string,
 ) *HostUsecase {
 	return &HostUsecase{
 		log:      log,
 		hostRepo: hostRepo,
 		signer:   signer,
 		timeout:  timeout,
-		dir:      dir,
 	}
 }
 
@@ -107,7 +105,7 @@ func (uc *HostUsecase) CreateHost(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := uc.TestSSHConnection(ctx, m.IPAddr, m.Port, m.Username, password); err != nil {
+	if err := uc.TestSSHConnection(ctx, m.SSHIP, m.SSHPort, m.SSHUser, password); err != nil {
 		return nil, err
 	}
 
@@ -149,16 +147,16 @@ func (uc *HostUsecase) UpdateHostById(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := uc.TestSSHConnection(ctx, m.IPAddr, m.Port, m.Username, password); err != nil {
+	if err := uc.TestSSHConnection(ctx, m.SSHIP, m.SSHPort, m.SSHUser, password); err != nil {
 		return err
 	}
 
 	data := map[string]any{
 		"name":     m.Name,
 		"label":    m.Label,
-		"ip_addr":  m.IPAddr,
-		"port":     m.Port,
-		"username": m.Username,
+		"ssh_ip":   m.SSHIP,
+		"ssh_port": m.SSHPort,
+		"ssh_user": m.SSHUser,
 		"py_path":  m.PyPath,
 		"remark":   m.Remark,
 	}
@@ -209,7 +207,7 @@ func (uc *HostUsecase) DeleteHostById(
 		return database.NewGormError(err, map[string]any{"id": hostId})
 	}
 
-	path := uc.ExportPath(hostId)
+	path := HostVarsStoragePath(hostId)
 	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
 		uc.log.Error(
 			"删除ansible主机变量文件失败",
@@ -307,9 +305,9 @@ func (uc *HostUsecase) TestSSHConnection(
 
 	uc.log.Info(
 		"开始测试ssh连接",
-		zap.String("ip_addr", ip),
-		zap.Uint16("port", port),
-		zap.String("username", user),
+		zap.String("ssh_ip", ip),
+		zap.Uint16("ssh_port", port),
+		zap.String("ssh_user", user),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -329,9 +327,9 @@ func (uc *HostUsecase) TestSSHConnection(
 		uc.log.Error(
 			"创建ssh连接失败",
 			zap.Error(err),
-			zap.String("ip_addr", ip),
-			zap.Uint16("port", port),
-			zap.String("username", user),
+			zap.String("ssh_ip", ip),
+			zap.Uint16("ssh_port", port),
+			zap.String("ssh_user", user),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
@@ -343,9 +341,9 @@ func (uc *HostUsecase) TestSSHConnection(
 		uc.log.Error(
 			"创建ssh session失败",
 			zap.Error(err),
-			zap.String("ip_addr", ip),
-			zap.Uint16("port", port),
-			zap.String("username", user),
+			zap.String("ssh_ip", ip),
+			zap.Uint16("ssh_port", port),
+			zap.String("ssh_user", user),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
@@ -369,26 +367,21 @@ func (uc *HostUsecase) TestSSHConnection(
 		uc.log.Error(
 			"部署ssh公钥失败",
 			zap.Error(err),
-			zap.String("ip_addr", ip),
-			zap.Uint16("port", port),
-			zap.String("username", user),
+			zap.String("ssh_ip", ip),
+			zap.Uint16("ssh_port", port),
+			zap.String("ssh_user", user),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHKeyDeployment.WithCause(err)
 	}
 	uc.log.Info(
 		"测试ssh连接通过",
-		zap.String("ip_addr", ip),
-		zap.Uint16("port", port),
-		zap.String("username", user),
+		zap.String("ssh_ip", ip),
+		zap.Uint16("ssh_port", port),
+		zap.String("ssh_user", user),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return nil
-}
-
-func (uc *HostUsecase) ExportPath(pk uint32) string {
-	filename := fmt.Sprintf("db_host_%d.yaml", pk)
-	return filepath.Join(uc.dir, filename)
 }
 
 func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Error {
@@ -403,15 +396,15 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 	)
 
 	ansibleHost := AnsibleHostVars{
-		DBHostID:                 m.ID,
-		AnsibleHost:              m.IPAddr,
-		AnsiblePort:              m.Port,
-		AnsibleUser:              m.Username,
+		ID:                       m.ID,
+		AnsibleHost:              m.SSHIP,
+		AnsiblePort:              m.SSHPort,
+		AnsibleUser:              m.SSHUser,
 		AnsiblePythonInterpreter: m.PyPath,
 	}
 
-	path := uc.ExportPath(m.ID)
-	if err := file.WriteYAML(path, ansibleHost); err != nil {
+	path := HostVarsStoragePath(m.ID)
+	if _, err := serializer.WriteYAML(path, ansibleHost); err != nil {
 		uc.log.Error(
 			"导出ansible主机变量文件失败",
 			zap.Error(err),
@@ -432,7 +425,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 }
 
 type AnsibleHostVars struct {
-	DBHostID                 uint32 `json:"db_host_id" yaml:"db_host_id"`
+	ID                       uint32 `json:"id" yaml:"id"`
 	AnsibleHost              string `json:"ansible_host" yaml:"ansible_host"`
 	AnsiblePort              uint16 `json:"ansible_port" yaml:"ansible_port"`
 	AnsibleUser              string `json:"ansible_user" yaml:"ansible_user"`
@@ -440,10 +433,15 @@ type AnsibleHostVars struct {
 }
 
 func (vs *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("db_host_id", vs.DBHostID)
+	enc.AddUint32("id", vs.ID)
 	enc.AddString("ansible_host", vs.AnsibleHost)
 	enc.AddUint16("ansible_port", vs.AnsiblePort)
 	enc.AddString("ansible_user", vs.AnsibleUser)
 	enc.AddString("ansible_python_interpreter", vs.AnsiblePythonInterpreter)
 	return nil
+}
+
+func HostVarsStoragePath(pk uint32) string {
+	filename := fmt.Sprintf("db_host_%d.yaml", pk)
+	return filepath.Join(config.StorageDir, "host_vars", filename)
 }

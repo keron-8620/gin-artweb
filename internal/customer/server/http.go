@@ -12,9 +12,9 @@ import (
 	"gin-artweb/internal/customer/service"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/config"
-	"gin-artweb/internal/shared/crypto"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/internal/shared/utils/crypto"
 )
 
 func NewServer(

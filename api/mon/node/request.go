@@ -2,74 +2,39 @@ package node
 
 import "gin-artweb/api/common"
 
-// CreateMonNodeRequest 用于创建mon节点的请求结构体
+// CreateOrUpdateMonNodeRequest 用于创建mon节点的请求结构体
 //
-// swagger:model CreateMonNodeRequest
-type CreateMonNodeRequest struct {
+// swagger:model CreateOrUpdateMonNodeRequest
+type CreateOrUpdateMonNodeRequest struct {
 	// 名称
 	// required: true
 	// example: "mon上海节点"
-	Name string `json:"name" binding:"required,max=50"`
+	Name string `json:"name" form:"name" binding:"required,max=50"`
 
 	// 部署路径
 	// required: true
 	// example: "/home/monuser/mon"
-	DeployPath string `json:"deploy_path" binding:"required"`
+	DeployPath string `json:"deploy_path" form:"deploy_path" binding:"required"`
 
 	// 导出路径
 	// required: true
 	// example: "/mnt/quant360/import/mon"
-	OutportPath string `json:"outport_path" binding:"required"`
+	OutportPath string `json:"outport_path" form:"outport_path" binding:"required"`
 
 	// JAVA_HOME
 	// required: true
 	// example: "/home/monuser/jdk-11.0.1"
-	JavaHome string `json:"java_home" bunding:"required"`
+	JavaHome string `json:"java_home" form:"java_home" bunding:"required"`
 
 	// URL地址
 	// required: true
 	// example: "http://192.168.11.189:8080/mon"
-	URL string `json:"url" bunding:"required"`
+	URL string `json:"url" form:"url" bunding:"required"`
 
 	// 主机ID
 	// required: true
 	// example: 1
-	HostID uint32 `json:"host_id" binding:"required"`
-}
-
-// UpdateMonNodeRequest 用于更新mon节点的请求结构体
-//
-// swagger:model UpdateMonNodeRequest
-type UpdateMonNodeRequest struct {
-	// 名称
-	// required: true
-	// example: "mon上海节点"
-	Name string `json:"name" binding:"required,max=50"`
-
-	// 部署路径
-	// required: true
-	// example: "/home/monuser/mon"
-	DeployPath string `json:"deploy_path" binding:"required"`
-
-	// 导出路径
-	// required: true
-	// example: "/mnt/quant360/import/mon"
-	OutportPath string `json:"outport_path" binding:"required"`
-
-	// JAVA_HOME
-	// required: true
-	// example: "/home/monuser/jdk-11.0.1"
-	JavaHome string `json:"java_home" bunding:"required"`
-
-	// URL地址
-	// required: true
-	// example: "http://192.168.11.189:8080/mon"
-	URL string `json:"url" bunding:"required"`
-
-	// 主机ID
-	// required: true
-	// example: 1
-	HostID uint32 `json:"host_id" binding:"required"`
+	HostID uint32 `json:"host_id" form:"host_id" binding:"required"`
 }
 
 // ListMonNodeRequest 用于获取mon节点列表的请求结构体
@@ -89,7 +54,7 @@ type ListMonNodeRequest struct {
 }
 
 func (req *ListMonNodeRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.BaseModelQuery.QueryMap(10)
+	page, size, query := req.StandardModelQuery.QueryMap(10)
 	if req.Name != "" {
 		query["name like ?"] = "%" + req.Name + "%"
 	}

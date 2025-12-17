@@ -44,7 +44,7 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					zap.String("user_agent", c.Request.UserAgent()),
 				)
 				err := errors.FromError(goerrors.New(errMsg))
-				c.JSON(err.Code, err.Reply())
+				c.JSON(err.Code, err.ToMap())
 			}
 		}()
 

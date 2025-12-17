@@ -51,7 +51,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -80,7 +80,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -93,7 +93,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, &pbButton.ButtonReply{
 		Code: http.StatusCreated,
-		Data: ButtonModelToOut(*m),
+		Data: ButtonModelToDetailOut(*m),
 	})
 }
 
@@ -120,7 +120,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -158,7 +158,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -176,13 +176,13 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
 	ctx.JSON(http.StatusOK, &pbButton.ButtonReply{
 		Code: http.StatusOK,
-		Data: ButtonModelToOut(*m),
+		Data: ButtonModelToDetailOut(*m),
 	})
 }
 
@@ -208,7 +208,7 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -225,7 +225,7 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -260,7 +260,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -278,7 +278,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -290,7 +290,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, &pbButton.ButtonReply{
 		Code: http.StatusOK,
-		Data: ButtonModelToOut(*m),
+		Data: ButtonModelToDetailOut(*m),
 	})
 }
 
@@ -305,7 +305,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 // @Param menu_id query uint false "菜单ID"
 // @Param is_active query bool false "是否激活"
 // @Param descr query string false "按钮描述"
-// @Success 200 {object} pbButton.PagButtonBaseReply "成功返回按钮列表"
+// @Success 200 {object} pbButton.PagButtonReply "成功返回按钮列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button [get]
@@ -320,7 +320,7 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.Reply())
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
 	}
 
@@ -346,7 +346,7 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.Reply())
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
@@ -356,8 +356,8 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListButtonModelToOutBase(ms)
-	ctx.JSON(http.StatusOK, &pbButton.PagButtonBaseReply{
+	mbs := ListButtonModelToStandardOut(ms)
+	ctx.JSON(http.StatusOK, &pbButton.PagButtonReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
@@ -371,13 +371,11 @@ func (s *ButtonService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/button", s.ListButton)
 }
 
-func ButtonModelToOutBase(
+func ButtonModelToBaseOut(
 	m biz.ButtonModel,
-) *pbButton.ButtonOutBase {
-	return &pbButton.ButtonOutBase{
+) *pbButton.ButtonBaseOut {
+	return &pbButton.ButtonBaseOut{
 		ID:           m.ID,
-		CreatedAt:    m.CreatedAt.String(),
-		UpdatedAt:    m.UpdatedAt.String(),
 		Name:         m.Name,
 		ArrangeOrder: m.ArrangeOrder,
 		IsActive:     m.IsActive,
@@ -385,12 +383,22 @@ func ButtonModelToOutBase(
 	}
 }
 
-func ButtonModelToOut(
+func ButtonModelToStandardOut(
 	m biz.ButtonModel,
-) *pbButton.ButtonOut {
-	var menu *pbMenu.MenuOutBase
+) *pbButton.ButtonStandardOut {
+	return &pbButton.ButtonStandardOut{
+		ButtonBaseOut: *ButtonModelToBaseOut(m),
+		CreatedAt:     m.CreatedAt.String(),
+		UpdatedAt:     m.UpdatedAt.String(),
+	}
+}
+
+func ButtonModelToDetailOut(
+	m biz.ButtonModel,
+) *pbButton.ButtonDetailOut {
+	var menu *pbMenu.MenuStandardOut
 	if m.Menu.ID != 0 { // 或其他合适的判断条件
-		menu = MenuModelToOutBase(m.Menu)
+		menu = MenuModelToStandardOut(m.Menu)
 	}
 	var permissionIDs []uint32
 	if len(m.Permissions) > 0 {
@@ -399,24 +407,24 @@ func ButtonModelToOut(
 			permissionIDs[i] = p.ID
 		}
 	}
-	return &pbButton.ButtonOut{
-		ButtonOutBase: *ButtonModelToOutBase(m),
-		Menu:          menu,
-		Permissions:   permissionIDs,
+	return &pbButton.ButtonDetailOut{
+		ButtonStandardOut: *ButtonModelToStandardOut(m),
+		Menu:              menu,
+		Permissions:       permissionIDs,
 	}
 }
 
-func ListButtonModelToOutBase(
+func ListButtonModelToStandardOut(
 	bms *[]biz.ButtonModel,
-) *[]pbButton.ButtonOutBase {
+) *[]pbButton.ButtonStandardOut {
 	if bms == nil {
-		return &[]pbButton.ButtonOutBase{}
+		return &[]pbButton.ButtonStandardOut{}
 	}
 	ms := *bms
-	mso := make([]pbButton.ButtonOutBase, 0, len(ms))
+	mso := make([]pbButton.ButtonStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := ButtonModelToOutBase(m)
+			mo := ButtonModelToStandardOut(m)
 			mso = append(mso, *mo)
 		}
 	}

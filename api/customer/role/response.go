@@ -6,40 +6,44 @@ import (
 	"gin-artweb/api/customer/menu"
 )
 
-// RoleOutBase 角色基础信息
-type RoleOutBase struct {
+type RoleBaseOut struct {
 	// 角色ID
 	ID uint32 `json:"id" example:"1"`
-	// 创建时间
-	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
-	// 更新时间
-	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 	// 名称
 	Name string `json:"name" example:"用户管理"`
 	// 描述
 	Descr string `json:"descr" example:"用户管理"`
 }
 
-type RoleOut struct {
-	RoleOutBase
+// RoleStandardOut 角色基础信息
+type RoleStandardOut struct {
+	RoleBaseOut
+	// 创建时间
+	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
+	// 更新时间
+	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
+}
+
+type RoleDetailOut struct {
+	RoleStandardOut
 	Permissions []uint32 `json:"permissions"`
 	Menus       []uint32 `json:"menus"`
 	Buttons     []uint32 `json:"buttons"`
 }
 
 // RoleBaseReply 角色响应结构
-type RoleReply = common.APIReply[*RoleOut]
+type RoleReply = common.APIReply[*RoleDetailOut]
 
-// PagRoleBaseReply 角色的分页响应结构
-type PagRoleBaseReply = common.APIReply[*common.Pag[RoleOutBase]]
+// PagRoleReply 角色的分页响应结构
+type PagRoleReply = common.APIReply[*common.Pag[RoleStandardOut]]
 
 // RoleMenuPerm 角色菜单权限
 type RoleMenuPerm struct {
-	menu.MenuOutBase
+	menu.MenuBaseOut
 	// 子菜单
 	Children []RoleMenuPerm `json:"children"`
 	// 按钮
-	Buttons []button.ButtonOutBase `json:"buttons"`
+	Buttons []button.ButtonBaseOut `json:"buttons"`
 }
 
 // RolePermTreeReply 角色响应结构

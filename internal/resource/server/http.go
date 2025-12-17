@@ -1,7 +1,6 @@
 package server
 
 import (
-	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -34,10 +33,8 @@ func NewServer(
 	hostRepo := data.NewHostRepo(loggers.Data, db, dbTimeout)
 	pkgRepo := data.NewpackageRepo(loggers.Data, db, dbTimeout)
 
-	hostDir := filepath.Join(config.StorageDir, "inventory", "host_vars")
-	pkgDir := filepath.Join(config.StorageDir, "package")
-	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, signer, sshTimeout, hostDir)
-	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo, pkgDir)
+	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, signer, sshTimeout)
+	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo)
 
 	hostService := service.NewHostService(loggers.Service, hostUsecase)
 	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(conf.Security.Upload.MaxFileSize)*1024*1024)

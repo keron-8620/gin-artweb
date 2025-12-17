@@ -115,7 +115,7 @@ func (uc *PermissionUsecase) CreatePermission(
 	}
 
 	uc.log.Info(
-		"权限创建成功",
+		"创建权限成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -181,7 +181,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 	}
 
 	uc.log.Info(
-		"权限更新成功",
+		"更新权限成功",
 		zap.Uint32(PermissionIDKey, permID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -234,7 +234,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 	}
 
 	uc.log.Info(
-		"权限删除成功",
+		"删除权限成功",
 		zap.Uint32(PermissionIDKey, permID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -349,7 +349,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 	}
 
 	uc.log.Info(
-		"权限策略加载成功",
+		"加载权限策略成功",
 		zap.Int("policy_count", policyCount),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)

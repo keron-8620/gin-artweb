@@ -59,4 +59,10 @@ var (
 		"删除文件错误",
 		nil,
 	)
+	ErrSetFilePermission = New(
+		http.StatusInternalServerError,
+		"set_file_permission",
+		"设置文件权限错误",
+		nil,
+	)
 )

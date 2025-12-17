@@ -5,14 +5,9 @@ import (
 	"gin-artweb/api/customer/role"
 )
 
-// UserOutBase用户基础信息
-type UserOutBase struct {
+type UserBaseOut struct {
 	// 用户ID
 	ID uint32 `json:"id" example:"1"`
-	// 创建时间
-	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
-	// 更新时间
-	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 	// 名称
 	Username string `json:"username" example:"judgement"`
 	// 是否激活
@@ -21,16 +16,25 @@ type UserOutBase struct {
 	IsStaff bool `json:"is_staff" example:"false"`
 }
 
-type UserOut struct {
-	UserOutBase
-	Role *role.RoleOutBase `json:"role"`
+// UserStandardOut用户基础信息
+type UserStandardOut struct {
+	UserBaseOut
+	// 创建时间
+	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
+	// 更新时间
+	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
+}
+
+type UserDetailOut struct {
+	UserStandardOut
+	Role *role.RoleBaseOut `json:"role"`
 }
 
 // UserBaseReply 用户响应结构
-type UserReply = common.APIReply[*UserOut]
+type UserReply = common.APIReply[*UserDetailOut]
 
 // PagUserReply 用户的分页响应结构
-type PagUserReply = common.APIReply[*common.Pag[UserOut]]
+type PagUserReply = common.APIReply[*common.Pag[UserDetailOut]]
 
 type LoginOut struct {
 	Token string `json:"token"`
