@@ -1,0 +1,36 @@
+---
+
+- name: verify fetch_flag and freeze_flag is_exist
+  debug:
+    msg: "fetch_flag is not existed or freeze_flag is not existed or file_check_result is failed"
+  failed_when: not xcounter_fetch_ok.stat.exists or not xcounter_freezed_ok.stat.exists or file_check_result is failed
+  register: check_result
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: yes
+
+- name: touch counter_collector success
+  shell: "echo 'success' > {{ local_path_oes_home_flag_colodir }}/{{ flag_success }}"
+  when: check_result is success
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: touch counter_collector failed
+  shell: "echo 'fail' > {{ local_path_oes_home_flag_colodir }}/{{ flag_failed }}"
+  when: check_result is failed
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: clear running flag
+  file:
+    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: set exit code
+  fail:
+     msg: "Check result indicates failure: {{ check_result }}"
+  when: check_result is failed
+  delegate_to: 127.0.0.1
+  run_once: true

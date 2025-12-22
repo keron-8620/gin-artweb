@@ -6,36 +6,36 @@ import (
 	"path/filepath"
 )
 
-// Move moves a file or directory from src to dst.
-// If dst is an existing directory, src will be moved into that directory.
-// If dst is a file or non-existent path, src will be renamed to dst.
+// Move 将文件或目录从源路径移动到目标路径。
+// 如果目标路径是已存在的目录，则源文件/目录将被移动到该目录中。
+// 如果目标路径是文件或不存在的路径，则源文件/目录将被重命名为目标路径。
 func Move(src, dst string) error {
-	// Validate input paths
+	// 验证输入路径
 	if src == "" {
-		return fmt.Errorf("source path cannot be empty")
+		return fmt.Errorf("源路径不能为空")
 	}
 	if dst == "" {
-		return fmt.Errorf("destination path cannot be empty")
+		return fmt.Errorf("目标路径不能为空")
 	}
 
-	// Check if source exists
+	// 检查源是否存在
 	srcInfo, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("failed to get source info: %w", err)
+		return fmt.Errorf("获取源信息失败: %w", err)
 	}
 
-	// Check if source and destination are the same
+	// 检查源和目标是否相同
 	if dstInfo, err := os.Stat(dst); err == nil {
 		if os.SameFile(srcInfo, dstInfo) {
-			// Source and destination are the same, nothing to do
+			// 源和目标相同，无需操作
 			return nil
 		}
 		
-		// If destination is a directory, move src into that directory
+		// 如果目标是目录，则将源移动到该目录中
 		if dstInfo.IsDir() {
 			dst = filepath.Join(dst, filepath.Base(src))
 			
-			// Check again if they're the same after path adjustment
+			// 路径调整后再次检查是否相同
 			if dstInfo, err := os.Stat(dst); err == nil {
 				if os.SameFile(srcInfo, dstInfo) {
 					return nil
@@ -43,31 +43,19 @@ func Move(src, dst string) error {
 			}
 		}
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("failed to check destination: %w", err)
+		return fmt.Errorf("检查目标路径失败: %w", err)
 	}
 
-	// Ensure parent directory of destination exists
+	// 确保目标的父目录存在
 	dstDir := filepath.Dir(dst)
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
-		return fmt.Errorf("failed to create destination parent directory: %w", err)
+		return fmt.Errorf("创建目标父目录失败: %w", err)
 	}
 
-	// Perform the move operation
+	// 执行移动操作
 	if err := os.Rename(src, dst); err != nil {
-		return fmt.Errorf("failed to move %s to %s: %w", src, dst, err)
+		return fmt.Errorf("将 %s 移动到 %s 失败: %w", src, dst, err)
 	}
 
 	return nil
-}
-
-// MoveFile moves a file from src to dst.
-// It behaves the same as Move but provides semantic clarity when working specifically with files.
-func MoveFile(src, dst string) error {
-	return Move(src, dst)
-}
-
-// MoveDir moves a directory from src to dst.
-// It behaves the same as Move but provides semantic clarity when working specifically with directories.
-func MoveDir(src, dst string) error {
-	return Move(src, dst)
 }

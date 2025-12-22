@@ -9,8 +9,8 @@ type TimeoutConfig struct {
 // TimestampConfig 时间戳验证配置
 type TimestampConfig struct {
 	CheckTimestamp  bool `yaml:"check_timestamp"`   // 是否检查时间戳
-	Tolerance       int  `yaml:"tolerance"`         // 时间容忍度(秒)
-	FutureTolerance int  `yaml:"future_tolerance"`  // 未来时间容忍度(秒)
+	Tolerance       int  `yaml:"tolerance"`         // 时间容忍度(毫秒)
+	FutureTolerance int  `yaml:"future_tolerance"`  // 未来时间容忍度(毫秒)
 }
 
 // TokenConfig Token配置
@@ -33,12 +33,6 @@ type UploadConfig struct {
 
 // PasswordConfig 密码配置
 type PasswordConfig struct {
-	MinLength     int  `yaml:"min_length"`      // 最小长度
-	MaxLength     int  `yaml:"max_length"`      // 最大长度
-	RequireUpper  bool `yaml:"require_upper"`   // 需要大写字母
-	RequireLower  bool `yaml:"require_lower"`   // 需要小写字母
-	RequireNumber bool `yaml:"require_number"`  // 需要数字
-	RequireSpecial bool `yaml:"require_special"` // 需要特殊字符
 	StrengthLevel int  `yaml:"strength_level"`  // 密码强度等级
 }
 

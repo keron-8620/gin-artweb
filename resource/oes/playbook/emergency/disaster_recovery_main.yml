@@ -1,0 +1,23 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - name: load automatic variables
+      include_vars: "{{ local_path_oes_home_config_all }}/automatic.yml"
+      delegate_to: 127.0.0.1
+      run_once: true
+
+    - name: start oes disaster recovery
+      shell: "nohup {{ ansible_python_interpreter }} art/watch.py -s {{ zb_host }} -p {{ zb_port }} -u {{ zb_user }} -d {{ zb_path }} -l {{ zb_dir }} >/dev/null 2>&1 &"
+      args:
+        chdir: "{{ slave_path_oes_home }}"
+      when: is_enable_zb and node_role == 'follow' and zb_active == "start"
+
+    - name: stop oes disaster recovery
+      shell: "pkill -f '{{ ansible_python_interpreter }} art/watch.py -s {{ zb_host }} -p {{ zb_port }} -u {{ zb_user }} -d {{ zb_path }} -l {{ zb_dir }}'"
+      args:
+        chdir: "{{ slave_path_oes_home }}"
+      when: is_enable_zb and node_role == 'follow' and zb_active == "stop"

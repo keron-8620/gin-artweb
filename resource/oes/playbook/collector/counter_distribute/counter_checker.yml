@@ -1,0 +1,10 @@
+---
+
+- name: check counter files ready
+  wait_for:
+    path: "{{ slave_path_oes_home_data_broker }}/{{item}}"
+    state: present
+    timeout: 1
+  with_items: "{{ counter_check_files }}"
+  register: check_result
+  ignore_errors: yes

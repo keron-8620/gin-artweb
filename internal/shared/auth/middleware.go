@@ -74,7 +74,7 @@ func AuthMiddleware(enforcer *AuthEnforcer, logger *zap.Logger, loginUrl string)
 			c.AbortWithStatusJSON(ErrForbidden.Code, ErrForbidden.ToMap())
 			return
 		}
-		SetUserClaims(c, *info)
+		c.Set(contextUserKey, info)
 		c.Next()
 	}
 }

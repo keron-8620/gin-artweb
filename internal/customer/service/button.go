@@ -144,13 +144,14 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucButton.UpdateButtonByID(ctx, uri.PK, req.PermissionIDs, map[string]any{
+	m, err := s.ucButton.UpdateButtonByID(ctx, uri.PK, req.PermissionIDs, map[string]any{
 		"name":          req.Name,
 		"arrange_order": req.ArrangeOrder,
 		"is_active":     req.IsActive,
 		"descr":         req.Descr,
 		"menu_id":       req.MenuID,
-	}); err != nil {
+	})
+	if err != nil {
 		s.log.Error(
 			"更新按钮失败",
 			zap.Error(err),
@@ -167,18 +168,6 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	m, err := s.ucButton.FindButtonByID(ctx, []string{"Permissions", "Menu"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的按钮信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
 
 	ctx.JSON(http.StatusOK, &pbButton.ButtonReply{
 		Code: http.StatusOK,

@@ -21,5 +21,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -X 'main.version=${VERSION}' \
     -X 'main.commitID=${COMMIT_ID}' \
     -X 'main.buildTime=${BUILD_TIME}' \
+    -X 'main.goVersion=$(go version)' \
+    -X 'main.goOS=$(go env GOOS)' \
+    -X 'main.goArch=$(go env GOARCH)'
   " \
   -o gin-artweb main.go

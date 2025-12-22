@@ -236,6 +236,58 @@ definitions:
     - mon_node_id
     - package_id
     type: object
+  colony.CreateOrUpdateOesColonyRequest:
+    properties:
+      colony_num:
+        description: |-
+          集群号
+          required: true
+          example: "01"
+        maxLength: 2
+        type: string
+      extracted_name:
+        description: |-
+          解压后名称
+          required: true
+          example: "oes"
+        maxLength: 50
+        type: string
+      mon_node_id:
+        description: |-
+          mon节点ID
+          required: true
+          example: 1
+        type: integer
+      package_id:
+        description: |-
+          程序包ID
+          required: true
+          example: 1
+        type: integer
+      system_type:
+        description: |-
+          系统类型
+          required: true
+          example: "stk"
+        enum:
+        - STK
+        - CRD
+        - OPT
+        type: string
+      xcounter_id:
+        description: |-
+          xcounter包ID
+          required: true
+          example: 1
+        type: integer
+    required:
+    - colony_num
+    - extracted_name
+    - mon_node_id
+    - package_id
+    - system_type
+    - xcounter_id
+    type: object
   colony.MdsColonyBaseOut:
     properties:
       colony_num:
@@ -320,6 +372,104 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
     type: object
+  colony.OesColonyBaseOut:
+    properties:
+      colony_num:
+        description: 集群号
+        example: test
+        type: string
+      extracted_name:
+        description: 解压后名称
+        example: ""
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      system_type:
+        description: 系统类型
+        example: stk
+        type: string
+    type: object
+  colony.OesColonyDetailOut:
+    properties:
+      colony_num:
+        description: 集群号
+        example: test
+        type: string
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      extracted_name:
+        description: 解压后名称
+        example: ""
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      mon_node:
+        $ref: '#/definitions/node.MonNodeBaseOut'
+      package:
+        $ref: '#/definitions/pkg.PackageStandardOut'
+      system_type:
+        description: 系统类型
+        example: stk
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      xcounter:
+        $ref: '#/definitions/pkg.PackageStandardOut'
+    type: object
+  colony.OesColonyReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/colony.OesColonyDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  colony.OesColonyStandardOut:
+    properties:
+      colony_num:
+        description: 集群号
+        example: test
+        type: string
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      extracted_name:
+        description: 解压后名称
+        example: ""
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      system_type:
+        description: 系统类型
+        example: stk
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
   colony.PagMdsColonyReply:
     properties:
       code:
@@ -330,6 +480,25 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/common.Pag-colony_MdsColonyStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  colony.PagOesColonyReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-colony_OesColonyStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -396,6 +565,38 @@ definitions:
         description: 对象数组
         items:
           $ref: '#/definitions/colony.MdsColonyStandardOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-colony_OesColonyStandardOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/colony.OesColonyStandardOut'
         type: array
       page:
         description: |-
@@ -524,6 +725,38 @@ definitions:
         description: 对象数组
         items:
           $ref: '#/definitions/node.MonNodeDetailOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
+  common.Pag-node_OesNodeStandardOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/node.OesNodeStandardOut'
         type: array
       page:
         description: |-
@@ -1285,7 +1518,6 @@ definitions:
         type: string
     required:
     - host_id
-    - is_enable
     - mds_colony_id
     - node_role
     type: object
@@ -1333,6 +1565,41 @@ definitions:
     - host_id
     - name
     - outport_path
+    type: object
+  node.CreateOrUpdateOesNodeRequest:
+    properties:
+      host_id:
+        description: |-
+          主机ID
+          required: true
+          example: 1
+        type: integer
+      is_enable:
+        description: |-
+          是否启用
+          required: true
+          example: true
+        type: boolean
+      node_role:
+        description: |-
+          节点角色
+          required: true
+          example: "01"
+        enum:
+        - master
+        - follow
+        - arbiter
+        type: string
+      oes_colony_id:
+        description: |-
+          oes集群ID
+          required: true
+          example: 1
+        type: integer
+    required:
+    - host_id
+    - node_role
+    - oes_colony_id
     type: object
   node.MdsNodeDetailOut:
     properties:
@@ -1484,6 +1751,73 @@ definitions:
           Example: "success"
         type: string
     type: object
+  node.OesNodeDetailOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      host:
+        $ref: '#/definitions/host.HostBaseOut'
+      id:
+        description: ID
+        example: 1
+        type: integer
+      is_enable:
+        description: 是否启用
+        type: boolean
+      node_role:
+        description: 节点角色
+        example: master
+        type: string
+      oes_colony:
+        $ref: '#/definitions/colony.OesColonyBaseOut'
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  node.OesNodeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/node.OesNodeDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  node.OesNodeStandardOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      id:
+        description: ID
+        example: 1
+        type: integer
+      is_enable:
+        description: 是否启用
+        type: boolean
+      node_role:
+        description: 节点角色
+        example: master
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
   node.PagMdsNodeReply:
     properties:
       code:
@@ -1513,6 +1847,25 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/common.Pag-node_MonNodeDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  node.PagOesNodeReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-node_OesNodeStandardOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -5075,6 +5428,384 @@ paths:
       summary: 更新mon节点
       tags:
       - mon节点管理
+  /api/v1/oes/colony:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询oes集群列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: oes集群名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes集群列表
+          schema:
+            $ref: '#/definitions/colony.PagOesColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes集群列表
+      tags:
+      - oes集群管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于创建新的oes集群
+      parameters:
+      - description: 创建oes集群请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/colony.CreateOrUpdateOesColonyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes集群信息
+          schema:
+            $ref: '#/definitions/colony.OesColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建oes集群
+      tags:
+      - oes集群管理
+  /api/v1/oes/colony/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的oes集群
+      parameters:
+      - description: oes集群编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除oes集群
+      tags:
+      - oes集群管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的oes集群详情
+      parameters:
+      - description: oes集群编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes集群信息
+          schema:
+            $ref: '#/definitions/colony.OesColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes集群详情
+      tags:
+      - oes集群管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的oes集群
+      parameters:
+      - description: oes集群编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新oes集群请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/colony.CreateOrUpdateOesColonyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes集群信息
+          schema:
+            $ref: '#/definitions/colony.OesColonyReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新oes集群
+      tags:
+      - oes集群管理
+  /api/v1/oes/node:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询oes节点列表
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: oes节点名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes节点列表
+          schema:
+            $ref: '#/definitions/node.PagOesNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes节点列表
+      tags:
+      - oes节点管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于创建新的oes节点
+      parameters:
+      - description: 创建oes节点请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/node.CreateOrUpdateOesNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes节点信息
+          schema:
+            $ref: '#/definitions/node.OesNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建oes节点
+      tags:
+      - oes节点管理
+  /api/v1/oes/node/{pk}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的oes节点
+      parameters:
+      - description: oes节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除oes节点
+      tags:
+      - oes节点管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的oes节点详情
+      parameters:
+      - description: oes节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes节点信息
+          schema:
+            $ref: '#/definitions/node.OesNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes节点详情
+      tags:
+      - oes节点管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的oes节点
+      parameters:
+      - description: oes节点编号
+        in: path
+        name: pk
+        required: true
+        type: integer
+      - description: 更新oes节点请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/node.CreateOrUpdateOesNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes节点信息
+          schema:
+            $ref: '#/definitions/node.OesNodeReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes节点未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新oes节点
+      tags:
+      - oes节点管理
   /api/v1/resource/host:
     get:
       consumes:

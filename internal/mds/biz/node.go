@@ -20,7 +20,7 @@ const MdsNodeIDKey = "mds_node_id"
 type MdsNodeModel struct {
 	database.StandardModel
 	NodeRole    string            `gorm:"column:node_role;type:varchar(50);comment:节点角色" json:"role"`
-	IsEnable    bool              `gorm:"column:is_enable;type:tinyint;comment:是否启用" json:"is_enable"`
+	IsEnable    bool              `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
 	MdsColonyID uint32            `gorm:"column:mds_colony_id;not null;comment:mds集群ID" json:"mds_colony_id"`
 	MdsColony   MdsColonyModel    `gorm:"foreignKey:MdsColonyID;references:ID;constraint:OnDelete:CASCADE" json:"mds_colony"`
 	HostID      uint32            `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
@@ -37,6 +37,8 @@ func (m *MdsNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("role", m.NodeRole)
 	enc.AddBool("is_enable", m.IsEnable)
+	enc.AddUint32("mds_colony_id", m.MdsColonyID)
+	enc.AddUint32("host_id", m.HostID)
 	return nil
 }
 
@@ -98,19 +100,19 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 
 	uc.log.Info(
 		"创建mds节点成功",
-		zap.Object(database.ModelKey, &m),
+		zap.Object(database.ModelKey, nm),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return &m, nil
+	return nm, nil
 }
 
 func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 	ctx context.Context,
 	mdsNodeID uint32,
 	data map[string]any,
-) *errors.Error {
+) (*MdsNodeModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -129,16 +131,16 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
-	nm, rErr := uc.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, mdsNodeID)
+	m, rErr := uc.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, mdsNodeID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
-	if err := uc.OutPortMdsNodeData(ctx, nm); err != nil {
-		return err
+	if err := uc.OutPortMdsNodeData(ctx, m); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(
@@ -146,7 +148,7 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
@@ -260,11 +262,12 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	var specdir string
-	if m.NodeRole == "master" {
+	switch m.NodeRole {
+	case "master":
 		specdir = "host_01"
-	} else if m.NodeRole == "follow" {
+	case "follow":
 		specdir = "host_02"
-	} else {
+	default:
 		specdir = "host_03"
 	}
 	mdsVars := MdsNodeVars{
@@ -273,7 +276,7 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 		Specdir:  specdir,
 		HostID:   m.HostID,
 	}
-	mdsColonyConf := filepath.Join(config.StorageDir, "export", "mds", m.MdsColony.ColonyNum, "colony.yml")
+	mdsColonyConf := filepath.Join(config.StorageDir, "mds", "config", m.MdsColony.ColonyNum, specdir, "node.yaml")
 	if _, err := serializer.WriteYAML(mdsColonyConf, mdsVars); err != nil {
 		uc.log.Error(
 			"导出mds节点变量文件失败",

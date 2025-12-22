@@ -18,10 +18,10 @@ const ScriptIDKey = "script_id"
 
 type ScriptModel struct {
 	database.StandardModel
-	Name      string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	Name      string `gorm:"column:name;type:varchar(50);not null;index:idx_script_project_label_name;comment:名称" json:"name"`
 	Descr     string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	Project   string `gorm:"column:project;type:varchar(50);comment:项目" json:"project"`
-	Label     string `gorm:"column:label;type:varchar(50);index:idx_script_label;comment:标签" json:"label"`
+	Project   string `gorm:"column:project;type:varchar(50);index:idx_script_project_label_name;comment:项目" json:"project"`
+	Label     string `gorm:"column:label;type:varchar(50);index:idx_script_project_label_name;;comment:标签" json:"label"`
 	Language  string `gorm:"column:language;type:varchar(50);comment:脚本语言" json:"language"`
 	Status    bool   `gorm:"column:status;type:boolean;comment:是否启用" json:"status"`
 	IsBuiltin bool   `gorm:"column:is_builtin;type:boolean;comment:是否是内置脚本" json:"is_builtin"`
@@ -49,9 +49,9 @@ func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *ScriptModel) ScriptPath() string {
 	if m.IsBuiltin {
-		return filepath.Join(config.ResourceDir, "script", m.Project, m.Label, m.Name)
+		return filepath.Join(config.ResourceDir, m.Project, "script", m.Label, m.Name)
 	}
-	return filepath.Join(config.StorageDir, "script", m.Project, m.Label, m.Name)
+	return filepath.Join(config.StorageDir, m.Project, "script", m.Label, m.Name)
 }
 
 type ScriptRepo interface {
@@ -113,9 +113,22 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	ctx context.Context,
 	scriptID uint32,
 	data map[string]any,
-) *errors.Error {
+) (*ScriptModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
+	}
+
+	om, rErr := uc.FindScriptByID(ctx, scriptID)
+	if rErr != nil {
+		return nil, rErr
+	}
+	if om.IsBuiltin {
+		uc.log.Error(
+			"内置脚本不能修改",
+			zap.Uint32(ScriptIDKey, scriptID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return nil, ErrScriptIsBuiltin.WithData(map[string]any{ScriptIDKey: scriptID})
 	}
 
 	uc.log.Info(
@@ -133,7 +146,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	uc.log.Info(
@@ -141,7 +154,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 		zap.Uint32(ScriptIDKey, scriptID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return uc.FindScriptByID(ctx, scriptID)
 }
 
 func (uc *ScriptUsecase) DeleteScriptByID(
@@ -152,16 +165,24 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 		return errors.FromError(err)
 	}
 
+	m, rErr := uc.FindScriptByID(ctx, scriptID)
+	if rErr != nil {
+		return rErr
+	}
+	if m.IsBuiltin {
+		uc.log.Error(
+			"内置脚本不能删除",
+			zap.Uint32(ScriptIDKey, scriptID),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return ErrScriptIsBuiltin.WithData(map[string]any{ScriptIDKey: scriptID})
+	}
+
 	uc.log.Info(
 		"开始删除脚本",
 		zap.Uint32(ScriptIDKey, scriptID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	m, rErr := uc.FindScriptByID(ctx, scriptID)
-	if rErr != nil {
-		return rErr
-	}
 
 	if err := uc.scriptRepo.DeleteModel(ctx, scriptID); err != nil {
 		uc.log.Error(

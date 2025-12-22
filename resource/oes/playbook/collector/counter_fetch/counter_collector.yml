@@ -1,0 +1,92 @@
+---
+
+- name: create counter logs
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items: 
+    - "{{ local_path_oes_home_counter_colodir_bin_script }}"
+    - "{{ local_path_oes_home_counter_colodir_bin_lib }}"
+    - "{{ local_path_oes_home_counter_colodir_conf }}"
+    - "{{ local_path_oes_home_counter_colodir_data }}"
+    - "{{ local_path_oes_home_counter_colodir_data_broker }}"
+    - "{{ local_path_oes_home_counter_colodir_logs }}"
+    - "{{ local_path_oes_home_backup_colodir }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: backup counter logs
+  archive:
+    path: "{{ local_path_oes_home_counter_colodir_logs }}"
+    dest: "{{ local_path_oes_home_backup_colodir }}/counter_logs_{{ curr_date }}{{ curr_time_hhmm.stdout.strip() }}.tar.gz"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  ignore_errors: yes
+
+- name: rm local xcounter_run_fetch_ok
+  file:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_fetch_ok }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: rm local counter/bin_lib, bin/script, conf, data
+  command: "find {{ item }} -type f -delete"
+  with_items:
+    - "{{ local_path_oes_home_counter_colodir_bin_script }}"
+    - "{{ local_path_oes_home_counter_colodir_bin_lib }}"
+    - "{{ local_path_oes_home_counter_colodir_conf }}"
+    - "{{ local_path_oes_home_counter_colodir_data }}"
+    - "{{ local_path_oes_home_counter_colodir_data_broker }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: True
+
+- name: archive oes script files
+  archive:
+    path:
+      - "{{ slave_path_oes_home_bin_lib }}"
+      - "{{ slave_path_oes_home_bin_script }}"
+      - "{{ slave_path_oes_home_conf }}"
+      - "{{ slave_path_oes_home_data }}"
+    dest: "{{ slave_path_oes_home }}/xcounter.tar.gz"
+    remove: False
+  run_once: true
+  ignore_errors: True
+
+- name: fetch ufx2oes script files
+  fetch:
+    src: "{{ slave_path_oes_home }}/{{ item }}"
+    dest: "{{ local_path_oes_home_counter_colodir }}/"
+    flat: yes
+    fail_on_missing: yes
+    validate_checksum: no
+  with_items:
+    - "xcounter.tar.gz"
+  run_once: true
+  ignore_errors: True
+
+- name: unarchive oes script files
+  command: tar -xzvf xcounter.tar.gz
+  args:
+    chdir: "{{ local_path_oes_home_counter_colodir }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: True
+
+- name: get counter data
+  raw: 'cd {{ local_path_oes_home_counter_colodir_bin_script }}
+        && export LD_LIBRARY_PATH=$PWD:$PWD/../lib && 
+        {{ local_python_interpreter }} $PWD/xcounter2oes_main.py {{ counter_fetch_cmd_args }}'
+  delegate_to: 127.0.0.1
+  run_once: true
+  register: collector_counter_result
+  ignore_errors: yes
+
+- name: backup broker data
+  archive:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}"
+    dest: "{{ local_path_oes_home_backup_colodir }}/broker_backup_{{ curr_date }}{{ curr_time_hhmm.stdout.strip() }}.tar.gz"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  ignore_errors: yes

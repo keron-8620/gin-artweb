@@ -38,6 +38,12 @@ var (
 		"添加计划任务到调度器中失败",
 		nil,
 	)
+	ErrScriptIsBuiltin = errors.New(
+		http.StatusBadRequest,
+		"script_is_builtin",
+		"内置脚本不允许修改或删除",
+		nil,
+	)
 )
 
 

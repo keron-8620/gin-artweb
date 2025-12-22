@@ -41,6 +41,8 @@ func (m *MdsColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("colony_num", m.ColonyNum)
 	enc.AddString("extracted_name", m.ExtractedName)
+	enc.AddUint32("package_id", m.PackageID)
+	enc.AddUint32("mon_node_id", m.MonNodeID)
 	return nil
 }
 
@@ -112,9 +114,9 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 	ctx context.Context,
 	mdsColonyID uint32,
 	data map[string]any,
-) *errors.Error {
+) (*MdsColonyModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -133,16 +135,16 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
-	nm, rErr := uc.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, mdsColonyID)
+	m, rErr := uc.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, mdsColonyID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
-	if err := uc.OutportMdsColonyData(ctx, nm); err != nil {
-		return err
+	if err := uc.OutportMdsColonyData(ctx, m); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(
@@ -150,7 +152,7 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
@@ -282,7 +284,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		}
 	}
 
-	mdsTmpDir, mErr := fileutil.MkdirTemp("/tmp", "mds-")
+	tmpDir, mErr := os.MkdirTemp("/tmp", "mds-")
 	if mErr != nil {
 		uc.log.Error(
 			"创建mds程序包解压的tmp文件夹失败",
@@ -292,28 +294,27 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		return ErrExportMdsColonyFailed.WithCause(mErr)
 	}
 	defer func() {
-		if err := os.RemoveAll(mdsTmpDir); err != nil {
+		if err := os.RemoveAll(tmpDir); err != nil {
 			uc.log.Error(
 				"删除mds程序包解压的tmp文件夹失败",
 				zap.Error(err),
-				zap.String("path", mdsTmpDir),
+				zap.String("path", tmpDir),
 			)
 		}
 	}()
 
-	untarDirName, valiErr := archive.ValidateSingleDirTarGz(bizReso.PackageStoragePath(m.Package.StorageFilename))
+	mdsPkgPath := bizReso.PackageStoragePath(m.Package.StorageFilename)
+	mdsUnTarDirName, valiErr := archive.ValidateSingleDirTarGz(mdsPkgPath)
 	if valiErr != nil {
 		uc.log.Error(
 			"mds程序包校验失败",
 			zap.Error(valiErr),
-			zap.String("path", m.Package.StorageFilename),
+			zap.String("path", mdsPkgPath),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrExportMdsColonyFailed.WithCause(valiErr)
 	}
-
-	pkgPath := bizReso.PackageStoragePath(m.Package.StorageFilename)
-	if err := archive.UntarGz(pkgPath, mdsTmpDir, archive.WithContext(ctx)); err != nil {
+	if err := archive.UntarGz(mdsPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
 		uc.log.Error(
 			"解压mds程序包失败",
 			zap.Error(err),
@@ -324,12 +325,12 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		return ErrUntarGzMdsPackage.WithCause(err)
 	}
 
-	tmpDir := filepath.Join(mdsTmpDir, untarDirName)
-	if err := fileutil.CopyDir(tmpDir, colonyBinDir); err != nil {
+	mdsTmpDir := filepath.Join(tmpDir, mdsUnTarDirName)
+	if err := fileutil.CopyDir(mdsTmpDir, colonyBinDir, true); err != nil {
 		uc.log.Error(
 			"复制mds程序包解压目录失败",
 			zap.Error(err),
-			zap.String("src_path", tmpDir),
+			zap.String("src_path", mdsTmpDir),
 			zap.String("dst_path", colonyBinDir),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -339,7 +340,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
 	if _, err := os.Stat(colonyConfAll); os.IsNotExist(err) {
 		colonyBinConf := filepath.Join(colonyBinDir, "conf")
-		if err := fileutil.CopyDir(colonyBinConf, colonyConfAll); err != nil {
+		if err := fileutil.CopyDir(colonyBinConf, colonyConfAll, true); err != nil {
 			uc.log.Error(
 				"复制mds集群配置文件失败",
 				zap.Error(err),
@@ -349,8 +350,8 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			)
 			return errors.FromError(err)
 		}
-		srcPath := filepath.Join(config.ConfigDir, "automatic_mds.yml")
-		dstPath := filepath.Join(colonyConfAll, "automatic.yml")
+		srcPath := filepath.Join(config.ConfigDir, "automatic_mds.yaml")
+		dstPath := filepath.Join(colonyConfAll, "automatic.yaml")
 		if err := fileutil.CopyFile(srcPath, dstPath); err != nil {
 			uc.log.Error(
 				"复制mds的automatic配置文件失败",
@@ -363,14 +364,14 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		}
 	}
 	mdsVars := MdsColonyVars{
-		ID:            m.ID,
-		ColonyNum:     m.ColonyNum,
-		ExtractedName: m.ExtractedName,
-		PackageID:     m.PackageID,
-		Version:       m.Package.Version,
-		MonNodeID:     m.MonNodeID,
+		ID:        m.ID,
+		ColonyNum: m.ColonyNum,
+		PkgName:   m.ExtractedName,
+		PackageID: m.PackageID,
+		Version:   m.Package.Version,
+		MonNodeID: m.MonNodeID,
 	}
-	mdsColonyConf := filepath.Join(colonyConfAll, "colony.yml")
+	mdsColonyConf := filepath.Join(colonyConfAll, "colony.yaml")
 	if _, err := serializer.WriteYAML(mdsColonyConf, mdsVars); err != nil {
 		uc.log.Error(
 			"导出mds集群配置变量文件失败",
@@ -392,18 +393,18 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 }
 
 type MdsColonyVars struct {
-	ID            uint32 `json:"id"`
-	ColonyNum     string `json:"colony_num"`
-	ExtractedName string `json:"extracted_name"`
-	PackageID     uint32 `json:"package_id"`
-	Version       string `json:"version"`
-	MonNodeID     uint32 `json:"mon_node_id"`
+	ID        uint32 `json:"id" yaml:"id"`
+	ColonyNum string `json:"colony_num" yaml:"colony_num"`
+	PkgName   string `json:"pkg_name" yaml:"pkg_name"`
+	PackageID uint32 `json:"package_id" yaml:"package_id"`
+	Version   string `json:"version" yaml:"version"`
+	MonNodeID uint32 `json:"mon_node_id" yaml:"mon_node_id"`
 }
 
 func (vs *MdsColonyVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("id", vs.ID)
+	enc.AddUint32("mds_colony_id", vs.ID)
 	enc.AddString("colony_num", vs.ColonyNum)
-	enc.AddString("extracted_name", vs.ExtractedName)
+	enc.AddString("pkg_name", vs.PkgName)
 	enc.AddUint32("package_id", vs.PackageID)
 	enc.AddString("version", vs.Version)
 	enc.AddUint32("mon_node_id", vs.MonNodeID)

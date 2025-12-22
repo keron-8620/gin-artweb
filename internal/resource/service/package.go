@@ -316,10 +316,11 @@ func PackageModelToOutBase(
 	m biz.PackageModel,
 ) *pbPkg.PackageStandardOut {
 	return &pbPkg.PackageStandardOut{
-		ID:       m.ID,
-		Filename: m.OriginFilename,
-		Label:    m.Label,
-		Version:  m.Version,
+		ID:         m.ID,
+		Filename:   m.OriginFilename,
+		Label:      m.Label,
+		Version:    m.Version,
+		UploadedAt: m.UploadedAt.String(),
 	}
 }
 

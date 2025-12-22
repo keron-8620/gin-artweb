@@ -1,0 +1,4 @@
+---
+
+cron_job_name: "csdc_collector"
+fetch_ok_flag: "{{ fetch_csdc_ok }}"

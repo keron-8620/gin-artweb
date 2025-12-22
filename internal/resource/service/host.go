@@ -142,7 +142,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucHost.UpdateHostById(ctx, biz.HostModel{
+	m, err := s.ucHost.UpdateHostById(ctx, biz.HostModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: uri.PK},
 		},
@@ -153,7 +153,8 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		SSHUser: req.SSHUser,
 		PyPath:  req.PyPath,
 		Remark:  req.Remark,
-	}, req.SSHPassword); err != nil {
+	}, req.SSHPassword)
+	if err != nil {
 		s.log.Error(
 			"更新主机失败",
 			zap.Error(err),
@@ -170,18 +171,6 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	m, err := s.ucHost.FindHostById(ctx, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的主机信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
 
 	mo := HostModelToStandardOut(*m)
 	ctx.JSON(http.StatusOK, &pbHost.HostReply{

@@ -1,0 +1,41 @@
+---
+
+- name: send xcounter2oes.log to slave logs
+  copy:
+    src: "{{ local_path_oes_home_counter_colodir_logs }}/xcounter2oes_main.log"
+    dest: "{{ slave_path_oes_home_logs }}"
+    mode: 0644
+  ignore_errors: yes
+
+- name: send counter files
+  synchronize:
+    src: "{{ local_path_oes_home_counter_colodir_data_broker }}/"
+    dest: "{{ slave_path_oes_home_data_broker }}/"
+  register: collector_counter_files_result
+  ignore_errors: yes
+
+- name: send counter capital-flow log to slave logs
+  copy:
+    src: "{{ local_path_oes_home_counter_colodir_logs }}/CounterAllot.{{ curr_date }}.falog"
+    dest: "{{ slave_path_oes_home_logs }}"
+    mode: 0644
+  when: "counter.lower() == 'hs'"
+  register: send_capital_flow_res
+  ignore_errors: yes
+
+- block:
+  - stat:
+      path: "{{ local_path_oes_home_counter_colodir_default }}/{{ item }}"
+    register: counter_files2
+    delegate_to: 127.0.0.1
+    run_once: true
+    with_items:
+      - "{{ default_counter_files2 }}"
+
+  - name: send define counter files 2
+    copy:
+      src: "{{ item.stat.path }}"
+      dest: "{{ slave_path_oes_home_data_broker }}/"
+      mode: 0644
+    when: item.stat.exists == true
+    with_items: "{{ counter_files2.results }}"

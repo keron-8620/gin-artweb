@@ -25,8 +25,8 @@ func NewServer(
 		panic(err)
 	}
 
-	sshTimeout := time.Duration(conf.SSH.ConnectTimeout) * time.Second
-	signer, err := NewSigner(loggers.Data, conf.SSH.PrivateKeyPath, sshTimeout)
+	sshTimeout := time.Duration(conf.SSH.Timeout) * time.Second
+	signer, err := NewSigner(loggers.Data, conf.SSH.Private, sshTimeout)
 	if err != nil {
 		panic(err)
 	}

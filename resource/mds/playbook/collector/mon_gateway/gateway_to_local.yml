@@ -1,0 +1,21 @@
+---
+
+- name: ensure TradingDate.txt absent
+  file:
+    path: "{{ local_path_mds_home_mon_colodir }}/TradingDate.txt"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: mkdir mon directory
+  file:
+    path: "{{ local_path_mds_home_mon_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote mon file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ mon_host.ansible_port }}' {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_host.slave_path_mon_outport }}/mds/{{ colony_num }}/ {{ local_path_mds_home_mon_colodir }}/"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: true

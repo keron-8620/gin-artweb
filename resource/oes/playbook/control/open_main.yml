@@ -1,0 +1,12 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - name: oes open
+      command: ./oes open
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+      when: node_role == "master"

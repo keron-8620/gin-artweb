@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"mime/multipart"
+	"strings"
 	"time"
 
 	"gin-artweb/api/common"
@@ -21,6 +22,7 @@ type UploadPackageRequest struct {
 	Version string `form:"version" binding:"required"`
 
 	// 上传的程序包文件
+	// Required: true
 	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
@@ -43,6 +45,11 @@ type ListPackageRequest struct {
 	// Max length: 50
 	Label string `form:"label" binding:"omitempty,max=50"`
 
+	// 标签，最大长度50,多个标签用逗号分隔
+	// Required: true
+	// Max length: 50
+	Labels string `form:"labels" binding:"omitempty,max=50"`
+
 	// 版本号，最大长度50
 	// Required: true
 	// Max length: 50
@@ -58,9 +65,22 @@ type ListPackageRequest struct {
 }
 
 func (req *ListPackageRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.BaseModelQuery.QueryMap(13)
+	page, size, query := req.BaseModelQuery.QueryMap(7)
 	if req.Label != "" {
 		query["label = ?"] = req.Label
+	}
+	if req.Labels != "" {
+		rawLabels := strings.Split(req.Labels, ",")
+		var labels []string
+		for _, label := range rawLabels {
+			trimmedLabel := strings.TrimSpace(label)
+			if trimmedLabel != "" { // 过滤掉空标签
+				labels = append(labels, trimmedLabel)
+			}
+		}
+		if len(labels) > 0 {
+			query["label in ?"] = labels
+		}
 	}
 	if req.Version != "" {
 		query["version like ?"] = "%" + req.Version + "%"

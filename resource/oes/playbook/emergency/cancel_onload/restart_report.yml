@@ -1,0 +1,45 @@
+---
+
+- name: Check if reporter onload function is already disabled
+  shell: |
+    grep -q "^#reporter.startupExe" "{{ slave_path_oes_home_conf }}/system.conf"
+  register: reporter_check
+  ignore_errors: yes
+  when: node_role == "master"
+  run_once: true
+
+- name: Report if onload function is already disabled
+  debug:
+    msg: "reporter进程onload功能已经是关闭状态, 不需要重启服务, 请检查配置."
+  when: reporter_check.rc == 0
+  delegate_to: 127.0.0.1
+  run_once: true
+  
+- name: Disable reporter onload function
+  shell: |
+    sed -i '/^reporter.startupExe/,+2 s/^/#/' "{{ slave_path_oes_home_conf }}/system.conf"
+  when: reporter_check.rc != 0 and node_role == "master"
+
+- name: Show message about disabling onload function
+  debug:
+    msg: "已关闭reporter的onload功能,即将进行重启操作."
+  delegate_to: 127.0.0.1
+  run_once: true
+  when: reporter_check.rc != 0
+
+- name: Wait for 5 seconds before restart
+  wait_for:
+    timeout: 5
+  when: reporter_check.rc != 0
+
+- name: Restart reporter service
+  shell: |
+    cd {{ slave_path_oes_home_bin }} && ./reporter sp -F && ./reporter st
+  when: reporter_check.rc != 0 and node_role == "master"
+
+- name: Show completion message
+  debug:
+    msg: "reporter进程重启完成, 请检查."
+  delegate_to: 127.0.0.1
+  run_once: true
+  when: reporter_check.rc != 0

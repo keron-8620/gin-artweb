@@ -1,0 +1,11 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - name: kill oes process
+      command: sh KillOES.sh -Y
+      args:
+        chdir: "{{ slave_path_oes_home_sbin }}"

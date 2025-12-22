@@ -9,11 +9,11 @@ import (
 
 // SystemConf 系统配置结构体
 type SystemConf struct {
-	Server   *ServerConfig    `yaml:"server"`
-	Database *DBConf          `yaml:"database"`
-	Log      *LogConfig       `yaml:"log"`
-	CORS     *AllowConfig     `yaml:"cors"`
-	SMTP     *SMTPConfig      `yaml:"smtp"`
+	Server   *ServerConfig `yaml:"server"`
+	Database *DBConf       `yaml:"database"`
+	Log      *LogConfig    `yaml:"log"`
+	CORS     *AllowConfig  `yaml:"cors"`
+	// SMTP     *SMTPConfig      `yaml:"smtp"`
 	Security *SecurityConfig  `yaml:"security"`
 	Rate     *RateLimitConfig `yaml:"rate"`
 	SSH      *SSHConfig       `yaml:"ssh"`

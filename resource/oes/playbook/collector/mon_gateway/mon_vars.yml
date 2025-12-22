@@ -1,0 +1,4 @@
+---
+
+fetch_ok_flag: "{{ fetch_mon_ok }}"
+cron_job_name: "mon_collector"

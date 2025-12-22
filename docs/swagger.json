@@ -3748,6 +3748,594 @@
                 }
             }
         },
+        "/api/v1/oes/colony": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询oes集群列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes集群管理"
+                ],
+                "summary": "查询oes集群列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "oes集群名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建用户名",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes集群列表",
+                        "schema": {
+                            "$ref": "#/definitions/colony.PagOesColonyReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于创建新的oes集群",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes集群管理"
+                ],
+                "summary": "创建oes集群",
+                "parameters": [
+                    {
+                        "description": "创建oes集群请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/colony.CreateOrUpdateOesColonyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes集群信息",
+                        "schema": {
+                            "$ref": "#/definitions/colony.OesColonyReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/oes/colony/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的oes集群详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes集群管理"
+                ],
+                "summary": "查询oes集群详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes集群编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes集群信息",
+                        "schema": {
+                            "$ref": "#/definitions/colony.OesColonyReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes集群未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的oes集群",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes集群管理"
+                ],
+                "summary": "更新oes集群",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes集群编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新oes集群请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/colony.CreateOrUpdateOesColonyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes集群信息",
+                        "schema": {
+                            "$ref": "#/definitions/colony.OesColonyReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes集群未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的oes集群",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes集群管理"
+                ],
+                "summary": "删除oes集群",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes集群编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes集群未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/oes/node": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询oes节点列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes节点管理"
+                ],
+                "summary": "查询oes节点列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "oes节点名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建用户名",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes节点列表",
+                        "schema": {
+                            "$ref": "#/definitions/node.PagOesNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于创建新的oes节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes节点管理"
+                ],
+                "summary": "创建oes节点",
+                "parameters": [
+                    {
+                        "description": "创建oes节点请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/node.CreateOrUpdateOesNodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes节点信息",
+                        "schema": {
+                            "$ref": "#/definitions/node.OesNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/oes/node/{pk}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的oes节点详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes节点管理"
+                ],
+                "summary": "查询oes节点详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes节点编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes节点信息",
+                        "schema": {
+                            "$ref": "#/definitions/node.OesNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes节点未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的oes节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes节点管理"
+                ],
+                "summary": "更新oes节点",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes节点编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新oes节点请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/node.CreateOrUpdateOesNodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes节点信息",
+                        "schema": {
+                            "$ref": "#/definitions/node.OesNodeReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes节点未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的oes节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes节点管理"
+                ],
+                "summary": "删除oes节点",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes节点编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes节点未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/resource/host": {
             "get": {
                 "security": [
@@ -4583,6 +5171,50 @@
                 }
             }
         },
+        "colony.CreateOrUpdateOesColonyRequest": {
+            "type": "object",
+            "required": [
+                "colony_num",
+                "extracted_name",
+                "mon_node_id",
+                "package_id",
+                "system_type",
+                "xcounter_id"
+            ],
+            "properties": {
+                "colony_num": {
+                    "description": "集群号\nrequired: true\nexample: \"01\"",
+                    "type": "string",
+                    "maxLength": 2
+                },
+                "extracted_name": {
+                    "description": "解压后名称\nrequired: true\nexample: \"oes\"",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "mon_node_id": {
+                    "description": "mon节点ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "package_id": {
+                    "description": "程序包ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "system_type": {
+                    "description": "系统类型\nrequired: true\nexample: \"stk\"",
+                    "type": "string",
+                    "enum": [
+                        "STK",
+                        "CRD",
+                        "OPT"
+                    ]
+                },
+                "xcounter_id": {
+                    "description": "xcounter包ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                }
+            }
+        },
         "colony.MdsColonyBaseOut": {
             "type": "object",
             "properties": {
@@ -4690,6 +5322,131 @@
                 }
             }
         },
+        "colony.OesColonyBaseOut": {
+            "type": "object",
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "example": "test"
+                },
+                "extracted_name": {
+                    "description": "解压后名称",
+                    "type": "string",
+                    "example": ""
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "system_type": {
+                    "description": "系统类型",
+                    "type": "string",
+                    "example": "stk"
+                }
+            }
+        },
+        "colony.OesColonyDetailOut": {
+            "type": "object",
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "example": "test"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "extracted_name": {
+                    "description": "解压后名称",
+                    "type": "string",
+                    "example": ""
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "mon_node": {
+                    "$ref": "#/definitions/node.MonNodeBaseOut"
+                },
+                "package": {
+                    "$ref": "#/definitions/pkg.PackageStandardOut"
+                },
+                "system_type": {
+                    "description": "系统类型",
+                    "type": "string",
+                    "example": "stk"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "xcounter": {
+                    "$ref": "#/definitions/pkg.PackageStandardOut"
+                }
+            }
+        },
+        "colony.OesColonyReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/colony.OesColonyDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "colony.OesColonyStandardOut": {
+            "type": "object",
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "example": "test"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "extracted_name": {
+                    "description": "解压后名称",
+                    "type": "string",
+                    "example": ""
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "system_type": {
+                    "description": "系统类型",
+                    "type": "string",
+                    "example": "stk"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
         "colony.PagMdsColonyReply": {
             "type": "object",
             "properties": {
@@ -4702,6 +5459,27 @@
                     "allOf": [
                         {
                             "$ref": "#/definitions/common.Pag-colony_MdsColonyStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "colony.PagOesColonyReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-colony_OesColonyStandardOut"
                         }
                     ]
                 },
@@ -4769,6 +5547,38 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/colony.MdsColonyStandardOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-colony_OesColonyStandardOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/colony.OesColonyStandardOut"
                     }
                 },
                 "page": {
@@ -4897,6 +5707,38 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/node.MonNodeDetailOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "common.Pag-node_OesNodeStandardOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/node.OesNodeStandardOut"
                     }
                 },
                 "page": {
@@ -5698,7 +6540,6 @@
             "type": "object",
             "required": [
                 "host_id",
-                "is_enable",
                 "mds_colony_id",
                 "node_role"
             ],
@@ -5759,6 +6600,37 @@
                 "url": {
                     "description": "URL地址\nrequired: true\nexample: \"http://192.168.11.189:8080/mon\"",
                     "type": "string"
+                }
+            }
+        },
+        "node.CreateOrUpdateOesNodeRequest": {
+            "type": "object",
+            "required": [
+                "host_id",
+                "node_role",
+                "oes_colony_id"
+            ],
+            "properties": {
+                "host_id": {
+                    "description": "主机ID\nrequired: true\nexample: 1",
+                    "type": "integer"
+                },
+                "is_enable": {
+                    "description": "是否启用\nrequired: true\nexample: true",
+                    "type": "boolean"
+                },
+                "node_role": {
+                    "description": "节点角色\nrequired: true\nexample: \"01\"",
+                    "type": "string",
+                    "enum": [
+                        "master",
+                        "follow",
+                        "arbiter"
+                    ]
+                },
+                "oes_colony_id": {
+                    "description": "oes集群ID\nrequired: true\nexample: 1",
+                    "type": "integer"
                 }
             }
         },
@@ -5951,6 +6823,91 @@
                 }
             }
         },
+        "node.OesNodeDetailOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "host": {
+                    "$ref": "#/definitions/host.HostBaseOut"
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "node_role": {
+                    "description": "节点角色",
+                    "type": "string",
+                    "example": "master"
+                },
+                "oes_colony": {
+                    "$ref": "#/definitions/colony.OesColonyBaseOut"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "node.OesNodeReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/node.OesNodeDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "node.OesNodeStandardOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "node_role": {
+                    "description": "节点角色",
+                    "type": "string",
+                    "example": "master"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
         "node.PagMdsNodeReply": {
             "type": "object",
             "properties": {
@@ -5984,6 +6941,27 @@
                     "allOf": [
                         {
                             "$ref": "#/definitions/common.Pag-node_MonNodeDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "node.PagOesNodeReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-node_OesNodeStandardOut"
                         }
                     ]
                 },

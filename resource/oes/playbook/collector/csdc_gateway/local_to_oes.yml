@@ -1,0 +1,43 @@
+---
+
+- name: copy csdc files to oes by remote-dir or network-protocol
+  copy:
+    src: "{{ item }}"
+    dest: "{{ slave_path_oes_home_data_csdc }}"
+    mode: 0644
+  with_fileglob:
+    - "{{ local_path_oes_home_csdc_colodir }}/*"
+  register: collector_csdc_files_result
+  ignore_errors: yes
+
+- name: merge csdc counter-files send list
+  set_fact:
+    counter_files: "{{ counter_files | default([]) + [item.name] }}"
+  when: "item.from_way == 'xter'"
+  with_items: "{{ csdc_cp_files }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- block:
+  - name: get counter-files copy list
+    find:
+      paths: "{{ local_path_oes_home_counter_colodir_data_exchange }}"
+      get_checksum: yes
+      file_type: file
+      use_regex: yes
+      patterns: "{{ counter_files }}"
+    register: counter_send_files
+    delegate_to: 127.0.0.1
+    run_once: true
+
+  - name: copy xdzq csdc files to oes by xcounter
+    copy:
+      src: "{{ item.path }}"
+      dest: "{{ slave_path_oes_home_data_csdc }}"
+      mode: 0644
+    loop_control:
+      label: "{{ item.path }}"
+    with_items: "{{ counter_send_files.files }}"
+    register: collector_sse_files_result
+    ignore_errors: yes
+  when: "counter_files is not undefined"

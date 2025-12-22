@@ -305,9 +305,11 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	}
 
 	// 添加分页条件
-	if query.Limit > 0 {
-		mdb = mdb.Limit(query.Limit)
+	limit := MaxLimit
+	if query.Limit > 0 && query.Limit <= MaxLimit {
+		limit = query.Limit
 	}
+	mdb = mdb.Limit(limit)
 	if query.Offset > 0 {
 		mdb = mdb.Offset(query.Offset)
 	}
@@ -337,6 +339,8 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	return count, nil
 }
 
+const MaxLimit = 1000
+
 // QueryParams 查询参数结构体，用于配置列表查询的各种参数
 type QueryParams struct {
 	Preloads []string       // 需要预加载的关联关系列表
@@ -344,7 +348,7 @@ type QueryParams struct {
 	OrderBy  []string       // 排序字段列表
 	Limit    int            // 限制返回记录数
 	Offset   int            // 偏移量
-	IsCount  bool           // 是否只查询总数
+	IsCount  bool           // 是否查询总数
 	Omit     []string       // 需要忽略的字段列表
 	Columns  []string       // 查询字段列表
 }

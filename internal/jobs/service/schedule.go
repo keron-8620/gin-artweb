@@ -144,24 +144,13 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 		"script_id":      req.ScriptID,
 	}
 
-	if err := s.ucSchedule.UpdateScheduleByID(ctx, uri.PK, data); err != nil {
+	m, err := s.ucSchedule.UpdateScheduleByID(ctx, uri.PK, data)
+	if err != nil {
 		s.log.Error(
 			"更新计划任务失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	m, err := s.ucSchedule.FindScheduleByID(ctx, []string{"Script"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的计划任务信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())

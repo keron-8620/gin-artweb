@@ -7,79 +7,79 @@ import (
 	"strings"
 )
 
-// Remove removes the named file or directory.
-// If the path is a directory, it will be removed only if it's empty.
-// If the path does not exist, Remove returns nil (no error).
+// Remove 删除指定名称的文件或目录。
+// 如果路径是目录，则只有在目录为空时才会被删除。
+// 如果路径不存在，则 Remove 返回 nil（无错误）。
 func Remove(path string) error {
-	// Validate input path
+	// 验证输入路径
 	if path == "" {
-		return fmt.Errorf("path cannot be empty")
+		return fmt.Errorf("路径不能为空")
 	}
 
-	// Check if path exists
+	// 检查路径是否存在
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			// Path doesn't exist, nothing to remove
+			// 路径不存在，无需删除
 			return nil
 		}
-		return fmt.Errorf("failed to check path: %w", err)
+		return fmt.Errorf("检查路径失败: %w", err)
 	}
 
-	// Remove the file or empty directory
+	// 删除文件或空目录
 	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("failed to remove %s: %w", path, err)
+		return fmt.Errorf("删除 %s 失败: %w", path, err)
 	}
 
 	return nil
 }
 
-// RemoveAll removes path and any children it contains.
-// It removes everything it can but returns the first error it encounters.
-// If the path does not exist, RemoveAll returns nil (no error).
+// RemoveAll 删除路径及其包含的所有子项。
+// 它会删除所有能删除的内容，但返回遇到的第一个错误。
+// 如果路径不存在，则 RemoveAll 返回 nil（无错误）。
 func RemoveAll(path string) error {
-	// Validate input path
+	// 验证输入路径
 	if path == "" {
-		return fmt.Errorf("path cannot be empty")
+		return fmt.Errorf("路径不能为空")
 	}
 
-	// Check if path exists
+	// 检查路径是否存在
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			// Path doesn't exist, nothing to remove
+			// 路径不存在，无需删除
 			return nil
 		}
-		return fmt.Errorf("failed to check path: %w", err)
+		return fmt.Errorf("检查路径失败: %w", err)
 	}
 
-	// Remove path and all its contents
+	// 删除路径及其所有内容
 	if err := os.RemoveAll(path); err != nil {
-		return fmt.Errorf("failed to remove all %s: %w", path, err)
+		return fmt.Errorf("删除全部 %s 失败: %w", path, err)
 	}
 
 	return nil
 }
 
-// RemoveIfExists removes the named file or directory if it exists.
-// It's an alias for Remove for semantic clarity.
+// RemoveIfExists 如果文件或目录存在则删除它。
+// 这是 Remove 的别名，用于语义上的清晰性。
 func RemoveIfExists(path string) error {
 	return Remove(path)
 }
 
-// SafeRemoveAll removes path and any children it contains,
-// but includes safety checks to prevent accidental deletion of important paths.
+// SafeRemoveAll 删除路径及其包含的所有子项，
+// 但包含安全检查以防止意外删除重要路径。
 func SafeRemoveAll(path string) error {
-	// Validate input path
+	// 验证输入路径
 	if path == "" {
-		return fmt.Errorf("path cannot be empty")
+		return fmt.Errorf("路径不能为空")
 	}
 
-	// Resolve to absolute path for safety checks
+	// 解析绝对路径以进行安全检查
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return fmt.Errorf("failed to resolve absolute path: %w", err)
+		return fmt.Errorf("解析绝对路径失败: %w", err)
 	}
 
-	// Safety checks to prevent accidental deletion of system paths
+	// 安全检查以防止意外删除系统路径
 	unsafePaths := []string{
 		"/",
 		"/usr",
@@ -98,61 +98,61 @@ func SafeRemoveAll(path string) error {
 
 	for _, unsafePath := range unsafePaths {
 		if strings.HasPrefix(absPath, unsafePath) && absPath == unsafePath {
-			return fmt.Errorf("refusing to remove protected system path: %s", absPath)
+			return fmt.Errorf("拒绝删除受保护的系统路径: %s", absPath)
 		}
 	}
 
-	// Also prevent removal of current working directory or parent paths
+	// 还要防止删除当前工作目录或父路径
 	cwd, err := os.Getwd()
 	if err == nil {
 		if absPath == cwd || strings.HasPrefix(cwd, absPath+"/") {
-			return fmt.Errorf("refusing to remove current working directory or parent path: %s", absPath)
+			return fmt.Errorf("拒绝删除当前工作目录或父路径: %s", absPath)
 		}
 	}
 
-	// Check if path exists
+	// 检查路径是否存在
 	if _, err := os.Stat(absPath); err != nil {
 		if os.IsNotExist(err) {
-			// Path doesn't exist, nothing to remove
+			// 路径不存在，无需删除
 			return nil
 		}
-		return fmt.Errorf("failed to check path: %w", err)
+		return fmt.Errorf("检查路径失败: %w", err)
 	}
 
-	// Remove path and all its contents
+	// 删除路径及其所有内容
 	if err := os.RemoveAll(absPath); err != nil {
-		return fmt.Errorf("failed to safely remove all %s: %w", absPath, err)
+		return fmt.Errorf("安全删除全部 %s 失败: %w", absPath, err)
 	}
 
 	return nil
 }
 
-// RemoveEmptyDir removes a directory only if it's empty.
-// Returns an error if the path is not a directory or if it contains files.
+// RemoveEmptyDir 仅在目录为空时删除该目录。
+// 如果路径不是目录或包含文件，则返回错误。
 func RemoveEmptyDir(path string) error {
-	// Validate input path
+	// 验证输入路径
 	if path == "" {
-		return fmt.Errorf("path cannot be empty")
+		return fmt.Errorf("路径不能为空")
 	}
 
-	// Check if path exists
+	// 检查路径是否存在
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Path doesn't exist, nothing to remove
+			// 路径不存在，无需删除
 			return nil
 		}
-		return fmt.Errorf("failed to check path: %w", err)
+		return fmt.Errorf("检查路径失败: %w", err)
 	}
 
-	// Check if path is a directory
+	// 检查路径是否为目录
 	if !info.IsDir() {
-		return fmt.Errorf("path is not a directory: %s", path)
+		return fmt.Errorf("路径不是目录: %s", path)
 	}
 
-	// Try to remove (this will fail if directory is not empty)
+	// 尝试删除（如果目录不为空则会失败）
 	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("failed to remove directory (may not be empty): %w", err)
+		return fmt.Errorf("删除目录失败（可能不为空）: %w", err)
 	}
 
 	return nil

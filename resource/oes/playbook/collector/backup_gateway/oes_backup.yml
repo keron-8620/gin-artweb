@@ -1,0 +1,88 @@
+---
+
+- name: create art-oes backup directory
+  file:
+    path: "{{ local_path_oes_home_backup_colodir }}/{{ curr_date }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  ignore_errors: yes
+  run_once: yes
+
+- name: backup art-oes files
+  archive:
+    path: "{{ item.bkup_src }}"
+    dest: "{{ local_path_oes_home_backup_colodir }}/{{ curr_date }}/{{ item.bkup_name }}-{{ curr_date }}{{ curr_time_hhmm.stdout.strip() }}.tar.gz"
+    remove: "no"
+  with_items: "{{ art_oes_backup_list }}"
+  delegate_to: 127.0.0.1
+  ignore_errors: yes
+  run_once: yes
+
+- name: clean art backup files
+  command: "{{ local_python_interpreter}} clear_dirs.py {{ item.bkup_src }}"
+  args:
+    chdir: "{{ local_path_script_home_slave }}"
+  when: item.src_remove == "yes"
+  with_items: "{{ art_oes_backup_list }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: clean art product files
+  command: "{{ local_python_interpreter}} clear_dirs.py {{ item }}"
+  args:
+    chdir: "{{ local_path_script_home_slave }}"
+  with_items:
+    - "{{ local_path_oes_home_mon_colodir }}"
+    - "{{ local_path_oes_home_counter_colodir }}"
+    - "{{ local_path_oes_home_sse_colodir }}"
+    - "{{ local_path_oes_home_szse_colodir }}"
+    - "{{ local_path_oes_home_sse_etf_colodir }}"
+    - "{{ local_path_oes_home_szse_etf_colodir }}"
+    - "{{ local_path_oes_home_sse_late_colodir }}"
+    - "{{ local_path_oes_home_szse_late_colodir }}"
+    - "{{ local_path_oes_home_csdc_colodir }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create backup directory
+  file:
+    path: "{{ slave_backup_path_oes_curr_date }}"
+    state: directory
+
+- name: backup oes specified content
+  archive:
+    path: "{{ item.bkup_src }}"
+    dest: "{{ slave_backup_path_oes_curr_date }}/{{ item.bkup_name }}-{{ curr_date }}{{ curr_time_hhmm.stdout.strip() }}.tar.gz"
+    remove: no
+  with_items: "{{ backup_list }}"
+  ignore_errors: yes
+  register: backup_res
+
+- name: clean oes backup files
+  command: "{{ ansible_python_interpreter }} clear_dirs.py {{ item.bkup_src }}"
+  args:
+    chdir: "{{ slave_path_oes_home_art }}"
+  when: item.src_remove == "yes"
+  with_items: "{{ backup_list }}"
+
+- name: backup multi specified content
+  command: "{{ ansible_python_interpreter }} multi_bak_txlog.py -s {{ item.bkup_src }} -b {{ slave_backup_path_oes_curr_date }}"
+  args:
+    chdir: "{{ slave_path_oes_home_art }}"
+  when: item.src_remove == "yes"
+  with_items: "{{ backup_multi_list }}"
+  ignore_errors: yes
+
+- name: clean oes backup multi files
+  command: "{{ ansible_python_interpreter }} clear_dirs.py {{ item.bkup_src }}"
+  args:
+    chdir: "{{ slave_path_oes_home_art }}"
+  when: item.src_remove == "yes"
+  with_items: "{{ backup_multi_list }}"
+
+- name: clean oes old backup files
+  command: "{{ ansible_python_interpreter }} clear_old_bak_files.py -p {{ slave_backup_path_oes }} -k {{ item }} -d {{ clear_old_backup_datas }}"
+  args:
+    chdir: "{{ slave_path_oes_home_art }}"
+  with_items: "{{ clear_old_backup_key_word_list }}"
+  when: is_clear_old_backup_files == "yes"

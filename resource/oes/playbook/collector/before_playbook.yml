@@ -1,0 +1,64 @@
+---
+
+- name: create flag directory
+  file:
+    path: "{{ local_path_oes_home_flag_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: check flag status
+  stat:
+    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
+  register: flag_running
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: echo task is running
+  fail:
+    msg: "{{ cron_job_name }} is running, please wait for it to finish"
+  when: flag_running.stat.exists
+
+- name: touch running flag
+  file:
+    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
+    state: touch
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: rm success or failed flag
+  file:
+    path: "{{ local_path_oes_home_flag_colodir }}/{{ item }}"
+    state: absent
+  with_items:
+    - "{{ flag_success }}"
+    - "{{ flag_failed }}"
+    - "{{ flag_timeout }}"
+    - "{{ flag_cancel }}"
+    - "{{ flag_crash }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: print curr_date
+  debug:
+    msg: "{{ curr_date }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: print next_trd_date
+  debug:
+    msg: "{{ next_trd_date }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: print pre_trd_date
+  debug:
+    msg: "{{ pre_trd_date }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: get curr hhmm
+  command: 'date +%H%M'
+  register: curr_time_hhmm
+  delegate_to: 127.0.0.1
+  run_once: true

@@ -6,99 +6,79 @@ import (
 	"path/filepath"
 )
 
-// Mkdir creates a directory named path with the specified permission bits.
-// If the directory already exists, it does nothing and returns nil.
+// Mkdir 使用指定的权限位创建名为 path 的目录。
+// 如果目录已经存在，则不执行任何操作并返回 nil。
 func Mkdir(path string, perm os.FileMode) error {
-	// Validate input path
+	// 验证输入路径
 	if path == "" {
-		return fmt.Errorf("path cannot be empty")
+		return fmt.Errorf("路径不能为空")
 	}
 
-	// Check if directory already exists
+	// 检查目录是否已存在
 	if info, err := os.Stat(path); err == nil {
 		if info.IsDir() {
-			// Directory already exists
+			// 目录已存在
 			return nil
 		}
-		// Path exists but is not a directory
-		return fmt.Errorf("path exists but is not a directory: %s", path)
+		// 路径存在但不是目录
+		return fmt.Errorf("路径存在但不是目录: %s", path)
 	} else if !os.IsNotExist(err) {
-		// Other stat error
-		return fmt.Errorf("failed to check path: %w", err)
+		// 其他状态错误
+		return fmt.Errorf("检查路径失败: %w", err)
 	}
 
-	// Create the directory
+	// 创建目录
 	if err := os.Mkdir(path, perm); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		return fmt.Errorf("创建目录失败: %w", err)
 	}
 
 	return nil
 }
 
-// MkdirAll creates a directory named path along with any necessary parents,
-// with the specified permission bits.
-// If the directory already exists, it does nothing and returns nil.
+// MkdirAll 创建名为 path 的目录以及任何必要的父目录，
+// 使用指定的权限位。
+// 如果目录已经存在，则不执行任何操作并返回 nil。
 func MkdirAll(path string, perm os.FileMode) error {
-	// Validate input path
+	// 验证输入路径
 	if path == "" {
-		return fmt.Errorf("path cannot be empty")
+		return fmt.Errorf("路径不能为空")
 	}
 
-	// Clean the path
+	// 清理路径
 	path = filepath.Clean(path)
 
-	// Check if directory already exists
+	// 检查目录是否已存在
 	if info, err := os.Stat(path); err == nil {
 		if info.IsDir() {
-			// Directory already exists
+			// 目录已存在
 			return nil
 		}
-		// Path exists but is not a directory
-		return fmt.Errorf("path exists but is not a directory: %s", path)
+		// 路径存在但不是目录
+		return fmt.Errorf("路径存在但不是目录: %s", path)
 	} else if !os.IsNotExist(err) {
-		// Other stat error
-		return fmt.Errorf("failed to check path: %w", err)
+		// 其他状态错误
+		return fmt.Errorf("检查路径失败: %w", err)
 	}
 
-	// Create the directory and any necessary parents
+	// 创建目录及任何必要的父目录
 	if err := os.MkdirAll(path, perm); err != nil {
-		return fmt.Errorf("failed to create directory path: %w", err)
+		return fmt.Errorf("创建目录路径失败: %w", err)
 	}
 
 	return nil
 }
 
-// MkdirWithParents creates a directory with specified permissions along with its parent directories.
-// This is an alias for MkdirAll for convenience.
-func MkdirWithParents(path string, perm os.FileMode) error {
-	return MkdirAll(path, perm)
-}
-
-// MkdirTemp creates a new temporary directory in the directory dir with a name beginning with prefix
-// and returns the path of the new directory.
-// If dir is the empty string, TempDir uses the default directory for temporary files (see os.TempDir).
-// Multiple programs calling MkdirTemp simultaneously will not choose the same directory.
-func MkdirTemp(dir, prefix string) (string, error) {
-	// Create temporary directory
-	tempDir, err := os.MkdirTemp(dir, prefix)
-	if err != nil {
-		return "", fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-
-	return tempDir, nil
-}
-
-// EnsureDir ensures that the directory containing the given file path exists.
-// This is useful when you want to ensure the parent directory of a file exists before creating the file.
+// EnsureDir 确保包含给定文件路径的目录存在。
+// 当您想在创建文件之前确保其父目录存在时，这很有用。
 func EnsureDir(filePath string) error {
-	// Validate input path
+	// 验证输入路径
 	if filePath == "" {
-		return fmt.Errorf("file path cannot be empty")
+		return fmt.Errorf("文件路径不能为空")
 	}
 
-	// Get the directory part of the file path
+	// 获取文件路径的目录部分
 	dir := filepath.Dir(filePath)
 
-	// Create directory with default permissions if it doesn't exist
+	// 如果目录不存在，则使用默认权限创建目录
 	return MkdirAll(dir, 0755)
 }

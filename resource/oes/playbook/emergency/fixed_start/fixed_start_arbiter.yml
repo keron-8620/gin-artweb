@@ -1,0 +1,13 @@
+---
+
+- name: stop oes arbiter
+  command: ./oes stop -F
+  args:
+    chdir: "{{ slave_path_oes_home_bin }}"
+  when: node_role == "arbiter"
+
+- name: start arbiter oes
+  command: ./oes start
+  args:
+    chdir: "{{ slave_path_oes_home_bin }}"
+  when: node_role == "arbiter"

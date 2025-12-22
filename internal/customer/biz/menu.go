@@ -256,9 +256,9 @@ func (uc *MenuUsecase) UpdateMenuByID(
 	menuID uint32,
 	permIDs []uint32,
 	data map[string]any,
-) *errors.Error {
+) (*MenuModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -271,7 +271,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 
 	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	data["id"] = menuID
@@ -283,12 +283,12 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 	if err := uc.menuRepo.RemoveGroupPolicy(ctx, m, false); err != nil {
 		uc.log.Error(
@@ -297,7 +297,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			zap.Uint32(MenuIDKey, menuID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrRemoveGroupPolicy.WithCause(err)
+		return nil, ErrRemoveGroupPolicy.WithCause(err)
 	}
 
 	if err := uc.menuRepo.AddGroupPolicy(ctx, m); err != nil {
@@ -307,7 +307,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			zap.Uint32(MenuIDKey, menuID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrAddGroupPolicy.WithCause(err)
+		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
 
 	uc.log.Info(
@@ -315,7 +315,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 		zap.Uint32(MenuIDKey, menuID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *MenuUsecase) DeleteMenuByID(

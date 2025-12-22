@@ -1,0 +1,22 @@
+---
+
+- name: clear sse late directory
+  file:
+    path: "{{ local_path_oes_home_sse_late_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create sse late directory
+  file:
+    path: "{{ local_path_oes_home_sse_late_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote sse late file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ sse_port }}' {{ sse_user }}@{{ sse_host }}:{{ gateway_path_root_exchange_sse }}/{{ item }} {{ local_path_oes_home_sse_late_colodir }}/"
+  with_items: "{{ sse_late_cp_files }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes

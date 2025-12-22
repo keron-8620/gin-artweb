@@ -131,24 +131,13 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 		"host_id":      req.HostID,
 	}
 
-	if err := s.ucNode.UpdateMonNodeByID(ctx, uri.PK, data); err != nil {
+	m, err := s.ucNode.UpdateMonNodeByID(ctx, uri.PK, data)
+	if err != nil {
 		s.log.Error(
 			"更新mon节点失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	m, err := s.ucNode.FindMonNodeByID(ctx, []string{"Host"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的mon节点信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())

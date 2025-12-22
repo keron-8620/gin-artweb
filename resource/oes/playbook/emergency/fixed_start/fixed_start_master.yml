@@ -1,0 +1,66 @@
+---
+
+- name: stop oes master
+  command: ./oes stop -F
+  args:
+    chdir: "{{ slave_path_oes_home_bin }}"
+  when: node_role == "master"
+
+- name: find master txlog files
+  find:
+    paths: "{{ slave_path_oes_home_txlog }}"
+    patterns: "TXLOG_*"
+  register: txlog_files
+  when: node_role == "master"
+
+- name: clear master txlog files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ txlog_files.files | map(attribute='path') | list }}"
+  when: node_role == "master"
+
+- name: archive oes follow data
+  archive:
+    path: "{{ slave_path_oes_home_data }}"
+    dest: "{{ slave_path_oes_home }}/data.tar.gz"
+  when: node_role == "follow"
+
+- name: fetch oes follow data to local
+  fetch:
+    src: "{{ slave_path_oes_home }}/data.tar.gz"
+    dest: "{{ local_path_oes_home_tmp_colodir }}/data.tar.gz"
+    flat: "yes"
+  when: node_role == "follow"
+
+- name: clear oes follow data tar file
+  file:
+    path: "{{ slave_path_oes_home_data }}/data.tar.gz"
+    state: absent
+  when: node_role == "follow"
+
+- name: copy archived file to target remote host
+  copy:
+    src: "{{ local_path_oes_home_tmp_colodir }}/data.tar.gz"
+    dest: "{{ slave_path_oes_home }}/data.tar.gz"
+    force: "yes"
+  when: node_role == "master"
+
+- name: unarchived data tar file
+  unarchive:
+    src: "{{ slave_path_oes_home }}/data.tar.gz"
+    dest: "{{ slave_path_oes_home_data }}"
+    remote_src: "yes"
+  when: node_role == "master"
+
+- name: clear txlog tar files
+  file:
+    path: "{{ slave_path_oes_home }}/data.tar.gz"
+    state: absent
+
+- name: start arbiter oes
+  command: ./oes start
+  args:
+    chdir: "{{ slave_path_oes_home_bin }}"
+  when: node_role == "master"
+

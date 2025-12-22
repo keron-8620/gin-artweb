@@ -1,0 +1,27 @@
+---
+
+- name: check mon files ready
+  find:
+    paths: "{{ slave_path_oes_home_data_monitor }}"
+    get_checksum: yes
+    file_type: file
+    use_regex: yes
+    patterns: "{{ item }}"
+  with_items: "{{ mon_check_files }}"
+  register: find_res
+
+- name: print mon files ready
+  debug:
+    msg: "file ==> {{ item.item }} | matched ==> {{ item.matched }}"
+  failed_when: "item.matched == 0"
+  with_items: "{{ find_res.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  ignore_errors: yes
+  register: check_result
+
+- name: cp mon files to oes conf
+  command: "cp {{ slave_path_oes_home_data_monitor }}/{{ item }} {{ slave_path_oes_home_conf }}"
+  when: check_result is success and ansible_play_hosts == ansible_play_hosts_all
+  with_items: "{{ mon_cp_to_conf_files }}"
+  ignore_errors: yes

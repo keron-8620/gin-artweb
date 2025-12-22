@@ -1,0 +1,50 @@
+---
+
+- name: check counter files ready
+  find:
+    paths: "{{ local_path_oes_home_counter_colodir_data_broker }}"
+    get_checksum: yes
+    file_type: file
+    use_regex: yes
+    patterns: "{{ item }}"
+  with_items: "{{ counter_check_files }}"
+  register: find_res
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: print counter files ready
+  debug:
+    msg: "file ==> {{ item.item }} | matched ==> {{ item.matched }}"
+  failed_when: "item.matched == 0"
+  with_items: "{{ find_res.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  ignore_errors: yes
+  register: file_check_result
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: check xcounter.ok is exist
+  stat:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_fetch_ok }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  register: xcounter_fetch_ok
+
+
+- name: create glzq o32 system ok freezed_ok_flag for xcounter
+  file:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_freezed_ok }}"
+    state: touch
+  when: file_check_result is success and xcounter_fetch_ok.stat.exists and broker == "glzq"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  ignore_errors: yes
+
+- name: check xcounter_freezed OK flag
+  stat:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_freezed_ok }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  register: xcounter_freezed_ok
+

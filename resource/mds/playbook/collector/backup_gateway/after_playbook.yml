@@ -1,0 +1,23 @@
+
+- name: create backup .success flag on local host
+  file:
+    path: "{{ local_path_mds_home_flag_colodir }}/{{ flag_success }}"
+    state: touch
+  when: "backup_res is success"
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: create backup .failed flag on local host
+  file:
+    path: "{{ local_path_mds_home_flag_colodir }}/{{ flag_failed }}"
+    state: touch
+  when: "backup_res is failed"
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: set exit code
+  fail:
+     msg: "backup result indicates failure: {{ backup_res }}"
+  when: backup_res is failed
+  delegate_to: 127.0.0.1
+  run_once: true

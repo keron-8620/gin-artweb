@@ -239,9 +239,9 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 	ctx context.Context,
 	scheduleID uint32,
 	data map[string]any,
-) *errors.Error {
+) (*ScheduleModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -259,17 +259,17 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindScheduleByID(ctx, []string{"Script"}, scheduleID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
 	uc.removeJob(ctx, scheduleID)
 	if rErr := uc.addJob(ctx, m); rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
 	uc.log.Info(
@@ -277,7 +277,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 		zap.Uint32(ScheduleIDKey, scheduleID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *ScheduleUsecase) DeleteScheduleByID(

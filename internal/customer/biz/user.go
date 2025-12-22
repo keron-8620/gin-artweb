@@ -397,7 +397,7 @@ func (uc *UserUsecase) CheckPasswordStrength(ctx context.Context, pwd string) *e
 	)
 
 	strength := GetPasswordStrength(pwd)
-	if strength < StrengthStrong {
+	if strength < uc.conf.Password.StrengthLevel {
 		uc.log.Warn(
 			"密码强度不足",
 			zap.Int("password_strength", strength),

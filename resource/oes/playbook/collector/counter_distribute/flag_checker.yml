@@ -1,0 +1,29 @@
+---
+
+- name: check xcounter_fetch OK flag
+  stat:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_fetch_ok }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  register: xcounter_fetch_ok
+
+- name: print check xcounter_fetch res if flag is not exist
+  debug:
+    msg: "xcounter_fetch OK flag is not exist"
+  when: not xcounter_fetch_ok.stat.exists
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: check xcounter_freezed OK flag
+  stat:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_freezed_ok }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  register: xcounter_freezed_ok
+
+- name: print check xcounter_freeze res if flag is not exist
+  debug:
+    msg: "xcounter_freeze OK flag is not exist"
+  when: not xcounter_freezed_ok.stat.exists
+  delegate_to: 127.0.0.1
+  run_once: yes

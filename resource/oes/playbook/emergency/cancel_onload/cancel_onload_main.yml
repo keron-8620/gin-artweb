@@ -1,0 +1,15 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - include_tasks: ./restart_all.yml
+      when: process_name == "all"
+
+    - include_tasks: ./restart_reporter.yml
+      when: process_name == "reporter"
+
+    - include_tasks: ./restart_receiver.yml
+      when: process_name == "receiver"

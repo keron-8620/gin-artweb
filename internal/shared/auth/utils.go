@@ -42,6 +42,6 @@ func GetUserClaims(ctx *gin.Context) *UserClaims {
 	return nil
 }
 
-func SetUserClaims(ctx *gin.Context, claims UserClaims) {
-	ctx.Set(contextUserKey, &claims)
-}
+// func SetUserClaims(ctx *gin.Context, claims UserClaims) {
+// 	ctx.Set(contextUserKey, &claims)
+// }

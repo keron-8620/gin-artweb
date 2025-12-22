@@ -1,0 +1,13 @@
+---
+
+- name: send sse file to oes
+  synchronize:
+    src: "{{ local_path_oes_home_sse_colodir }}/"
+    dest: "{{ slave_path_oes_home_data_exchange }}/"
+  ignore_errors: yes
+
+- name: send sse etf file to oes
+  synchronize:
+    src: "{{ local_path_oes_home_sse_etf_colodir }}/"
+    dest: "{{ slave_path_oes_home_data_exchange_sse_etf }}/"
+  ignore_errors: yes

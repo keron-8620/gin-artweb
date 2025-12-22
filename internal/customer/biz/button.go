@@ -233,9 +233,9 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 	buttonID uint32,
 	permIDs []uint32,
 	data map[string]any,
-) *errors.Error {
+) (*ButtonModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -248,7 +248,7 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 
 	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	data["id"] = buttonID
@@ -260,12 +260,12 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindButtonByID(ctx, []string{"Menu", "Permissions"}, buttonID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
 	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, m, false); err != nil {
@@ -275,7 +275,7 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 			zap.Uint32(ButtonIDKey, buttonID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrRemoveGroupPolicy.WithCause(err)
+		return nil, ErrRemoveGroupPolicy.WithCause(err)
 	}
 
 	if err := uc.buttonRepo.AddGroupPolicy(ctx, m); err != nil {
@@ -285,7 +285,7 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 			zap.Uint32(ButtonIDKey, buttonID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrAddGroupPolicy.WithCause(err)
+		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
 
 	uc.log.Info(
@@ -293,7 +293,7 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 		zap.Uint32(ButtonIDKey, buttonID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *ButtonUsecase) DeleteButtonByID(

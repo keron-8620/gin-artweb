@@ -128,24 +128,13 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 		"mon_node_id":    req.MonNodeID,
 	}
 
-	if err := s.ucColony.UpdateMdsColonyByID(ctx, uri.PK, data); err != nil {
+	m, err := s.ucColony.UpdateMdsColonyByID(ctx, uri.PK, data)
+	if err != nil {
 		s.log.Error(
 			"更新mds集群失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	m, err := s.ucColony.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的mds集群信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())

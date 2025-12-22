@@ -43,6 +43,7 @@ func (m *MonNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("outport_path", m.OutportPath)
 	enc.AddString("java_home", m.JavaHome)
 	enc.AddString("url", m.URL)
+	enc.AddUint32("host_id", m.HostID)
 	return nil
 }
 
@@ -109,9 +110,9 @@ func (uc *MonNodeUsecase) UpdateMonNodeByID(
 	ctx context.Context,
 	nodeID uint32,
 	data map[string]any,
-) *errors.Error {
+) (*MonNodeModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -129,16 +130,16 @@ func (uc *MonNodeUsecase) UpdateMonNodeByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindMonNodeByID(ctx, []string{"Host"}, nodeID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
 	if rErr := uc.ExportMonNode(ctx, *m); rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
 	uc.log.Info(
@@ -146,7 +147,7 @@ func (uc *MonNodeUsecase) UpdateMonNodeByID(
 		zap.Uint32(MonNodeIDKey, nodeID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *MonNodeUsecase) DeleteMonNodeByID(
@@ -305,8 +306,8 @@ func (uc *MonNodeUsecase) ExportMonNode(ctx context.Context, m MonNodeModel) *er
 type MonNodeVars struct {
 	ID          uint32 `json:"id" yaml:"id"`
 	Name        string `json:"name" yaml:"name"`
-	DeployPath  string `json:"deploy_path" yaml:"deploy_path"`
-	OutportPath string `json:"outport_path" yaml:"outport_path"`
+	DeployPath  string `json:"slave_path_mon_home" yaml:"slave_path_mon_home"`
+	OutportPath string `json:"slave_path_mon_outport" yaml:"slave_path_mon_outport"`
 	JavaHome    string `json:"java_home" yaml:"java_home"`
 	URL         string `json:"url" yaml:"url"`
 	HostID      uint32 `json:"host_id" yaml:"host_id"`
@@ -315,8 +316,8 @@ type MonNodeVars struct {
 func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("id", vs.ID)
 	enc.AddString("name", vs.Name)
-	enc.AddString("deploy_path", vs.DeployPath)
-	enc.AddString("outport_path", vs.OutportPath)
+	enc.AddString("slave_path_mon_home", vs.DeployPath)
+	enc.AddString("slave_path_mon_outport", vs.OutportPath)
 	enc.AddString("java_home", vs.JavaHome)
 	enc.AddString("url", vs.URL)
 	enc.AddUint32("host_id", vs.HostID)
@@ -324,6 +325,5 @@ func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 func MonNodeExportPath(pk uint32) string {
-	filename := fmt.Sprintf("mon_%d.yaml", pk)
-	return filepath.Join(config.StorageDir, "mon", filename)
+	return filepath.Join(config.StorageDir, "mon", "config", fmt.Sprintf("%d", pk), "mon.yaml")
 }

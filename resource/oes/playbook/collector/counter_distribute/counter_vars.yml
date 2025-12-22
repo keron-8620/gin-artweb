@@ -1,0 +1,4 @@
+---
+
+fetch_ok_flag: "{{ fetch_counter_ok }}"
+cron_job_name: "counter_distribute"

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	goerrors "errors"
+	"fmt"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -93,8 +94,15 @@ func (c *AuthEnforcer) AddPolicy(ctx context.Context, sub, obj, act string) erro
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
+
+	// 参数校验
+	if sub == "" || obj == "" || act == "" {
+		return fmt.Errorf("添加策略失败: 参数不能为空")
+	}
+
+	// 添加策略
 	if _, err := c.Enforcer.AddPolicy(sub, obj, act); err != nil {
-		return err
+		return fmt.Errorf("添加策略失败: %w", err)
 	}
 	return nil
 }
@@ -106,8 +114,15 @@ func (c *AuthEnforcer) RemovePolicy(ctx context.Context, sub, obj, act string) e
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
+
+	// 参数校验
+	if sub == "" || obj == "" || act == "" {
+		return fmt.Errorf("移除策略失败: 参数不能为空")
+	}
+
+	// 移除策略
 	if _, err := c.Enforcer.RemovePolicy(sub, obj, act); err != nil {
-		return err
+		return fmt.Errorf("移除策略失败: %w", err)
 	}
 	return nil
 }
@@ -118,8 +133,15 @@ func (c *AuthEnforcer) AddGroupPolicy(ctx context.Context, sub, obj string) erro
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
+
+	// 参数校验
+	if sub == "" || obj == "" {
+		return fmt.Errorf("添加组策略失败: 参数不能为空")
+	}
+
+	// 添加组策略
 	if _, err := c.Enforcer.AddGroupingPolicy(sub, obj); err != nil {
-		return err
+		return fmt.Errorf("添加组策略失败: %w", err)
 	}
 	return nil
 }
@@ -130,8 +152,18 @@ func (c *AuthEnforcer) RemoveGroupPolicy(ctx context.Context, index int, value s
 	if err := errors.CheckContext(ctx); err != nil {
 		return err
 	}
+
+	// 参数校验
+	if value == "" {
+		return fmt.Errorf("移除组策略失败: 值不能为空")
+	}
+	if index < 0 || index > 1 {
+		return fmt.Errorf("移除组策略失败: 索引必须在0-1之间")
+	}
+
+	// 移除组策略
 	if _, err := c.Enforcer.RemoveFilteredGroupingPolicy(index, value); err != nil {
-		return err
+		return fmt.Errorf("删除组策略失败: %w", err)
 	}
 	return nil
 }

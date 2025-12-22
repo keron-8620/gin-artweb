@@ -184,7 +184,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		return
 	}
 
-	if rErr := s.ucScript.UpdateScriptByID(ctx, uri.PK, map[string]any{
+	m, rErr := s.ucScript.UpdateScriptByID(ctx, uri.PK, map[string]any{
 		"name":       req.File.Filename,
 		"descr":      req.Descr,
 		"project":    req.Project,
@@ -193,7 +193,8 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		"status":     req.Status,
 		"is_builtin": false,
 		"username":   uc.Subject,
-	}); rErr != nil {
+	})
+	if rErr != nil {
 		s.log.Error(
 			"更新脚本失败",
 			zap.Error(rErr),
@@ -201,18 +202,6 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
-		return
-	}
-
-	m, err := s.ucScript.FindScriptByID(ctx, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的脚本详情失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 

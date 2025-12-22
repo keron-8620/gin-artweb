@@ -1,0 +1,63 @@
+###################### local工作目录相关文件位置 ####################
+local_path_mds_home_bin: "{{ local_path_mds_home }}/bin"
+local_path_mds_home_bin_colodir: "{{ local_path_mds_home_bin }}/{{ colony_num }}"
+local_path_mds_home_config: "{{ local_path_mds_home }}/config"
+local_path_mds_home_config_all: "{{ local_path_mds_home_config }}/{{ colony_num }}/all"
+local_path_mds_home_config_specdir: "{{ local_path_mds_home_config }}/{{ colony_num }}/{{ specdir }}"
+local_path_mds_home_flag: "{{ local_path_mds_home }}/flags"
+local_path_mds_home_flag_colodir: "{{ local_path_mds_home_flag }}/{{ colony_num }}"
+local_path_mds_home_backup: "{{ local_path_mds_home }}/backup"
+local_path_mds_home_backup_colodir: "{{ local_path_mds_home_backup }}/{{ colony_num }}"
+local_path_mds_home_tmp: "{{ local_path_mds_home }}/.tmp"
+local_path_mds_home_tmp_colodir: "{{ local_path_mds_home_tmp }}/{{ colony_num }}"
+local_path_mds_home_mon: "{{ local_path_mds_home }}/mon"
+local_path_mds_home_mon_colodir: "{{ local_path_mds_home_mon }}/{{ colony_num }}"
+local_path_mds_home_sse: "{{ local_path_mds_home }}/sse"
+local_path_mds_home_sse_colodir: "{{ local_path_mds_home_sse }}/{{ colony_num }}"
+local_path_mds_home_sse_etf: "{{ local_path_mds_home }}/sse_etf"
+local_path_mds_home_sse_etf_colodir: "{{ local_path_mds_home_sse_etf }}/{{ colony_num }}"
+local_path_mds_home_sse_late: "{{ local_path_mds_home }}/sse_late"
+local_path_mds_home_sse_late_colodir: "{{ local_path_mds_home_sse_late }}/{{ colony_num }}"
+local_path_mds_home_szse: "{{ local_path_mds_home }}/szse"
+local_path_mds_home_szse_colodir: "{{ local_path_mds_home_szse }}/{{ colony_num }}"
+local_path_mds_home_szse_etf: "{{ local_path_mds_home }}/szse_etf"
+local_path_mds_home_szse_etf_colodir: "{{ local_path_mds_home_szse_etf }}/{{ colony_num }}"
+local_path_mds_home_szse_late: "{{ local_path_mds_home }}/szse_late"
+local_path_mds_home_szse_late_colodir: "{{ local_path_mds_home_szse_late }}/{{ colony_num }}"
+
+local_path_script_home_slave: "{{ local_path_script_home }}/slave"
+###################### local工作目录相关文件位置 ####################
+
+################# 被控机相关目录 ##############################
+slave_path_user_home: "/home/{{ ansible_user }}/{{ specdir }}"
+slave_path_mds_home: "{{ slave_path_user_home }}/{{ extracted_name }}"
+slave_path_mds_home_art: "{{ slave_path_mds_home }}/art"
+slave_path_mds_home_bin: "{{ slave_path_mds_home }}/bin"
+slave_path_mds_home_bin_script: "{{ slave_path_mds_home }}/bin/script"
+slave_path_mds_home_conf: "{{ slave_path_mds_home }}/conf"
+slave_path_mds_home_logs: "{{ slave_path_mds_home }}/logs"
+slave_path_mds_home_txlog: "{{ slave_path_mds_home }}/txlog"
+slave_path_mds_home_data: "{{ slave_path_mds_home }}/data"
+slave_path_mds_home_data_flags: "{{ slave_path_mds_home_data }}/flags"
+slave_path_mds_home_data_exchange: "{{ slave_path_mds_home_data }}/exchange"
+slave_path_mds_home_data_monitor: "{{ slave_path_mds_home_data }}/monitor"
+slave_path_mds_home_sbin: "{{ slave_path_mds_home }}/sbin"
+
+slave_backup_path: "{{ slave_path_user_home }}/backup"
+slave_backup_path_mds: "{{ slave_backup_path }}/{{ extracted_name }}"
+slave_backup_path_mds_curr_date: "{{ slave_backup_path_mds }}/{{ curr_date }}"
+#################被控机相关目录##############################
+
+############################## flag 文件名 ##########################
+fetch_mon_ok: "DATA_FETCH_MON.{{ curr_date }}.OK"
+fetch_sse_ok: "DATA_FETCH_SSE.{{ curr_date }}.OK"
+fetch_szse_ok: "DATA_FETCH_SZSE.{{ curr_date }}.OK"
+
+flag_name: "{{ cron_job_name }}_{{ curr_date }}"
+flag_success: "{{ flag_name }}.success"
+flag_failed: "{{ flag_name }}.failed"
+flag_running: "{{ flag_name }}.running"
+flag_timeout: "{{ flag_name }}.timeout"
+flag_cancel: "{{ flag_name }}.cancel"
+flag_crash: "{{ flag_name }}.crash"
+#####################################################################

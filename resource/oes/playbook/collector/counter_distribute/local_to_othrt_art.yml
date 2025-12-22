@@ -1,0 +1,15 @@
+- name: copy data/broker to other art
+  command: rsync -az -e 'ssh -p {{ item.slave_port }}' {{ local_path_oes_home_counter_colodir_data_broker }}/ {{ item.slave_user }}@{{ item.slave_host }}:{{ item.slave_path }}
+  with_items: "{{ counter_slaves }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: yes
+  register: broker_dep_result
+
+- name: copy xcounter2oes.log to other art
+  command: rsync -az -e 'ssh -p {{ item.slave_port }}' {{ local_path_oes_home_counter_colodir_logs }}/ {{ item.slave_user }}@{{ item.slave_host }}:{{ item.slave_path }}
+  with_items: "{{ counter_slaves }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: yes
+  register: logs_dep_result

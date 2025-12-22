@@ -1,0 +1,21 @@
+---
+
+- name: check szse files ready
+  find:
+    paths: "{{ slave_path_mds_home_data_exchange }}"
+    get_checksum: yes
+    file_type: file
+    use_regex: yes
+    patterns: "{{ item }}"
+  with_items: "{{ szse_check_files_list }}"
+  register: find_res
+
+- name: print szse files ready
+  debug:
+    msg: "file ==> {{ item.item }} | matched ==> {{ item.matched }}"
+  failed_when: "item.matched == 0"
+  with_items: "{{ find_res.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  ignore_errors: yes
+  register: check_result

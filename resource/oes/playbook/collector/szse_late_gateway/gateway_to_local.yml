@@ -1,0 +1,22 @@
+---
+
+- name: clear szse late directory
+  file:
+    path: "{{ local_path_oes_home_szse_late_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create szse late directory
+  file:
+    path: "{{ local_path_oes_home_szse_late_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote szse file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ szse_port }}' {{ szse_user }}@{{ szse_host }}:{{ gateway_path_root_exchange_szse }}/{{ item }} {{ local_path_oes_home_szse_late_colodir }}/"
+  with_items: "{{ szse_late_cp_files }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes

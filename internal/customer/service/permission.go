@@ -140,12 +140,13 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucPerm.UpdatePermissionByID(ctx, uri.PK, map[string]any{
+	m, err := s.ucPerm.UpdatePermissionByID(ctx, uri.PK, map[string]any{
 		"url":    req.URL,
 		"method": req.Method,
 		"label":  req.Label,
 		"descr":  req.Descr,
-	}); err != nil {
+	})
+	if err != nil {
 		s.log.Error(
 			"更新权限失败",
 			zap.Error(err),
@@ -162,18 +163,6 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	m, err := s.ucPerm.FindPermissionByID(ctx, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的权限信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
 
 	mo := PermModelToStandardOut(*m)
 	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{

@@ -9,9 +9,9 @@ func ValidateCriticalConfig(conf *SystemConf) error {
 		return fmt.Errorf("HTTP端口 %d 无效,必须在1-65535之间", conf.Server.Port)
 	}
 
-	if conf.SMTP.Port <= 0 || conf.SMTP.Port > 65535 {
-		return fmt.Errorf("SMTP端口 %d 无效,必须在1-65535之间", conf.SMTP.Port)
-	}
+	// if conf.SMTP.Port <= 0 || conf.SMTP.Port > 65535 {
+	// 	return fmt.Errorf("SMTP端口 %d 无效,必须在1-65535之间", conf.SMTP.Port)
+	// }
 
 	// 验证必需的配置项
 	if conf.Database.Type == "" {

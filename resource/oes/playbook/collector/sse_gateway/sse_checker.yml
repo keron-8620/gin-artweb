@@ -1,0 +1,54 @@
+---
+- name: get gzlx month
+  raw: echo "obase=16;{{ curr_date[4:6] }}"|bc|tr '[A-Z]' '[a-z]'
+  delegate_to: 127.0.0.1
+  run_once: true
+  register: gzlx_mm
+
+- name: check sse files ready
+  find:
+    paths: "{{ slave_path_oes_home_data_exchange }}"
+    get_checksum: yes
+    file_type: file
+    use_regex: yes
+    patterns: "{{ item }}"
+  with_items: "{{ sse_check_files }}"
+  register: find_res
+
+- name: print sse files ready
+  debug:
+    msg: "file ==> {{ item.item }} | matched ==> {{ item.matched }}"
+  failed_when: "item.matched == 0"
+  with_items: "{{ find_res.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  ignore_errors: yes
+  register: sse_security_files_check_result
+
+- name: check sse etf files ready
+  find:
+    paths: "{{ slave_path_oes_home_data_exchange_sse_etf }}"
+    get_checksum: yes
+    file_type: file
+    use_regex: yes
+    patterns: "{{ item }}"
+  with_items: "{{ etf_check_files }}"
+  register: etf_find_res
+
+- name: print sse etf files ready
+  debug:
+    msg: "file ==> {{ item.item }} | matched ==> {{ item.matched }}"
+  failed_when: "item.matched == 0"
+  with_items: "{{ etf_find_res.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  ignore_errors: yes
+  register: sse_etf_files_check_result
+
+- name: register check result
+  debug:
+    msg: "register check result"
+  failed_when: "sse_security_files_check_result is failed or sse_etf_files_check_result is failed"
+  register: check_result
+  run_once: yes
+  ignore_errors: yes

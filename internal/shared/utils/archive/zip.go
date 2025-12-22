@@ -2,11 +2,10 @@ package archive
 
 import (
 	"archive/zip"
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+	"strings"
 
 	"gin-artweb/internal/shared/errors"
 )
@@ -27,7 +26,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 	}
 	defer func() {
 		if closeErr := dstFile.Close(); closeErr != nil {
-			// 记录关闭错误但不中断主流程
+			panic(fmt.Errorf("关闭文件%s失败: %v", dst, closeErr))
 		}
 	}()
 
@@ -35,7 +34,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 	zipWriter := zip.NewWriter(dstFile)
 	defer func() {
 		if closeErr := zipWriter.Close(); closeErr != nil {
-			// 记录关闭错误
+			panic(fmt.Errorf("关闭ZIP写入器失败: %w", closeErr))
 		}
 	}()
 
@@ -244,16 +243,92 @@ func Unzip(src, dst string, opts ...ArchiveOption) error {
 	return nil
 }
 
-// ZipWithTimeout 带超时的Zip操作
-func ZipWithTimeout(src, dst string, timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return Zip(src, dst, WithContext(ctx))
-}
+// ValidateSingleDirZip 校验 ZIP 文件是否只包含一个顶层目录，并返回该目录名称
+func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
+	options := applyOptions(opts...)
 
-// UnzipWithTimeout 带超时的Unzip操作
-func UnzipWithTimeout(src, dst string, timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return Unzip(src, dst, WithContext(ctx))
+	// 检查上下文
+	if err := errors.CheckContext(options.Context); err != nil {
+		return "", err
+	}
+
+	// 打开zip文件
+	reader, err := zip.OpenReader(src)
+	if err != nil {
+		return "", fmt.Errorf("打开ZIP文件 %s 失败: %w", src, err)
+	}
+	defer reader.Close()
+
+	// 用于存储所有顶层条目
+	topLevelEntries := make(map[string]bool)
+	var firstDirName string
+
+	// 遍历zip中的文件
+	for _, file := range reader.File {
+		// 检查上下文
+		if err := errors.CheckContext(options.Context); err != nil {
+			return "", err
+		}
+
+		// 获取条目名称
+		name := file.Name
+
+		// 清理路径名称
+		name = filepath.Clean(name)
+		name = strings.TrimPrefix(name, "./")
+		name = strings.TrimSuffix(name, "/")
+
+		// 提取顶层目录名
+		var topLevelName string
+		if strings.Contains(name, "/") {
+			parts := strings.Split(name, "/")
+			topLevelName = parts[0]
+		} else {
+			topLevelName = name
+		}
+
+		// 如果是空名称，跳过
+		if topLevelName == "" {
+			continue
+		}
+
+		// 记录顶层条目
+		topLevelEntries[topLevelName] = true
+
+		// 记录第一个目录名称
+		if firstDirName == "" && file.FileInfo().IsDir() {
+			firstDirName = topLevelName
+		}
+
+		// 如果已经发现多个顶层条目，可以直接返回错误
+		if len(topLevelEntries) > 1 {
+			// 获取所有键名
+			keys := make([]string, 0, len(topLevelEntries))
+			for k := range topLevelEntries {
+				keys = append(keys, k)
+			}
+			return "", fmt.Errorf("压缩文件包含多个顶层条目: %v", keys)
+		}
+	}
+
+	// 检查结果
+	if len(topLevelEntries) == 0 {
+		return "", fmt.Errorf("压缩文件为空")
+	}
+
+	if len(topLevelEntries) > 1 {
+		// 获取所有键名
+		keys := make([]string, 0, len(topLevelEntries))
+		for k := range topLevelEntries {
+			keys = append(keys, k)
+		}
+		return "", fmt.Errorf("压缩文件包含多个顶层条目: %v", keys)
+	}
+
+	// 检查唯一的条目是否是目录
+	if firstDirName == "" {
+		return "", fmt.Errorf("压缩文件的唯一条目不是目录")
+	}
+
+	return firstDirName, nil
 }

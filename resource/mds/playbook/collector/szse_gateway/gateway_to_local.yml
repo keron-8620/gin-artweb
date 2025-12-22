@@ -1,0 +1,23 @@
+---
+
+- name: clear szse directory
+  file:
+    path: "{{ local_path_mds_home_szse_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create szse directory
+  file:
+    path: "{{ local_path_mds_home_szse_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote szse file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ szse_port }}' {{ szse_user }}@{{ szse_host }}:{{ gateway_path_root_exchange_szse }}/{{ item }} {{ local_path_mds_home_szse_colodir }}/"
+  with_items: "{{ szse_cp_files_list }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes
+  register: szse_fetch

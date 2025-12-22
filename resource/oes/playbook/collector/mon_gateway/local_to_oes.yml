@@ -1,0 +1,20 @@
+---
+
+- name: is TradingDate.txt exist
+  stat:
+    path: "{{ local_path_oes_home_mon_colodir }}/TradingDate.txt"
+  register: trading_date_res
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: to TradingDate.txt
+  raw: "echo -e 'EffectiveDate = {{ curr_date }}\nTradingDate = {{ curr_date }}' > {{ local_path_oes_home_mon_colodir }}/TradingDate.txt"
+  when: trading_date_res.stat.exists != true
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: send mon file to oes
+  synchronize:
+    src: "{{ local_path_oes_home_mon_colodir }}/"
+    dest: "{{ slave_path_oes_home_data_monitor }}/"
+  ignore_errors: yes

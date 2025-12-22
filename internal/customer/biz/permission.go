@@ -126,9 +126,9 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 	ctx context.Context,
 	permID uint32,
 	data map[string]any,
-) *errors.Error {
+) (*PermissionModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -146,7 +146,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindPermissionByID(ctx, permID)
@@ -157,7 +157,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return rErr
+		return nil, rErr
 	}
 
 	if err := uc.permRepo.RemovePolicy(ctx, *m, false); err != nil {
@@ -167,7 +167,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrRemovePolicy.WithCause(err)
+		return nil, ErrRemovePolicy.WithCause(err)
 	}
 
 	if err := uc.permRepo.AddPolicy(ctx, *m); err != nil {
@@ -177,7 +177,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrAddPolicy.WithCause(err)
+		return nil, ErrAddPolicy.WithCause(err)
 	}
 
 	uc.log.Info(
@@ -185,7 +185,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 		zap.Uint32(PermissionIDKey, permID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *PermissionUsecase) DeletePermissionByID(

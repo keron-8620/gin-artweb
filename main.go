@@ -26,6 +26,7 @@ import (
 	jobs "gin-artweb/internal/jobs/server"
 	mds "gin-artweb/internal/mds/server"
 	mon "gin-artweb/internal/mon/server"
+	oes "gin-artweb/internal/oes/server"
 	resource "gin-artweb/internal/resource/server"
 
 	"gin-artweb/docs"
@@ -40,6 +41,9 @@ var (
 	version   string
 	commitID  string
 	buildTime string
+	goVersion string
+	goOS  string
+	goArch string
 )
 
 // @securityDefinitions.apikey ApiKeyAuth
@@ -47,9 +51,25 @@ var (
 // @name Authorization
 func main() {
 	// 定义并解析命令行参数，指定配置文件路径，默认为 "../config/system.yaml"
-	var configPath string
-	flag.StringVar(&configPath, "config", filepath.Join(config.ConfigDir, "system.yml"), "Path to config file")
+	var (
+		configPath  string
+		showVersion bool
+	)
+	flag.StringVar(&configPath, "config", filepath.Join(config.ConfigDir, "system.yaml"), "系统配置文件的路径")
+	flag.BoolVar(&showVersion, "v", false, "展示版本信息")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Println("===== 版本信息 =====")
+		fmt.Printf("版本号    : %s\n", version)
+		fmt.Printf("提交ID    : %s\n", commitID)
+		fmt.Printf("构建时间  : %s\n", buildTime)
+		fmt.Printf("Go版本    : %s\n", goVersion)
+		fmt.Printf("操作系统  : %s\n", goOS)
+		fmt.Printf("系统架构  : %s\n", goArch)
+		fmt.Println("==================")
+		return
+	}
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
 	i, clearFunc, err := newInitialize(configPath)
@@ -288,6 +308,7 @@ func newRouter(init *initialize) *gin.Engine {
 	jobs.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers, init.crontab)
 	mon.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	mds.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
+	oes.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
 	return r
 }
 

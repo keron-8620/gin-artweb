@@ -1,0 +1,27 @@
+---
+- name: is TradingDate.txt exist
+  stat:
+    path: "{{ local_path_mds_home_mon_colodir }}/TradingDate.txt"
+  register: trading_date_res
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: to TradingDate.txt
+  raw: "echo -e 'EffectiveDate = {{ curr_date }}\nTradingDate = {{ curr_date }}' > {{ local_path_mds_home_mon_colodir }}/TradingDate.txt"
+  when: trading_date_res.stat.exists != true
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: send mon file to mds
+  synchronize:
+    src: "{{ local_path_mds_home_mon_colodir }}/"
+    dest: "{{ slave_path_mds_home_data_monitor }}/"
+  ignore_errors: yes
+
+- name: send clientinfo file to umds
+  command: "rsync -az --no-r -e 'ssh -p {{ umds_port }}' {{ local_path_mds_home_mon_colodir }}/{{ item }} {{ umds_user }}@{{ umds_host }}:{{ umds_deploy_path }}/"
+  with_items: "{{ umds_cp_files_list }}"
+  when: umds_enable == true
+  delegate_to: 127.0.0.1
+  run_once: yes
+  ignore_errors: yes

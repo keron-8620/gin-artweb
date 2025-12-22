@@ -1,0 +1,17 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - name: oes touch flags
+      file:
+        path: "{{ slave_path_oes_home_data_flags }}/{{ item }}"
+        state: touch
+      with_items:
+        - "{{ fetch_sse_ok }}"
+        - "{{ fetch_szse_ok }}"
+        - "{{ fetch_mon_ok }}"
+        - "{{ fetch_csdc_ok }}"
+        - "{{ fetch_counter_ok }}"

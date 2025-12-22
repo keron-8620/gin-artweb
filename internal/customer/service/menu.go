@@ -167,7 +167,8 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 		data["parent_id"] = req.ParentID
 	}
 
-	if err := s.ucMenu.UpdateMenuByID(ctx, uri.PK, req.PermissionIDs, data); err != nil {
+	m, err := s.ucMenu.UpdateMenuByID(ctx, uri.PK, req.PermissionIDs, data)
+	if err != nil {
 		s.log.Error(
 			"更新菜单失败",
 			zap.Error(err),
@@ -184,18 +185,6 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-
-	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的菜单信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
 
 	mo := MenuModelToDetailOut(*m)
 	ctx.JSON(http.StatusOK, &pbMenu.MenuReply{

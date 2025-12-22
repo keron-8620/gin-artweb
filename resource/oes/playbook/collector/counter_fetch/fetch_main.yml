@@ -1,0 +1,23 @@
+---
+
+- hosts: all
+  vars_files:
+    - ../../common/base_vars.yml
+    - ./counter_vars.yml
+
+  tasks:
+    - include_tasks: ../../common/load_automatic.yml
+
+    - include_tasks: ../before_playbook.yml
+
+    - include_tasks: ./flag_checker.yml
+
+    - include_tasks: ./counter_collector.yml
+      when: not xcounter_fetch_ok.stat.exists
+
+    - include_tasks: ./counter_checker.yml
+
+    - include_tasks: ./counter_freezed.yml
+      when: xcounter_fetch_ok.stat.exists and not xcounter_freezed_ok.stat.exists
+
+    - include_tasks: ./set_status.yml

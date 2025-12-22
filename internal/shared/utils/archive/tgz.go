@@ -3,13 +3,11 @@ package archive
 import (
 	"archive/tar"
 	"compress/gzip"
-	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"gin-artweb/internal/shared/errors"
 )
@@ -30,8 +28,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 	}
 	defer func() {
 		if closeErr := dstFile.Close(); closeErr != nil {
-			// 记录关闭错误
-			panic(closeErr)
+			panic(fmt.Errorf("关闭文件%s失败: %v", dst, closeErr))
 		}
 	}()
 
@@ -39,8 +36,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 	gzWriter := gzip.NewWriter(dstFile)
 	defer func() {
 		if closeErr := gzWriter.Close(); closeErr != nil {
-			// 记录关闭错误
-			panic(closeErr)
+			panic(fmt.Errorf("关闭GZIP写入器失败: %w", closeErr))
 		}
 	}()
 
@@ -48,7 +44,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 	tarWriter := tar.NewWriter(gzWriter)
 	defer func() {
 		if closeErr := tarWriter.Close(); closeErr != nil {
-			// 记录关闭错误
+			panic(fmt.Errorf("关闭Tar写入器失败: %w", closeErr))
 		}
 	}()
 
@@ -278,13 +274,6 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	}
 
 	return nil
-}
-
-// TarGzWithTimeout 带超时的TarGz操作
-func TarGzWithTimeout(src, dst string, timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return TarGz(src, dst, WithContext(ctx))
 }
 
 // ValidateSingleDirTarGz 校验 tar.gz 文件是否只包含一个顶层目录，并返回该目录名称

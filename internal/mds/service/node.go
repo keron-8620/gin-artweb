@@ -127,24 +127,13 @@ func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 		"mds_colony_id": req.MdsColonyID,
 	}
 
-	if err := s.ucNode.UpdateMdsNodeByID(ctx, uri.PK, data); err != nil {
+	m, err := s.ucNode.UpdateMdsNodeByID(ctx, uri.PK, data)
+	if err != nil {
 		s.log.Error(
 			"更新mds节点失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	m, err := s.ucNode.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的mds节点信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())

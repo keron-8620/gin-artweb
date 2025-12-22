@@ -1,0 +1,76 @@
+---
+
+- name: clear csdc directory
+  file:
+    path: "{{ local_path_oes_home_csdc_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: mkdir csdc directory
+  file:
+    path: "{{ local_path_oes_home_csdc_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- block:
+  - name: print dtzq ftp cmd
+    debug:
+      msg: "wget  -r -nd -P {{ local_path_oes_home_csdc_colodir }} {{ csdc_ftp_path }}/{{ pre_trd_date }}/{{ item.name }} "
+    when: "item.from_way == 'net'"
+    with_items:
+      - "{{ csdc_cp_files }}"
+
+  - name: copy csdc file to local by wget
+    raw: 'wget  -r -nd -P {{ local_path_oes_home_csdc_colodir }} {{ csdc_ftp_path }}/{{ pre_trd_date }}/{{ item.name }} '
+    when: "item.from_way == 'net'"
+    with_items:
+      - "{{ csdc_cp_files }}"
+    register: ftp_res
+    ignore_errors: True
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- block:
+  - name: merge sh_csdc copy list
+    set_fact:
+      sh_cp_files_list: "{{ sh_cp_files_list | default([]) + [item.name] }}"
+    when: "item.from_way == 'dir' and item.se == 'sh'"
+    with_items: "{{ csdc_cp_files }}"
+
+  - name: fetch remote sh-csdc file
+    command: "rsync -az --exclude='*/' -e 'ssh -p {{ csdc_port }}' {{ csdc_user }}@{{ csdc_host }}:{{ gateway_path_root_csdc_sh }}/{{ item }} {{ local_path_oes_home_csdc_colodir }}/"
+    with_items: "{{ sh_cp_files_list }}"
+    when: "sh_cp_files_list is not undefined"
+    ignore_errors: yes
+
+  - name: merge sz_csdc copy list
+    set_fact:
+      sz_cp_files_list: "{{ sz_cp_files_list | default([]) + [item.name] }}"
+    when: "item.from_way == 'dir' and item.se == 'sz'"
+    with_items: "{{ csdc_cp_files }}"
+
+  - name: fetch remote sz-csdc file
+    command: "rsync -az --exclude='*/' -e 'ssh -p {{ csdc_port }}' {{ csdc_user }}@{{ csdc_host }}:{{ gateway_path_root_csdc_sz }}/{{ item }} {{ local_path_oes_home_csdc_colodir }}/"
+    with_items: "{{ sz_cp_files_list }}"
+    when: "sz_cp_files_list is not undefined"
+    ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: rename SJSKS
+  raw: 'mv {{ local_path_oes_home_csdc_colodir }}/SJSKS* {{ local_path_oes_home_csdc_colodir }}/SJSKS.DBF'
+  ignore_errors: yes
+  failed_when: no
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: rename SJSFX
+  raw: 'mv {{ local_path_oes_home_csdc_colodir }}/SJSFX* {{ local_path_oes_home_csdc_colodir }}/SJSFX.DBF'
+  ignore_errors: yes
+  failed_when: no
+  delegate_to: 127.0.0.1
+  run_once: true
+
+

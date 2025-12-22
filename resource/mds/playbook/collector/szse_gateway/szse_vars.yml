@@ -1,0 +1,4 @@
+---
+
+fetch_ok_flag: "{{ fetch_szse_ok }}"
+cron_job_name: "szse_collector"

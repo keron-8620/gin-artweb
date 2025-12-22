@@ -1,0 +1,55 @@
+---
+
+- name: rm local counter_freezed_ok_flag
+  file:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_freezed_ok }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create gateway path export root directory
+  file:
+    path: "{{ local_path_oes_home_counter_colodir_logs }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: True
+
+- name: create counter_data_file.ready
+  file:
+    path: "{{ local_path_oes_home_counter_colodir_data }}/counter_data_file.ready"
+    state: touch
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: True
+
+- name: export broker data
+  raw: 'cp -r {{ local_path_oes_home_counter_colodir_data_broker }}/*.csv {{ local_path_oes_home_counter_logs }} &&
+          cp -r {{ local_path_oes_home_counter_colodir_data }}/counter_data_file.ready {{ local_path_oes_home_counter_logs }}'
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: True
+
+- name: transfer2oes asset
+  raw: 'cd {{ local_path_oes_home_counter_colodir_bin_script }} &&
+        export LD_LIBRARY_PATH=$PWD:$PWD/../lib &&
+        {{ local_python_interpreter }} $PWD/xcounter2oes_transfer2oes_main.py {{ counter_freeze_cmd_args }} 2> xcounter2oes_transfer2oes_main.log'
+  delegate_to: 127.0.0.1
+  run_once: true
+  register: freezed_counter_result
+  ignore_errors: True
+
+- name: copy counter logs
+  copy:
+    src: "{{ item }}"
+    dest: "{{ slave_path_oes_home_logs }}"
+    mode: 0644
+  with_fileglob:
+    - "{{ local_path_oes_home_counter_logs }}/xcounter2oes_*.log"
+
+- name: check xcounter_run_freezed.ok
+  stat:
+    path: "{{ local_path_oes_home_counter_colodir_data_broker }}/{{ xcounter_run_freezed_ok }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+  register: xcounter_freezed_ok

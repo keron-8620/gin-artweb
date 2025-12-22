@@ -1,0 +1,44 @@
+---
+
+################# 目标主机创建成功标志 ######################
+- name: slave create fetch data directory flag
+  file:
+    path: "{{ slave_path_mds_home_data_flags }}"
+    state: directory
+
+- name: slave create fetch data files flag
+  file:
+    path: "{{ slave_path_mds_home_data_flags }}/{{ fetch_ok_flag }}"
+    state: touch
+  when: check_result is success
+################# 目标主机创建成功标志 ######################
+
+######################## 本地标志文件模块 ##################
+- name: touch local success flag
+  shell: "echo 'success' > {{ local_path_mds_home_flag_colodir }}/{{ flag_success }}"
+  when: check_result is success
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: touch local failed flag
+  shell: "echo 'fail' > {{ local_path_mds_home_flag_colodir }}/{{ flag_failed }}"
+  when: check_result is failed
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: clear running flag
+  file:
+    path: "{{ local_path_mds_home_flag_colodir }}/{{ flag_running }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: set exit code
+  fail:
+     msg: "Check result indicates failure: {{ check_result }}"
+  when: check_result is failed
+  delegate_to: 127.0.0.1
+  run_once: true
+######################## 本地标志文件模块 ##################
+
+

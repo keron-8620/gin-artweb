@@ -1,5 +1,0 @@
-id: 5
-ansible_host: 192.168.11.190
-ansible_port: 22
-ansible_user: oesuser
-ansible_python_interpreter: /usr/local/lib/python3.8/bin/python3.8

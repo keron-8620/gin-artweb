@@ -14,7 +14,7 @@ type CreateOrUpdateMdsNodeRequest struct {
 	// 是否启用
 	// required: true
 	// example: true
-	IsEnable bool `json:"is_enable" form:"is_enable" binding:"required"`
+	IsEnable bool `json:"is_enable" form:"is_enable"`
 
 	// mds集群ID
 	// required: true

@@ -1,0 +1,15 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../../common/base_vars.yml
+    - ./backup_vars.yml
+
+  tasks:
+    - include_tasks: ../../common/load_automatic.yml
+
+    - include_tasks: ../before_playbook.yml
+
+    - include_tasks: ./oes_backup.yml
+
+    - include_tasks: ./after_playbook.yml

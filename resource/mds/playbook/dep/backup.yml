@@ -1,0 +1,27 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yml
+
+  tasks:
+    - name: stop mds
+      command: ./mds stop -F
+      args:
+        chdir: "{{ slave_path_mds_home_bin }}"
+      ignore_errors: yes
+
+    - name: find mds package exclude txlog
+      find:
+        paths: "{{ slave_path_mds_home }}"
+        file_type: any
+        recurse: yes
+        excludes: txlog
+      register: files_to_backup
+
+    - name: archive mds package
+      archive:
+        path: "{{ files_to_backup.files | map(attribute='path') | list }}"
+        dest: "{{ slave_path_user_home }}/{{ pkg_name }}_{{ version }}.tar.gz"
+        remove: False
+        format: gz

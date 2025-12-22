@@ -1,0 +1,4 @@
+---
+
+fetch_ok_flag: "{{ fetch_sse_late_ok }}"
+cron_job_name: "sse_late_collector"

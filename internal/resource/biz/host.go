@@ -135,9 +135,9 @@ func (uc *HostUsecase) UpdateHostById(
 	ctx context.Context,
 	m HostModel,
 	password string,
-) *errors.Error {
+) (*HostModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -148,7 +148,7 @@ func (uc *HostUsecase) UpdateHostById(
 	)
 
 	if err := uc.TestSSHConnection(ctx, m.SSHIP, m.SSHPort, m.SSHUser, password); err != nil {
-		return err
+		return nil, err
 	}
 
 	data := map[string]any{
@@ -168,11 +168,11 @@ func (uc *HostUsecase) UpdateHostById(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	if err := uc.ExportHost(ctx, m); err != nil {
-		return err
+		return nil, err
 	}
 
 	uc.log.Info(
@@ -180,7 +180,7 @@ func (uc *HostUsecase) UpdateHostById(
 		zap.Object(database.ModelKey, &m),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return uc.FindHostById(ctx, m.ID)
 }
 
 func (uc *HostUsecase) DeleteHostById(
@@ -396,7 +396,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 	)
 
 	ansibleHost := AnsibleHostVars{
-		ID:                       m.ID,
+		HostID:                   m.ID,
 		AnsibleHost:              m.SSHIP,
 		AnsiblePort:              m.SSHPort,
 		AnsibleUser:              m.SSHUser,
@@ -425,7 +425,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 }
 
 type AnsibleHostVars struct {
-	ID                       uint32 `json:"id" yaml:"id"`
+	HostID                   uint32 `json:"host_id" yaml:"host_id"`
 	AnsibleHost              string `json:"ansible_host" yaml:"ansible_host"`
 	AnsiblePort              uint16 `json:"ansible_port" yaml:"ansible_port"`
 	AnsibleUser              string `json:"ansible_user" yaml:"ansible_user"`
@@ -433,7 +433,7 @@ type AnsibleHostVars struct {
 }
 
 func (vs *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("id", vs.ID)
+	enc.AddUint32("host_id", vs.HostID)
 	enc.AddString("ansible_host", vs.AnsibleHost)
 	enc.AddUint16("ansible_port", vs.AnsiblePort)
 	enc.AddString("ansible_user", vs.AnsibleUser)
@@ -442,6 +442,6 @@ func (vs *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 func HostVarsStoragePath(pk uint32) string {
-	filename := fmt.Sprintf("db_host_%d.yaml", pk)
+	filename := fmt.Sprintf("host_%d.yaml", pk)
 	return filepath.Join(config.StorageDir, "host_vars", filename)
 }

@@ -1,0 +1,55 @@
+---
+
+- name: clear szse directory
+  file:
+    path: "{{ local_path_oes_home_szse_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create szse directory
+  file:
+    path: "{{ local_path_oes_home_szse_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote szse file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ szse_port }}' {{ szse_user }}@{{ szse_host }}:{{ gateway_path_root_exchange_szse }}/{{ item }} {{ local_path_oes_home_szse_colodir }}/"
+  with_items: "{{ szse_cp_files }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: clear szse etf directory
+  file:
+    path: "{{ local_path_oes_home_szse_etf_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create szse etf directory
+  file:
+    path: "{{ local_path_oes_home_szse_etf_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: export sse etf variables
+  command: "{{ local_python_interpreter }} get_etf_check_files.py --task szse --colony_num {{ colony_num }} --curr_date {{ curr_date }}"
+  args:
+    chdir: "{{ local_path_script_home_python }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: load sse etf variables
+  include_vars: "{{ local_path_oes_home_tmp_colodir }}/szse_etf.yml"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote szse etf file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ szse_port }}' {{ szse_user }}@{{ szse_host }}:{{ gateway_path_root_exchange_szse_etf }}/{{ item }} {{ local_path_oes_home_szse_etf_colodir }}/"
+  with_items: "{{ szse_etf_cp_files }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes

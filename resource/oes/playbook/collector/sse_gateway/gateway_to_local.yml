@@ -1,0 +1,67 @@
+---
+
+- name: get gzlx month
+  raw: echo "obase=16;{{ curr_date[4:6] }}"|bc|tr '[A-Z]' '[a-z]'
+  delegate_to: 127.0.0.1
+  run_once: true
+  register: gzlx_mm
+
+- name: clear sse directory
+  file:
+    path: "{{ local_path_oes_home_sse_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create sse directory
+  file:
+    path: "{{ local_path_oes_home_sse_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- block:
+  - name: fetch remote sse file
+    command: "rsync -az --exclude='*/' -e 'ssh -p {{ sse_port }}' {{ sse_user }}@{{ sse_host }}:{{ gateway_path_root_exchange_sse }}/{{ item }} {{ local_path_oes_home_sse_colodir }}/"
+    with_items: "{{ sse_cp_files }}"
+
+  - name: unzip sse files ready
+    command: "{{ local_python_interpreter }} unzip_sse_files.py {{ local_path_oes_home_sse_colodir }}"
+    args:
+      chdir: "{{ local_path_script_home_python }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: clear sse etf directory
+  file:
+    path: "{{ local_path_oes_home_sse_etf_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create sse etf directory
+  file:
+    path: "{{ local_path_oes_home_sse_etf_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: export sse etf variables
+  command: "{{ local_python_interpreter }} get_etf_check_files.py --task sse --colony_num {{ colony_num }} --curr_date {{ curr_date }}"
+  args:
+    chdir: "{{ local_path_script_home_python }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: load sse etf variables
+  include_vars: "{{ local_path_oes_home_tmp_colodir }}/sse_etf.yml"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: fetch remote sse etf file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ sse_port }}' {{ sse_user }}@{{ sse_host }}:{{ gateway_path_root_exchange_sse_etf }}/{{ item }} {{ local_path_oes_home_sse_etf_colodir }}/"
+  with_items: "{{ sse_etf_cp_files }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes

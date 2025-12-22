@@ -300,9 +300,9 @@ func (uc *RoleUsecase) UpdateRoleByID(
 	menuIDs []uint32,
 	buttonIDs []uint32,
 	data map[string]any,
-) *errors.Error {
+) (*RoleModel, *errors.Error) {
 	if err := errors.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -317,17 +317,17 @@ func (uc *RoleUsecase) UpdateRoleByID(
 
 	perms, err := uc.GetPermissions(ctx, permIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	menus, err := uc.GetMenus(ctx, menuIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	buttons, err := uc.GetButtons(ctx, buttonIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	data["id"] = roleID
@@ -339,12 +339,12 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return nil, database.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
-		return rErr
+		return nil, rErr
 	}
 
 	if err := uc.roleRepo.RemoveGroupPolicy(ctx, m); err != nil {
@@ -354,7 +354,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrRemoveGroupPolicy.WithCause(err)
+		return nil, ErrRemoveGroupPolicy.WithCause(err)
 	}
 
 	if err := uc.roleRepo.AddGroupPolicy(ctx, m); err != nil {
@@ -364,7 +364,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		return ErrAddGroupPolicy.WithCause(err)
+		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
 
 	uc.log.Info(
@@ -372,7 +372,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 		zap.Uint32(RoleIDKey, roleID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
-	return nil
+	return m, nil
 }
 
 func (uc *RoleUsecase) DeleteRoleByID(

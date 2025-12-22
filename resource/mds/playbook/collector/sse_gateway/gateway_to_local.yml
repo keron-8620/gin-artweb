@@ -1,0 +1,35 @@
+---
+
+- name: get gzlx month
+  raw: echo "obase=16;{{ curr_date[4:6] }}"|bc|tr '[A-Z]' '[a-z]'
+  delegate_to: 127.0.0.1
+  run_once: true
+  register: gzlx_mm
+
+- name: clear sse directory
+  file:
+    path: "{{ local_path_mds_home_sse_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create sse directory
+  file:
+    path: "{{ local_path_mds_home_sse_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- block:
+  - name: fetch remote sse file
+    command: "rsync -az --exclude='*/' -e 'ssh -p {{ sse_port }}' {{ sse_user }}@{{ sse_host }}:{{ gateway_path_root_exchange_sse }}/{{ item }} {{ local_path_mds_home_sse_colodir }}/"
+    with_items: "{{ sse_cp_files_list }}"
+    register: sse_fetch
+
+  - name: unzip sse files ready
+    command: "{{ local_python_interpreter }} unzip_sse_files.py {{ local_path_mds_home_sse_colodir }}"
+    args:
+      chdir: "{{ local_path_script_home_slave }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes

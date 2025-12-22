@@ -144,7 +144,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucRole.UpdateRoleByID(
+	m, err := s.ucRole.UpdateRoleByID(
 		ctx, uri.PK,
 		req.PermissionIDs,
 		req.MenuIDs,
@@ -153,7 +153,8 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			"name":  req.Name,
 			"descr": req.Descr,
 		},
-	); err != nil {
+	)
+	if err != nil {
 		s.log.Error(
 			"更新角色失败",
 			zap.Error(err),
@@ -171,17 +172,6 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询更新后的角色信息失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
 		Code: http.StatusOK,
 		Data: RoleModelToDetailOut(*m),
