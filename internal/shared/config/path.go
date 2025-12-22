@@ -38,8 +38,8 @@ func getBaseDir() string {
 		resolvedPath = filepath.ToSlash(resolvedPath)
 	}
 
-	// binDir := filepath.Dir(resolvedPath)
-	return filepath.Dir(resolvedPath)
+	binDir := filepath.Dir(resolvedPath)
+	return filepath.Dir(binDir)
 }
 
 var (
