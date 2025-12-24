@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	PermissionIDKey  = "permission_id"
-	PermissionIDsKey = "permission_ids"
+	PermissionTableName = "customer_permission"
+	PermissionIDKey     = "permission_id"
+	PermissionIDsKey    = "permission_ids"
 )
 
 type PermissionModel struct {
@@ -25,10 +26,13 @@ type PermissionModel struct {
 }
 
 func (m *PermissionModel) TableName() string {
-	return "customer_permission"
+	return PermissionTableName
 }
 
 func (m *PermissionModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return database.GormModelIsNil(PermissionTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}

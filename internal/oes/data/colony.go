@@ -9,6 +9,7 @@ import (
 
 	"gin-artweb/internal/oes/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 )
@@ -16,13 +17,13 @@ import (
 type oesColonyRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
+	timeouts *config.DBTimeout
 }
 
 func NewOesColonyRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
+	timeouts *config.DBTimeout,
 ) biz.OesColonyRepo {
 	return &oesColonyRepo{
 		log:      log,

@@ -4,42 +4,42 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/resource/data"
 	"gin-artweb/internal/resource/service"
-	"gin-artweb/internal/shared/config"
-	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/internal/shared/middleware"
 )
 
 func NewServer(
 	router *gin.RouterGroup,
-	conf *config.SystemConf,
-	db *gorm.DB,
-	dbTimeout *database.DBTimeout,
+	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(db, loggers.Data); err != nil {
+	if err := dbAutoMigrate(init.DB, loggers.Data); err != nil {
 		panic(err)
 	}
 
-	sshTimeout := time.Duration(conf.SSH.Timeout) * time.Second
-	signer, err := NewSigner(loggers.Data, conf.SSH.Private, sshTimeout)
+	sshTimeout := time.Duration(init.Conf.SSH.Timeout) * time.Second
+	signer, err := NewSigner(loggers.Data, init.Conf.SSH.Private, sshTimeout)
 	if err != nil {
 		panic(err)
 	}
-	hostRepo := data.NewHostRepo(loggers.Data, db, dbTimeout)
-	pkgRepo := data.NewpackageRepo(loggers.Data, db, dbTimeout)
+	hostRepo := data.NewHostRepo(loggers.Data, init.DB, init.DBTimeout)
+	pkgRepo := data.NewpackageRepo(loggers.Data, init.DB, init.DBTimeout)
 
 	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, signer, sshTimeout)
 	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo)
 
 	hostService := service.NewHostService(loggers.Service, hostUsecase)
-	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(conf.Security.Upload.MaxFileSize)*1024*1024)
+	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(init.Conf.Security.Upload.MaxFileSize)*1024*1024)
 
 	appRouter := router.Group("/v1/resource")
+	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
+	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
+
 	hostService.LoadRouter(appRouter)
 	pkgService.LoadRouter(appRouter)
 }

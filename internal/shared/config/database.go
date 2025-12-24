@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // DBConf 数据库配置结构体，用于配置数据库连接参数
 type DBConf struct {
 	Type            string `yaml:"type" json:"type"`                             // 数据库类型，支持 mysql, postgres, sqlite, sqlserver, opengauss
@@ -12,4 +14,11 @@ type DBConf struct {
 	ReadTimeout     int    `yaml:"read_timeout" json:"read_timeout"`             // 查询单条数据超时
 	WriteTimeout    int    `yaml:"write_timeout" json:"write_timeout"`           // 写操作超时
 	ListTimeout     int    `yaml:"list_timeout" json:"list_timeout"`             // 查询列表超时
+}
+
+// DBTimeout 数据库操作超时参数
+type DBTimeout struct {
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	ListTimeout  time.Duration
 }

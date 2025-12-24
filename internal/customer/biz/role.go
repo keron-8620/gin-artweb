@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	RoleIDKey = "role_id"
-	RoleBase  = "role_base"
+	RoleTableName = "customer_role"
+	RoleIDKey     = "role_id"
+	RoleBase      = "role_base"
 )
 
 type RoleModel struct {
@@ -26,10 +27,13 @@ type RoleModel struct {
 }
 
 func (m *RoleModel) TableName() string {
-	return "customer_role"
+	return RoleTableName
 }
 
 func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return database.GormModelIsNil(RoleTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}

@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	ButtonIDKey  = "button_id"
-	ButtonIDsKey = "button_ids"
+	ButtonTableName = "customer_button"
+	ButtonIDKey     = "button_id"
+	ButtonIDsKey    = "button_ids"
 )
 
 type ButtonModel struct {
@@ -28,10 +29,13 @@ type ButtonModel struct {
 }
 
 func (m *ButtonModel) TableName() string {
-	return "customer_button"
+	return ButtonTableName
 }
 
 func (m *ButtonModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return database.GormModelIsNil(ButtonTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}

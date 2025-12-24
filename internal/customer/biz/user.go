@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	UserIDKey   = "user_id"
-	UsernameKey = "username"
+	UserTableName = "customer_user"
+	UserIDKey     = "user_id"
+	UsernameKey   = "username"
 )
 
 type UserModel struct {
@@ -32,10 +33,13 @@ type UserModel struct {
 }
 
 func (m *UserModel) TableName() string {
-	return "customer_user"
+	return UserTableName
 }
 
 func (m *UserModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return database.GormModelIsNil(UserTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}

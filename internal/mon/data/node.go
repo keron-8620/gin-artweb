@@ -4,6 +4,7 @@ import (
 	"context"
 	"gin-artweb/internal/mon/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 	"time"
@@ -15,13 +16,13 @@ import (
 type monNodeRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
+	timeouts *config.DBTimeout
 }
 
 func NewMonNodeRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
+	timeouts *config.DBTimeout,
 ) biz.MonNodeRepo {
 	return &monNodeRepo{
 		log:      log,

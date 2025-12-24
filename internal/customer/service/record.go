@@ -138,7 +138,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.ToMap())
+		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
 		return
 	}
 	req.Username = claims.Subject

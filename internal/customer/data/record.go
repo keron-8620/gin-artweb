@@ -11,6 +11,7 @@ import (
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
@@ -19,7 +20,7 @@ import (
 type loginRecordRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
+	timeouts *config.DBTimeout
 	cache    *cache.Cache
 	maxNum   int
 	ttl      time.Duration
@@ -28,7 +29,7 @@ type loginRecordRepo struct {
 func NewLoginRecordRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
+	timeouts *config.DBTimeout,
 	lockTime time.Duration,
 	clearTime time.Duration,
 	num int,

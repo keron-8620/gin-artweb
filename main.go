@@ -10,17 +10,18 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/casbin/casbin/v2"
+	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/robfig/cron/v3"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
-	"gorm.io/gorm"
 
 	customer "gin-artweb/internal/customer/server"
 	jobs "gin-artweb/internal/jobs/server"
@@ -30,6 +31,8 @@ import (
 	resource "gin-artweb/internal/resource/server"
 
 	"gin-artweb/docs"
+	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/crontab"
 	"gin-artweb/internal/shared/database"
@@ -42,8 +45,8 @@ var (
 	commitID  string
 	buildTime string
 	goVersion string
-	goOS  string
-	goArch string
+	goOS      string
+	goArch    string
 )
 
 // @securityDefinitions.apikey ApiKeyAuth
@@ -72,14 +75,14 @@ func main() {
 	}
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
-	i, clearFunc, err := newInitialize(configPath)
+	logger, i, clearFunc, err := newInitialize(configPath)
 	if err != nil {
 		panic(err)
 	}
 	defer clearFunc() // 程序结束前执行资源清理操作
 
 	// 设置 Gin 框架的日志输出到 Zap 日志中，并设置运行模式为 ReleaseMode
-	// gin.DefaultWriter = zap.NewStdLog(i.log).Writer()
+	// gin.DefaultWriter = zap.NewStdLog(logger).Writer()
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 
@@ -87,13 +90,13 @@ func main() {
 	r := newRouter(i)
 
 	// 启动定时任务
-	if i.crontab != nil {
-		i.crontab.Start()
+	if i.Crontab != nil {
+		i.Crontab.Start()
 	}
 
 	// 构建 HTTP 服务器结构体
 	srv := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", i.conf.Server.Host, i.conf.Server.Port),
+		Addr:    fmt.Sprintf("%s:%d", i.Conf.Server.Host, i.Conf.Server.Port),
 		Handler: r,
 	}
 
@@ -101,45 +104,45 @@ func main() {
 	go func() {
 		var err error
 		// 判断是否启用 SSL/TLS 加密传输
-		if i.conf.Server.SSL.Enable {
+		if i.Conf.Server.SSL.Enable {
 			// 构造证书和私钥的完整路径
-			crtPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.CrtPath)
-			keyPath := filepath.Join(config.ConfigDir, i.conf.Server.SSL.KeyPath)
+			crtPath := filepath.Join(config.ConfigDir, i.Conf.Server.SSL.CrtPath)
+			keyPath := filepath.Join(config.ConfigDir, i.Conf.Server.SSL.KeyPath)
 
 			// 校验证书文件是否存在
 			if _, statErr := os.Stat(crtPath); os.IsNotExist(statErr) {
-				i.log.Fatal("SSL CRT 文件不存在", zap.String("path", crtPath))
+				logger.Fatal("SSL CRT 文件不存在", zap.String("path", crtPath))
 			}
 			// 校验私钥文件是否存在
 			if _, statErr := os.Stat(keyPath); os.IsNotExist(statErr) {
-				i.log.Fatal("SSL KEY 文件不存在", zap.String("path", keyPath))
+				logger.Fatal("SSL KEY 文件不存在", zap.String("path", keyPath))
 			}
 
 			// 输出 HTTPS 启动信息并开始监听
-			i.log.Info("正在启动 HTTPS 服务器...",
+			logger.Info("正在启动 HTTPS 服务器...",
 				zap.String("addr", srv.Addr),
 				zap.String("crt", crtPath),
 				zap.String("key", keyPath))
 			err = srv.ListenAndServeTLS(crtPath, keyPath)
 		} else {
 			// 输出 HTTP 启动信息并开始监听
-			i.log.Info("正在启动 HTTP 服务器...", zap.String("addr", srv.Addr))
+			logger.Info("正在启动 HTTP 服务器...", zap.String("addr", srv.Addr))
 			err = srv.ListenAndServe()
 		}
 
 		// 处理服务器启动过程中的致命错误
 		if err != nil && err != http.ErrServerClosed {
-			i.log.Error("服务器启动失败", zap.Error(err))
+			logger.Error("服务器启动失败", zap.Error(err))
 			panic(err)
 		}
 	}()
 
 	// 打印服务器启动信息
-	i.log.Info(
+	logger.Info(
 		"服务器启动ing ...",
-		zap.String("host", i.conf.Server.Host),
-		zap.Int("port", i.conf.Server.Port),
-		zap.Bool("ssl", i.conf.Server.SSL.Enable),
+		zap.String("host", i.Conf.Server.Host),
+		zap.Int("port", i.Conf.Server.Port),
+		zap.Bool("ssl", i.Conf.Server.SSL.Enable),
 		zap.String("version", version),
 		zap.String("commit", commitID),
 		zap.String("build_time", buildTime),
@@ -151,27 +154,20 @@ func main() {
 	<-quit // 阻塞等待信号到来
 
 	// 收到关闭信号后打印提示信息
-	i.log.Info("正在关闭服务器...")
+	logger.Info("正在关闭服务器...")
 
 	// 创建带超时控制的上下文对象用于通知服务器关闭
 	ctx, cancel := context.WithTimeout(context.Background(),
-		time.Duration(i.conf.Security.Timeout.ShutdownTimeout)*time.Second)
+		time.Duration(i.Conf.Security.Timeout.ShutdownTimeout)*time.Second)
 	defer cancel()
 
 	// 执行服务器优雅关闭逻辑
 	if err := srv.Shutdown(ctx); err != nil {
-		i.log.Error("服务器强制关闭", zap.Error(err))
+		logger.Error("服务器强制关闭", zap.Error(err))
 	}
 
 	// 最终确认服务器已经退出
-	i.log.Info("服务器已退出")
-}
-
-type initialize struct {
-	conf    *config.SystemConf
-	log     *zap.Logger
-	db      *gorm.DB
-	crontab *cron.Cron
+	logger.Info("服务器已退出")
 }
 
 // newInitialize 初始化系统组件
@@ -179,7 +175,7 @@ type initialize struct {
 // 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
-func newInitialize(path string) (*initialize, func(), error) {
+func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error) {
 	// 加载系统配置
 	conf := config.NewSystemConf(path)
 
@@ -197,7 +193,26 @@ func newInitialize(path string) (*initialize, func(), error) {
 	db, err := database.NewGormDB(conf.Database, dbConf)
 	if err != nil {
 		logger.Error("数据库连接失败", zap.Error(err))
-		return nil, nil, err
+		return nil, nil, nil, err
+	}
+
+	dbTimeout := config.DBTimeout{
+		ListTimeout:  time.Duration(conf.Database.ListTimeout) * time.Second,
+		ReadTimeout:  time.Duration(conf.Database.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
+	}
+
+	base := auth.RoleToSubject(0)
+	policies := []string{
+		fmt.Sprintf("p, %s, /api/v1/customer/me/password, PATCH", base),
+		fmt.Sprintf("p, %s, /api/v1/customer/me/menu/tree, GET", base),
+	}
+	adapter := stringadapter.NewAdapter(strings.Join(policies, "\n"))
+	modelPath := filepath.Join(config.ConfigDir, "model.conf")
+	enf, err := casbin.NewEnforcer(modelPath, adapter)
+	if err != nil {
+		logger.Error("Casbin 初始化失败", zap.Error(err))
+		return nil, nil, nil, err
 	}
 
 	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "cron.log"))
@@ -205,11 +220,12 @@ func newInitialize(path string) (*initialize, func(), error) {
 	ct := crontab.NewCron(cronLogger)
 
 	// 返回初始化结构体和清理函数
-	return &initialize{
-			conf:    conf,
-			db:      db,
-			log:     logger,
-			crontab: ct,
+	return logger, &common.Initialize{
+			Conf:      conf,
+			DB:        db,
+			DBTimeout: &dbTimeout,
+			Enforcer:  enf,
+			Crontab:   ct,
 		}, func() {
 			// 1. 关闭计划任务
 			if ct != nil {
@@ -242,15 +258,15 @@ func newInitialize(path string) (*initialize, func(), error) {
 		}, nil
 }
 
-func newRouter(init *initialize) *gin.Engine {
-	loggers := NewLoggers(init.conf.Log)
+func newRouter(init *common.Initialize) *gin.Engine {
+	loggers := NewLoggers(init.Conf.Log)
 	r := gin.New()
 
 	// host请求头防护中间件
-	r.Use(middleware.HostGuard(loggers.Service, init.conf.Server.Host, fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)))
+	r.Use(middleware.HostGuard(loggers.Service, init.Conf.Server.Host, fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)))
 
 	// 注册跨域请求处理中间件
-	r.Use(middleware.CorsMiddleware(init.conf.CORS))
+	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
 
 	// 注册链路追踪处理中间件
 	r.Use(middleware.TracingMiddleware(loggers.Service))
@@ -259,19 +275,19 @@ func newRouter(init *initialize) *gin.Engine {
 	r.Use(middleware.ErrorMiddleware(loggers.Service))
 
 	// 注册超时处理中间件
-	r.Use(middleware.TimeoutMiddleware(time.Duration(init.conf.Security.Timeout.RequestTimeout) * time.Second))
+	r.Use(middleware.TimeoutMiddleware(time.Duration(init.Conf.Security.Timeout.RequestTimeout) * time.Second))
 
 	// 注册时间戳处理中间件,用于防御重放攻击
-	if init.conf.Security.Timestamp.CheckTimestamp {
+	if init.Conf.Security.Timestamp.CheckTimestamp {
 		r.Use(middleware.TimestampMiddleware(
 			loggers.Service,
-			int64(init.conf.Security.Timestamp.Tolerance),
-			int64(init.conf.Security.Timestamp.FutureTolerance),
+			int64(init.Conf.Security.Timestamp.Tolerance),
+			int64(init.Conf.Security.Timestamp.FutureTolerance),
 		))
 	}
 
 	// IP限流中间件
-	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.conf.Rate.RPS), init.conf.Rate.Burst))
+	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Rate.RPS), init.Conf.Rate.Burst))
 
 	r.GET("/", func(c *gin.Context) {
 		c.File(filepath.Join(config.BaseDir, "html", "index.html"))
@@ -279,11 +295,11 @@ func newRouter(init *initialize) *gin.Engine {
 	r.Static("/static", filepath.Join(config.BaseDir, "html", "static"))
 
 	// 配置 Swagger 文档
-	if init.conf.Server.EnableSwagger {
+	if init.Conf.Server.EnableSwagger {
 		docs.SwaggerInfo.Title = "gin-artweb"
 		docs.SwaggerInfo.Description = "gin-artweb自动化运维平台"
 		docs.SwaggerInfo.Version = version
-		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.conf.Server.Host, init.conf.Server.Port)
+		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)
 		docs.SwaggerInfo.Schemes = []string{"http", "https"}
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
@@ -296,19 +312,13 @@ func newRouter(init *initialize) *gin.Engine {
 
 	apiRouter := r.Group("/api")
 
-	dbTimeout := database.DBTimeout{
-		ListTimeout:  time.Duration(init.conf.Database.ListTimeout) * time.Second,
-		ReadTimeout:  time.Duration(init.conf.Database.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(init.conf.Database.WriteTimeout) * time.Second,
-	}
-
 	// 初始化加载业务模块
-	customer.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
-	resource.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
-	jobs.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers, init.crontab)
-	mon.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
-	mds.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
-	oes.NewServer(apiRouter, init.conf, init.db, &dbTimeout, loggers)
+	customer.NewServer(apiRouter, init, loggers)
+	resource.NewServer(apiRouter, init, loggers)
+	jobs.NewServer(apiRouter, init, loggers)
+	mon.NewServer(apiRouter, init, loggers)
+	mds.NewServer(apiRouter, init, loggers)
+	oes.NewServer(apiRouter, init, loggers)
 	return r
 }
 

@@ -5,12 +5,14 @@ import (
 	goerrors "errors"
 	"time"
 
+	"github.com/casbin/casbin/v2"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
@@ -23,26 +25,26 @@ const (
 type buttonRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
-	cache    *auth.AuthEnforcer
+	timeouts *config.DBTimeout
+	enforcer *casbin.Enforcer
 }
 
 func NewButtonRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
-	cache *auth.AuthEnforcer,
+	timeouts *config.DBTimeout,
+	enforcer *casbin.Enforcer,
 ) biz.ButtonRepo {
 	return &buttonRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
-		cache:    cache,
+		enforcer: enforcer,
 	}
 }
 
 func (r *buttonRepo) CreateModel(
-	ctx context.Context, 
+	ctx context.Context,
 	m *biz.ButtonModel,
 	perms *[]biz.PermissionModel,
 ) error {
@@ -222,7 +224,7 @@ func (r *buttonRepo) ListModel(
 		)
 		return 0, nil, err
 	}
-	
+
 	r.log.Debug(
 		"查询按钮模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
@@ -253,7 +255,7 @@ func (r *buttonRepo) AddGroupPolicy(
 	)
 
 	m := *button
-	
+
 	// 检查必要字段
 	if m.ID == 0 {
 		return goerrors.New("AddGroupPolicy操作失败: 按钮ID不能为0")
@@ -272,7 +274,7 @@ func (r *buttonRepo) AddGroupPolicy(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	menuStartTime := time.Now()
-	if err := r.cache.AddGroupPolicy(ctx, sub, menuObj); err != nil {
+	if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, menuObj); err != nil {
 		r.log.Error(
 			"添加按钮与父级菜单的继承关系策略失败",
 			zap.Error(err),
@@ -314,7 +316,7 @@ func (r *buttonRepo) AddGroupPolicy(
 		}
 
 		obj := auth.PermissionToSubject(o.ID)
-		if err := r.cache.AddGroupPolicy(ctx, sub, obj); err != nil {
+		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
 			r.log.Error(
 				"添加按钮与权限的关联策略失败",
 				zap.Error(err),
@@ -360,7 +362,7 @@ func (r *buttonRepo) RemoveGroupPolicy(
 	)
 
 	m := *button
-	
+
 	// 检查必要字段
 	if m.ID == 0 {
 		return goerrors.New("RemoveGroupPolicy操作失败: 按钮ID不能为0")
@@ -376,7 +378,7 @@ func (r *buttonRepo) RemoveGroupPolicy(
 	rmSubStartTime := time.Now()
 
 	// 删除该按钮作为子级的策略（被其他策略继承）
-	if err := r.cache.RemoveGroupPolicy(ctx, 0, sub); err != nil {
+	if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 0, sub); err != nil {
 		r.log.Error(
 			"删除按钮作为子级策略失败(该策略继承自其他策略)",
 			zap.Error(err),
@@ -404,7 +406,7 @@ func (r *buttonRepo) RemoveGroupPolicy(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rmObjStartTime := time.Now()
-		if err := r.cache.RemoveGroupPolicy(ctx, 1, sub); err != nil {
+		if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 1, sub); err != nil {
 			r.log.Error(
 				"删除按钮作为父级策略失败(该策略被其他策略继承)",
 				zap.Error(err),

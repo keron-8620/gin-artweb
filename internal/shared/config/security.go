@@ -28,7 +28,7 @@ type LoginSecurityConfig struct {
 
 // UploadConfig 上传配置
 type UploadConfig struct {
-	MaxFileSize int `yaml:"max_file_size"`  // 最大文件大小(MB)
+	MaxFileSize int `yaml:"max_file_size"`  // 最大上传文件大小(MB)
 }
 
 // PasswordConfig 密码配置

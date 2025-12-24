@@ -5,12 +5,14 @@ import (
 	goerrors "errors"
 	"time"
 
+	"github.com/casbin/casbin/v2"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 )
@@ -18,26 +20,26 @@ import (
 type roleRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
-	cache    *auth.AuthEnforcer
+	timeouts *config.DBTimeout
+	enforcer *casbin.Enforcer
 }
 
 func NewRoleRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
-	cache *auth.AuthEnforcer,
+	timeouts *config.DBTimeout,
+	enforcer *casbin.Enforcer,
 ) biz.RoleRepo {
 	return &roleRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
-		cache:    cache,
+		enforcer: enforcer,
 	}
 }
 
 func (r *roleRepo) CreateModel(
-	ctx context.Context, 
+	ctx context.Context,
 	m *biz.RoleModel,
 	perms *[]biz.PermissionModel,
 	menus *[]biz.MenuModel,
@@ -282,7 +284,7 @@ func (r *roleRepo) AddGroupPolicy(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	baseStartTime := time.Now()
-	if err := r.cache.AddGroupPolicy(ctx, sub, base); err != nil {
+	if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, base); err != nil {
 		r.log.Error(
 			"添加角色与基础角色的继承关系策略失败",
 			zap.Error(err),
@@ -324,7 +326,7 @@ func (r *roleRepo) AddGroupPolicy(
 		}
 
 		obj := auth.PermissionToSubject(o.ID)
-		if err := r.cache.AddGroupPolicy(ctx, sub, obj); err != nil {
+		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
 			r.log.Error(
 				"添加角色与权限的关联策略失败",
 				zap.Error(err),
@@ -366,7 +368,7 @@ func (r *roleRepo) AddGroupPolicy(
 		}
 
 		obj := auth.MenuToSubject(o.ID)
-		if err := r.cache.AddGroupPolicy(ctx, sub, obj); err != nil {
+		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
 			r.log.Error(
 				"添加角色与菜单的关联策略失败",
 				zap.Error(err),
@@ -408,7 +410,7 @@ func (r *roleRepo) AddGroupPolicy(
 		}
 
 		obj := auth.ButtonToSubject(o.ID)
-		if err := r.cache.AddGroupPolicy(ctx, sub, obj); err != nil {
+		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
 			r.log.Error(
 				"添加角色与按钮的关联策略失败",
 				zap.Error(err),
@@ -462,7 +464,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 	rmSubStartTime := time.Now()
 
 	// 删除该角色作为子级的策略（被其他策略继承）
-	if err := r.cache.RemoveGroupPolicy(ctx, 0, sub); err != nil {
+	if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 0, sub); err != nil {
 		r.log.Error(
 			"删除角色作为子级策略失败(该策略继承自其他策略)",
 			zap.Error(err),

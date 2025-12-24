@@ -5,8 +5,8 @@ basepath=$(cd `dirname $0`/..; pwd)
 cd $basepath
 
 # 编译前清理旧的可执行文件
-if [ -f "$basepath/gin-artweb" ]; then
-  rm -rf "$basepath/gin-artweb"
+if [ -f "$basepath/bin/gin-artweb" ]; then
+  rm -rf "$basepath/bin/gin-artweb"
 fi
 
 VERSION="v0.17.7.0.1"
@@ -25,4 +25,4 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -X 'main.goOS=$(go env GOOS)' \
     -X 'main.goArch=$(go env GOARCH)'
   " \
-  -o gin-artweb main.go
+  -o bin/gin-artweb main.go

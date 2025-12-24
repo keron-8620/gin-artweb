@@ -9,6 +9,7 @@ import (
 
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 )
@@ -16,13 +17,13 @@ import (
 type packageRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
+	timeouts *config.DBTimeout
 }
 
 func NewpackageRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
+	timeouts *config.DBTimeout,
 ) biz.PackageRepo {
 	return &packageRepo{
 		log:      log,

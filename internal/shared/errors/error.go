@@ -26,31 +26,68 @@ func New(code int, reason, message string, data map[string]any) *Error {
 }
 
 func (e *Error) Error() string {
+	if e == nil {
+		return ""
+	}
 	return fmt.Sprintf("error: code=%d reason = %s msg = %s data = %v cause = %v", e.Code, e.Reason, e.Msg, e.Data, e.cause)
 }
 
-func (e *Error) Unwrap() error { return e.cause }
+func (e *Error) Unwrap() error { 
+	if e == nil {
+		return nil
+	}
+	return e.cause 
+}
 
 func (e *Error) Is(err error) bool {
-	if se := new(Error); errors.As(err, &se) {
+	if e == nil {
+		return  err == nil
+	}
+	if err == nil {
+		return false
+	}
+	if se, ok := err.(*Error); ok {
+		return se.Code == e.Code && se.Reason == e.Reason
+	}
+	var se *Error
+	if errors.As(err, &se) {
 		return se.Code == e.Code && se.Reason == e.Reason
 	}
 	return false
 }
 
 func (e *Error) WithCause(cause error) *Error {
+	if e == nil {
+		return nil
+	}
 	err := Clone(e)
-	err.cause = cause
+	if err != nil {
+		err.cause = cause
+	}
 	return err
 }
 
 func (e *Error) WithData(md map[string]any) *Error {
+	if e == nil {
+		return nil
+	}
+	
 	err := Clone(e)
-	err.Data = md
+	if len(md) > 0 {
+		err.Data = md
+	}
 	return err
 }
 
 func (e *Error) ToMap() map[string]any {
+	if e == nil {
+		return map[string]any{
+			"code":   http.StatusOK,
+			"reason": "ok",
+			"msg":    "",
+			"data":   map[string]any{},
+		}
+	}
 	data := e.Data
 	if e.cause != nil {
 		data = make(map[string]any, len(e.Data)+1)

@@ -13,6 +13,7 @@ import (
 
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
@@ -21,13 +22,13 @@ import (
 type hostRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
+	timeouts *config.DBTimeout
 }
 
 func NewHostRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
+	timeouts *config.DBTimeout,
 ) biz.HostRepo {
 	return &hostRepo{
 		log:      log,

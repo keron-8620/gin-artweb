@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	MenuIDKey  = "menu_id"
-	MenuIDsKey = "menu_ids"
+	MenuTableName = "customer_menu"
+	MenuIDKey     = "menu_id"
+	MenuIDsKey    = "menu_ids"
 )
 
 type Meta struct {
@@ -42,10 +43,13 @@ type MenuModel struct {
 }
 
 func (m *MenuModel) TableName() string {
-	return "customer_menu"
+	return MenuTableName
 }
 
 func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return database.GormModelIsNil(MenuTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}

@@ -63,6 +63,8 @@ func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *ScriptRecordModel) InitEnv() []string {
 	env := os.Environ()
+	env = append(env, fmt.Sprintf("JOB_LOG_PATH=%s", m.LogPath()))
+	env = append(env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir))
 	if m.EnvVars != "" {
 		var envMap map[string]string
 		if err := json.Unmarshal([]byte(m.EnvVars), &envMap); err == nil {
@@ -322,8 +324,6 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 
 	// 设置环境变量
 	cmd.Env = record.InitEnv()
-	cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_LOG_PATH=%s", logPath))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir))
 
 	// 重定向输出到日志文件
 	cmd.Stdout = taskinfo.LogFile

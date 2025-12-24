@@ -370,7 +370,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.ToMap())
+		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
 		return
 	}
 	s.log.Info(
@@ -414,7 +414,6 @@ func (s *RoleService) LoadRouter(r *gin.RouterGroup) {
 	r.DELETE("/role/:pk", s.DeleteRole)
 	r.GET("/role/:pk", s.GetRole)
 	r.GET("/role", s.ListRole)
-	r.GET("/me/menu/tree", s.GetRoleMenuTree)
 }
 
 func RoleModelToBaseOut(

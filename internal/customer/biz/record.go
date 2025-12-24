@@ -12,6 +12,8 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
+const LoginRecordTableName = "customer_login_record"
+
 type LoginRecordModel struct {
 	database.BaseModel
 	Username  string    `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
@@ -22,10 +24,13 @@ type LoginRecordModel struct {
 }
 
 func (m *LoginRecordModel) TableName() string {
-	return "customer_login_record"
+	return LoginRecordTableName
 }
 
 func (m *LoginRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return database.GormModelIsNil(LoginRecordTableName)
+	}
 	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
 		return err
 	}

@@ -5,12 +5,14 @@ import (
 	goerrors "errors"
 	"time"
 
+	"github.com/casbin/casbin/v2"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
@@ -19,21 +21,21 @@ import (
 type menuRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
-	cache    *auth.AuthEnforcer
+	timeouts *config.DBTimeout
+	enforcer *casbin.Enforcer
 }
 
 func NewMenuRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
-	cache *auth.AuthEnforcer,
+	timeouts *config.DBTimeout,
+	enforcer *casbin.Enforcer,
 ) biz.MenuRepo {
 	return &menuRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
-		cache:    cache,
+		enforcer: enforcer,
 	}
 }
 
@@ -276,7 +278,7 @@ func (r *menuRepo) AddGroupPolicy(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		menuStartTime := time.Now()
-		if err := r.cache.AddGroupPolicy(ctx, sub, obj); err != nil {
+		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
 			r.log.Error(
 				"添加菜单与父级菜单的继承关系策略失败",
 				zap.Error(err),
@@ -318,7 +320,7 @@ func (r *menuRepo) AddGroupPolicy(
 		}
 
 		obj := auth.PermissionToSubject(o.ID)
-		if err := r.cache.AddGroupPolicy(ctx, sub, obj); err != nil {
+		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
 			r.log.Error(
 				"添加菜单与权限的关联策略失败",
 				zap.Error(err),
@@ -377,7 +379,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	rmSubStartTime := time.Now()
-	if err := r.cache.RemoveGroupPolicy(ctx, 0, sub); err != nil {
+	if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 0, sub); err != nil {
 		r.log.Error(
 			"删除该菜单作为子级的组策略失败",
 			zap.Error(err),
@@ -404,7 +406,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		rmObjStartTime := time.Now()
-		if err := r.cache.RemoveGroupPolicy(ctx, 1, sub); err != nil {
+		if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 1, sub); err != nil {
 			r.log.Error(
 				"删除该菜单作为父级的组策略失败",
 				zap.Error(err),

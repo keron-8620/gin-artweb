@@ -461,7 +461,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(auth.ErrGetUserClaims.Code, auth.ErrGetUserClaims.ToMap())
+		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
 		return
 	}
 
@@ -612,8 +612,6 @@ func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/user/:pk", s.GetUser)
 	r.GET("/user", s.ListUser)
 	r.PATCH("/user/password/:pk", s.ResetPassword)
-	r.PATCH("/me/password", s.PatchPassword)
-	r.POST("/login", s.Login)
 }
 
 func UserModelToBaseOut(

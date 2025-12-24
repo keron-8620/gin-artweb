@@ -1,4 +1,3 @@
-#!/usr/local/lib/python3.11/bin/python3.11
 import os
 import optparse
 import shutil

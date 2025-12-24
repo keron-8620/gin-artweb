@@ -5,12 +5,14 @@ import (
 	goerrors "errors"
 	"time"
 
+	"github.com/casbin/casbin/v2"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
@@ -19,25 +21,34 @@ import (
 type permissionRepo struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
-	timeouts *database.DBTimeout
-	cache    *auth.AuthEnforcer
+	timeouts *config.DBTimeout
+	enforcer *casbin.Enforcer
 }
 
 func NewPermissionRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
-	timeouts *database.DBTimeout,
-	cache *auth.AuthEnforcer,
+	timeouts *config.DBTimeout,
+	enforcer *casbin.Enforcer,
 ) biz.PermissionRepo {
 	return &permissionRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
-		cache:    cache,
+		enforcer: enforcer,
 	}
 }
 
 func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel) error {
+	if m == nil {
+		err := goerrors.New("创建权限模型失败: 创建权限模型参数不能为空")
+		r.log.Error(
+			"权限模型不能为空",
+			zap.Error(err),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return err
+	}
 	r.log.Debug(
 		"开始创建权限模型",
 		zap.Object(database.ModelKey, m),
@@ -71,6 +82,18 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 }
 
 func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+	if len(data) == 0 {
+		err := goerrors.New("更新权限模型失败: 更新数据为空")
+		r.log.Error(
+			"更新权限模型失败: 更新数据为空",
+			zap.Error(err),
+			zap.Any(database.UpdateDataKey, data),
+			zap.Any(database.ConditionKey, conds),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return err
+	}
+
 	r.log.Debug(
 		"开始更新权限模型",
 		zap.Any(database.UpdateDataKey, data),
@@ -193,7 +216,7 @@ func (r *permissionRepo) ListModel(
 		)
 		return 0, nil, err
 	}
-	
+
 	r.log.Debug(
 		"查询权限模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
@@ -236,7 +259,7 @@ func (r *permissionRepo) AddPolicy(
 	)
 	startTime := time.Now()
 	sub := auth.PermissionToSubject(m.ID)
-	if err := r.cache.AddPolicy(ctx, sub, m.URL, m.Method); err != nil {
+	if err := auth.AddPolicy(ctx, r.enforcer, sub, m.URL, m.Method); err != nil {
 		r.log.Error(
 			"添加权限策略失败",
 			zap.Error(err),
@@ -293,7 +316,7 @@ func (r *permissionRepo) RemovePolicy(
 	)
 	rmSubStartTime := time.Now()
 	sub := auth.PermissionToSubject(m.ID)
-	if err := r.cache.RemovePolicy(ctx, sub, m.URL, m.Method); err != nil {
+	if err := auth.RemovePolicy(ctx, r.enforcer, sub, m.URL, m.Method); err != nil {
 		r.log.Error(
 			"删除权限策略失败",
 			zap.Error(err),
@@ -324,7 +347,7 @@ func (r *permissionRepo) RemovePolicy(
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmObjStartTime)),
 		)
-		if err := r.cache.RemoveGroupPolicy(ctx, 1, sub); err != nil {
+		if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 1, sub); err != nil {
 			r.log.Error(
 				"删除继承该权限的组策略失败",
 				zap.Error(err),

@@ -7,29 +7,12 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
-	"time"
 
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/shared/errors"
 )
-
-// zap日志中数据库相关常用key
-const (
-	UpdateDataKey  = "data"         // 更新数据字段
-	ConditionKey   = "conds"        // 查询条件参数
-	PreloadKey     = "preloads"     // 预加载关联关系
-	ModelKey       = "model"        // 数据模型
-	QueryParamsKey = "query_params" // 查询参数
-)
-
-// DBTimeout 数据库操作超时参数
-type DBTimeout struct {
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	ListTimeout  time.Duration
-}
 
 // DBPanic 处理数据库操作中的panic异常，自动回滚事务并记录错误日志
 // ctx: 上下文
@@ -339,7 +322,16 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	return count, nil
 }
 
-const MaxLimit = 1000
+// zap日志中数据库相关常用key
+const (
+	MaxLimit = 1000 // 查询结果最大限制数
+
+	UpdateDataKey  = "data"         // 更新数据字段
+	ConditionKey   = "conds"        // 查询条件参数
+	PreloadKey     = "preloads"     // 预加载关联关系
+	ModelKey       = "model"        // 数据模型
+	QueryParamsKey = "query_params" // 查询参数
+)
 
 // QueryParams 查询参数结构体，用于配置列表查询的各种参数
 type QueryParams struct {

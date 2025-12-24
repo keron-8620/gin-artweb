@@ -2,29 +2,26 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"gin-artweb/internal/mds/biz"
 	"gin-artweb/internal/mds/data"
 	"gin-artweb/internal/mds/service"
-	"gin-artweb/internal/shared/config"
-	"gin-artweb/internal/shared/database"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/internal/shared/middleware"
 )
 
 func NewServer(
 	router *gin.RouterGroup,
-	conf *config.SystemConf,
-	db *gorm.DB,
-	dbTimeout *database.DBTimeout,
+	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(db, loggers.Data); err != nil {
+	if err := dbAutoMigrate(init.DB, loggers.Data); err != nil {
 		panic(err)
 	}
 
-	colonyRepo := data.NewMdsColonyRepo(loggers.Data, db, dbTimeout)
-	nodeRepo := data.NewMdsNodeRepo(loggers.Data, db, dbTimeout)
+	colonyRepo := data.NewMdsColonyRepo(loggers.Data, init.DB, init.DBTimeout)
+	nodeRepo := data.NewMdsNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 
 	colonyUsecase := biz.NewMdsColonyUsecase(loggers.Biz, colonyRepo)
 	nodeUsecase := biz.NewMdsNodeUsecase(loggers.Biz, nodeRepo)
@@ -33,6 +30,8 @@ func NewServer(
 	nodeService := service.NewMdsNodeService(loggers.Service, nodeUsecase)
 
 	appRouter := router.Group("/v1/mds")
+	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
+	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
 	colonyService.LoadRouter(appRouter)
 	nodeService.LoadRouter(appRouter)
 }
