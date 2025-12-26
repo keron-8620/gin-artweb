@@ -46,7 +46,7 @@ func (q *BaseModelQuery) QueryMap(l int) (int, int, map[string]any) {
 		size int = DefaultSize
 	)
 	if q.Page > 1 {
-		page = q.Page
+		page = q.Page - 1
 	}
 	if q.Size > 0 {
 		size = q.Size

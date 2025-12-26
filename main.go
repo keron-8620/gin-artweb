@@ -10,12 +10,9 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/casbin/casbin/v2"
-	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
@@ -202,14 +199,7 @@ func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error)
 		WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
 	}
 
-	base := auth.RoleToSubject(0)
-	policies := []string{
-		fmt.Sprintf("p, %s, /api/v1/customer/me/password, PATCH", base),
-		fmt.Sprintf("p, %s, /api/v1/customer/me/menu/tree, GET", base),
-	}
-	adapter := stringadapter.NewAdapter(strings.Join(policies, "\n"))
-	modelPath := filepath.Join(config.ConfigDir, "model.conf")
-	enf, err := casbin.NewEnforcer(modelPath, adapter)
+	enf, err := auth.NewCasbinEnforcer()
 	if err != nil {
 		logger.Error("Casbin 初始化失败", zap.Error(err))
 		return nil, nil, nil, err

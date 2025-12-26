@@ -12,7 +12,7 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/internal/shared/utils/serializer"
+	"gin-artweb/pkg/serializer"
 )
 
 const OesNodeIDKey = "oes_node_id"

@@ -28,7 +28,7 @@ func NewServer(
 	recordUsecase := biz.NewScriptRecordUsecase(loggers.Biz, scriptRepo, recordRepo)
 	scheduleUsecase := biz.NewScheduleUsecase(loggers.Biz, scriptRepo, scheduleRepo, recordUsecase, init.Crontab)
 
-	scriptService := service.NewScriptService(loggers.Service, scriptUsecase, int64(init.Conf.Security.Upload.MaxFileSize))
+	scriptService := service.NewScriptService(loggers.Service, scriptUsecase, int64(init.Conf.Security.Upload.MaxScriptSize)*1024*1024)
 	recordService := service.NewScriptRecordService(loggers.Service, recordUsecase)
 	scheduleService := service.NewScheduleService(loggers.Service, scheduleUsecase)
 

@@ -29,5 +29,6 @@ func NewServer(
 	appRouter := router.Group("/v1/mon")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
+
 	nodeService.LoadRouter(appRouter)
 }

@@ -96,7 +96,7 @@ func (s *MdsColonyService) CreateMdsColony(ctx *gin.Context) {
 // @Security ApiKeyAuth
 func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 	var uri pbComm.PKUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
+	if err := ctx.ShouldBind(&uri); err != nil {
 		s.log.Error(
 			"绑定更新mds集群ID参数失败",
 			zap.Error(err),

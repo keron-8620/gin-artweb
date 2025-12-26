@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"gin-artweb/internal/customer/biz"
+	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/test"
 )
@@ -51,7 +52,7 @@ func (suite *MenuTestSuite) SetupSuite() {
 	)
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	enforcer, err := test.NewTestEnforcer(test.TestSecretKey)
+	enforcer, err := auth.NewCasbinEnforcer()
 	if err != nil {
 		panic(err)
 	}

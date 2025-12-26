@@ -68,7 +68,7 @@ func UploadFile(
 	return nil
 }
 
-func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, filename string) *errors.Error {
+func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, rename string) *errors.Error {
 	// 检查文件是否存在
 	if _, statErr := os.Stat(filePath); os.IsNotExist(statErr) {
 		logger.Error(
@@ -89,8 +89,8 @@ func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, filename strin
 
 	// 获取文件名
 	var originFilename string = filepath.Base(filePath)
-	if filename != "" {
-		originFilename = filename
+	if rename != "" {
+		originFilename = rename
 	}
 	encodedFilename := url.QueryEscape(originFilename)
 

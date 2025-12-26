@@ -42,13 +42,13 @@ type Pag[T any] struct {
 func NewPag[T any](page, size int, total int64, items *[]T) *Pag[T] {
 	var pages int64
 	if total == 0 || size <= 0 {
-		pages = 0
+		pages = 1
 	} else {
 		s := int64(size)
 		pages = (total + s - 1) / s
 	}
 	return &Pag[T]{
-		Page:  page,
+		Page:  page + 1,
 		Size:  size,
 		Total: total,
 		Pages: pages,

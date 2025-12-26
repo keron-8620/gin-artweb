@@ -13,7 +13,7 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/internal/shared/utils/crypto"
+	"gin-artweb/pkg/crypto"
 )
 
 const (

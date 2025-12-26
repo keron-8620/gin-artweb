@@ -274,37 +274,6 @@ func (r *roleRepo) AddGroupPolicy(
 
 	sub := auth.RoleToSubject(m.ID)
 
-	// 添加基础角色继承关系
-	base := auth.RoleToSubject(0)
-	r.log.Debug(
-		"开始添加角色与基础角色的继承关系策略",
-		zap.Object(database.ModelKey, role),
-		zap.String(auth.GroupSubKey, sub),
-		zap.String(auth.GroupObjKey, base),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-	)
-	baseStartTime := time.Now()
-	if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, base); err != nil {
-		r.log.Error(
-			"添加角色与基础角色的继承关系策略失败",
-			zap.Error(err),
-			zap.Object(database.ModelKey, role),
-			zap.String(auth.GroupSubKey, sub),
-			zap.String(auth.GroupObjKey, base),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(baseStartTime)),
-		)
-		return err
-	}
-	r.log.Debug(
-		"添加角色与基础角色的继承关系策略成功",
-		zap.Object(database.ModelKey, role),
-		zap.String(auth.GroupSubKey, sub),
-		zap.String(auth.GroupObjKey, base),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		zap.Duration(log.DurationKey, time.Since(baseStartTime)),
-	)
-
 	r.log.Debug(
 		"开始添加角色与权限的关联策略",
 		zap.Object(database.ModelKey, role),

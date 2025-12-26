@@ -1039,6 +1039,31 @@ definitions:
         example: 100
         type: integer
     type: object
+  conf.ListMdsConfRequest:
+    properties:
+      dir_name:
+        description: |-
+          文件夹名称
+          required: true
+          example: "all"
+        enum:
+        - all
+        - host_01
+        - host_02
+        - host_03
+        type: string
+      mds_colony_id:
+        description: |-
+          mds集群ID
+          required: true
+          example: 1
+        type: integer
+    required:
+    - dir_name
+    - mds_colony_id
+    type: object
+  conf.PagMdsConfReply:
+    type: object
   errors.Error:
     properties:
       code:
@@ -3208,40 +3233,6 @@ paths:
       summary: 更新按钮
       tags:
       - 按钮管理
-  /api/v1/customer/login:
-    post:
-      consumes:
-      - application/json
-      description: 本接口用于登陆
-      parameters:
-      - description: 登陆请求参数
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/user.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 登录成功
-          schema:
-            $ref: '#/definitions/user.LoginReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "401":
-          description: 用户名或密码错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      summary: 登陆接口
-      tags:
-      - 用户管理
   /api/v1/customer/me/menu/tree:
     get:
       consumes:
@@ -4861,6 +4852,40 @@ paths:
       summary: 下载脚本
       tags:
       - 脚本管理
+  /api/v1/login:
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于登陆
+      parameters:
+      - description: 登陆请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            $ref: '#/definitions/user.LoginReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: 用户名或密码错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: 登陆接口
+      tags:
+      - 用户管理
   /api/v1/mds/colony:
     get:
       consumes:
@@ -5050,6 +5075,162 @@ paths:
       summary: 更新mds集群
       tags:
       - mds集群管理
+  /api/v1/mds/conf/delete:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的MDS配置文件
+      parameters:
+      - description: MDS集群ID
+        format: int32
+        in: query
+        name: mds_colony_id
+        required: true
+        type: integer
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除MDS配置文件
+      tags:
+      - MDS配置管理
+  /api/v1/mds/conf/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定的MDS配置文件
+      parameters:
+      - description: MDS集群ID
+        format: int32
+        in: query
+        name: mds_colony_id
+        required: true
+        type: integer
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 下载成功，返回文件流
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载MDS配置文件
+      tags:
+      - MDS配置管理
+  /api/v1/mds/conf/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定目录下的MDS配置文件列表
+      parameters:
+      - description: 请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/conf.ListMdsConfRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回配置文件列表
+          schema:
+            $ref: '#/definitions/conf.PagMdsConfReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取MDS配置文件列表
+      tags:
+      - MDS配置管理
+  /api/v1/mds/conf/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传MDS配置文件到指定目录
+      parameters:
+      - description: MDS集群ID
+        format: int32
+        in: formData
+        name: mds_colony_id
+        required: true
+        type: integer
+      - description: 目录名称
+        in: formData
+        name: dir_name
+        required: true
+        type: string
+      - description: 配置文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传MDS配置文件
+      tags:
+      - MDS配置管理
   /api/v1/mds/node:
     get:
       consumes:

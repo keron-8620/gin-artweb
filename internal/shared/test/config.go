@@ -30,7 +30,7 @@ func NewTestSecurityConfig() *config.SecurityConfig {
 			LockMinutes:       30, // 登录失败锁定30分钟
 		},
 		Upload: config.UploadConfig{
-			MaxFileSize: 500, // 最大上传文件500M大小(MB)
+			MaxPkgSize: 500, // 最大上传文件500M大小(MB)
 		},
 		Password: config.PasswordConfig{
 			StrengthLevel: 3, // 中高等密码强度要求，可测试各种密码强度规则

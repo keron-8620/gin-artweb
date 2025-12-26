@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/customer/data"
@@ -12,7 +13,7 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
-	"gin-artweb/internal/shared/utils/crypto"
+	"gin-artweb/pkg/crypto"
 )
 
 func NewServer(
@@ -56,6 +57,18 @@ func NewServer(
 		panic(pErr.Error())
 	}
 
+	pPolicies, pErr := init.Enforcer.GetPolicy()
+	if pErr != nil {
+		panic(pErr)
+	}
+	loggers.Data.Debug("已加载所有p策略", zap.Any("pPolicies", pPolicies))
+
+	gPolicies, gErr := init.Enforcer.GetGroupingPolicy()
+	if gErr != nil {
+		panic(gErr)
+	}
+	loggers.Data.Debug("已加载所有g策略", zap.Any("gPolicies", gPolicies))
+
 	permissionService := service.NewPermissionService(loggers.Service, permissionUsecase)
 	menuService := service.NewMenuService(loggers.Service, menuUsecase)
 	buttonService := service.NewButtonService(loggers.Service, buttonUsecase)
@@ -66,11 +79,11 @@ func NewServer(
 	router.POST("/v1/login", userService.Login)
 	appRouter := router.Group("/v1/customer")
 
-	router.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
 	appRouter.GET("/me/menu/tree", roleService.GetRoleMenuTree)
 	appRouter.PATCH("/me/password", userService.PatchPassword)
 
-	router.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
+	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
 	permissionService.LoadRouter(appRouter)
 	menuService.LoadRouter(appRouter)
 	buttonService.LoadRouter(appRouter)

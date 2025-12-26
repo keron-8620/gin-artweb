@@ -521,7 +521,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 401 {object} errors.Error "用户名或密码错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/login [post]
+// @Router /api/v1/login [post]
 func (s *UserService) Login(ctx *gin.Context) {
 	var req pbUser.LoginRequest
 	if err := ctx.ShouldBind(&req); err != nil {
@@ -618,10 +618,10 @@ func UserModelToBaseOut(
 	m biz.UserModel,
 ) *pbUser.UserBaseOut {
 	return &pbUser.UserBaseOut{
-		ID:        m.ID,
-		Username:  m.Username,
-		IsActive:  m.IsActive,
-		IsStaff:   m.IsStaff,
+		ID:       m.ID,
+		Username: m.Username,
+		IsActive: m.IsActive,
+		IsStaff:  m.IsStaff,
 	}
 }
 
@@ -630,8 +630,8 @@ func UserModelToStandardOut(
 ) *pbUser.UserStandardOut {
 	return &pbUser.UserStandardOut{
 		UserBaseOut: *UserModelToBaseOut(m),
-		CreatedAt: m.CreatedAt.String(),
-		UpdatedAt: m.UpdatedAt.String(),
+		CreatedAt:   m.CreatedAt.String(),
+		UpdatedAt:   m.UpdatedAt.String(),
 	}
 }
 

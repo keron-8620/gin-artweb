@@ -5,17 +5,43 @@ import (
 	"fmt"
 
 	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/model"
+	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
 
 	"gin-artweb/internal/shared/errors"
 )
+
+func NewCasbinEnforcer() (*casbin.Enforcer, error) {
+	cm, err := model.NewModelFromString(`
+		[request_definition]
+		r = sub, obj, act
+
+		[policy_definition]
+		p = sub, obj, act
+
+		[role_definition]
+		g = _, _
+
+		[policy_effect]
+		e = some(where (p.eft == allow))
+
+		[matchers]
+		m = g*(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+	`)
+	if err != nil {
+		return nil, err
+	}
+	adapter := stringadapter.NewAdapter("p, perm_0, /api/v1/login, POST")
+	return casbin.NewEnforcer(cm, adapter)
+}
 
 const (
 	SubKey = "sub"
 	ObjKey = "obj"
 	ActKey = "act"
 
-	GroupSubKey = "group_sub" // 组策略主体键
-	GroupObjKey = "group_obj" // 组策略对象键
+	GroupSubKey = "group_parent" // 组策略主体键
+	GroupObjKey = "group_child"  // 组策略对象键
 )
 
 const (

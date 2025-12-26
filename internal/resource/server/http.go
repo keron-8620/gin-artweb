@@ -34,7 +34,7 @@ func NewServer(
 	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo)
 
 	hostService := service.NewHostService(loggers.Service, hostUsecase)
-	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(init.Conf.Security.Upload.MaxFileSize)*1024*1024)
+	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(init.Conf.Security.Upload.MaxPkgSize)*1024*1024)
 
 	appRouter := router.Group("/v1/resource")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))

@@ -109,6 +109,8 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String(auth.ObjKey, fullPath),
 				zap.String(auth.ActKey, c.Request.Method),
 			)
+			rErr := errors.FromError(err).WithCause(err)
+			c.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 			return
 		}
 		if !hasPerm {

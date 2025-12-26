@@ -339,13 +339,13 @@ func (r *permissionRepo) RemovePolicy(
 
 	// 如果需要删除继承该权限的组策略
 	if removeInherited {
-		rmObjStartTime := time.Now()
+		rmSubStartTime := time.Now()
 		r.log.Debug(
 			"开始删除继承该权限的组策略",
 			zap.Object(database.ModelKey, &m),
 			zap.String(auth.GroupObjKey, sub),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(rmObjStartTime)),
+			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 		if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 1, sub); err != nil {
 			r.log.Error(
@@ -354,7 +354,7 @@ func (r *permissionRepo) RemovePolicy(
 				zap.Object(database.ModelKey, &m),
 				zap.String(auth.GroupObjKey, sub),
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-				zap.Duration(log.DurationKey, time.Since(rmObjStartTime)),
+				zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 			)
 			return err
 		}
@@ -363,8 +363,9 @@ func (r *permissionRepo) RemovePolicy(
 			zap.Object(database.ModelKey, &m),
 			zap.String(auth.GroupObjKey, sub),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(rmObjStartTime)),
+			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 	}
+
 	return nil
 }

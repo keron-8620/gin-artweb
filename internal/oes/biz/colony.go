@@ -15,9 +15,9 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/internal/shared/utils/archive"
-	"gin-artweb/internal/shared/utils/fileutil"
-	"gin-artweb/internal/shared/utils/serializer"
+	"gin-artweb/pkg/archive"
+	"gin-artweb/pkg/fileutil"
+	"gin-artweb/pkg/serializer"
 )
 
 const OesColonyIDKey = "oes_colony_id"

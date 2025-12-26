@@ -39,7 +39,7 @@ func (suite *PermissionTestSuite) SetupSuite() {
 	db.AutoMigrate(&biz.PermissionModel{})
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	enforcer, err := test.NewTestEnforcer(test.TestSecretKey)
+	enforcer, err := auth.NewCasbinEnforcer()
 	if err != nil {
 		panic(err)
 	}
