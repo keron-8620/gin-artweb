@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
-
-	"gin-artweb/internal/shared/errors"
 )
 
 // ReadYAML 读取并解析 YAML 文件
@@ -17,11 +15,6 @@ func ReadYAML(filename string, v any, opts ...SerializerOption) (*ReadResult, er
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
-	}
 
 	// 检查文件是否存在
 	fileInfo, err := os.Stat(filename)
@@ -41,11 +34,6 @@ func ReadYAML(filename string, v any, opts ...SerializerOption) (*ReadResult, er
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("读取YAML文件 %s 失败: %w", filename, err)
-	}
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
 	}
 
 	if len(data) == 0 {
@@ -71,11 +59,6 @@ func WriteYAML(filename string, data any, opts ...SerializerOption) (*WriteResul
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
-	}
 
 	if options.Atomic {
 		return writeYAMLAtomic(filename, data, options, startTime)
@@ -129,12 +112,6 @@ func writeYAMLAtomic(filename string, data any, options SerializerOptions, start
 
 	if err != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
-		return nil, err
-	}
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
 		os.Remove(tmpFile)
 		return nil, err
 	}

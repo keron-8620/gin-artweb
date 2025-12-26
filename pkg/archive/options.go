@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"gin-artweb/internal/shared/errors"
 )
 
 // ArchiveOptions 压缩/解压选项
@@ -90,8 +88,10 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 	buf := make([]byte, bufferSize)
 
 	for {
-		if err := errors.CheckContext(ctx); err != nil {
-			return written, err
+		select {
+		case <-ctx.Done():
+			return written, ctx.Err()
+		default:
 		}
 
 		n, err := src.Read(buf)

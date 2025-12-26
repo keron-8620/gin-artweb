@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"gin-artweb/internal/shared/errors"
 )
 
 // ReadJSON 读取并解析 JSON 文件
@@ -17,11 +15,6 @@ func ReadJSON(filename string, v any, opts ...SerializerOption) (*ReadResult, er
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
-	}
 
 	// 检查文件是否存在
 	fileInfo, err := os.Stat(filename)
@@ -41,11 +34,6 @@ func ReadJSON(filename string, v any, opts ...SerializerOption) (*ReadResult, er
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("读取JSON文件 %s 失败: %w", filename, err)
-	}
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
 	}
 
 	if len(data) == 0 {
@@ -71,11 +59,6 @@ func WriteJSON(filename string, data any, opts ...SerializerOption) (*WriteResul
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
-	}
 
 	if options.Atomic {
 		result, err := writeJSONAtomic(filename, data, options)
@@ -106,11 +89,6 @@ func writeJSON(filename string, data any, options SerializerOptions, startTime t
 			// 记录日志但不中断主流程
 		}
 	}()
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
-		return nil, err
-	}
 
 	// 序列化为JSON并写入文件
 	encoder := json.NewEncoder(file)
@@ -155,12 +133,6 @@ func writeJSONAtomic(filename string, data any, options SerializerOptions) (*Wri
 	result, err := writeJSON(tmpFile, data, options, startTime)
 	if err != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
-		return nil, err
-	}
-
-	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
 		os.Remove(tmpFile)
 		return nil, err
 	}
