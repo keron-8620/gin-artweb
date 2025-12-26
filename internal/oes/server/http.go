@@ -28,6 +28,7 @@ func NewServer(
 
 	colonyService := service.NewOesColonyService(loggers.Service, colonyUsecase)
 	nodeService := service.NewOesNodeService(loggers.Service, nodeUsecase)
+	confService := service.NewOesConfService(loggers.Service, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/oes")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
@@ -35,4 +36,5 @@ func NewServer(
 
 	colonyService.LoadRouter(appRouter)
 	nodeService.LoadRouter(appRouter)
+	confService.LoadRouter(appRouter)
 }
