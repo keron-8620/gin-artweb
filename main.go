@@ -67,7 +67,7 @@ func main() {
 		fmt.Printf("Go版本    : %s\n", goVersion)
 		fmt.Printf("操作系统  : %s\n", goOS)
 		fmt.Printf("系统架构  : %s\n", goArch)
-		fmt.Println("==================")
+		fmt.Println("====================")
 		return
 	}
 
