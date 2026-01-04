@@ -9,11 +9,9 @@ import (
 type FileInfo struct {
 	Name     string      `json:"name"`
 	Size     int64       `json:"size"`
-	Mode     os.FileMode `json:"mode"`
 	ModTime  string      `json:"mod_time"`
 	IsDir    bool        `json:"is_dir"`
 	Children []*FileInfo `json:"children,omitempty"`
-	Path     string      `json:"path"`
 }
 
 func ListFileInfo(path string) (*FileInfo, error) {
@@ -31,10 +29,8 @@ func ListFileInfo(path string) (*FileInfo, error) {
 	root := &FileInfo{
 		Name:    fileInfo.Name(),
 		Size:    fileInfo.Size(),
-		Mode:    fileInfo.Mode(),
 		ModTime: fileInfo.ModTime().String(),
 		IsDir:   fileInfo.IsDir(),
-		Path:    path,
 	}
 
 	if root.IsDir {

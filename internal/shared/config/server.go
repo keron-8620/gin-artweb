@@ -10,8 +10,9 @@ type SSLConfig struct {
 
 // ServerConfig 服务器配置
 type ServerConfig struct {
-	Host          string    `yaml:"host"`
-	Port          int       `yaml:"port"`
-	SSL           SSLConfig `yaml:"ssl"`
-	EnableSwagger bool      `yaml:"enable_swagger"`
+	Host          string          `yaml:"host"`
+	Port          int             `yaml:"port"`
+	SSL           SSLConfig       `yaml:"ssl"`
+	Rate          RateLimitConfig `yaml:"rate"`
+	EnableSwagger bool            `yaml:"enable_swagger"`
 }

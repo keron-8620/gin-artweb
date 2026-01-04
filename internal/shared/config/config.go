@@ -15,7 +15,6 @@ type SystemConf struct {
 	CORS     *AllowConfig  `yaml:"cors"`
 	// SMTP     *SMTPConfig      `yaml:"smtp"`
 	Security *SecurityConfig  `yaml:"security"`
-	Rate     *RateLimitConfig `yaml:"rate"`
 	SSH      *SSHConfig       `yaml:"ssh"`
 }
 

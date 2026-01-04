@@ -261,6 +261,14 @@ func (uc *OesColonyUsecase) ListOesColony(
 	return count, ms, nil
 }
 
+func (uc *OesColonyUsecase) GetOesColonyBinDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "oes", "bin", colonyNum)
+}
+
+func (uc *OesColonyUsecase) GetOesColonyConfigDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "oes", "config", colonyNum)
+}
+
 func (uc *OesColonyUsecase) OutportOesColonyData(
 	ctx context.Context,
 	m *OesColonyModel,
@@ -275,9 +283,8 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	colonyDir := filepath.Join(config.StorageDir, "oes")
-	colonyBinDir := filepath.Join(colonyDir, "bin", m.ColonyNum)
-	colonyConfDir := filepath.Join(colonyDir, "config", m.ColonyNum)
+	colonyBinDir := uc.GetOesColonyBinDir(m.ColonyNum)
+	colonyConfDir := uc.GetOesColonyConfigDir(m.ColonyNum)
 
 	if _, err := os.Stat(colonyBinDir); !os.IsNotExist(err) {
 		if err := os.RemoveAll(colonyBinDir); err != nil {

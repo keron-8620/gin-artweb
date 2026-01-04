@@ -50,7 +50,7 @@ default_counter_files2: ['PrivateFundBlacklist.csv', 'PrivateFundInfo.csv', 'Pri
 
 #################被控机相关目录######################################
 slave_path_user_home: "/home/{{ ansible_user }}/{{ specdir }}"
-slave_path_oes_home: "{{ slave_path_user_home }}/{{ extracted_name }}"
+slave_path_oes_home: "{{ slave_path_user_home }}/{{ pkg_name }}"
 slave_path_oes_home_art: "{{ slave_path_oes_home }}/art"
 slave_path_oes_home_bin: "{{ slave_path_oes_home }}/bin"
 slave_path_oes_home_bin_lib: "{{ slave_path_oes_home }}/bin/lib"
@@ -69,7 +69,7 @@ slave_path_oes_home_data_exchange_sse_etf: "{{ slave_path_oes_home_data_exchange
 slave_path_oes_home_data_exchange_szse_etf: "{{ slave_path_oes_home_data_exchange }}/szse_etf"
 
 slave_backup_path: "{{ slave_path_user_home }}/backup"
-slave_backup_path_oes: "{{ slave_backup_path }}/{{ extracted_name }}"
+slave_backup_path_oes: "{{ slave_backup_path }}/{{ pkg_name }}"
 slave_backup_path_oes_curr_date: "{{ slave_backup_path_oes }}/{{ curr_date }}"
 #################被控机相关目录#######################################
 

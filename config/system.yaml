@@ -1,25 +1,29 @@
 server: # 服务配置
-  host: "192.168.10.12" # 服务地址
+  host: "192.168.122.131" # 服务地址
   port: 8621 # 服务端口
   ssl: # ssl配置
     enable: false # 是否启用ssl
     key_path: "server.key" # ssl密钥文件
     crt_path: "server.crt" # ssl证书文件
     password: "" # ssl密钥密码
+  rate: # 访问频率控制
+    rps: 10 # 每秒请求数
+    burst: 20 # 缓存请求数
   enable_swagger: true # 是否启用swagger
 
 database: # 数据库配置
   type: "opengauss" # 数据库类型
-  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable" # opengauss配置
-  # dns: "root@sys:Quant360@tcp(192.168.11.200:2881)/art?charset=utf8mb4" # mysql配置
+  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable" # PostgreSql/OpenGauss配置
+  # dns: "root@sys:Quant360@tcp(192.168.11.200:2881)/art?charset=utf8mb4" # MySql/OceanBase配置
+  # dns: "gin_artweb.db" # sqlite3数据库配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   conn_max_lifetime: 3600 # 连接最大存活时间
   conn_max_idle_time: 600 # 连接最大空闲时间
   log_sql: true # 是否记录sql日志
   read_timeout: 3 # 读超时时间
-  write_timeout: 10 # 写超时时间
-  list_timeout: 8 # 批量查询超时
+  write_timeout: 8 # 写超时时间
+  list_timeout: 10 # 批量查询超时
 
 log: # 日志服务
   level: "DEBUG" # 日志级别
@@ -42,7 +46,7 @@ security:
   timeout:
     request_timeout: 60 # 请求超时时间
     shutdown_timeout: 30 # 关闭超时时间
-  timestamp: # 时间戳相关配置
+  timestamp: # 时间戳相关配置(用于拦截重放攻击)
     check_timestamp: false # 是否检查时间戳
     tolerance: 300000  # 时间容忍度(毫秒)，允许客户端时间与服务器时间的最大偏差
     future_tolerance: 60000 # 未来时间容忍度(毫秒)，允许客户端时间超前的最大范围
@@ -54,13 +58,11 @@ security:
     max_failed_attempts: 5 # 登录失败最大次数
     lock_minutes: 30 # 登录失败锁定时间
   upload: # 文件上传
-    max_file_size: 500 # 上传文件大小限制(MB)
+    max_script_size: 1 # 上传脚本大小限制(MB)
+    max_pkg_size: 50 # 上传程序包大小限制(MB)
+    max_conf_size: 1 # 上传配置大小限制(MB)
   password: # 密码策略
-    strength_level: 3 # 密码强度等级
-
-rate: # 访问频率控制
-  rps: 10 # 每秒请求数
-  burst: 20 # 缓存请求数
+    strength_level: 3 # 密码强度等级(0-4)
 
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名

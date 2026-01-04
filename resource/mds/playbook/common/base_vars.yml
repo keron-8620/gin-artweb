@@ -30,7 +30,7 @@ local_path_script_home_slave: "{{ local_path_script_home }}/slave"
 
 ################# 被控机相关目录 ##############################
 slave_path_user_home: "/home/{{ ansible_user }}/{{ specdir }}"
-slave_path_mds_home: "{{ slave_path_user_home }}/{{ extracted_name }}"
+slave_path_mds_home: "{{ slave_path_user_home }}/{{ pkg_name }}"
 slave_path_mds_home_art: "{{ slave_path_mds_home }}/art"
 slave_path_mds_home_bin: "{{ slave_path_mds_home }}/bin"
 slave_path_mds_home_bin_script: "{{ slave_path_mds_home }}/bin/script"
@@ -44,7 +44,7 @@ slave_path_mds_home_data_monitor: "{{ slave_path_mds_home_data }}/monitor"
 slave_path_mds_home_sbin: "{{ slave_path_mds_home }}/sbin"
 
 slave_backup_path: "{{ slave_path_user_home }}/backup"
-slave_backup_path_mds: "{{ slave_backup_path }}/{{ extracted_name }}"
+slave_backup_path_mds: "{{ slave_backup_path }}/{{ pkg_name }}"
 slave_backup_path_mds_curr_date: "{{ slave_backup_path_mds }}/{{ curr_date }}"
 #################被控机相关目录##############################
 

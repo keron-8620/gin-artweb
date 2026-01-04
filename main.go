@@ -193,18 +193,21 @@ func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error)
 		return nil, nil, nil, err
 	}
 
+	// 初始化数据库超时配置
 	dbTimeout := config.DBTimeout{
 		ListTimeout:  time.Duration(conf.Database.ListTimeout) * time.Second,
 		ReadTimeout:  time.Duration(conf.Database.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
 	}
 
+	// 初始化casbin 权限管理
 	enf, err := auth.NewCasbinEnforcer()
 	if err != nil {
 		logger.Error("Casbin 初始化失败", zap.Error(err))
 		return nil, nil, nil, err
 	}
 
+	// 初始化计划任务
 	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "cron.log"))
 	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
 	ct := crontab.NewCron(cronLogger)
@@ -277,7 +280,7 @@ func newRouter(init *common.Initialize) *gin.Engine {
 	}
 
 	// IP限流中间件
-	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Rate.RPS), init.Conf.Rate.Burst))
+	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
 
 	r.GET("/", func(c *gin.Context) {
 		c.File(filepath.Join(config.BaseDir, "html", "index.html"))

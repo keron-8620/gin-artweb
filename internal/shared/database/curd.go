@@ -352,17 +352,21 @@ func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	} else {
 		enc.AddString(PreloadKey, "")
 	}
+	
 	// 记录查询条件
 	enc.AddReflected("query", q.Query)
+
 	// 记录排序字段
 	if len(q.OrderBy) > 0 {
 		enc.AddString("order_by", strings.Join(q.OrderBy, ","))
 	} else {
 		enc.AddString("order_by", "")
 	}
+
 	// 记录分页参数
 	enc.AddInt("limit", q.Limit)
 	enc.AddInt("offset", q.Offset)
+
 	// 记录是否查询总数
 	enc.AddBool("is_count", q.IsCount)
 

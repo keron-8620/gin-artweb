@@ -1,7 +1,0 @@
-mon_node_id: 1
-name: mon
-deploy_path: /home/monuser/mon
-outport_path: /mnt/quant360/import/mon
-java_home: /home/monuser/jdk-11.0.1
-url: http://192.168.11.189:8080/mon
-host_id: 1

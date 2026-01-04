@@ -30,9 +30,9 @@ type HostModel struct {
 	database.StandardModel
 	Name    string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
 	Label   string `gorm:"column:label;type:varchar(50);index:idx_host_label;comment:标签" json:"label"`
-	SSHIP   string `gorm:"column:ssh_ip;type:varchar(108);comment:IP地址" json:"ssh_ip"`
-	SSHPort uint16 `gorm:"column:ssh_port;type:smallint;comment:端口" json:"ssh_port"`
-	SSHUser string `gorm:"column:ssh_user;type:varchar(50);comment:用户名" json:"ssh_user"`
+	SSHIP   string `gorm:"column:ssh_ip;type:varchar(108);uniqueIndex:idx_host_ip_port_user;comment:IP地址" json:"ssh_ip"`
+	SSHPort uint16 `gorm:"column:ssh_port;type:smallint;uniqueIndex:idx_host_ip_port_user;comment:端口" json:"ssh_port"`
+	SSHUser string `gorm:"column:ssh_user;type:varchar(50);uniqueIndex:idx_host_ip_port_user;comment:用户名" json:"ssh_user"`
 	PyPath  string `gorm:"column:py_path;type:varchar(254);comment:python路径" json:"py_path"`
 	Remark  string `gorm:"column:remark;type:varchar(254);comment:备注" json:"remark"`
 }

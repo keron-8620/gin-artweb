@@ -255,6 +255,14 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 	return count, ms, nil
 }
 
+func (uc *MdsColonyUsecase) GetMdsColonyBinDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "mds", "bin", colonyNum)
+}
+
+func (uc *MdsColonyUsecase) GetMdsColonyConfigDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "mds", "config", colonyNum)
+}
+
 func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	ctx context.Context,
 	m *MdsColonyModel,
@@ -269,9 +277,8 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	colonyDir := filepath.Join(config.StorageDir, "mds")
-	colonyBinDir := filepath.Join(colonyDir, "bin", m.ColonyNum)
-	colonyConfDir := filepath.Join(colonyDir, "config", m.ColonyNum)
+	colonyBinDir := uc.GetMdsColonyBinDir(m.ColonyNum)
+	colonyConfDir := uc.GetMdsColonyConfigDir(m.ColonyNum)
 
 	if _, err := os.Stat(colonyBinDir); !os.IsNotExist(err) {
 		if err := os.RemoveAll(colonyBinDir); err != nil {

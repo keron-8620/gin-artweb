@@ -19,9 +19,9 @@ const (
 
 type PermissionModel struct {
 	database.StandardModel
-	URL    string `gorm:"column:url;type:varchar(150);not null;index:idx_permission_url_method_label;comment:HTTP的URL地址" json:"url"`
-	Method string `gorm:"column:method;type:varchar(10);not null;index:idx_permission_url_method_label;comment:请求方法" json:"method"`
-	Label  string `gorm:"column:label;type:varchar(50);not null;index:idx_permission_url_method_label;comment:标签" json:"label"`
+	URL    string `gorm:"column:url;type:varchar(150);not null;uniqueIndex:idx_permission_url_method;comment:HTTP的URL地址" json:"url"`
+	Method string `gorm:"column:method;type:varchar(10);not null;uniqueIndex:idx_permission_url_method;comment:请求方法" json:"method"`
+	Label  string `gorm:"column:label;type:varchar(50);not null;index:label;comment:标签" json:"label"`
 	Descr  string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
 }
 

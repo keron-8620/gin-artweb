@@ -189,8 +189,8 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 		LogFile:  nil,
 	}
 
-	// panic 恢复保护
 	defer func() {
+		// panic 恢复保护
 		if r := recover(); r != nil {
 			// 记录panic信息和堆栈跟踪
 			stack := debug.Stack()

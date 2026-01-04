@@ -95,7 +95,7 @@ func (s *MdsNodeService) CreateMdsNode(ctx *gin.Context) {
 // @Security ApiKeyAuth
 func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
-	if err := ctx.ShouldBind(&uri); err != nil {
+	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新mds节点ID参数失败",
 			zap.Error(err),
@@ -160,7 +160,7 @@ func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 // @Security ApiKeyAuth
 func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
-	if err := ctx.ShouldBind(&uri); err != nil {
+	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除mds节点ID参数失败",
 			zap.Error(err),
@@ -212,7 +212,7 @@ func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 // @Security ApiKeyAuth
 func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
-	if err := ctx.ShouldBind(&uri); err != nil {
+	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询mds节点ID参数失败",
 			zap.Error(err),
@@ -272,7 +272,7 @@ func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 // @Security ApiKeyAuth
 func (s *MdsNodeService) ListMdsNode(ctx *gin.Context) {
 	var req pbMdsNode.ListMdsNodeRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		s.log.Error(
 			"绑定查询mds节点列表参数失败",
 			zap.Error(err),

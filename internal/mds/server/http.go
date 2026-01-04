@@ -28,7 +28,7 @@ func NewServer(
 
 	colonyService := service.NewMdsColonyService(loggers.Service, colonyUsecase)
 	nodeService := service.NewMdsNodeService(loggers.Service, nodeUsecase)
-	confService := service.NewMdsConfService(loggers.Service, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
+	confService := service.NewMdsConfService(loggers.Service, colonyUsecase, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/mds")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
