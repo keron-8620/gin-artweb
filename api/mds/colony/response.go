@@ -29,8 +29,21 @@ type MdsColonyDetailOut struct {
 	MonNode *mon.MonNodeBaseOut     `json:"mon_node"`
 }
 
-// MdsColonyReply 程序包响应结构
+// MdsColonyReply mds集群配置的响应结构
 type MdsColonyReply = common.APIReply[MdsColonyDetailOut]
 
-// PagMdsColonyReply 程序包的分页响应结构
+// PagMdsColonyReply mds集群配置的分页响应结构
 type PagMdsColonyReply = common.APIReply[*common.Pag[MdsColonyStandardOut]]
+
+// mds 任务状态
+type MdsTaskStatus struct {
+	Mon  string `json:"mon"`
+	Sse  string `json:"sse"`
+	Szse string `json:"szse"`
+}
+
+// MdsTaskStatusReply 单个mds集群的任务状态响应结构
+type MdsTaskStatusReply = common.APIReply[MdsTaskStatus]
+
+// ListMdsTaskStatusReply 多个mds集群的任务状态响应结构
+type ListMdsTaskStatusReply = common.APIReply[map[string]MdsTaskStatus]

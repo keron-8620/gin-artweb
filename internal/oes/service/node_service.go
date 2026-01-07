@@ -7,45 +7,45 @@ import (
 	"go.uber.org/zap"
 
 	pbComm "gin-artweb/api/common"
-	pbNode "gin-artweb/api/mon/node"
-	"gin-artweb/internal/mon/biz"
+	pbNode "gin-artweb/api/oes/node"
+	"gin-artweb/internal/oes/biz"
 	servReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type NodeService struct {
+type OesNodeService struct {
 	log    *zap.Logger
-	ucNode *biz.MonNodeUsecase
+	ucNode *biz.OesNodeUsecase
 }
 
-func NewNodeService(
+func NewOesNodeService(
 	logger *zap.Logger,
-	ucNode *biz.MonNodeUsecase,
-) *NodeService {
-	return &NodeService{
+	ucNode *biz.OesNodeUsecase,
+) *OesNodeService {
+	return &OesNodeService{
 		log:    logger,
 		ucNode: ucNode,
 	}
 }
 
-// @Summary 创建mon节点
-// @Description 本接口用于创建新的mon节点
-// @Tags mon节点管理
+// @Summary 创建oes节点
+// @Description 本接口用于创建新的oes节点
+// @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param request body pbNode.CreateOrUpdateMonNodeRequest true "创建mon节点请求"
-// @Success 200 {object} pbNode.MonNodeReply "成功返回mon节点信息"
+// @Param request body pbNode.CreateOrUpdateOesNodeRequest true "创建oes节点请求"
+// @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mon/node [post]
+// @Router /api/v1/oes/node [post]
 // @Security ApiKeyAuth
-func (s *NodeService) CreateMonNode(ctx *gin.Context) {
-	var req pbNode.CreateOrUpdateMonNodeRequest
+func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
+	var req pbNode.CreateOrUpdateOesNodeRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
-			"绑定创建mon节点参数失败",
+			"绑定创建oes节点参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -55,19 +55,17 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 		return
 	}
 
-	node := biz.MonNodeModel{
-		Name:        req.Name,
-		DeployPath:  req.DeployPath,
-		OutportPath: req.OutportPath,
-		JavaHome:    req.JavaHome,
-		URL:         req.URL,
+	colony := biz.OesNodeModel{
+		NodeRole:    req.NodeRole,
+		IsEnable:    req.IsEnable,
 		HostID:      req.HostID,
+		OesColonyID: req.OesColonyID,
 	}
 
-	m, rErr := s.ucNode.CreateMonNode(ctx, node)
+	m, rErr := s.ucNode.CreateOesNode(ctx, colony)
 	if rErr != nil {
 		s.log.Error(
-			"创建mon节点失败",
+			"创建oes节点失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -76,30 +74,30 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &pbNode.MonNodeReply{
+	ctx.JSON(http.StatusOK, &pbNode.OesNodeReply{
 		Code: http.StatusOK,
-		Data: *MonNodeToDetailOut(*m),
+		Data: *OesNodeToDetailOut(*m),
 	})
 }
 
-// @Summary 更新mon节点
-// @Description 本接口用于更新指定ID的mon节点
-// @Tags mon节点管理
+// @Summary 更新oes节点
+// @Description 本接口用于更新指定ID的oes节点
+// @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mon节点编号"
-// @Param request body pbNode.CreateOrUpdateMonNodeRequest true "更新mon节点请求"
-// @Success 200 {object} pbNode.MonNodeReply "成功返回mon节点信息"
+// @Param pk path uint true "oes节点编号"
+// @Param request body pbNode.CreateOrUpdateOesNodeRequest true "更新oes节点请求"
+// @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "mon节点未找到"
+// @Failure 404 {object} errors.Error "oes节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mon/node/{pk} [put]
+// @Router /api/v1/oes/node/{pk} [put]
 // @Security ApiKeyAuth
-func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
+func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定更新mon节点ID参数失败",
+			"绑定更新oes节点ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -109,10 +107,10 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 		return
 	}
 
-	var req pbNode.CreateOrUpdateMonNodeRequest
+	var req pbNode.CreateOrUpdateOesNodeRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
-			"绑定更新mon节点参数失败",
+			"绑定更新oes节点参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -123,18 +121,16 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 	}
 
 	data := map[string]any{
-		"name":         req.Name,
-		"deploy_path":  req.DeployPath,
-		"outport_path": req.OutportPath,
-		"java_home":    req.JavaHome,
-		"url":          req.URL,
-		"host_id":      req.HostID,
+		"node_role":     req.NodeRole,
+		"is_enable":     req.IsEnable,
+		"host_id":       req.HostID,
+		"oes_colony_id": req.OesColonyID,
 	}
 
-	m, err := s.ucNode.UpdateMonNodeByID(ctx, uri.PK, data)
+	m, err := s.ucNode.UpdateOesNodeByID(ctx, uri.PK, data)
 	if err != nil {
 		s.log.Error(
-			"更新mon节点失败",
+			"更新oes节点失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
@@ -144,29 +140,29 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &pbNode.MonNodeReply{
+	ctx.JSON(http.StatusOK, &pbNode.OesNodeReply{
 		Code: http.StatusOK,
-		Data: *MonNodeToDetailOut(*m),
+		Data: *OesNodeToDetailOut(*m),
 	})
 }
 
-// @Summary 删除mon节点
-// @Description 本接口用于删除指定ID的mon节点
-// @Tags mon节点管理
+// @Summary 删除oes节点
+// @Description 本接口用于删除指定ID的oes节点
+// @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mon节点编号"
+// @Param pk path uint true "oes节点编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "mon节点未找到"
+// @Failure 404 {object} errors.Error "oes节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mon/node/{pk} [delete]
+// @Router /api/v1/oes/node/{pk} [delete]
 // @Security ApiKeyAuth
-func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
+func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定删除mon节点ID参数失败",
+			"绑定删除oes节点ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -177,14 +173,14 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始删除mon节点",
+		"开始删除oes节点",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucNode.DeleteMonNodeByID(ctx, uri.PK); err != nil {
+	if err := s.ucNode.DeleteOesNodeByID(ctx, uri.PK); err != nil {
 		s.log.Error(
-			"删除mon节点失败",
+			"删除oes节点失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -194,7 +190,7 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"删除mon节点成功",
+		"删除oes节点成功",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -202,23 +198,23 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询mon节点详情
-// @Description 本接口用于查询指定ID的mon节点详情
-// @Tags mon节点管理
+// @Summary 查询oes节点详情
+// @Description 本接口用于查询指定ID的oes节点详情
+// @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mon节点编号"
-// @Success 200 {object} pbNode.MonNodeReply "成功返回mon节点信息"
+// @Param pk path uint true "oes节点编号"
+// @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "mon节点未找到"
+// @Failure 404 {object} errors.Error "oes节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mon/node/{pk} [get]
+// @Router /api/v1/oes/node/{pk} [get]
 // @Security ApiKeyAuth
-func (s *NodeService) GetMonNode(ctx *gin.Context) {
+func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定查询mon节点ID参数失败",
+			"绑定查询oes节点ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -229,15 +225,15 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询mon节点详情",
+		"开始查询oes节点详情",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucNode.FindMonNodeByID(ctx, []string{"Host"}, uri.PK)
+	m, err := s.ucNode.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.PK)
 	if err != nil {
 		s.log.Error(
-			"查询mon节点详情失败",
+			"查询oes节点详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -247,38 +243,38 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"查询mon节点详情成功",
+		"查询oes节点详情成功",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := MonNodeToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &pbNode.MonNodeReply{
+	mo := OesNodeToDetailOut(*m)
+	ctx.JSON(http.StatusOK, &pbNode.OesNodeReply{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
 }
 
-// @Summary 查询mon节点列表
-// @Description 本接口用于查询mon节点列表
-// @Tags mon节点管理
+// @Summary 查询oes节点列表
+// @Description 本接口用于查询oes节点列表
+// @Tags oes节点管理
 // @Accept json
 // @Produce json
 // @Param page query int false "页码" minimum(1)
 // @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "mon节点名称"
+// @Param name query string false "oes节点名称"
 // @Param is_enabled query bool false "是否启用"
 // @Param username query string false "创建用户名"
-// @Success 200 {object} pbNode.PagMonNodeReply "成功返回mon节点列表"
+// @Success 200 {object} pbNode.PagOesNodeReply "成功返回oes节点列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mon/node [get]
+// @Router /api/v1/oes/node [get]
 // @Security ApiKeyAuth
-func (s *NodeService) ListMonNode(ctx *gin.Context) {
-	var req pbNode.ListMonNodeRequest
+func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
+	var req pbNode.ListOesNodeRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		s.log.Error(
-			"绑定查询mon节点列表参数失败",
+			"绑定查询oes节点列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -289,25 +285,26 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询mon节点列表",
+		"开始查询oes节点列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
 	qp := database.QueryParams{
-		Preloads: []string{"Host"},
+		Preloads: []string{"OesColony", "Host"},
 		IsCount:  true,
 		Limit:    size,
 		Offset:   page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}
-	total, ms, err := s.ucNode.ListMonNode(ctx, qp)
+	total, ms, err := s.ucNode.ListOesNode(ctx, qp)
 	if err != nil {
 		s.log.Error(
-			"查询mon节点列表失败",
+			"查询oes节点列表失败",
 			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -316,70 +313,68 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"查询mon节点列表成功",
+		"查询oes节点列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListMonNodeToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &pbNode.PagMonNodeReply{
+	mbs := ListOesNodeToDetailOut(ms)
+	ctx.JSON(http.StatusOK, &pbNode.PagOesNodeReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
-func (s *NodeService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/node", s.CreateMonNode)
-	r.PUT("/node/:pk", s.UpdateMonNode)
-	r.DELETE("/node/:pk", s.DeleteMonNode)
-	r.GET("/node/:pk", s.GetMonNode)
-	r.GET("/node", s.ListMonNode)
+func (s *OesNodeService) LoadRouter(r *gin.RouterGroup) {
+	r.POST("/node", s.CreateOesNode)
+	r.PUT("/node/:pk", s.UpdateOesNode)
+	r.DELETE("/node/:pk", s.DeleteOesNode)
+	r.GET("/node/:pk", s.GetOesNode)
+	r.GET("/node", s.ListOesNode)
 }
 
-func MonNodeToBaseOut(
-	m biz.MonNodeModel,
-) *pbNode.MonNodeBaseOut {
-	return &pbNode.MonNodeBaseOut{
-		ID:          m.ID,
-		Name:        m.Name,
-		DeployPath:  m.DeployPath,
-		OutportPath: m.OutportPath,
-		JavaHome:    m.JavaHome,
-		URL:         m.URL,
+func OesNodeToBaseOut(
+	m biz.OesNodeModel,
+) *pbNode.OesNodeBaseOut {
+	return &pbNode.OesNodeBaseOut{
+		ID:       m.ID,
+		NodeRole: m.NodeRole,
+		IsEnable: m.IsEnable,
 	}
 }
 
-func MonNodeToStandardOut(
-	m biz.MonNodeModel,
-) *pbNode.MonNodeStandardOut {
-	return &pbNode.MonNodeStandardOut{
-		MonNodeBaseOut: *MonNodeToBaseOut(m),
+func OesNodeToStandardOut(
+	m biz.OesNodeModel,
+) *pbNode.OesNodeStandardOut {
+	return &pbNode.OesNodeStandardOut{
+		OesNodeBaseOut: *OesNodeToBaseOut(m),
 		CreatedAt:      m.CreatedAt.String(),
 		UpdatedAt:      m.UpdatedAt.String(),
 	}
 }
 
-func MonNodeToDetailOut(
-	m biz.MonNodeModel,
-) *pbNode.MonNodeDetailOut {
-	return &pbNode.MonNodeDetailOut{
-		MonNodeStandardOut: *MonNodeToStandardOut(m),
+func OesNodeToDetailOut(
+	m biz.OesNodeModel,
+) *pbNode.OesNodeDetailOut {
+	return &pbNode.OesNodeDetailOut{
+		OesNodeStandardOut: *OesNodeToStandardOut(m),
+		OesColony:          OesColonyToBaseOut(m.OesColony),
 		Host:               servReso.HostModelToBaseOut(m.Host),
 	}
 }
 
-func ListMonNodeToDetailOut(
-	rms *[]biz.MonNodeModel,
-) *[]pbNode.MonNodeDetailOut {
+func ListOesNodeToDetailOut(
+	rms *[]biz.OesNodeModel,
+) *[]pbNode.OesNodeStandardOut {
 	if rms == nil {
-		return &[]pbNode.MonNodeDetailOut{}
+		return &[]pbNode.OesNodeStandardOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbNode.MonNodeDetailOut, 0, len(ms))
+	mso := make([]pbNode.OesNodeStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := MonNodeToDetailOut(m)
+			mo := OesNodeToStandardOut(m)
 			mso = append(mso, *mo)
 		}
 	}

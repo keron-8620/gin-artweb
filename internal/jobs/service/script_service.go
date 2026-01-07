@@ -367,6 +367,7 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 		s.log.Error(
 			"查询脚本列表失败",
 			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)

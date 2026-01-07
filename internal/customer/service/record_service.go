@@ -80,6 +80,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 		s.log.Error(
 			"查询用户登录记录列表失败",
 			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -164,6 +165,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 			"查询个人登录记录列表失败",
 			zap.Error(err),
 			zap.Uint32(auth.UserIDKey, claims.UserID),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)

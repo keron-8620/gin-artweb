@@ -27,9 +27,9 @@ type OesColonyStandardOut struct {
 
 type OesColonyDetailOut struct {
 	OesColonyStandardOut
-	Package *pkg.PackageStandardOut `json:"package"`
+	Package  *pkg.PackageStandardOut `json:"package"`
 	XCounter *pkg.PackageStandardOut `json:"xcounter"`
-	MonNode *mon.MonNodeBaseOut     `json:"mon_node"`
+	MonNode  *mon.MonNodeBaseOut     `json:"mon_node"`
 }
 
 // OesColonyReply 程序包响应结构
@@ -37,3 +37,30 @@ type OesColonyReply = common.APIReply[OesColonyDetailOut]
 
 // PagOesColonyReply 程序包的分页响应结构
 type PagOesColonyReply = common.APIReply[*common.Pag[OesColonyStandardOut]]
+
+// 现货的任务状态
+type StkTaskStatus struct {
+	Mon     string `json:"mon"`
+	Counter string `json:"counter"`
+	Sse     string `json:"sse"`
+	Szse    string `json:"szse"`
+	Csdc    string `json:"csdc"`
+}
+
+// 两融的任务状态
+type CrdTaskStatus struct {
+	Mon      string `json:"mon"`
+	Counter  string `json:"counter"`
+	Sse      string `json:"sse"`
+	Szse     string `json:"szse"`
+	SseLate  string `json:"sse_late"`
+	SzseLate string `json:"szse_late"`
+}
+
+// 期权任务状态
+type OptTaskStatus struct {
+	Mon     string `json:"mon"`
+	Counter string `json:"counter"`
+	Sse     string `json:"sse"`
+	Szse    string `json:"szse"`
+}

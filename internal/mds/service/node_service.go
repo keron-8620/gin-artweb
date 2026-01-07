@@ -7,45 +7,45 @@ import (
 	"go.uber.org/zap"
 
 	pbComm "gin-artweb/api/common"
-	pbNode "gin-artweb/api/oes/node"
-	"gin-artweb/internal/oes/biz"
+	pbMdsNode "gin-artweb/api/mds/node"
+	"gin-artweb/internal/mds/biz"
 	servReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type OesNodeService struct {
+type MdsNodeService struct {
 	log    *zap.Logger
-	ucNode *biz.OesNodeUsecase
+	ucNode *biz.MdsNodeUsecase
 }
 
-func NewOesNodeService(
+func NewMdsNodeService(
 	logger *zap.Logger,
-	ucNode *biz.OesNodeUsecase,
-) *OesNodeService {
-	return &OesNodeService{
+	ucNode *biz.MdsNodeUsecase,
+) *MdsNodeService {
+	return &MdsNodeService{
 		log:    logger,
 		ucNode: ucNode,
 	}
 }
 
-// @Summary 创建oes节点
-// @Description 本接口用于创建新的oes节点
-// @Tags oes节点管理
+// @Summary 创建mds节点
+// @Description 本接口用于创建新的mds节点
+// @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param request body pbNode.CreateOrUpdateOesNodeRequest true "创建oes节点请求"
-// @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
+// @Param request body pbMdsNode.CreateOrUpdateMdsNodeRequest true "创建mds节点请求"
+// @Success 200 {object} pbMdsNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node [post]
+// @Router /api/v1/mds/node [post]
 // @Security ApiKeyAuth
-func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
-	var req pbNode.CreateOrUpdateOesNodeRequest
+func (s *MdsNodeService) CreateMdsNode(ctx *gin.Context) {
+	var req pbMdsNode.CreateOrUpdateMdsNodeRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
-			"绑定创建oes节点参数失败",
+			"绑定创建mds节点参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -55,17 +55,17 @@ func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
 		return
 	}
 
-	colony := biz.OesNodeModel{
+	colony := biz.MdsNodeModel{
 		NodeRole:    req.NodeRole,
 		IsEnable:    req.IsEnable,
 		HostID:      req.HostID,
-		OesColonyID: req.OesColonyID,
+		MdsColonyID: req.MdsColonyID,
 	}
 
-	m, rErr := s.ucNode.CreateOesNode(ctx, colony)
+	m, rErr := s.ucNode.CreateMdsNode(ctx, colony)
 	if rErr != nil {
 		s.log.Error(
-			"创建oes节点失败",
+			"创建mds节点失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -74,30 +74,30 @@ func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &pbNode.OesNodeReply{
+	ctx.JSON(http.StatusOK, &pbMdsNode.MdsNodeReply{
 		Code: http.StatusOK,
-		Data: *OesNodeToDetailOut(*m),
+		Data: *MdsNodeToDetailOut(*m),
 	})
 }
 
-// @Summary 更新oes节点
-// @Description 本接口用于更新指定ID的oes节点
-// @Tags oes节点管理
+// @Summary 更新mds节点
+// @Description 本接口用于更新指定ID的mds节点
+// @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes节点编号"
-// @Param request body pbNode.CreateOrUpdateOesNodeRequest true "更新oes节点请求"
-// @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
+// @Param pk path uint true "mds节点编号"
+// @Param request body pbMdsNode.CreateOrUpdateMdsNodeRequest true "更新mds节点请求"
+// @Success 200 {object} pbMdsNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "oes节点未找到"
+// @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node/{pk} [put]
+// @Router /api/v1/mds/node/{pk} [put]
 // @Security ApiKeyAuth
-func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
+func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定更新oes节点ID参数失败",
+			"绑定更新mds节点ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -107,10 +107,10 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 		return
 	}
 
-	var req pbNode.CreateOrUpdateOesNodeRequest
+	var req pbMdsNode.CreateOrUpdateMdsNodeRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
-			"绑定更新oes节点参数失败",
+			"绑定更新mds节点参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -124,13 +124,13 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 		"node_role":     req.NodeRole,
 		"is_enable":     req.IsEnable,
 		"host_id":       req.HostID,
-		"oes_colony_id": req.OesColonyID,
+		"mds_colony_id": req.MdsColonyID,
 	}
 
-	m, err := s.ucNode.UpdateOesNodeByID(ctx, uri.PK, data)
+	m, err := s.ucNode.UpdateMdsNodeByID(ctx, uri.PK, data)
 	if err != nil {
 		s.log.Error(
-			"更新oes节点失败",
+			"更新mds节点失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
@@ -140,29 +140,29 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &pbNode.OesNodeReply{
+	ctx.JSON(http.StatusOK, &pbMdsNode.MdsNodeReply{
 		Code: http.StatusOK,
-		Data: *OesNodeToDetailOut(*m),
+		Data: *MdsNodeToDetailOut(*m),
 	})
 }
 
-// @Summary 删除oes节点
-// @Description 本接口用于删除指定ID的oes节点
-// @Tags oes节点管理
+// @Summary 删除mds节点
+// @Description 本接口用于删除指定ID的mds节点
+// @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes节点编号"
+// @Param pk path uint true "mds节点编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "oes节点未找到"
+// @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node/{pk} [delete]
+// @Router /api/v1/mds/node/{pk} [delete]
 // @Security ApiKeyAuth
-func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
+func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定删除oes节点ID参数失败",
+			"绑定删除mds节点ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -173,14 +173,14 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始删除oes节点",
+		"开始删除mds节点",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucNode.DeleteOesNodeByID(ctx, uri.PK); err != nil {
+	if err := s.ucNode.DeleteMdsNodeByID(ctx, uri.PK); err != nil {
 		s.log.Error(
-			"删除oes节点失败",
+			"删除mds节点失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -190,7 +190,7 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"删除oes节点成功",
+		"删除mds节点成功",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -198,23 +198,23 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询oes节点详情
-// @Description 本接口用于查询指定ID的oes节点详情
-// @Tags oes节点管理
+// @Summary 查询mds节点详情
+// @Description 本接口用于查询指定ID的mds节点详情
+// @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes节点编号"
-// @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
+// @Param pk path uint true "mds节点编号"
+// @Success 200 {object} pbMdsNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "oes节点未找到"
+// @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node/{pk} [get]
+// @Router /api/v1/mds/node/{pk} [get]
 // @Security ApiKeyAuth
-func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
+func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 	var uri pbComm.PKUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定查询oes节点ID参数失败",
+			"绑定查询mds节点ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -225,15 +225,15 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询oes节点详情",
+		"开始查询mds节点详情",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucNode.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.PK)
+	m, err := s.ucNode.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, uri.PK)
 	if err != nil {
 		s.log.Error(
-			"查询oes节点详情失败",
+			"查询mds节点详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestPKKey, uri.PK),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -243,38 +243,38 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"查询oes节点详情成功",
+		"查询mds节点详情成功",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mo := OesNodeToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &pbNode.OesNodeReply{
+	mo := MdsNodeToDetailOut(*m)
+	ctx.JSON(http.StatusOK, &pbMdsNode.MdsNodeReply{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
 }
 
-// @Summary 查询oes节点列表
-// @Description 本接口用于查询oes节点列表
-// @Tags oes节点管理
+// @Summary 查询mds节点列表
+// @Description 本接口用于查询mds节点列表
+// @Tags mds节点管理
 // @Accept json
 // @Produce json
 // @Param page query int false "页码" minimum(1)
 // @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "oes节点名称"
+// @Param name query string false "mds节点名称"
 // @Param is_enabled query bool false "是否启用"
 // @Param username query string false "创建用户名"
-// @Success 200 {object} pbNode.PagOesNodeReply "成功返回oes节点列表"
+// @Success 200 {object} pbMdsNode.PagMdsNodeReply "成功返回mds节点列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node [get]
+// @Router /api/v1/mds/node [get]
 // @Security ApiKeyAuth
-func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
-	var req pbNode.ListOesNodeRequest
+func (s *MdsNodeService) ListMdsNode(ctx *gin.Context) {
+	var req pbMdsNode.ListMdsNodeRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		s.log.Error(
-			"绑定查询oes节点列表参数失败",
+			"绑定查询mds节点列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
@@ -285,25 +285,26 @@ func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询oes节点列表",
+		"开始查询mds节点列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
 	qp := database.QueryParams{
-		Preloads: []string{"OesColony", "Host"},
+		Preloads: []string{"MdsColony", "Host"},
 		IsCount:  true,
 		Limit:    size,
 		Offset:   page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}
-	total, ms, err := s.ucNode.ListOesNode(ctx, qp)
+	total, ms, err := s.ucNode.ListMdsNode(ctx, qp)
 	if err != nil {
 		s.log.Error(
-			"查询oes节点列表失败",
+			"查询mds节点列表失败",
 			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -312,68 +313,68 @@ func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"查询oes节点列表成功",
+		"查询mds节点列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	mbs := ListOesNodeToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &pbNode.PagOesNodeReply{
+	mbs := ListMdsNodeToDetailOut(ms)
+	ctx.JSON(http.StatusOK, &pbMdsNode.PagMdsNodeReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
-func (s *OesNodeService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/node", s.CreateOesNode)
-	r.PUT("/node/:pk", s.UpdateOesNode)
-	r.DELETE("/node/:pk", s.DeleteOesNode)
-	r.GET("/node/:pk", s.GetOesNode)
-	r.GET("/node", s.ListOesNode)
+func (s *MdsNodeService) LoadRouter(r *gin.RouterGroup) {
+	r.POST("/node", s.CreateMdsNode)
+	r.PUT("/node/:pk", s.UpdateMdsNode)
+	r.DELETE("/node/:pk", s.DeleteMdsNode)
+	r.GET("/node/:pk", s.GetMdsNode)
+	r.GET("/node", s.ListMdsNode)
 }
 
-func OesNodeToBaseOut(
-	m biz.OesNodeModel,
-) *pbNode.OesNodeBaseOut {
-	return &pbNode.OesNodeBaseOut{
+func MdsNodeToBaseOut(
+	m biz.MdsNodeModel,
+) *pbMdsNode.MdsNodeBaseOut {
+	return &pbMdsNode.MdsNodeBaseOut{
 		ID:       m.ID,
 		NodeRole: m.NodeRole,
 		IsEnable: m.IsEnable,
 	}
 }
 
-func OesNodeToStandardOut(
-	m biz.OesNodeModel,
-) *pbNode.OesNodeStandardOut {
-	return &pbNode.OesNodeStandardOut{
-		OesNodeBaseOut: *OesNodeToBaseOut(m),
+func MdsNodeToStandardOut(
+	m biz.MdsNodeModel,
+) *pbMdsNode.MdsNodeStandardOut {
+	return &pbMdsNode.MdsNodeStandardOut{
+		MdsNodeBaseOut: *MdsNodeToBaseOut(m),
 		CreatedAt:      m.CreatedAt.String(),
 		UpdatedAt:      m.UpdatedAt.String(),
 	}
 }
 
-func OesNodeToDetailOut(
-	m biz.OesNodeModel,
-) *pbNode.OesNodeDetailOut {
-	return &pbNode.OesNodeDetailOut{
-		OesNodeStandardOut: *OesNodeToStandardOut(m),
-		OesColony:          OesColonyToBaseOut(m.OesColony),
+func MdsNodeToDetailOut(
+	m biz.MdsNodeModel,
+) *pbMdsNode.MdsNodeDetailOut {
+	return &pbMdsNode.MdsNodeDetailOut{
+		MdsNodeStandardOut: *MdsNodeToStandardOut(m),
+		MdsColony:          MdsColonyToBaseOut(m.MdsColony),
 		Host:               servReso.HostModelToBaseOut(m.Host),
 	}
 }
 
-func ListOesNodeToDetailOut(
-	rms *[]biz.OesNodeModel,
-) *[]pbNode.OesNodeStandardOut {
+func ListMdsNodeToDetailOut(
+	rms *[]biz.MdsNodeModel,
+) *[]pbMdsNode.MdsNodeStandardOut {
 	if rms == nil {
-		return &[]pbNode.OesNodeStandardOut{}
+		return &[]pbMdsNode.MdsNodeStandardOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbNode.OesNodeStandardOut, 0, len(ms))
+	mso := make([]pbMdsNode.MdsNodeStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := OesNodeToStandardOut(m)
+			mo := MdsNodeToStandardOut(m)
 			mso = append(mso, *mo)
 		}
 	}

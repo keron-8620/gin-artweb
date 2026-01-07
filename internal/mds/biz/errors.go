@@ -19,4 +19,16 @@ var (
 		"解压mds程序包失败",
 		nil,
 	)
+	ErrMdsColonyNotFound = errors.New(
+		http.StatusNotFound,
+		"mds_colony_not_found",
+		"mds集群不存在",
+		nil,
+	)
+	ErrMdsColonyListEmpty = errors.New(
+		http.StatusNotFound,
+		"mds_colony_list_empty",
+		"mds集群列表为空",
+		nil,
+	)
 )

@@ -243,6 +243,17 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 		return
 	}
 
+	if m == nil {
+		s.log.Error(
+			"查询mds集群详情失败",
+			zap.Error(biz.ErrMdsColonyNotFound),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(biz.ErrMdsColonyNotFound.Code, biz.ErrMdsColonyNotFound.ToMap())
+		return
+	}
+
 	s.log.Info(
 		"查询mds集群详情成功",
 		zap.Uint32(pbComm.RequestPKKey, uri.PK),
@@ -305,6 +316,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 		s.log.Error(
 			"查询mds集群列表失败",
 			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -325,12 +337,152 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 	})
 }
 
+// @Summary 查询mds集群的任务状态
+// @Description 本接口用于查询指定ID的mds集群任务状态
+// @Tags mds集群管理
+// @Accept json
+// @Produce json
+// @Param pk path uint true "mds集群编号"
+// @Success 200 {object} pbColony.MdsTaskStatusReply "成功返回mds集群的任务状态"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "mds集群未找到"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/mds/colony/{pk}/status [get]
+// @Security ApiKeyAuth
+func (s *MdsColonyService) GetMdsTaskStatus(ctx *gin.Context) {
+	var uri pbComm.PKUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定查询mds集群ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	m, err := s.ucColony.FindMdsColonyByID(ctx, nil, uri.PK)
+	if err != nil {
+		s.log.Error(
+			"查询mds集群详情失败",
+			zap.Error(err),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		return
+	}
+
+	taskStatus, rErr := s.ucColony.GetMdsTaskStatus(ctx, m.ColonyNum)
+	if rErr != nil {
+		s.log.Error(
+			"查询mds集群任务状态失败",
+			zap.Error(rErr),
+			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+	ctx.JSON(http.StatusOK, &pbColony.MdsTaskStatusReply{
+		Code: http.StatusOK,
+		Data: *taskStatus,
+	})
+}
+
+// @Summary 查询mds集群列表的任务状态
+// @Description 本接口用于查询mds集群列表的任务状态
+// @Tags mds集群管理
+// @Accept json
+// @Produce json
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param name query string false "mds集群名称"
+// @Param is_enabled query bool false "是否启用"
+// @Param username query string false "创建用户名"
+// @Success 200 {object} pbColony.ListMdsTaskStatusReply "成功返回mds集群列表的任务状态"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/mds/colony/status [get]
+// @Security ApiKeyAuth
+func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
+	var req pbColony.ListMdsColonyRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询mds集群列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	page, size, query := req.Query()
+	qp := database.QueryParams{
+		Preloads: nil,
+		IsCount:  false,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"colony_num ASC"},
+		Query:    query,
+	}
+
+	_, ms, err := s.ucColony.ListMdsColony(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询mds集群列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		return
+	}
+
+	if ms == nil {
+		s.log.Warn(
+			"查询mds集群列表为nil",
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.JSON(biz.ErrMdsColonyListEmpty.Code, biz.ErrMdsColonyListEmpty.ToMap())
+		return
+	}
+
+	data := make(map[string]pbColony.MdsTaskStatus, len(*ms))
+	for _, m := range *ms {
+		taskStatus, rErr := s.ucColony.GetMdsTaskStatus(ctx, m.ColonyNum)
+		if rErr != nil {
+			s.log.Error(
+				"查询mds集群任务状态失败",
+				zap.Error(rErr),
+				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			)
+		}
+		data[m.ColonyNum] = *taskStatus
+	}
+	
+	ctx.JSON(http.StatusOK, &pbColony.ListMdsTaskStatusReply{
+		Code: http.StatusOK,
+		Data: data,
+	})
+}
+
 func (s *MdsColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/colony", s.CreateMdsColony)
 	r.PUT("/colony/:pk", s.UpdateMdsColony)
 	r.DELETE("/colony/:pk", s.DeleteMdsColony)
 	r.GET("/colony/:pk", s.GetMdsColony)
 	r.GET("/colony", s.ListMdsColony)
+	r.GET("/colony/:pk/status", s.GetMdsTaskStatus)
+	r.GET("/colony/status", s.ListMdsTaskStatus)
 }
 
 func MdsColonyToBaseOut(

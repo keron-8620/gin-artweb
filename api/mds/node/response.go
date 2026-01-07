@@ -29,8 +29,8 @@ type MdsNodeDetailOut struct {
 	Host      *host.HostBaseOut        `json:"host"`
 }
 
-// MdsNodeReply 程序包响应结构
+// MdsNodeReply mds节点配置的响应结构
 type MdsNodeReply = common.APIReply[MdsNodeDetailOut]
 
-// PagMdsNodeReply 程序包的分页响应结构
+// PagMdsNodeReply mds节点配置的分页响应结构
 type PagMdsNodeReply = common.APIReply[*common.Pag[MdsNodeStandardOut]]

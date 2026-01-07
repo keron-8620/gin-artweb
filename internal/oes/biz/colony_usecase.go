@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	pbColony "gin-artweb/api/oes/colony"
 	bizMon "gin-artweb/internal/mon/biz"
 	bizReso "gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/shared/common"
@@ -259,6 +262,186 @@ func (uc *OesColonyUsecase) ListOesColony(
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return count, ms, nil
+}
+
+func (uc *OesColonyUsecase) GetStkTaskStatus(ctx context.Context, colonyNum string) (*pbColony.StkTaskStatus, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
+	flagBaseName := "_collector_" + time.Now().Format("20060102") + ".*"
+
+	// 获取mon任务状态
+	monStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "mon"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取counter任务状态
+	countStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "counter"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取sse任务状态
+	sseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "sse"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取szse任务状态
+	szseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "szse"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取csdc任务状态
+	csdcStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "csdc"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	return &pbColony.StkTaskStatus{
+		Mon:     monStatus,
+		Counter: countStatus,
+		Sse:     sseStatus,
+		Szse:    szseStatus,
+		Csdc:    csdcStatus,
+	}, nil
+}
+
+func (uc *OesColonyUsecase) GetCrdTaskStatus(ctx context.Context, colonyNum string) (*pbColony.CrdTaskStatus, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
+	flagBaseName := "_collector_" + time.Now().Format("20060102") + ".*"
+
+	// 获取mon任务状态
+	monStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "mon"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取counter任务状态
+	countStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "counter"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取sse任务状态
+	sseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "sse"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取szse任务状态
+	szseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "szse"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取csdc任务状态
+	sseLateStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "sse_late"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	szseLateStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "szse_late"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	return &pbColony.CrdTaskStatus{
+		Mon:      monStatus,
+		Counter:  countStatus,
+		Sse:      sseStatus,
+		Szse:     szseStatus,
+		SseLate:  sseLateStatus,
+		SzseLate: szseLateStatus,
+	}, nil
+}
+
+func (uc *OesColonyUsecase) GetOptTaskStatus(ctx context.Context, colonyNum string) (*pbColony.OptTaskStatus, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
+	flagBaseName := "_collector_" + time.Now().Format("20060102") + ".*"
+
+	// 获取mon任务状态
+	monStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "mon"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取counter任务状态
+	countStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "counter"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取sse任务状态
+	sseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "sse"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取szse任务状态
+	szseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "szse"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	return &pbColony.OptTaskStatus{
+		Mon:     monStatus,
+		Counter: countStatus,
+		Sse:     sseStatus,
+		Szse:    szseStatus,
+	}, nil
+}
+
+func (uc *OesColonyUsecase) getTaskStatus(ctx context.Context, pattern string) (string, *errors.Error) {
+	if err := errors.CheckContext(ctx); err != nil {
+		return "", errors.FromError(err)
+	}
+
+	flagFiles, err := filepath.Glob(pattern)
+	if err != nil {
+		uc.log.Error(
+			"查询mds任务标识文件失败",
+			zap.Error(err),
+			zap.String("pattern", pattern),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		return "", errors.FromError(err)
+	}
+	if len(flagFiles) == 1 {
+		flagFile := flagFiles[0]
+		slice := strings.Split(flagFile, ".")
+		if len(slice) > 1 {
+			return slice[len(slice)-1], nil
+		}
+	} else if len(flagFiles) > 1 {
+		runningFlag := pattern[:len(pattern)-1] + "running"
+		if _, err := os.Stat(runningFlag); err == nil {
+			return "running", nil
+		} else if os.IsNotExist(err) {
+			return "failed", nil
+		} else {
+			uc.log.Error(
+				"检查mds的running标志文件时出错",
+				zap.Error(err),
+				zap.String("running_flag", runningFlag),
+				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			)
+			return "", errors.FromError(err)
+		}
+	}
+	return "", nil
 }
 
 func (uc *OesColonyUsecase) GetOesColonyBinDir(colonyNum string) string {

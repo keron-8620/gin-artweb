@@ -3001,6 +3001,81 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/mds/colony/status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询mds集群任务状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mds集群管理"
+                ],
+                "summary": "查询mds集群任务状态",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "mds集群名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建用户名",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mds集群的任务状态列表",
+                        "schema": {
+                            "$ref": "#/definitions/colony.ListMdsTaskStatusReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/mds/colony/{pk}": {
             "get": {
                 "security": [
@@ -3148,6 +3223,61 @@ const docTemplate = `{
                         "description": "删除成功",
                         "schema": {
                             "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "mds集群未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/mds/colony/{pk}/status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的mds集群状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mds集群管理"
+                ],
+                "summary": "查询mds集群的状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mds集群编号",
+                        "name": "pk",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mds集群的任务状态",
+                        "schema": {
+                            "$ref": "#/definitions/colony.MdsTaskStatusReply"
                         }
                     },
                     "400": {
@@ -5702,6 +5832,9 @@ const docTemplate = `{
                 }
             }
         },
+        "colony.ListMdsTaskStatusReply": {
+            "type": "object"
+        },
         "colony.MdsColonyBaseOut": {
             "type": "object",
             "properties": {
@@ -5806,6 +5939,41 @@ const docTemplate = `{
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "colony.MdsTaskStatus": {
+            "type": "object",
+            "properties": {
+                "mon": {
+                    "type": "string"
+                },
+                "sse": {
+                    "type": "string"
+                },
+                "szse": {
+                    "type": "string"
+                }
+            }
+        },
+        "colony.MdsTaskStatusReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/colony.MdsTaskStatus"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
                 }
             }
         },
