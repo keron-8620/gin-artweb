@@ -39,3 +39,4 @@
       mode: 0644
     when: item.stat.exists == true
     with_items: "{{ counter_files2.results }}"
+

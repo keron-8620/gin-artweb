@@ -1,0 +1,7 @@
+
+- name: send counter to mon file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ mon_host.ansible_port }}' {{ local_path_oes_home_counter_colodir_data_broker }}/CrdCollateralClassExt{{ curr_date }}.csv {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_host.slave_path_mon_home }}/config-upload/collateral-class-ext/{{ colony_num }}/"
+  ignore_errors: yes
+  when: "broker.lower() == 'zszq' and system_type == 'crd'"
+  delegate_to: 127.0.0.1
+  run_once: true
