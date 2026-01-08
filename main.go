@@ -258,17 +258,11 @@ func newRouter(init *common.Initialize) *gin.Engine {
 	// host请求头防护中间件
 	r.Use(middleware.HostGuard(loggers.Service, init.Conf.Server.Host, fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)))
 
+	// IP限流中间件
+	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
+
 	// 注册跨域请求处理中间件
 	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
-
-	// 注册链路追踪处理中间件
-	r.Use(middleware.TracingMiddleware(loggers.Service))
-
-	// 注册统一异常处理中间件
-	r.Use(middleware.ErrorMiddleware(loggers.Service))
-
-	// 注册超时处理中间件
-	r.Use(middleware.TimeoutMiddleware(time.Duration(init.Conf.Security.Timeout.RequestTimeout) * time.Second))
 
 	// 注册时间戳处理中间件,用于防御重放攻击
 	if init.Conf.Security.Timestamp.CheckTimestamp {
@@ -279,13 +273,26 @@ func newRouter(init *common.Initialize) *gin.Engine {
 		))
 	}
 
-	// IP限流中间件
-	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
+	// 注册链路追踪处理中间件
+	r.Use(middleware.TracingMiddleware(loggers.Service))
 
+	// 注册统一异常处理中间件
+	r.Use(middleware.ErrorMiddleware(loggers.Service))
+
+	// 注册超时处理中间件
+	r.Use(middleware.TimeoutMiddleware(time.Duration(init.Conf.Security.Timeout.RequestTimeout) * time.Second))
+
+	// 配置静态文件处理
+	htmlPath := filepath.Join(config.BaseDir, "html", "index.html")
 	r.GET("/", func(c *gin.Context) {
-		c.File(filepath.Join(config.BaseDir, "html", "index.html"))
+		c.File(htmlPath)
 	})
-	r.Static("/static", filepath.Join(config.BaseDir, "html", "static"))
+	faviconPath := filepath.Join(config.BaseDir, "html", "favicon.ico")
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File(faviconPath)
+	})
+	staticPath := filepath.Join(config.BaseDir, "html", "static")
+	r.Static("/static", staticPath)
 
 	// 配置 Swagger 文档
 	if init.Conf.Server.EnableSwagger {
