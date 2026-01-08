@@ -1,5 +1,5 @@
 server: # 服务配置
-  host: "192.168.122.131" # 服务地址
+  host: "192.168.10.12" # 服务地址
   port: 8621 # 服务端口
   ssl: # ssl配置
     enable: false # 是否启用ssl

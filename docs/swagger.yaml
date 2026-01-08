@@ -288,7 +288,13 @@ definitions:
     - system_type
     - xcounter_id
     type: object
+  colony.ListCrdTaskStatusReply:
+    type: object
   colony.ListMdsTaskStatusReply:
+    type: object
+  colony.ListOptTaskStatusReply:
+    type: object
+  colony.ListStkTaskStatusReply:
     type: object
   colony.MdsColonyBaseOut:
     properties:
@@ -372,34 +378,6 @@ definitions:
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
-        type: string
-    type: object
-  colony.MdsTaskStatus:
-    properties:
-      mon:
-        type: string
-      sse:
-        type: string
-      szse:
-        type: string
-    type: object
-  colony.MdsTaskStatusReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/colony.MdsTaskStatus'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
         type: string
     type: object
   colony.OesColonyBaseOut:
@@ -5288,46 +5266,11 @@ paths:
       summary: 更新mds集群
       tags:
       - mds集群管理
-  /api/v1/mds/colony/{pk}/status:
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询指定ID的mds集群状态
-      parameters:
-      - description: mds集群编号
-        in: path
-        name: pk
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回mds集群的任务状态
-          schema:
-            $ref: '#/definitions/colony.MdsTaskStatusReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "404":
-          description: mds集群未找到
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 查询mds集群的状态
-      tags:
-      - mds集群管理
   /api/v1/mds/colony/status:
     get:
       consumes:
       - application/json
-      description: 本接口用于查询mds集群任务状态
+      description: 本接口用于查询mds集群列表的任务状态
       parameters:
       - description: 页码
         in: query
@@ -5356,7 +5299,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: 成功返回mds集群的任务状态列表
+          description: 成功返回mds集群列表的任务状态
           schema:
             $ref: '#/definitions/colony.ListMdsTaskStatusReply'
         "400":
@@ -5369,7 +5312,7 @@ paths:
             $ref: '#/definitions/errors.Error'
       security:
       - ApiKeyAuth: []
-      summary: 查询mds集群任务状态
+      summary: 查询mds集群列表的任务状态
       tags:
       - mds集群管理
   /api/v1/mds/node:
@@ -6092,6 +6035,153 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 更新oes集群
+      tags:
+      - oes集群管理
+  /api/v1/oes/colony/status/crd:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询oes两融集群列表的任务状态
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: oes集群名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes两融集群列表的任务状态
+          schema:
+            $ref: '#/definitions/colony.ListCrdTaskStatusReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes两融集群列表的任务状态
+      tags:
+      - oes集群管理
+  /api/v1/oes/colony/status/opt:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询oes期权集群列表的任务状态
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: oes集群名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes期权集群列表的任务状态
+          schema:
+            $ref: '#/definitions/colony.ListOptTaskStatusReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes期权集群列表的任务状态
+      tags:
+      - oes集群管理
+  /api/v1/oes/colony/status/stk:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询oes现货集群列表的任务状态
+      parameters:
+      - description: 页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        maximum: 100
+        minimum: 1
+        name: size
+        type: integer
+      - description: oes集群名称
+        in: query
+        name: name
+        type: string
+      - description: 是否启用
+        in: query
+        name: is_enabled
+        type: boolean
+      - description: 创建用户名
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes现货集群列表的任务状态
+          schema:
+            $ref: '#/definitions/colony.ListStkTaskStatusReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes现货集群列表的任务状态
       tags:
       - oes集群管理
   /api/v1/oes/node:
