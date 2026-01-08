@@ -1,0 +1,9 @@
+---
+
+- name: send bse file to mds
+  synchronize:
+    src: "{{ local_path_mds_home_bse_colodir }}/"
+    dest: "{{ slave_path_mds_home_data_exchange }}/"
+    checksum: yes
+  register: collector_bse_files_result
+  ignore_errors: yes

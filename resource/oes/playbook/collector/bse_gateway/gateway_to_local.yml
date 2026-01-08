@@ -1,0 +1,23 @@
+---
+
+- name: clear bse directory
+  file:
+    path: "{{ local_path_oes_home_bse_colodir }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: create bse directory
+  file:
+    path: "{{ local_path_oes_home_bse_colodir }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  run_once: true
+
+
+- name: fetch remote bse file
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ bse_port }}' {{ bse_user }}@{{ bse_host }}:{{ gateway_path_root_exchange_bse }}/{{ item }} {{ local_path_oes_home_bse_colodir }}/"
+  with_items: "{{ bse_cp_files_list }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: yes

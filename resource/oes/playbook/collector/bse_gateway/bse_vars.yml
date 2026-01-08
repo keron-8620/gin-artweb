@@ -1,0 +1,4 @@
+---
+
+fetch_ok_flag: "{{ fetch_bse_ok }}"
+cron_job_name: "bse_collector"

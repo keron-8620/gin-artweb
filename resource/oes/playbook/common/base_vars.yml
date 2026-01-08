@@ -23,6 +23,8 @@ local_path_oes_home_counter_colodir_data: "{{ local_path_oes_home_counter_colodi
 local_path_oes_home_counter_colodir_data_broker: "{{ local_path_oes_home_counter_colodir_data }}/broker"
 local_path_oes_home_counter_colodir_data_exchange: "{{ local_path_oes_home_counter_colodir_data }}/exchange"
 local_path_oes_home_counter_colodir_default: "{{ local_path_oes_home_counter_colodir }}/default"
+local_path_oes_home_bse: "{{ local_path_oes_home }}/bse"
+local_path_oes_home_bse_colodir: "{{ local_path_oes_home_bse }}/{{ colony_num }}"
 local_path_oes_home_sse: "{{ local_path_oes_home }}/sse"
 local_path_oes_home_sse_colodir: "{{ local_path_oes_home_sse }}/{{ colony_num }}"
 local_path_oes_home_sse_etf: "{{ local_path_oes_home }}/sse_etf"

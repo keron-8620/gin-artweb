@@ -1,0 +1,18 @@
+---
+- hosts: all
+  vars_files:
+    - ../../common/base_vars.yml
+    - ./bse_vars.yml
+
+  tasks:
+    - include_tasks: ../../common/load_automatic.yml
+
+    - include_tasks: ../before_playbook.yml
+
+    - include_tasks: ./gateway_to_local.yml
+
+    - include_tasks: ./local_to_mds.yml
+
+    - include_tasks: ./bse_checker.yml
+
+    - include_tasks: ../after_playbook.yml
