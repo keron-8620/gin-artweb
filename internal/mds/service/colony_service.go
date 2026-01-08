@@ -337,61 +337,6 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 	})
 }
 
-// @Summary 查询mds集群的任务状态
-// @Description 本接口用于查询指定ID的mds集群任务状态
-// @Tags mds集群管理
-// @Accept json
-// @Produce json
-// @Param pk path uint true "mds集群编号"
-// @Success 200 {object} pbColony.MdsTaskStatusReply "成功返回mds集群的任务状态"
-// @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "mds集群未找到"
-// @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/colony/{pk}/status [get]
-// @Security ApiKeyAuth
-func (s *MdsColonyService) GetMdsTaskStatus(ctx *gin.Context) {
-	var uri pbComm.PKUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
-			"绑定查询mds集群ID参数失败",
-			zap.Error(err),
-			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
-		return
-	}
-
-	m, err := s.ucColony.FindMdsColonyByID(ctx, nil, uri.PK)
-	if err != nil {
-		s.log.Error(
-			"查询mds集群详情失败",
-			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	taskStatus, rErr := s.ucColony.GetMdsTaskStatus(ctx, m.ColonyNum)
-	if rErr != nil {
-		s.log.Error(
-			"查询mds集群任务状态失败",
-			zap.Error(rErr),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
-		return
-	}
-	ctx.JSON(http.StatusOK, &pbColony.MdsTaskStatusReply{
-		Code: http.StatusOK,
-		Data: *taskStatus,
-	})
-}
-
 // @Summary 查询mds集群列表的任务状态
 // @Description 本接口用于查询mds集群列表的任务状态
 // @Tags mds集群管理
@@ -481,7 +426,6 @@ func (s *MdsColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.DELETE("/colony/:pk", s.DeleteMdsColony)
 	r.GET("/colony/:pk", s.GetMdsColony)
 	r.GET("/colony", s.ListMdsColony)
-	r.GET("/colony/:pk/status", s.GetMdsTaskStatus)
 	r.GET("/colony/status", s.ListMdsTaskStatus)
 }
 
