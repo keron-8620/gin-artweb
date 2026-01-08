@@ -18,9 +18,6 @@
     - include_tasks: ./local_to_othrt_art.yml
       when: xcounter_freezed_ok.stat.exists and is_enable_counter_unilateral_freeze == "yes"
 
-    - include_tasks: ./local_to_mon.yml
-      when: xcounter_freezed_ok.stat.exists and is_enable_counter_unilateral_freeze == "yes"
-
     - include_tasks: ./counter_checker.yml
 
     - include_tasks: ../after_playbook.yml
