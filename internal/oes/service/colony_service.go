@@ -330,12 +330,270 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 	})
 }
 
+// @Summary 查询oes现货集群列表的任务状态
+// @Description 本接口用于查询oes现货集群列表的任务状态
+// @Tags oes集群管理
+// @Accept json
+// @Produce json
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param name query string false "oes集群名称"
+// @Param is_enabled query bool false "是否启用"
+// @Param username query string false "创建用户名"
+// @Success 200 {object} pbColony.ListStkTaskStatusReply "成功返回oes现货集群列表的任务状态"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/colony/status/stk [get]
+// @Security ApiKeyAuth
+func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
+	var req pbColony.ListOesColonyRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询oes现货集群列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	page, size, query := req.Query()
+	query["system_type = ?"] = "stk"
+	qp := database.QueryParams{
+		Preloads: nil,
+		IsCount:  false,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"colony_num ASC"},
+		Query:    query,
+	}
+
+	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询oes现货集群列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		return
+	}
+
+	if ms == nil {
+		s.log.Warn(
+			"查询oes现货集群列表为nil",
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
+		return
+	}
+
+	data := make(map[string]pbColony.StkTaskStatus, len(*ms))
+	for _, m := range *ms {
+		taskStatus, rErr := s.ucColony.GetStkTaskStatus(ctx, m.ColonyNum)
+		if rErr != nil {
+			s.log.Error(
+				"查询oes现货集群任务状态失败",
+				zap.Error(rErr),
+				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.String("colony_num", m.ColonyNum),
+				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			)
+		}
+		data[m.ColonyNum] = *taskStatus
+	}
+
+	ctx.JSON(http.StatusOK, &pbColony.ListStkTaskStatusReply{
+		Code: http.StatusOK,
+		Data: data,
+	})
+}
+
+// @Summary 查询oes两融集群列表的任务状态
+// @Description 本接口用于查询oes两融集群列表的任务状态
+// @Tags oes集群管理
+// @Accept json
+// @Produce json
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param name query string false "oes集群名称"
+// @Param is_enabled query bool false "是否启用"
+// @Param username query string false "创建用户名"
+// @Success 200 {object} pbColony.ListCrdTaskStatusReply "成功返回oes两融集群列表的任务状态"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/colony/status/crd [get]
+// @Security ApiKeyAuth
+func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
+	var req pbColony.ListOesColonyRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询oes两融集群列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	page, size, query := req.Query()
+	query["system_type = ?"] = "crd"
+	qp := database.QueryParams{
+		Preloads: nil,
+		IsCount:  false,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"colony_num ASC"},
+		Query:    query,
+	}
+
+	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询oes两融集群列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		return
+	}
+
+	if ms == nil {
+		s.log.Warn(
+			"查询oes两融集群列表为nil",
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
+		return
+	}
+
+	data := make(map[string]pbColony.CrdTaskStatus, len(*ms))
+	for _, m := range *ms {
+		taskStatus, rErr := s.ucColony.GetCrdTaskStatus(ctx, m.ColonyNum)
+		if rErr != nil {
+			s.log.Error(
+				"查询oes两融集群任务状态失败",
+				zap.Error(rErr),
+				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.String("colony_num", m.ColonyNum),
+				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			)
+		}
+		data[m.ColonyNum] = *taskStatus
+	}
+
+	ctx.JSON(http.StatusOK, &pbColony.ListCrdTaskStatusReply{
+		Code: http.StatusOK,
+		Data: data,
+	})
+}
+
+// @Summary 查询oes期权集群列表的任务状态
+// @Description 本接口用于查询oes期权集群列表的任务状态
+// @Tags oes集群管理
+// @Accept json
+// @Produce json
+// @Param page query int false "页码" minimum(1)
+// @Param size query int false "每页数量" minimum(1) maximum(100)
+// @Param name query string false "oes集群名称"
+// @Param is_enabled query bool false "是否启用"
+// @Param username query string false "创建用户名"
+// @Success 200 {object} pbColony.ListOptTaskStatusReply "成功返回oes期权集群列表的任务状态"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/colony/status/opt [get]
+// @Security ApiKeyAuth
+func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
+	var req pbColony.ListOesColonyRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询oes期权集群列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	page, size, query := req.Query()
+	query["system_type = ?"] = "opt"
+	qp := database.QueryParams{
+		Preloads: nil,
+		IsCount:  false,
+		Limit:    size,
+		Offset:   page,
+		OrderBy:  []string{"colony_num ASC"},
+		Query:    query,
+	}
+
+	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询oes期权集群列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		return
+	}
+
+	if ms == nil {
+		s.log.Warn(
+			"查询oes期权集群列表为nil",
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
+		return
+	}
+
+	data := make(map[string]pbColony.OptTaskStatus, len(*ms))
+	for _, m := range *ms {
+		taskStatus, rErr := s.ucColony.GetOptTaskStatus(ctx, m.ColonyNum)
+		if rErr != nil {
+			s.log.Error(
+				"查询oes期权集群任务状态失败",
+				zap.Error(rErr),
+				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.String("colony_num", m.ColonyNum),
+				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			)
+		}
+		data[m.ColonyNum] = *taskStatus
+	}
+
+	ctx.JSON(http.StatusOK, &pbColony.ListOptTaskStatusReply{
+		Code: http.StatusOK,
+		Data: data,
+	})
+}
+
 func (s *OesColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/colony", s.CreateOesColony)
 	r.PUT("/colony/:pk", s.UpdateOesColony)
 	r.DELETE("/colony/:pk", s.DeleteOesColony)
 	r.GET("/colony/:pk", s.GetOesColony)
 	r.GET("/colony", s.ListOesColony)
+	r.GET("/api/v1/oes/colony/status/stk", s.ListStkTaskStatus)
+	r.GET("/api/v1/oes/colony/status/crd", s.ListCrdTaskStatus)
+	r.GET("/api/v1/oes/colony/status/opt", s.ListOptTaskStatus)
 }
 
 func OesColonyToBaseOut(

@@ -408,12 +408,13 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 				"查询mds集群任务状态失败",
 				zap.Error(rErr),
 				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.String("colony_num", m.ColonyNum),
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
 		}
 		data[m.ColonyNum] = *taskStatus
 	}
-	
+
 	ctx.JSON(http.StatusOK, &pbColony.ListMdsTaskStatusReply{
 		Code: http.StatusOK,
 		Data: data,

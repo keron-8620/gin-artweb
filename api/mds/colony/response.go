@@ -38,12 +38,10 @@ type PagMdsColonyReply = common.APIReply[*common.Pag[MdsColonyStandardOut]]
 // mds 任务状态
 type MdsTaskStatus struct {
 	Mon  string `json:"mon"`
+	Bse  string `json:"bse"`
 	Sse  string `json:"sse"`
 	Szse string `json:"szse"`
 }
-
-// MdsTaskStatusReply 单个mds集群的任务状态响应结构
-type MdsTaskStatusReply = common.APIReply[MdsTaskStatus]
 
 // ListMdsTaskStatusReply 多个mds集群的任务状态响应结构
 type ListMdsTaskStatusReply = common.APIReply[map[string]MdsTaskStatus]

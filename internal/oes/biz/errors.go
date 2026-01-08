@@ -25,4 +25,10 @@ var (
 		"解压xcounter程序包失败",
 		nil,
 	)
+	ErrOesColonyListEmpty = errors.New(
+		http.StatusNotFound,
+		"oes_colony_list_empty",
+		"oes集群列表为空",
+		nil,
+	)
 )
