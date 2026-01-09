@@ -20,12 +20,14 @@ func NewServer(
 	loggers *log.Loggers,
 ) {
 	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Fatal("数据库自动迁移resource模型失败", zap.Error(err))
+		loggers.Server.Error("数据库自动迁移resource模型失败", zap.Error(err))
+		panic(err)
 	}
 
 	sshTimeout := time.Duration(init.Conf.SSH.Timeout) * time.Second
 	signer, err := NewSigner(loggers.Data, init.Conf.SSH.Private, sshTimeout)
 	if err != nil {
+		loggers.Server.Error("创建SSH密钥签名失败", zap.Error(err))
 		panic(err)
 	}
 	hostRepo := data.NewHostRepo(loggers.Data, init.DB, init.DBTimeout)

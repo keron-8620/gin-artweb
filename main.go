@@ -108,11 +108,13 @@ func main() {
 
 			// 校验证书文件是否存在
 			if _, statErr := os.Stat(crtPath); os.IsNotExist(statErr) {
-				loggers.Server.Fatal("SSL CRT 文件不存在", zap.String("path", crtPath))
+				loggers.Server.Error("SSL CRT 文件不存在", zap.String("path", crtPath))
+				panic(statErr)
 			}
 			// 校验私钥文件是否存在
 			if _, statErr := os.Stat(keyPath); os.IsNotExist(statErr) {
-				loggers.Server.Fatal("SSL KEY 文件不存在", zap.String("path", keyPath))
+				loggers.Server.Error("SSL KEY 文件不存在", zap.String("path", keyPath))
+				panic(statErr)
 			}
 
 			// 输出 HTTPS 启动信息并开始监听
@@ -179,6 +181,18 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 	// 初始化服务器日志记录器
 	loggers := NewLoggers(conf.Log)
 
+	// 初始化casbin 权限管理
+	enf, err := auth.NewCasbinEnforcer()
+	if err != nil {
+		loggers.Server.Fatal("Casbin 初始化失败", zap.Error(err))
+		return nil, nil, nil, err
+	}
+
+	// 初始化计划任务
+	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "cron.log"))
+	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
+	ct := crontab.NewCron(cronLogger)
+
 	// 创建GORM数据库配置并连接数据库
 	var dbLog *golog.Logger
 	if conf.Database.LogSQL {
@@ -188,8 +202,7 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 	dbConf := database.NewGormConfig(dbLog)
 	db, err := database.NewGormDB(conf.Database, dbConf)
 	if err != nil {
-		loggers.Server.Error("数据库连接失败", zap.Error(err))
-		return nil, nil, nil, err
+		loggers.Server.Fatal("数据库连接失败", zap.Error(err))
 	}
 
 	// 初始化数据库超时配置
@@ -198,18 +211,6 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 		ReadTimeout:  time.Duration(conf.Database.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
 	}
-
-	// 初始化casbin 权限管理
-	enf, err := auth.NewCasbinEnforcer()
-	if err != nil {
-		loggers.Server.Error("Casbin 初始化失败", zap.Error(err))
-		return nil, nil, nil, err
-	}
-
-	// 初始化计划任务
-	cronWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "cron.log"))
-	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
-	ct := crontab.NewCron(cronLogger)
 
 	// 返回初始化结构体和清理函数
 	return loggers, &common.Initialize{

@@ -18,7 +18,8 @@ func NewServer(
 	loggers *log.Loggers,
 ) {
 	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Fatal("数据库自动迁移jobs模型失败", zap.Error(err))
+		loggers.Server.Error("数据库自动迁移jobs模型失败", zap.Error(err))
+		panic(err)
 	}
 
 	scriptRepo := data.NewScriptRepo(loggers.Data, init.DB, init.DBTimeout)

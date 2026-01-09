@@ -22,7 +22,8 @@ func NewServer(
 	loggers *log.Loggers,
 ) {
 	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Fatal("数据库自动迁移customer模型失败", zap.Error(err))
+		loggers.Server.Error("数据库自动迁移customer模型失败", zap.Error(err))
+		panic(err)
 	}
 
 	permissionRepo := data.NewPermissionRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
@@ -45,27 +46,33 @@ func NewServer(
 
 	ctx := context.Background()
 	if pErr := permissionUsecase.LoadPermissionPolicy(ctx); pErr != nil {
-		loggers.Server.Fatal("系统初始化加载权限策略时失败", zap.Error(pErr))
+		loggers.Server.Error("系统初始化加载权限策略时失败", zap.Error(pErr))
+		panic(pErr)
 	}
 	if pErr := menuUsecase.LoadMenuPolicy(ctx); pErr != nil {
-		loggers.Server.Fatal("系统初始化加载菜单策略时失败", zap.Error(pErr))
+		loggers.Server.Error("系统初始化加载菜单策略时失败", zap.Error(pErr))
+		panic(pErr)
 	}
 	if pErr := buttonUsecase.LoadButtonPolicy(ctx); pErr != nil {
-		loggers.Server.Fatal("系统初始化加载按钮策略时失败", zap.Error(pErr))
+		loggers.Server.Error("系统初始化加载按钮策略时失败", zap.Error(pErr))
+		panic(pErr)
 	}
 	if pErr := roleUsecase.LoadRolePolicy(ctx); pErr != nil {
-		loggers.Server.Fatal("系统初始化加载角色策略时失败", zap.Error(pErr))
+		loggers.Server.Error("系统初始化加载角色策略时失败", zap.Error(pErr))
+		panic(pErr)
 	}
 
 	pPolicies, pErr := init.Enforcer.GetPolicy()
 	if pErr != nil {
-		loggers.Server.Fatal("系统初始化查询p策略失败", zap.Error(pErr))
+		loggers.Server.Error("系统初始化查询p策略失败", zap.Error(pErr))
+		panic(pErr)
 	}
 	loggers.Data.Debug("已加载所有p策略", zap.Any("pPolicies", pPolicies))
 
 	gPolicies, gErr := init.Enforcer.GetGroupingPolicy()
 	if gErr != nil {
-		loggers.Server.Fatal("系统初始化查询g策略失败", zap.Error(gErr))
+		loggers.Server.Error("系统初始化查询g策略失败", zap.Error(gErr))
+		panic(gErr)
 	}
 	loggers.Data.Debug("已加载所有g策略", zap.Any("gPolicies", gPolicies))
 
