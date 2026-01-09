@@ -9,7 +9,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbNode "gin-artweb/api/oes/node"
 	"gin-artweb/internal/oes/biz"
-	servReso "gin-artweb/internal/resource/service"
+	svReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -359,7 +359,7 @@ func OesNodeToDetailOut(
 	return &pbNode.OesNodeDetailOut{
 		OesNodeStandardOut: *OesNodeToStandardOut(m),
 		OesColony:          OesColonyToBaseOut(m.OesColony),
-		Host:               servReso.HostModelToBaseOut(m.Host),
+		Host:               svReso.HostModelToBaseOut(m.Host),
 	}
 }
 

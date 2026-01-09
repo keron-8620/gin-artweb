@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 
 	pbComm "gin-artweb/api/common"
-	pbMdsNode "gin-artweb/api/mds/node"
+	pbNode "gin-artweb/api/mds/node"
 	"gin-artweb/internal/mds/biz"
-	servReso "gin-artweb/internal/resource/service"
+	svReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -42,7 +42,7 @@ func NewMdsNodeService(
 // @Router /api/v1/mds/node [post]
 // @Security ApiKeyAuth
 func (s *MdsNodeService) CreateMdsNode(ctx *gin.Context) {
-	var req pbMdsNode.CreateOrUpdateMdsNodeRequest
+	var req pbNode.CreateOrUpdateMdsNodeRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定创建mds节点参数失败",
@@ -74,7 +74,7 @@ func (s *MdsNodeService) CreateMdsNode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &pbMdsNode.MdsNodeReply{
+	ctx.JSON(http.StatusOK, &pbNode.MdsNodeReply{
 		Code: http.StatusOK,
 		Data: *MdsNodeToDetailOut(*m),
 	})
@@ -107,7 +107,7 @@ func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 		return
 	}
 
-	var req pbMdsNode.CreateOrUpdateMdsNodeRequest
+	var req pbNode.CreateOrUpdateMdsNodeRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
 			"绑定更新mds节点参数失败",
@@ -140,7 +140,7 @@ func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &pbMdsNode.MdsNodeReply{
+	ctx.JSON(http.StatusOK, &pbNode.MdsNodeReply{
 		Code: http.StatusOK,
 		Data: *MdsNodeToDetailOut(*m),
 	})
@@ -249,7 +249,7 @@ func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 	)
 
 	mo := MdsNodeToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &pbMdsNode.MdsNodeReply{
+	ctx.JSON(http.StatusOK, &pbNode.MdsNodeReply{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -271,7 +271,7 @@ func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 // @Router /api/v1/mds/node [get]
 // @Security ApiKeyAuth
 func (s *MdsNodeService) ListMdsNode(ctx *gin.Context) {
-	var req pbMdsNode.ListMdsNodeRequest
+	var req pbNode.ListMdsNodeRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		s.log.Error(
 			"绑定查询mds节点列表参数失败",
@@ -319,7 +319,7 @@ func (s *MdsNodeService) ListMdsNode(ctx *gin.Context) {
 	)
 
 	mbs := ListMdsNodeToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &pbMdsNode.PagMdsNodeReply{
+	ctx.JSON(http.StatusOK, &pbNode.PagMdsNodeReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
@@ -335,8 +335,8 @@ func (s *MdsNodeService) LoadRouter(r *gin.RouterGroup) {
 
 func MdsNodeToBaseOut(
 	m biz.MdsNodeModel,
-) *pbMdsNode.MdsNodeBaseOut {
-	return &pbMdsNode.MdsNodeBaseOut{
+) *pbNode.MdsNodeBaseOut {
+	return &pbNode.MdsNodeBaseOut{
 		ID:       m.ID,
 		NodeRole: m.NodeRole,
 		IsEnable: m.IsEnable,
@@ -345,8 +345,8 @@ func MdsNodeToBaseOut(
 
 func MdsNodeToStandardOut(
 	m biz.MdsNodeModel,
-) *pbMdsNode.MdsNodeStandardOut {
-	return &pbMdsNode.MdsNodeStandardOut{
+) *pbNode.MdsNodeStandardOut {
+	return &pbNode.MdsNodeStandardOut{
 		MdsNodeBaseOut: *MdsNodeToBaseOut(m),
 		CreatedAt:      m.CreatedAt.String(),
 		UpdatedAt:      m.UpdatedAt.String(),
@@ -355,23 +355,23 @@ func MdsNodeToStandardOut(
 
 func MdsNodeToDetailOut(
 	m biz.MdsNodeModel,
-) *pbMdsNode.MdsNodeDetailOut {
-	return &pbMdsNode.MdsNodeDetailOut{
+) *pbNode.MdsNodeDetailOut {
+	return &pbNode.MdsNodeDetailOut{
 		MdsNodeStandardOut: *MdsNodeToStandardOut(m),
 		MdsColony:          MdsColonyToBaseOut(m.MdsColony),
-		Host:               servReso.HostModelToBaseOut(m.Host),
+		Host:               svReso.HostModelToBaseOut(m.Host),
 	}
 }
 
 func ListMdsNodeToDetailOut(
 	rms *[]biz.MdsNodeModel,
-) *[]pbMdsNode.MdsNodeStandardOut {
+) *[]pbNode.MdsNodeStandardOut {
 	if rms == nil {
-		return &[]pbMdsNode.MdsNodeStandardOut{}
+		return &[]pbNode.MdsNodeStandardOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbMdsNode.MdsNodeStandardOut, 0, len(ms))
+	mso := make([]pbNode.MdsNodeStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := MdsNodeToStandardOut(m)

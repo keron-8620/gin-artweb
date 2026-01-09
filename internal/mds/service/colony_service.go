@@ -9,8 +9,8 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbColony "gin-artweb/api/mds/colony"
 	"gin-artweb/internal/mds/biz"
-	servMon "gin-artweb/internal/mon/service"
-	servReso "gin-artweb/internal/resource/service"
+	svMon "gin-artweb/internal/mon/service"
+	svReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -455,8 +455,8 @@ func MdsColonyToDetailOut(
 ) *pbColony.MdsColonyDetailOut {
 	return &pbColony.MdsColonyDetailOut{
 		MdsColonyStandardOut: *MdsColonyToStandardOut(m),
-		Package:              servReso.PackageModelToOutBase(m.Package),
-		MonNode:              servMon.MonNodeToBaseOut(m.MonNode),
+		Package:              svReso.PackageModelToOutBase(m.Package),
+		MonNode:              svMon.MonNodeToBaseOut(m.MonNode),
 	}
 }
 

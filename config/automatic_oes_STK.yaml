@@ -56,6 +56,19 @@ counter_check_files:                                   # 主柜台获取检查�
   - "SecurityRiskLevel{{ curr_date[4:] }}.csv"
 ################# counter 相关配置 ##############
 
+###################### bse设置 #################
+bse_host: "192.168.11.189"
+bse_port: 22
+bse_user: "monuser"
+gateway_path_root_bse: /mnt/quant360/import/bse
+
+bse_cp_files_list:
+  - "NQXX.DBF"
+
+bse_check_files_list:
+  - "NQXX.DBF"
+###################### bse设置 #################
+
 ############### sse 文件配置 ####################
 sse_host: "192.168.11.189"
 sse_port: 22

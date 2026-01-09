@@ -17,11 +17,25 @@ mon_check_files_list:
   - "TradingDate.txt"
 ###################### mon设置 #################
 
+###################### bse设置 #################
+bse_host: "192.168.11.189"
+bse_port: 22
+bse_user: "monuser"
+gateway_path_root_bse: /mnt/quant360/import/bse
+
+bse_cp_files_list:
+  - "NQXX.DBF"
+
+bse_check_files_list:
+  - "NQXX.DBF"
+###################### bse设置 #################
+
 ###################### sse设置 #################
 sse_host: "192.168.11.189"
 sse_port: 22
 sse_user: "monuser"
 gateway_path_root_exchange_sse: /mnt/quant360/import/sse
+
 sse_cp_files_list:
   - "cpxx0201{{ curr_date[4:] }}.txt"
   - "cpxx0202{{ curr_date[4:] }}.txt"
@@ -47,6 +61,7 @@ szse_host: "192.168.11.189"
 szse_port: 22
 szse_user: "monuser"
 gateway_path_root_exchange_szse: /mnt/quant360/import/szse
+
 szse_cp_files_list:
   - "cashauctionparams_{{ curr_date }}.xml"
   - "securities_{{ curr_date }}.xml"

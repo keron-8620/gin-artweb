@@ -8,9 +8,9 @@ import (
 
 	pbComm "gin-artweb/api/common"
 	pbColony "gin-artweb/api/oes/colony"
-	servMon "gin-artweb/internal/mon/service"
+	svMon "gin-artweb/internal/mon/service"
 	"gin-artweb/internal/oes/biz"
-	servReso "gin-artweb/internal/resource/service"
+	svReso "gin-artweb/internal/resource/service"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -622,9 +622,9 @@ func OesColonyToDetailOut(
 ) *pbColony.OesColonyDetailOut {
 	return &pbColony.OesColonyDetailOut{
 		OesColonyStandardOut: *OesColonyToStandardOut(m),
-		Package:              servReso.PackageModelToOutBase(m.Package),
-		XCounter:             servReso.PackageModelToOutBase(m.XCounter),
-		MonNode:              servMon.MonNodeToBaseOut(m.MonNode),
+		Package:              svReso.PackageModelToOutBase(m.Package),
+		XCounter:             svReso.PackageModelToOutBase(m.XCounter),
+		MonNode:              svMon.MonNodeToBaseOut(m.MonNode),
 	}
 }
 
