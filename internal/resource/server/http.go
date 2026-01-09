@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/resource/data"
@@ -18,8 +19,8 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB, loggers.Data); err != nil {
-		panic(err)
+	if err := dbAutoMigrate(init.DB); err != nil {
+		loggers.Server.Fatal("数据库自动迁移resource模型失败", zap.Error(err))
 	}
 
 	sshTimeout := time.Duration(init.Conf.SSH.Timeout) * time.Second

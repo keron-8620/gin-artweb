@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"gin-artweb/internal/jobs/biz"
 	"gin-artweb/internal/jobs/data"
@@ -16,8 +17,8 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB, loggers.Data); err != nil {
-		panic(err)
+	if err := dbAutoMigrate(init.DB); err != nil {
+		loggers.Server.Fatal("数据库自动迁移jobs模型失败", zap.Error(err))
 	}
 
 	scriptRepo := data.NewScriptRepo(loggers.Data, init.DB, init.DBTimeout)

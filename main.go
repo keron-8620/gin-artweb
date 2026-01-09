@@ -72,7 +72,7 @@ func main() {
 	}
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
-	logger, i, clearFunc, err := newInitialize(configPath)
+	loggers, i, clearFunc, err := newInitialize(configPath)
 	if err != nil {
 		panic(err)
 	}
@@ -84,7 +84,7 @@ func main() {
 	gin.DisableConsoleColor()
 
 	// 创建 Gin 路由引擎
-	r := newRouter(i)
+	r := newRouter(loggers, i)
 
 	// 启动定时任务
 	if i.Crontab != nil {
@@ -108,34 +108,34 @@ func main() {
 
 			// 校验证书文件是否存在
 			if _, statErr := os.Stat(crtPath); os.IsNotExist(statErr) {
-				logger.Fatal("SSL CRT 文件不存在", zap.String("path", crtPath))
+				loggers.Server.Fatal("SSL CRT 文件不存在", zap.String("path", crtPath))
 			}
 			// 校验私钥文件是否存在
 			if _, statErr := os.Stat(keyPath); os.IsNotExist(statErr) {
-				logger.Fatal("SSL KEY 文件不存在", zap.String("path", keyPath))
+				loggers.Server.Fatal("SSL KEY 文件不存在", zap.String("path", keyPath))
 			}
 
 			// 输出 HTTPS 启动信息并开始监听
-			logger.Info("正在启动 HTTPS 服务器...",
+			loggers.Server.Info("正在启动 HTTPS 服务器...",
 				zap.String("addr", srv.Addr),
 				zap.String("crt", crtPath),
 				zap.String("key", keyPath))
 			err = srv.ListenAndServeTLS(crtPath, keyPath)
 		} else {
 			// 输出 HTTP 启动信息并开始监听
-			logger.Info("正在启动 HTTP 服务器...", zap.String("addr", srv.Addr))
+			loggers.Server.Info("正在启动 HTTP 服务器...", zap.String("addr", srv.Addr))
 			err = srv.ListenAndServe()
 		}
 
 		// 处理服务器启动过程中的致命错误
 		if err != nil && err != http.ErrServerClosed {
-			logger.Error("服务器启动失败", zap.Error(err))
+			loggers.Server.Error("服务器启动失败", zap.Error(err))
 			panic(err)
 		}
 	}()
 
 	// 打印服务器启动信息
-	logger.Info(
+	loggers.Server.Info(
 		"服务器启动ing ...",
 		zap.String("host", i.Conf.Server.Host),
 		zap.Int("port", i.Conf.Server.Port),
@@ -151,7 +151,7 @@ func main() {
 	<-quit // 阻塞等待信号到来
 
 	// 收到关闭信号后打印提示信息
-	logger.Info("正在关闭服务器...")
+	loggers.Server.Info("正在关闭服务器...")
 
 	// 创建带超时控制的上下文对象用于通知服务器关闭
 	ctx, cancel := context.WithTimeout(context.Background(),
@@ -160,11 +160,11 @@ func main() {
 
 	// 执行服务器优雅关闭逻辑
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("服务器强制关闭", zap.Error(err))
+		loggers.Server.Error("服务器强制关闭", zap.Error(err))
 	}
 
 	// 最终确认服务器已经退出
-	logger.Info("服务器已退出")
+	loggers.Server.Info("服务器已退出")
 }
 
 // newInitialize 初始化系统组件
@@ -172,13 +172,12 @@ func main() {
 // 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
-func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error) {
+func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error) {
 	// 加载系统配置
 	conf := config.NewSystemConf(path)
 
 	// 初始化服务器日志记录器
-	write := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "server.log"))
-	logger := log.NewZapLoggerMust(conf.Log.Level, write)
+	loggers := NewLoggers(conf.Log)
 
 	// 创建GORM数据库配置并连接数据库
 	var dbLog *golog.Logger
@@ -189,7 +188,7 @@ func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error)
 	dbConf := database.NewGormConfig(dbLog)
 	db, err := database.NewGormDB(conf.Database, dbConf)
 	if err != nil {
-		logger.Error("数据库连接失败", zap.Error(err))
+		loggers.Server.Error("数据库连接失败", zap.Error(err))
 		return nil, nil, nil, err
 	}
 
@@ -203,7 +202,7 @@ func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error)
 	// 初始化casbin 权限管理
 	enf, err := auth.NewCasbinEnforcer()
 	if err != nil {
-		logger.Error("Casbin 初始化失败", zap.Error(err))
+		loggers.Server.Error("Casbin 初始化失败", zap.Error(err))
 		return nil, nil, nil, err
 	}
 
@@ -213,7 +212,7 @@ func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error)
 	ct := crontab.NewCron(cronLogger)
 
 	// 返回初始化结构体和清理函数
-	return logger, &common.Initialize{
+	return loggers, &common.Initialize{
 			Conf:      conf,
 			DB:        db,
 			DBTimeout: &dbTimeout,
@@ -236,23 +235,22 @@ func newInitialize(path string) (*zap.Logger, *common.Initialize, func(), error)
 
 			// 2. 关闭数据库连接
 			if db != nil {
-				logger.Info("正在释放数据库资源...")
+				loggers.Server.Info("正在释放数据库资源...")
 				conn, err := db.DB()
 				if err != nil {
-					logger.Error("获取数据库连接失败", zap.Error(err))
+					loggers.Server.Error("获取数据库连接失败", zap.Error(err))
 				}
 				if err = conn.Close(); err != nil {
-					logger.Error("关闭数据库连接失败", zap.Error(err))
+					loggers.Server.Error("关闭数据库连接失败", zap.Error(err))
 				} else {
-					logger.Info("数据库资源释放成功")
+					loggers.Server.Info("数据库资源释放成功")
 				}
 			}
-			logger.Info("所有资源清理完成")
+			loggers.Server.Info("所有资源清理完成")
 		}, nil
 }
 
-func newRouter(init *common.Initialize) *gin.Engine {
-	loggers := NewLoggers(init.Conf.Log)
+func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 	r := gin.New()
 
 	// host请求头防护中间件
@@ -323,10 +321,12 @@ func newRouter(init *common.Initialize) *gin.Engine {
 }
 
 func NewLoggers(conf *config.LogConfig) *log.Loggers {
+	serverWrite := log.NewLumLogger(conf, filepath.Join(config.LogDir, "server.log"))
 	serviceWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "service.log"))
 	bizWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "biz.log"))
 	dataWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "data.log"))
 	return &log.Loggers{
+		Server:  log.NewZapLoggerMust(conf.Level, serverWrite),
 		Service: log.NewZapLoggerMust(conf.Level, serviceWrire),
 		Biz:     log.NewZapLoggerMust(conf.Level, bizWrire),
 		Data:    log.NewZapLoggerMust(conf.Level, dataWrire),

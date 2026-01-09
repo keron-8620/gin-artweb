@@ -61,6 +61,7 @@ func NewZapLoggerMust(level string, w io.Writer) *zap.Logger {
 }
 
 type Loggers struct {
+	Server  *zap.Logger
 	Service *zap.Logger
 	Biz     *zap.Logger
 	Data    *zap.Logger
