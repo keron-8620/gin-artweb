@@ -1,4 +1,4 @@
-#!/usr/local/lib/python3.11/bin/python3.11
+#!/usr/bin/env python3
 from typing import Optional, List, Dict
 from pathlib import Path
 import time

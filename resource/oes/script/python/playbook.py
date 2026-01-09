@@ -1,5 +1,5 @@
-#!/usr/local/bin/python3.8
-from typing import Optional, Dict
+#!/usr/bin/env python3
+from typing import List, Dict
 import os
 import sys
 import time
@@ -27,54 +27,54 @@ RESOURCE_DIR = BASE_DIR.joinpath("resource")
 SCRIPT_DIR = RESOURCE_DIR.joinpath("oes", "script")
 PLAYBOOK_DIR = RESOURCE_DIR.joinpath("oes", "playbook")
 
-def load_playbook_info() -> Dict:
-    """
-    加载playbook信息
-    """
-    with open(PLAYBOOK_DIR.joinpath("common", "playbook_info.yml"), "r") as f:
-        return yaml.safe_load(f)
+
+def get_curr_date() -> str:
+    return time.strftime('%Y%m%d', time.localtime())
 
 
-def get_next_trd_date(trd_dates: Dict, curr_date: Optional[str] = None) -> str:
-    """
-    获取下一个交易日
-
-    :param curr_date: 指定的交易日期
-    :return: 下一个交易日
-    """
-    if not curr_date:
-        curr_date = time.strftime("%Y%m%d", time.localtime())
-    trd_date_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-    date = int(curr_date)
-    if date >= trd_date_info[-1]:
-        trd_next_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-        return str(trd_next_info[0])
-    if date in trd_date_info:
-        index = trd_date_info.index(date)
-        return str(trd_date_info[index + 1])
+def next_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> str:
+    if not date:
+        raise AssertionError('日期不能为空')
+    trdDateList = trd_dates.get(f'trd_date_{the_year}_list', [])
+    if not trdDateList:
+        raise AssertionError(f'交易日历缺少{the_year}年的交易日列表')
+    if date >= trdDateList[-1]:
+        new_year = the_year + 1
+        new_trdDateList = trd_dates.get(f'trd_date_{new_year}_list')
+        if not new_trdDateList:
+            raise AssertionError(f'交易日历缺少{new_year}年的交易日列表')
+        return str(new_trdDateList[0])
+    if date in trdDateList:
+        index = trdDateList.index(date)
+        next_date = trdDateList[index + 1]
+        return str(next_date)
     else:
-        return str(date + 1)
+        new_date = date + 1
+        if new_date in trdDateList:
+            return str(new_date)
+        return next_trd_date(trd_dates, new_date, the_year)
 
 
-def get_pre_trd_date(trd_dates: Dict, curr_date: Optional[str] = None):
-    """
-    获取上一个交易日
-
-    :param curr_date: 指定的交易日期
-    :return: 上一个交易日
-    """
-    if not curr_date:
-        curr_date = time.strftime("%Y%m%d", time.localtime())
-    trd_date_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-    date = int(curr_date)
-    if date <= trd_date_info[0]:
-        trd_pre_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-        return str(trd_pre_info[-1])
-    if date in trd_date_info:
-        index = trd_date_info.index(date)
-        return str(trd_date_info[index - 1])
+def pre_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> str:
+    if not date:
+        raise AssertionError('日期不能为空')
+    trdDateList = trd_dates.get(f'trd_date_{the_year}_list', [])
+    if not trdDateList:
+        raise AssertionError(f'交易日历缺少{the_year}年的交易日列表')
+    if date <= trdDateList[0]:
+        last_year = the_year -1
+        last_trdDateList = trd_dates.get(f'trd_date_{last_year}_list')
+        if not last_trdDateList:
+            raise AssertionError(f'交易日历缺少{last_year}年的交易日列表')
+        return str(last_trdDateList[-1])
+    if date in trdDateList:
+        index = trdDateList.index(date)
+        return str(trdDateList[index - 1])
     else:
-        return str(date - 1)
+        last_date = date - 1
+        if last_date in trdDateList:
+            return str(last_date)
+        return pre_trd_date(trd_dates, last_date, the_year)
 
 
 def load_mon_conf(mon_id: int) -> Dict:
@@ -122,11 +122,13 @@ def init_vars(config_path: Path, extravars: str = ""):
     with open(trd_data_path, "r") as f:
         trd_dates = yaml.safe_load(f)
     if "curr_date" not in vars:
-        vars["curr_date"] = time.strftime("%Y%m%d")
+        vars["curr_date"] = get_curr_date()
+    curr_date_int = int(vars["curr_date"])
+    curr_year = int(vars["curr_date"][:4])
     if "next_trd_date" not in vars:
-        vars["next_trd_date"] = get_next_trd_date(trd_dates, vars["curr_date"])
+        vars["next_trd_date"] = next_trd_date(trd_dates, curr_date_int, curr_year)
     if "pre_trd_date" not in vars:
-        vars["pre_trd_date"] = get_pre_trd_date(trd_dates, vars["curr_date"])
+        vars["pre_trd_date"] = pre_trd_date(trd_dates, curr_date_int, curr_year)
     vars["local_path_script_home"] = str(SCRIPT_DIR)
     vars["local_path_playbook_home"] = str(PLAYBOOK_DIR)
     vars["local_path_oes_home"] = str(OES_DIR)

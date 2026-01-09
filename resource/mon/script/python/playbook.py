@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.8
+#!/usr/bin/env python3
 from typing import Dict
 import os
 import sys
@@ -26,6 +26,10 @@ SCRIPT_DIR = RESOURCE_DIR.joinpath("mon", "script")
 PLAYBOOK_DIR = RESOURCE_DIR.joinpath("mon", "playbook")
 
 
+def get_curr_date() -> str:
+    return time.strftime('%Y%m%d', time.localtime())
+
+
 def init_vars(mon_host_id: int, extravars: str = ""):
     """
     初始化vars配置
@@ -45,7 +49,7 @@ def init_vars(mon_host_id: int, extravars: str = ""):
                 key, value = item.split("=", 1)
                 vars[key.strip()] = value.strip()
     if "curr_date" not in vars:
-        vars["curr_date"] = time.strftime("%Y%m%d")
+        vars["curr_date"] = get_curr_date()
     vars["local_path_script_home"] = str(SCRIPT_DIR)
     vars["local_path_playbook_home"] = str(PLAYBOOK_DIR)
     vars["local_path_mon_home"] = str(MON_DIR)
