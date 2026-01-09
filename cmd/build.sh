@@ -1,19 +1,27 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
+# 设置脚本选项
+set -e  # 遇到错误立即退出
+set -u  # 使用未定义变量时退出
+
+# 获取并切换到项目根目录
 basepath=$(cd `dirname $0`/..; pwd)
-
 cd $basepath
+
+# 自动化测试并检查结果
+go test -v ./...
 
 # 编译前清理旧的可执行文件
 if [ -f "$basepath/bin/gin-artweb" ]; then
   rm -rf "$basepath/bin/gin-artweb"
 fi
 
-VERSION="v0.17.7.0.1"
+# 注入版本、Commit ID、构建时间等
+VERSION="0.17.7.0.1"
 COMMIT_ID=$(git rev-parse --short HEAD)  # 获取Git短Commit ID
 BUILD_TIME=$(date +"%Y-%m-%d %H:%M:%S")
 
-# 增强版（注入版本/构建信息，便于运维）
+# 编译程序
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
   -trimpath \
   -ldflags "\
@@ -26,3 +34,9 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -X 'main.goArch=$(go env GOARCH)'
   " \
   -o bin/gin-artweb main.go
+
+# 构建镜像
+podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION} .
+
+# 推送镜像
+# podman push swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION}

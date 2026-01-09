@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
 basepath=$(cd `dirname $0`; pwd)
 project_path=$(cd "$basepath/.."; pwd)

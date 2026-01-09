@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
 #获取当前时间-YYYYMMDD
 nowdate=$(date +%Y%m%d)
