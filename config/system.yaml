@@ -42,8 +42,8 @@ cors: # 跨域服务
   allow_headers: # 允许的请求头
     - "*"
 
-security:
-  timeout:
+security: # 安全配置
+  timeout: # 超时相关配置
     request_timeout: 60 # 请求超时时间
     shutdown_timeout: 30 # 关闭超时时间
   timestamp: # 时间戳相关配置(用于拦截重放攻击)

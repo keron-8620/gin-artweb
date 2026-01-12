@@ -78,13 +78,17 @@ func main() {
 	}
 	defer clearFunc() // 程序结束前执行资源清理操作
 
+	// 初始化随机数生成器
+	nonceStore := middleware.NewNonceStore()
+	defer nonceStore.Close()
+
 	// 设置 Gin 框架的日志输出到 Zap 日志中，并设置运行模式为 ReleaseMode
 	// gin.DefaultWriter = zap.NewStdLog(logger).Writer()
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 
 	// 创建 Gin 路由引擎
-	r := newRouter(loggers, i)
+	r := newRouter(loggers, i, nonceStore)
 
 	// 启动定时任务
 	if i.Crontab != nil {
@@ -220,7 +224,7 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 			Enforcer:  enf,
 			Crontab:   ct,
 		}, func() {
-			// 1. 关闭计划任务
+			// 关闭计划任务
 			if ct != nil {
 				cronLogger.Info("正在关闭计划任务...")
 				shutdownTimeout := time.Duration(conf.Security.Timeout.ShutdownTimeout) * time.Second
@@ -234,7 +238,7 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 				}
 			}
 
-			// 2. 关闭数据库连接
+			// 关闭数据库连接
 			if db != nil {
 				loggers.Server.Info("正在释放数据库资源...")
 				conn, err := db.DB()
@@ -251,7 +255,7 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 		}, nil
 }
 
-func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
+func newRouter(loggers *log.Loggers, init *common.Initialize, nonceStore *middleware.NonceStore) *gin.Engine {
 	r := gin.New()
 
 	// host请求头防护中间件
@@ -266,6 +270,7 @@ func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 	// 注册时间戳处理中间件,用于防御重放攻击
 	if init.Conf.Security.Timestamp.CheckTimestamp {
 		r.Use(middleware.TimestampMiddleware(
+			nonceStore,
 			loggers.Service,
 			int64(init.Conf.Security.Timestamp.Tolerance),
 			int64(init.Conf.Security.Timestamp.FutureTolerance),
