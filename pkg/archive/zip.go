@@ -24,19 +24,11 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 	if err != nil {
 		return fmt.Errorf("创建目标文件 %s 失败: %w", dst, err)
 	}
-	defer func() {
-		if closeErr := dstFile.Close(); closeErr != nil {
-			panic(fmt.Errorf("关闭文件%s失败: %v", dst, closeErr))
-		}
-	}()
+	defer dstFile.Close()
 
 	// 创建zip writer
 	zipWriter := zip.NewWriter(dstFile)
-	defer func() {
-		if closeErr := zipWriter.Close(); closeErr != nil {
-			panic(fmt.Errorf("关闭ZIP写入器失败: %w", closeErr))
-		}
-	}()
+	defer zipWriter.Close()
 
 	// 获取源文件信息
 	srcInfo, err := os.Stat(src)
@@ -220,23 +212,19 @@ func Unzip(src, dst string, opts ...ArchiveOption) error {
 			if err != nil {
 				return fmt.Errorf("创建目标文件 %s 失败: %w", target, err)
 			}
+			defer targetFile.Close()
 
-			// 确保文件被关闭
-			func() {
-				defer targetFile.Close()
+			// 打开源文件
+			srcFile, err := file.Open()
+			if err != nil {
+				return fmt.Errorf("打开ZIP内文件 %s 失败: %w", file.Name, err)
+			}
+			defer srcFile.Close()
 
-				// 打开源文件
-				srcFile, err := file.Open()
-				if err != nil {
-					panic(fmt.Errorf("打开ZIP内文件 %s 失败: %w", file.Name, err))
-				}
-				defer srcFile.Close()
-
-				// 复制内容
-				if _, err := safeCopy(options.Context, targetFile, srcFile, options.MaxFileSize, options.BufferSize); err != nil {
-					panic(fmt.Errorf("复制文件内容失败 %s: %w", file.Name, err))
-				}
-			}()
+			// 复制内容
+			if _, err := safeCopy(options.Context, targetFile, srcFile, options.MaxFileSize, options.BufferSize); err != nil {
+				return fmt.Errorf("复制文件内容失败 %s: %w", file.Name, err)
+			}
 		}
 	}
 

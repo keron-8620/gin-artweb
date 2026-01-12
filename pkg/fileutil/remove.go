@@ -97,7 +97,7 @@ func SafeRemoveAll(path string) error {
 	}
 
 	for _, unsafePath := range unsafePaths {
-		if strings.HasPrefix(absPath, unsafePath) && absPath == unsafePath {
+		if strings.HasPrefix(absPath, unsafePath) || absPath == unsafePath {
 			return fmt.Errorf("拒绝删除受保护的系统路径: %s", absPath)
 		}
 	}

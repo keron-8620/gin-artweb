@@ -26,27 +26,15 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 	if err != nil {
 		return fmt.Errorf("创建目标文件 %s 失败: %w", dst, err)
 	}
-	defer func() {
-		if closeErr := dstFile.Close(); closeErr != nil {
-			panic(fmt.Errorf("关闭文件%s失败: %v", dst, closeErr))
-		}
-	}()
+	defer dstFile.Close()
 
 	// 创建 gzip writer
 	gzWriter := gzip.NewWriter(dstFile)
-	defer func() {
-		if closeErr := gzWriter.Close(); closeErr != nil {
-			panic(fmt.Errorf("关闭GZIP写入器失败: %w", closeErr))
-		}
-	}()
+	defer gzWriter.Close()
 
 	// 创建 tar writer
 	tarWriter := tar.NewWriter(gzWriter)
-	defer func() {
-		if closeErr := tarWriter.Close(); closeErr != nil {
-			panic(fmt.Errorf("关闭Tar写入器失败: %w", closeErr))
-		}
-	}()
+	defer tarWriter.Close()
 
 	// 获取源文件信息
 	srcInfo, err := os.Stat(src)
@@ -175,11 +163,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	if err != nil {
 		return fmt.Errorf("创建gzip reader失败: %w", err)
 	}
-	defer func() {
-		if closeErr := gzReader.Close(); closeErr != nil {
-			// 记录关闭错误
-		}
-	}()
+	defer gzReader.Close()
 
 	// 创建 tar reader
 	tarReader := tar.NewReader(gzReader)
@@ -244,15 +228,13 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 			if err != nil {
 				return fmt.Errorf("创建目标文件 %s 失败: %w", target, err)
 			}
+			defer file.Close()
 
-			func() {
-				defer file.Close()
+			// 复制 目标文件
+			if _, err := safeCopy(options.Context, file, tarReader, options.MaxFileSize, options.BufferSize); err != nil {
+				return fmt.Errorf("复制文件内容失败 %s: %w", header.Name, err)
+			}
 
-				// 复制文件内容
-				if _, err := safeCopy(options.Context, file, tarReader, options.MaxFileSize, options.BufferSize); err != nil {
-					panic(fmt.Errorf("复制文件内容失败 %s: %w", header.Name, err))
-				}
-			}()
 		case tar.TypeSymlink:
 			// 检查符号链接安全性
 			if filepath.IsAbs(header.Linkname) {
@@ -264,9 +246,16 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 				return fmt.Errorf("符号链接指向目录外: %s -> %s", header.Name, header.Linkname)
 			}
 
-			// 创建符号链接
-			if err := os.Symlink(header.Linkname, target); err != nil {
-				return fmt.Errorf("创建符号链接 %s -> %s 失败: %w", target, header.Linkname, err)
+			// 检查是否允许跟随符号链接
+			if !options.FollowSymlinks {
+				// 创建符号链接
+				if err := os.Symlink(header.Linkname, target); err != nil {
+					return fmt.Errorf("创建符号链接 %s -> %s 失败: %w", target, header.Linkname, err)
+				}
+			} else {
+				// 如果跟随符号链接，需要额外的安全检查
+				// 这里我们只是简单地拒绝创建符号链接，因为跟随符号链接可能存在安全风险
+				return fmt.Errorf("不允许跟随符号链接: %s -> %s", header.Name, header.Linkname)
 			}
 		default:
 			// 忽略不支持的文件类型
@@ -297,11 +286,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("创建gzip reader失败: %w", err)
 	}
-	defer func() {
-		if closeErr := gzReader.Close(); closeErr != nil {
-			// 记录关闭错误
-		}
-	}()
+	defer gzReader.Close()
 
 	// 创建 tar reader
 	tarReader := tar.NewReader(gzReader)

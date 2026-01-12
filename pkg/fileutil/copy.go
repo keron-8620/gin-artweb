@@ -71,8 +71,9 @@ func CopyFile(src, dst string) error {
 	}
 	defer dstFile.Close()
 
-	// 复制文件内容
-	if _, err := io.Copy(dstFile, srcFile); err != nil {
+	// 使用缓冲区复制文件内容，提高大文件复制性能
+	buffer := make([]byte, 64*1024) // 64KB buffer
+	if _, err := io.CopyBuffer(dstFile, srcFile, buffer); err != nil {
 		return fmt.Errorf("复制文件内容失败: %w", err)
 	}
 
@@ -163,12 +164,12 @@ func CopyDir(src, dst string, copyContents bool) error {
 			// 递归复制子目录
 			// 对于内容复制，始终为子目录传递 copyContents=true
 			if err := CopyDir(srcPath, dstPath, copyContents); err != nil {
-				return fmt.Errorf("复制目录失败 %s: %w", entry.Name(), err)
+				return fmt.Errorf("复制子目录 %s 到 %s 失败: %w", srcPath, dstPath, err)
 			}
 		} else {
 			// 复制普通文件
 			if err := CopyFile(srcPath, dstPath); err != nil {
-				return fmt.Errorf("复制文件失败 %s: %w", entry.Name(), err)
+				return fmt.Errorf("复制文件 %s 到 %s 失败: %w", srcPath, dstPath, err)
 			}
 		}
 	}
