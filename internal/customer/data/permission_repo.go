@@ -14,8 +14,8 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
-	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type permissionRepo struct {
@@ -231,7 +231,7 @@ func (r *permissionRepo) AddPolicy(
 	m biz.PermissionModel,
 ) error {
 	// 检查上下文
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 
@@ -287,7 +287,7 @@ func (r *permissionRepo) RemovePolicy(
 	removeInherited bool,
 ) error {
 	// 检查上下文
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 

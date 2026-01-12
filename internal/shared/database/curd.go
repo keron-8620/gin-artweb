@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 // DBPanic 处理数据库操作中的panic异常，自动回滚事务并记录错误日志
@@ -46,14 +46,10 @@ func DBPanic(ctx context.Context, tx *gorm.DB) (err error) {
 // tx: GORM事务对象
 // 返回回滚操作可能产生的错误
 func dbRollback(ctx context.Context, tx *gorm.DB) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
-	// 执行回滚操作
-	if err := tx.Rollback().Error; err != nil {
-		return err
-	}
-	return nil
+	return tx.Rollback().Error
 }
 
 // dbCommit 提交数据库事务，如果提交失败则自动回滚
@@ -61,7 +57,7 @@ func dbRollback(ctx context.Context, tx *gorm.DB) error {
 // tx: GORM事务对象
 // 返回提交操作可能产生的错误
 func dbCommit(ctx context.Context, tx *gorm.DB) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 执行提交操作
@@ -85,7 +81,7 @@ func dbAssociateAppend(ctx context.Context, db *gorm.DB, om any, upmap map[strin
 
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
-		if err := errors.CheckContext(ctx); err != nil {
+		if err := ctxutil.CheckContext(ctx); err != nil {
 			return err
 		}
 		if k == "" {
@@ -111,7 +107,7 @@ func dbAssociateReplace(ctx context.Context, db *gorm.DB, om any, upmap map[stri
 
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
-		if err := errors.CheckContext(ctx); err != nil {
+		if err := ctxutil.CheckContext(ctx); err != nil {
 			return err
 		}
 		if k == "" {
@@ -131,7 +127,7 @@ func dbAssociateReplace(ctx context.Context, db *gorm.DB, om any, upmap map[stri
 // value: 要创建的数据
 // 返回操作可能产生的错误
 func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[string]any) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 使用GORM的Create方法创建记录
@@ -174,7 +170,7 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upmap map[string]any, conds ...any) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 检查是否提供了查询条件
@@ -220,7 +216,7 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBDelete(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 检查是否提供了查询条件
@@ -240,7 +236,7 @@ func DBDelete(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBFind(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...any) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 预加载关联关系
@@ -260,7 +256,7 @@ func DBFind(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ..
 // query: 查询参数
 // 返回记录总数和操作可能产生的错误
 func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParams) (int64, error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, err
 	}
 

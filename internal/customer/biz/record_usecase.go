@@ -10,6 +10,7 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const LoginRecordTableName = "customer_login_record"
@@ -68,7 +69,7 @@ func (uc *LoginRecordUsecase) CreateLoginRecord(
 	ctx context.Context,
 	m LoginRecordModel,
 ) (*LoginRecordModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -100,7 +101,7 @@ func (uc *LoginRecordUsecase) ListLoginRecord(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]LoginRecordModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 

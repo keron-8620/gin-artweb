@@ -12,6 +12,7 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const ScheduleIDKey = "schedule_id"
@@ -189,7 +190,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 	ctx context.Context,
 	m ScheduleModel,
 ) (*ScheduleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -240,7 +241,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 	scheduleID uint32,
 	data map[string]any,
 ) (*ScheduleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -284,7 +285,7 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 	ctx context.Context,
 	scheduleID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -319,7 +320,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 	preloads []string,
 	scheduleID uint32,
 ) (*ScheduleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -352,7 +353,7 @@ func (uc *ScheduleUsecase) ListSchedule(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]ScheduleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -396,7 +397,7 @@ func (uc *ScheduleUsecase) ReloadScheduleJob(
 func (uc *ScheduleUsecase) ListScheduleJob(
 	ctx context.Context,
 ) (*[]ScheduleJobInfo, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 

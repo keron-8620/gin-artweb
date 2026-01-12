@@ -21,6 +21,7 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const ScriptRecordIDKey = "script_record_id"
@@ -380,7 +381,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 	ctx context.Context,
 	req ExecuteRequest,
 ) (*ScriptRecordModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -462,7 +463,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 	preloads []string,
 	recordID uint32,
 ) (*ScriptRecordModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -496,7 +497,7 @@ func (uc *RecordUsecase) ListcriptRecord(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]ScriptRecordModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 

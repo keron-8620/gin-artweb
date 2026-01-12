@@ -18,6 +18,7 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/archive"
+	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/fileutil"
 	"gin-artweb/pkg/serializer"
 )
@@ -76,7 +77,7 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 	ctx context.Context,
 	m MdsColonyModel,
 ) (*MdsColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -118,7 +119,7 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 	mdsColonyID uint32,
 	data map[string]any,
 ) (*MdsColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -162,7 +163,7 @@ func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
 	ctx context.Context,
 	mdsColonyID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -195,7 +196,7 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 	preloads []string,
 	mdsColonyID uint32,
 ) (*MdsColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -229,7 +230,7 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]MdsColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -259,7 +260,7 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 }
 
 func (uc *MdsColonyUsecase) GetMdsTaskStatus(ctx context.Context, colonyNum string) (*pbColony.MdsTaskStatus, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -291,7 +292,7 @@ func (uc *MdsColonyUsecase) GetMdsTaskStatus(ctx context.Context, colonyNum stri
 }
 
 func (uc *MdsColonyUsecase) getTaskInfo(ctx context.Context, pattern string) (string, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return "", errors.FromError(err)
 	}
 
@@ -342,7 +343,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	ctx context.Context,
 	m *MdsColonyModel,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

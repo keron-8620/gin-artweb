@@ -13,6 +13,7 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/serializer"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const MdsNodeIDKey = "mds_node_id"
@@ -69,7 +70,7 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 	ctx context.Context,
 	m MdsNodeModel,
 ) (*MdsNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -111,7 +112,7 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 	mdsNodeID uint32,
 	data map[string]any,
 ) (*MdsNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -155,7 +156,7 @@ func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
 	ctx context.Context,
 	mdsNodeID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -188,7 +189,7 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 	preloads []string,
 	mdsNodeID uint32,
 ) (*MdsNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -222,7 +223,7 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]MdsNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -252,7 +253,7 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 }
 
 func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeModel) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

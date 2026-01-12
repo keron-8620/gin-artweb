@@ -12,6 +12,7 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/serializer"
 )
 
@@ -69,7 +70,7 @@ func (uc *OesNodeUsecase) CreateOesNode(
 	ctx context.Context,
 	m OesNodeModel,
 ) (*OesNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -111,7 +112,7 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 	oesNodeID uint32,
 	data map[string]any,
 ) (*OesNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -155,7 +156,7 @@ func (uc *OesNodeUsecase) DeleteOesNodeByID(
 	ctx context.Context,
 	oesNodeID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -188,7 +189,7 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 	preloads []string,
 	oesNodeID uint32,
 ) (*OesNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -222,7 +223,7 @@ func (uc *OesNodeUsecase) ListOesNode(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]OesNodeModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -252,7 +253,7 @@ func (uc *OesNodeUsecase) ListOesNode(
 }
 
 func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeModel) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

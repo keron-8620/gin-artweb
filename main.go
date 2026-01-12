@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -181,9 +182,6 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 	// 初始化服务器日志记录器
 	loggers := NewLoggers(conf.Log)
 
-	// 初始化随机数生成器
-	nonceStore := common.NewNonceStore()
-
 	// 初始化casbin 权限管理
 	enf, err := auth.NewCasbinEnforcer()
 	if err != nil {
@@ -222,11 +220,7 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 			DBTimeout: &dbTimeout,
 			Enforcer:  enf,
 			Crontab:   ct,
-			Nonce:     nonceStore,
 		}, func() {
-			// 关闭随机数缓存
-			nonceStore.Close()
-
 			// 关闭计划任务
 			if ct != nil {
 				cronLogger.Info("正在关闭计划任务...")
@@ -272,8 +266,13 @@ func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 
 	// 注册时间戳处理中间件,用于防御重放攻击
 	if init.Conf.Security.Timestamp.CheckTimestamp {
+		// 设置缓存过期时间为容忍度+未来容忍度，确保过期的nonce自动清除
+		nonceCache := cache.New(
+			time.Duration(init.Conf.Security.Timestamp.Tolerance)*time.Millisecond, // 默认过期时间
+			1*time.Minute, // 清理间隔
+		)
 		r.Use(middleware.TimestampMiddleware(
-			init.Nonce,
+			nonceCache,
 			loggers.Service,
 			int64(init.Conf.Security.Timestamp.Tolerance),
 			int64(init.Conf.Security.Timestamp.FutureTolerance),

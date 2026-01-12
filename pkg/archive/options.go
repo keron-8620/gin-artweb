@@ -3,6 +3,7 @@ package archive
 import (
 	"context"
 	"fmt"
+	"gin-artweb/pkg/ctxutil"
 	"io"
 	"os"
 	"path/filepath"
@@ -88,10 +89,8 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 	buf := make([]byte, bufferSize)
 
 	for {
-		select {
-		case <-ctx.Done():
-			return written, ctx.Err()
-		default:
+		if err := ctxutil.CheckContext(ctx); err != nil {
+			return written, err
 		}
 
 		n, err := src.Read(buf)

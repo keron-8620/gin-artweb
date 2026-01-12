@@ -12,6 +12,7 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const ScriptIDKey = "script_id"
@@ -81,7 +82,7 @@ func (uc *ScriptUsecase) CreateScript(
 	ctx context.Context,
 	m ScriptModel,
 ) (*ScriptModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -114,7 +115,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	scriptID uint32,
 	data map[string]any,
 ) (*ScriptModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -161,7 +162,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 	ctx context.Context,
 	scriptID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -210,7 +211,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 	ctx context.Context,
 	scriptID uint32,
 ) (*ScriptModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -243,7 +244,7 @@ func (uc *ScriptUsecase) ListScript(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]ScriptModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -273,7 +274,7 @@ func (uc *ScriptUsecase) ListScript(
 }
 
 func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

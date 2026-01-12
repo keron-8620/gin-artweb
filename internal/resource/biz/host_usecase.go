@@ -20,6 +20,7 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/serializer"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -95,7 +96,7 @@ func (uc *HostUsecase) CreateHost(
 	m HostModel,
 	password string,
 ) (*HostModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -136,7 +137,7 @@ func (uc *HostUsecase) UpdateHostById(
 	m HostModel,
 	password string,
 ) (*HostModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -187,7 +188,7 @@ func (uc *HostUsecase) DeleteHostById(
 	ctx context.Context,
 	hostId uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -231,7 +232,7 @@ func (uc *HostUsecase) FindHostById(
 	ctx context.Context,
 	hostId uint32,
 ) (*HostModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -264,7 +265,7 @@ func (uc *HostUsecase) ListHost(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]HostModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -299,7 +300,7 @@ func (uc *HostUsecase) TestSSHConnection(
 	port uint16,
 	user, password string,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -385,7 +386,7 @@ func (uc *HostUsecase) TestSSHConnection(
 }
 
 func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

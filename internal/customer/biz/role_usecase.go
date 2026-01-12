@@ -9,6 +9,7 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -104,7 +105,7 @@ func (uc *RoleUsecase) GetPermissions(
 	ctx context.Context,
 	permIDs []uint32,
 ) (*[]PermissionModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -144,7 +145,7 @@ func (uc *RoleUsecase) GetMenus(
 	ctx context.Context,
 	menuIDs []uint32,
 ) (*[]MenuModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -184,7 +185,7 @@ func (uc *RoleUsecase) GetButtons(
 	ctx context.Context,
 	buttonIDs []uint32,
 ) (*[]ButtonModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -227,7 +228,7 @@ func (uc *RoleUsecase) CreateRole(
 	buttonIDs []uint32,
 	m RoleModel,
 ) (*RoleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -305,7 +306,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 	buttonIDs []uint32,
 	data map[string]any,
 ) (*RoleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -383,7 +384,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 	ctx context.Context,
 	roleID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -431,7 +432,7 @@ func (uc *RoleUsecase) FindRoleByID(
 	preloads []string,
 	roleID uint32,
 ) (*RoleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -465,7 +466,7 @@ func (uc *RoleUsecase) ListRole(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]RoleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -494,7 +495,7 @@ func (uc *RoleUsecase) ListRole(
 }
 
 func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

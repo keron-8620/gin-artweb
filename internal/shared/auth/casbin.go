@@ -8,7 +8,7 @@ import (
 	"github.com/casbin/casbin/v2/model"
 	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
 
-	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 func NewCasbinEnforcer() (*casbin.Enforcer, error) {
@@ -75,7 +75,7 @@ func RoleToSubject(pk uint32) string {
 // rules: 要添加的策略规则列表，每个规则是一个字符串切片
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 参数校验
@@ -94,7 +94,7 @@ func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) 
 // // rules: 要移除的策略规则列表，每个规则是一个字符串切片
 // // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 参数校验
@@ -112,7 +112,7 @@ func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act strin
 // AddGroupPolicies 批量添加用户组策略规则
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 参数校验
@@ -130,7 +130,7 @@ func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) 
 // RemoveGroupPolicies 批量移除用户组策略规则
 // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func RemoveGroupPolicy(ctx context.Context, enf *casbin.Enforcer, index int, value string) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 	// 参数校验

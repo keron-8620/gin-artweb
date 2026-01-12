@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 // Zip 压缩文件或目录为ZIP格式
@@ -15,7 +15,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
 
 	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
+	if err := ctxutil.CheckContext(options.Context); err != nil {
 		return err
 	}
 
@@ -54,7 +54,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 			}
 
 			// 检查上下文
-			if err := errors.CheckContext(options.Context); err != nil {
+			if err := ctxutil.CheckContext(options.Context); err != nil {
 				return err
 			}
 
@@ -159,7 +159,7 @@ func Unzip(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
 
 	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
+	if err := ctxutil.CheckContext(options.Context); err != nil {
 		return err
 	}
 
@@ -180,7 +180,7 @@ func Unzip(src, dst string, opts ...ArchiveOption) error {
 	// 遍历zip中的文件
 	for _, file := range reader.File {
 		// 检查上下文
-		if err := errors.CheckContext(options.Context); err != nil {
+		if err := ctxutil.CheckContext(options.Context); err != nil {
 			return err
 		}
 
@@ -248,7 +248,7 @@ func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
 	options := applyOptions(opts...)
 
 	// 检查上下文
-	if err := errors.CheckContext(options.Context); err != nil {
+	if err := ctxutil.CheckContext(options.Context); err != nil {
 		return "", err
 	}
 
@@ -266,7 +266,7 @@ func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
 	// 遍历zip中的文件
 	for _, file := range reader.File {
 		// 检查上下文
-		if err := errors.CheckContext(options.Context); err != nil {
+		if err := ctxutil.CheckContext(options.Context); err != nil {
 			return "", err
 		}
 

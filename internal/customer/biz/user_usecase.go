@@ -14,6 +14,7 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/crypto"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -89,7 +90,7 @@ func (uc *UserUsecase) GetRole(
 	ctx context.Context,
 	roleID uint32,
 ) (*RoleModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -122,7 +123,7 @@ func (uc *UserUsecase) CreateUser(
 	ctx context.Context,
 	m UserModel,
 ) (*UserModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -176,7 +177,7 @@ func (uc *UserUsecase) UpdateUserByID(
 	userID uint32,
 	data map[string]any,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -256,7 +257,7 @@ func (uc *UserUsecase) DeleteUserByID(
 	ctx context.Context,
 	userID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -289,7 +290,7 @@ func (uc *UserUsecase) FindUserByID(
 	preloads []string,
 	userID uint32,
 ) (*UserModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -325,7 +326,7 @@ func (uc *UserUsecase) FindUserByName(
 	preloads []string,
 	username string,
 ) (*UserModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -360,7 +361,7 @@ func (uc *UserUsecase) ListUser(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]UserModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -391,7 +392,7 @@ func (uc *UserUsecase) ListUser(
 }
 
 func (uc *UserUsecase) CheckPasswordStrength(ctx context.Context, pwd string) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -419,7 +420,7 @@ func (uc *UserUsecase) CheckPasswordStrength(ctx context.Context, pwd string) *e
 }
 
 func (uc *UserUsecase) HashPassword(ctx context.Context, pwd string) (string, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return "", errors.FromError(err)
 	}
 
@@ -451,7 +452,7 @@ func (uc *UserUsecase) Login(
 	password string,
 	ipAddress string,
 ) (string, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return "", errors.FromError(err)
 	}
 
@@ -628,7 +629,7 @@ func (uc *UserUsecase) Login(
 }
 
 func (uc *UserUsecase) VerifyPassword(ctx context.Context, pwd, hash string) (bool, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return false, errors.FromError(err)
 	}
 
@@ -658,7 +659,7 @@ func (uc *UserUsecase) NewUserClaims(
 	ctx context.Context,
 	m UserModel,
 ) (*auth.UserClaims, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -691,7 +692,7 @@ func (uc *UserUsecase) NewUserClaims(
 }
 
 func (uc *UserUsecase) UserClaimsToToken(ctx context.Context, claims auth.UserClaims) (string, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return "", errors.FromError(err)
 	}
 

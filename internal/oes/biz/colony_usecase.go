@@ -21,6 +21,7 @@ import (
 	"gin-artweb/pkg/archive"
 	"gin-artweb/pkg/fileutil"
 	"gin-artweb/pkg/serializer"
+	"gin-artweb/pkg/ctxutil"
 )
 
 const OesColonyIDKey = "oes_colony_id"
@@ -82,7 +83,7 @@ func (uc *OesColonyUsecase) CreateOesColony(
 	ctx context.Context,
 	m OesColonyModel,
 ) (*OesColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -124,7 +125,7 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 	oesColonyID uint32,
 	data map[string]any,
 ) (*OesColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -168,7 +169,7 @@ func (uc *OesColonyUsecase) DeleteOesColonyByID(
 	ctx context.Context,
 	oesColonyID uint32,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 
@@ -201,7 +202,7 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 	preloads []string,
 	oesColonyID uint32,
 ) (*OesColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -235,7 +236,7 @@ func (uc *OesColonyUsecase) ListOesColony(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]OesColonyModel, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, nil, errors.FromError(err)
 	}
 
@@ -265,7 +266,7 @@ func (uc *OesColonyUsecase) ListOesColony(
 }
 
 func (uc *OesColonyUsecase) GetStkTaskStatus(ctx context.Context, colonyNum string) (*pbColony.StkTaskStatus, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -312,7 +313,7 @@ func (uc *OesColonyUsecase) GetStkTaskStatus(ctx context.Context, colonyNum stri
 }
 
 func (uc *OesColonyUsecase) GetCrdTaskStatus(ctx context.Context, colonyNum string) (*pbColony.CrdTaskStatus, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -365,7 +366,7 @@ func (uc *OesColonyUsecase) GetCrdTaskStatus(ctx context.Context, colonyNum stri
 }
 
 func (uc *OesColonyUsecase) GetOptTaskStatus(ctx context.Context, colonyNum string) (*pbColony.OptTaskStatus, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
 
@@ -405,7 +406,7 @@ func (uc *OesColonyUsecase) GetOptTaskStatus(ctx context.Context, colonyNum stri
 }
 
 func (uc *OesColonyUsecase) getTaskStatus(ctx context.Context, pattern string) (string, *errors.Error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return "", errors.FromError(err)
 	}
 
@@ -456,7 +457,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 	ctx context.Context,
 	m *OesColonyModel,
 ) *errors.Error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
 	}
 

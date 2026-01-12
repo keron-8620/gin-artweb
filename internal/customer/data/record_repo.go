@@ -13,8 +13,8 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
-	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type loginRecordRepo struct {
@@ -109,7 +109,7 @@ func (r *loginRecordRepo) ListModel(
 
 func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
 	// 检查上下文
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return 0, err
 	}
 
@@ -148,7 +148,7 @@ func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 
 func (r *loginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
 	// 检查上下文
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 

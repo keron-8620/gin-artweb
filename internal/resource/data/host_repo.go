@@ -15,8 +15,8 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
-	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type hostRepo struct {
@@ -198,7 +198,7 @@ func (r *hostRepo) NewSSHClient(
 	addr string,
 	c ssh.ClientConfig,
 ) (*ssh.Client, error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, err
 	}
 	r.log.Debug(
@@ -233,7 +233,7 @@ func (r *hostRepo) NewSession(
 	ctx context.Context,
 	client *ssh.Client,
 ) (*ssh.Session, error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, err
 	}
 
@@ -276,7 +276,7 @@ func (r *hostRepo) ExecuteCommand(
 	session *ssh.Session,
 	command string,
 ) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 
@@ -312,7 +312,7 @@ func (r *hostRepo) NewSFTPClient(
 	ctx context.Context,
 	client *ssh.Client,
 ) (*sftp.Client, error) {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, err
 	}
 
@@ -356,7 +356,7 @@ func (r *hostRepo) UploadFile(
 	client *sftp.Client,
 	src, dest string,
 ) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 
@@ -430,7 +430,7 @@ func (r *hostRepo) DownloadFile(
 	client *sftp.Client,
 	src, dest string,
 ) error {
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 

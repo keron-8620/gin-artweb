@@ -14,8 +14,8 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
-	"gin-artweb/internal/shared/errors"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type menuRepo struct {
@@ -244,7 +244,7 @@ func (r *menuRepo) AddGroupPolicy(
 	menu *biz.MenuModel,
 ) error {
 	// 检查上下文
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 
@@ -349,7 +349,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 	removeInherited bool,
 ) error {
 	// 检查上下文
-	if err := errors.CheckContext(ctx); err != nil {
+	if err := ctxutil.CheckContext(ctx); err != nil {
 		return err
 	}
 

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/patrickmn/go-cache"
 	"go.uber.org/zap"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/errors"
 )
 
@@ -50,7 +50,7 @@ var (
 // logger: 日志记录器
 // tolerance: 时间容忍度（毫秒），默认300000（5分钟）
 // futureTolerance: 允许未来时间的容忍度（毫秒），默认60000（1分钟）
-func TimestampMiddleware(nonceStore *common.NonceStore, logger *zap.Logger, tolerance, futureTolerance int64) gin.HandlerFunc {
+func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance, futureTolerance int64) gin.HandlerFunc {
 	// 设置默认值
 	if tolerance <= 0 {
 		tolerance = 300000 // 默认5分钟
@@ -110,13 +110,9 @@ func TimestampMiddleware(nonceStore *common.NonceStore, logger *zap.Logger, tole
 			return
 		}
 
-		// 计算随机数的过期时间（使用tolerance作为过期时间）
-		expiration := time.Duration(tolerance) * time.Millisecond
-
-		// 检查随机数是否已经被使用
-		if !nonceStore.Add(nonce, expiration) {
+		if _, exists := nonceStore.Get(nonce); exists {
 			logger.Error(
-				"检测到重放攻击",
+				"检测到重复的请求，可能存在重放攻击",
 				zap.String("nonce", nonce),
 				zap.Int64("timestamp", timestamp),
 				zap.String("method", c.Request.Method),
@@ -126,7 +122,6 @@ func TimestampMiddleware(nonceStore *common.NonceStore, logger *zap.Logger, tole
 			c.AbortWithStatusJSON(ErrReplayAttack.Code, ErrReplayAttack.ToMap())
 			return
 		}
-
 		c.Next()
 	}
 }
