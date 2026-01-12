@@ -104,11 +104,12 @@ func writeYAMLAtomic(filename string, data any, options SerializerOptions, start
 	// 创建临时文件
 	tmpFile := filename + ".tmp"
 
-	// 先写入临时文件
+	// 先写入临时文件，传递所有相关选项
 	result, err := WriteYAML(tmpFile, data,
 		WithContext(options.Context),
 		WithFileMode(options.FileMode),
-		WithDirMode(options.DirMode))
+		WithDirMode(options.DirMode),
+		WithMaxFileSize(options.MaxFileSize))
 
 	if err != nil {
 		// 清理临时文件

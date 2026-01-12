@@ -84,11 +84,7 @@ func writeJSON(filename string, data any, options SerializerOptions, startTime t
 	if err != nil {
 		return nil, fmt.Errorf("创建文件 %s 失败: %w", filename, err)
 	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			// 记录日志但不中断主流程
-		}
-	}()
+	defer file.Close()
 
 	// 序列化为JSON并写入文件
 	encoder := json.NewEncoder(file)
