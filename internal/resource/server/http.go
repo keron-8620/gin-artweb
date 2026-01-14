@@ -25,7 +25,7 @@ func NewServer(
 		loggers.Server.Error("数据库自动迁移resource模型失败", zap.Error(err))
 		panic(err)
 	}
-	pubKeys := make([]string, 0, len(init.Signers))
+	pubKeys := make([]string, len(init.Signers))
 	for i, signer := range init.Signers {
 		pubKeyBytes := ssh.MarshalAuthorizedKey(signer.PublicKey())
 		pubKeys[i] = base64.StdEncoding.EncodeToString(pubKeyBytes)

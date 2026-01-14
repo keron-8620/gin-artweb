@@ -7,6 +7,7 @@
     file_type: file
     use_regex: yes
     patterns: "{{ item }}"
+    size: "1"
   with_items: "{{ bse_check_files_list }}"
   register: find_res
 

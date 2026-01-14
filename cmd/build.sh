@@ -17,9 +17,9 @@ if [ -f "$basepath/bin/gin-artweb" ]; then
 fi
 
 # 注入版本、Commit ID、构建时间等
-VERSION="0.17.7.0.1"
-COMMIT_ID=$(git rev-parse --short HEAD)  # 获取Git短Commit ID
-BUILD_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+VERSION="0.17.7.0.1" # 项目版本号
+COMMIT_ID=$(git rev-parse --short HEAD) # 获取Git短Commit ID
+BUILD_TIME=$(date +"%Y-%m-%d %H:%M:%S") # 获取当前时间
 
 # 编译程序
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
@@ -36,7 +36,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
   -o bin/gin-artweb main.go
 
 # 构建镜像
-podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION} .
+# podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION} .
 
 # 推送镜像
 # podman push swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION}
