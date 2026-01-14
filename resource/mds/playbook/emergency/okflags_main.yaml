@@ -1,0 +1,15 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: mds touch flags
+      file:
+        path: "{{ slave_path_mds_home_data_flags }}/{{ item }}"
+        state: touch
+      with_items:
+        - "{{ fetch_sse_ok }}"
+        - "{{ fetch_szse_ok }}"
+        - "{{ fetch_mon_ok }}"

@@ -8,4 +8,4 @@ colony_num=$1
 
 shift 1
 
-./playbook.py --playbook_path collector/bse_gateway/bse_main.yml --colony_num $colony_num "$@"
+./playbook.py --playbook_path collector/bse_gateway/bse_main.yaml --colony_num $colony_num "$@"

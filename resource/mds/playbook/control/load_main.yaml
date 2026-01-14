@@ -1,0 +1,21 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: check .ok file in salve
+      wait_for:
+        path: "{{ slave_path_mds_home_data_flags }}/{{ item }}"
+        state: present
+        timeout: 1
+      with_items:
+        - "{{ fetch_sse_ok }}"
+        - "{{ fetch_szse_ok }}"
+        - "{{ fetch_mon_ok }}"
+
+    - name: load_data
+      command: ./mds load -D -N
+      args:
+        chdir: "{{ slave_path_mds_home_bin }}"

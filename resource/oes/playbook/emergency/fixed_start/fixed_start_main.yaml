@@ -1,0 +1,15 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../../common/base_vars.yaml
+
+  tasks:
+    - include_tasks: ./fixed_start_master.yaml
+      when: runner_nodes == "master"
+
+    - include_tasks: ./fixed_start_follow.yaml
+      when: runner_nodes == "follow"
+
+    - include_tasks: ./fixed_start_arbiter.yaml
+      when: runner_nodes == "arbiter"

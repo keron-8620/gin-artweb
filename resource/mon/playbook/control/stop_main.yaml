@@ -1,0 +1,13 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: stop mon
+      command: sh stop.sh
+      args:
+        chdir: "{{ slave_path_mon_home }}"
+      ignore_errors: True
+      register: stop_res

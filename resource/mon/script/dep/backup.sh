@@ -6,4 +6,4 @@ mon_id=$1
 
 shift 1
 
-./playbook.py --playbook_path dep/backup.yml --mon_id $mon_id "$@"
+./playbook.py --playbook_path dep/backup.yaml --mon_id $mon_id "$@"

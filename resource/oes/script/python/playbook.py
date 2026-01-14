@@ -116,7 +116,7 @@ def init_vars(config_path: Path, extravars: str = ""):
             if "=" in item:
                 key, value = item.split("=", 1)
                 vars[key.strip()] = value.strip()
-    trd_data_path = BASE_DIR.joinpath("config", "TrdDateList.yml")
+    trd_data_path = BASE_DIR.joinpath("config", "TrdDateList.yaml")
     if not trd_data_path.exists():
         raise FileNotFoundError(f"缺少交易日历文件: {trd_data_path}")
     with open(trd_data_path, "r") as f:

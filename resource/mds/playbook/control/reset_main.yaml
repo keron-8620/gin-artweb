@@ -1,0 +1,24 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: init mds runner nodes
+      set_fact:
+        mds_runner_nodes: "{{ (runner_nodes | default('master,follow,arbiter')).split(',') }}"
+      delegate_to: 127.0.0.1
+      run_once: true
+
+    - name: display mds runner nodes
+      debug:
+        var: mds_runner_nodes 
+      delegate_to: 127.0.0.1
+      run_once: true
+
+    - name: mds reset
+      command: ./mds reset -Y -F
+      args:
+        chdir: "{{ slave_path_mds_home_bin }}"
+      when: node_role in mds_runner_nodes

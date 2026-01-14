@@ -66,7 +66,7 @@ def create_sse_var_file(colony_num: str, automatic: Dict, mon_etf_path: Path, co
     if sse_etf_check_counter_files:
         counter_etf_files, _ = get_etc_check_files(counter_etf_path)
         all_etf_files += counter_etf_files
-    tmp_path = OES_DIR.joinpath(".tmp", colony_num, "sse_etf.yml")
+    tmp_path = OES_DIR.joinpath(".tmp", colony_num, "sse_etf.yaml")
     if not tmp_path.parent.exists():
         tmp_path.parent.mkdir(parents=True, exist_ok=True)
     with open(tmp_path, "w") as f:
@@ -83,7 +83,7 @@ def create_szse_var_file(colony_num: str, automatic: Dict, mon_etf_path: Path, c
     if szse_etf_check_counter_files:
         _, counter_etf_files = get_etc_check_files(counter_etf_path)
         all_etf_files += counter_etf_files
-    tmp_path = OES_DIR.joinpath(".tmp", colony_num, "szse_etf.yml")
+    tmp_path = OES_DIR.joinpath(".tmp", colony_num, "szse_etf.yaml")
     if not tmp_path.parent.exists():
         tmp_path.parent.mkdir(parents=True, exist_ok=True)
     with open(tmp_path, "w") as f:
@@ -91,7 +91,7 @@ def create_szse_var_file(colony_num: str, automatic: Dict, mon_etf_path: Path, c
 
 
 def main(task: str, colony_num: str, curr_date: Optional[str] = None):
-    automatic_path = OES_DIR.joinpath("config", colony_num, "all", "automatic.yml")
+    automatic_path = OES_DIR.joinpath("config", colony_num, "all", "automatic.yaml")
     if not automatic_path.exists():
         raise FileNotFoundError(f"no such file: {automatic_path}")
     with open(automatic_path, "r") as f:

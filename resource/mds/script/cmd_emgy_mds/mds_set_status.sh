@@ -12,4 +12,4 @@ task_status=$3
 
 shift 3
 
-./playbook.py --playbook_path emergency/set_status_main.yml --colony_num $colony_num --extravars "task_name=$task_name;task_status=$task_status" "$@"
+./playbook.py --playbook_path emergency/set_status_main.yaml --colony_num $colony_num --extravars "task_name=$task_name;task_status=$task_status" "$@"

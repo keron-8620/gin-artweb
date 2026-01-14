@@ -8,4 +8,4 @@ colony_num=$1
 
 shift 1
 
-./playbook.py --playbook_path collector/counter_distribute/distribute_main.yml --colony_num $colony_num "$@"
+./playbook.py --playbook_path collector/counter_distribute/distribute_main.yaml --colony_num $colony_num "$@"

@@ -1,0 +1,11 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: oes stop
+      command: ./oes stop -F
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"

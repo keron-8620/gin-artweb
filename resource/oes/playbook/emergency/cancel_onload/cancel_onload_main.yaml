@@ -1,0 +1,15 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - include_tasks: ./restart_all.yaml
+      when: process_name == "all"
+
+    - include_tasks: ./restart_reporter.yaml
+      when: process_name == "reporter"
+
+    - include_tasks: ./restart_receiver.yaml
+      when: process_name == "receiver"

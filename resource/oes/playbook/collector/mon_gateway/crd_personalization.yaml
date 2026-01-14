@@ -1,0 +1,8 @@
+---
+
+- name: yhzq crd personalization
+  command: "rsync -az --exclude='*/' -e 'ssh -p {{ mon_host.ansible_port }}' {{ local_path_oes_home_mon_colodir }}/CrdSecuritySector.csv {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_host.slave_path_mon_home }}/config-upload/config-counter/{{ items }}"
+  ignore_errors: yes
+  with_items: "{{ art_to_mon_files }}"
+  delegate_to: 127.0.0.1
+  run_once: true

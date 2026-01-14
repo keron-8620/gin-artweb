@@ -1,0 +1,23 @@
+---
+
+- hosts: all
+  vars_files:
+    - ../../common/base_vars.yaml
+    - ./counter_vars.yaml
+
+  tasks:
+    - include_tasks: ../../common/load_automatic.yaml
+
+    - include_tasks: ../before_playbook.yaml
+
+    - include_tasks: ./flag_checker.yaml
+
+    - include_tasks: ./local_to_oes.yaml
+      when: xcounter_freezed_ok.stat.exists
+
+    - include_tasks: ./local_to_othrt_art.yaml
+      when: xcounter_freezed_ok.stat.exists and is_enable_counter_unilateral_freeze == "yes"
+
+    - include_tasks: ./counter_checker.yaml
+
+    - include_tasks: ../after_playbook.yaml

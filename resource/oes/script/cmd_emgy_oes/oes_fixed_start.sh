@@ -10,4 +10,4 @@ runner_nodes=$2
 
 shift 2
 
-./playbook.py --playbook_path emergency/fixed_start/fixed_start_main.yml --colony_num $colony_num --extravars "runner_nodes=$runner_nodes" "$@"
+./playbook.py --playbook_path emergency/fixed_start/fixed_start_main.yaml --colony_num $colony_num --extravars "runner_nodes=$runner_nodes" "$@"

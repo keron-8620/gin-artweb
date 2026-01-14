@@ -1,0 +1,19 @@
+---
+
+- hosts: all
+  vars_files:
+    - ../../common/base_vars.yaml
+    - ./szse_vars.yaml
+    
+  tasks:
+    - include_tasks: ../../common/load_automatic.yaml
+
+    - include_tasks: ../before_playbook.yaml
+
+    - include_tasks: ./gateway_to_local.yaml
+
+    - include_tasks: ./local_to_oes.yaml
+
+    - include_tasks: ./szse_checker.yaml
+
+    - include_tasks: ../after_playbook.yaml

@@ -1,0 +1,43 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: stop oes
+      command: ./oes stop -F
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+
+    - name: start master oes
+      command: ./oes start
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+      when: node_role == "master"
+
+    - name: start follow oes
+      command: ./oes start
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+      when: node_role != "master"
+
+    - name: wait 60s
+      pause:
+        seconds: 60
+      delegate_to: 127.0.0.1
+      run_once: true
+
+    - name: get current time
+      command: date +%H%M
+      register: current_time
+      delegate_to: localhost
+      run_once: true
+
+    - name: master oes open
+      command: ./oes open
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+      when: 
+        - node_role == "master"
+        - current_time.stdout >= "0900"
