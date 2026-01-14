@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	golog "log"
@@ -27,6 +28,7 @@ import (
 	mon "gin-artweb/internal/mon/server"
 	oes "gin-artweb/internal/oes/server"
 	resource "gin-artweb/internal/resource/server"
+	"gin-artweb/pkg/shell"
 
 	"gin-artweb/docs"
 	"gin-artweb/internal/shared/auth"
@@ -182,10 +184,20 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 	// 初始化服务器日志记录器
 	loggers := NewLoggers(conf.Log)
 
+	signers, err := shell.GetSignersFromDefaultKeys()
+	if err != nil {
+		loggers.Server.Error("初始化加载ssh密钥失败", zap.Error(err))
+		return nil, nil, nil, err
+	}
+	if len(signers) == 0 {
+		loggers.Server.Error("没有可用的SSH密钥")
+		return nil, nil, nil, errors.New("没有可用的SSH密钥")
+	}
+
 	// 初始化casbin 权限管理
 	enf, err := auth.NewCasbinEnforcer()
 	if err != nil {
-		loggers.Server.Fatal("Casbin 初始化失败", zap.Error(err))
+		loggers.Server.Error("Casbin 初始化失败", zap.Error(err))
 		return nil, nil, nil, err
 	}
 
@@ -203,7 +215,8 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 	dbConf := database.NewGormConfig(dbLog)
 	db, err := database.NewGormDB(conf.Database, dbConf)
 	if err != nil {
-		loggers.Server.Fatal("数据库连接失败", zap.Error(err))
+		loggers.Server.Error("数据库连接失败", zap.Error(err))
+		return nil, nil, nil, err
 	}
 
 	// 初始化数据库超时配置
@@ -220,6 +233,7 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 			DBTimeout: &dbTimeout,
 			Enforcer:  enf,
 			Crontab:   ct,
+			Signers:   signers,
 		}, func() {
 			// 关闭计划任务
 			if ct != nil {

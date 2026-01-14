@@ -2,15 +2,11 @@ package biz
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
-	"github.com/pkg/sftp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/crypto/ssh"
@@ -19,8 +15,8 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/serializer"
 	"gin-artweb/pkg/ctxutil"
+	"gin-artweb/pkg/serializer"
 )
 
 const (
@@ -62,32 +58,31 @@ type HostRepo interface {
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, []string, ...any) (*HostModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]HostModel, error)
-	NewSSHClient(context.Context, string, ssh.ClientConfig) (*ssh.Client, error)
-	NewSession(context.Context, *ssh.Client) (*ssh.Session, error)
+	NewSSHClient(context.Context, string, uint16, string, []ssh.AuthMethod, time.Duration) (*ssh.Client, error)
 	ExecuteCommand(context.Context, *ssh.Session, string) error
-	NewSFTPClient(context.Context, *ssh.Client) (*sftp.Client, error)
-	UploadFile(context.Context, *sftp.Client, string, string) error
-	DownloadFile(context.Context, *sftp.Client, string, string) error
 }
 
 type HostUsecase struct {
-	log      *zap.Logger
-	hostRepo HostRepo
-	signer   ssh.Signer
-	timeout  time.Duration
+	log        *zap.Logger
+	hostRepo   HostRepo
+	sshTimeout time.Duration
+	authMethod ssh.AuthMethod
+	pubKeyB64s []string
 }
 
 func NewHostUsecase(
 	log *zap.Logger,
 	hostRepo HostRepo,
-	signer ssh.Signer,
-	timeout time.Duration,
+	sshTimeout time.Duration,
+	authMethod ssh.AuthMethod,
+	pubKeyB64s []string,
 ) *HostUsecase {
 	return &HostUsecase{
-		log:      log,
-		hostRepo: hostRepo,
-		signer:   signer,
-		timeout:  timeout,
+		log:        log,
+		hostRepo:   hostRepo,
+		sshTimeout: sshTimeout,
+		authMethod: authMethod,
+		pubKeyB64s: pubKeyB64s,
 	}
 }
 
@@ -296,9 +291,9 @@ func (uc *HostUsecase) ListHost(
 
 func (uc *HostUsecase) TestSSHConnection(
 	ctx context.Context,
-	ip string,
-	port uint16,
-	user, password string,
+	sshIP string,
+	sshPort uint16,
+	sshUser, sshPassword string,
 ) *errors.Error {
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return errors.FromError(err)
@@ -306,80 +301,87 @@ func (uc *HostUsecase) TestSSHConnection(
 
 	uc.log.Info(
 		"开始测试ssh连接",
-		zap.String("ssh_ip", ip),
-		zap.Uint16("ssh_port", port),
-		zap.String("ssh_user", user),
+		zap.String("ssh_ip", sshIP),
+		zap.Uint16("ssh_port", sshPort),
+		zap.String("ssh_user", sshUser),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	sshConfig := ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(uc.signer),
-			ssh.Password(password),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         uc.timeout,
+	cli, err := uc.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, []ssh.AuthMethod{uc.authMethod}, uc.sshTimeout)
+	if err == nil {
+		uc.log.Info(
+			"主机已认证并部署密钥的主机",
+			zap.String("ssh_ip", sshIP),
+			zap.Uint16("ssh_port", sshPort),
+			zap.String("ssh_user", sshUser),
+			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		)
+		cli.Close()
+		return nil
 	}
 
-	addr := net.JoinHostPort(ip, strconv.FormatUint(uint64(port), 10))
-	client, err := uc.hostRepo.NewSSHClient(ctx, addr, sshConfig)
+	sshAuths := []ssh.AuthMethod{
+		ssh.Password(sshPassword),
+	}
+
+	client, err := uc.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, uc.sshTimeout)
 	if err != nil {
 		uc.log.Error(
 			"创建ssh连接失败",
 			zap.Error(err),
-			zap.String("ssh_ip", ip),
-			zap.Uint16("ssh_port", port),
-			zap.String("ssh_user", user),
+			zap.String("ssh_ip", sshIP),
+			zap.Uint16("ssh_port", sshPort),
+			zap.String("ssh_user", sshUser),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
 	}
 	defer client.Close()
 
-	session, err := uc.hostRepo.NewSession(ctx, client)
+	session, err := client.NewSession()
 	if err != nil {
 		uc.log.Error(
 			"创建ssh session失败",
 			zap.Error(err),
-			zap.String("ssh_ip", ip),
-			zap.Uint16("ssh_port", port),
-			zap.String("ssh_user", user),
+			zap.String("ssh_ip", sshIP),
+			zap.Uint16("ssh_port", sshPort),
+			zap.String("ssh_user", sshUser),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
 	}
 	defer session.Close()
 
-	pubKeyBytes := ssh.MarshalAuthorizedKey(uc.signer.PublicKey())
-	pubKeyB64 := base64.StdEncoding.EncodeToString(pubKeyBytes)
-	script := `
-		mkdir -p ~/.ssh
-		tmp_key=$(mktemp)
-		echo '` + pubKeyB64 + `' | base64 -d > "$tmp_key"
-		if ! grep -Fq "$(cat "$tmp_key")" ~/.ssh/authorized_keys 2>/dev/null; then
-			cat "$tmp_key" >> ~/.ssh/authorized_keys
-		fi
-		rm -f "$tmp_key"
-		chmod 700 ~/.ssh
-		chmod 600 ~/.ssh/authorized_keys
-	`
-	if err := uc.hostRepo.ExecuteCommand(ctx, session, script); err != nil {
-		uc.log.Error(
-			"部署ssh公钥失败",
-			zap.Error(err),
-			zap.String("ssh_ip", ip),
-			zap.Uint16("ssh_port", port),
-			zap.String("ssh_user", user),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		)
-		return ErrSSHKeyDeployment.WithCause(err)
+	for _, pubKeyB64 := range uc.pubKeyB64s {
+		script := `
+			mkdir -p ~/.ssh
+			tmp_key=$(mktemp)
+			echo '` + pubKeyB64 + `' | base64 -d > "$tmp_key"
+			if ! grep -Fq "$(cat "$tmp_key")" ~/.ssh/authorized_keys 2>/dev/null; then
+				cat "$tmp_key" >> ~/.ssh/authorized_keys
+			fi
+			rm -f "$tmp_key"
+			chmod 700 ~/.ssh
+			chmod 600 ~/.ssh/authorized_keys
+		`
+		if err := uc.hostRepo.ExecuteCommand(ctx, session, script); err != nil {
+			uc.log.Error(
+				"部署ssh公钥失败",
+				zap.Error(err),
+				zap.String("ssh_ip", sshIP),
+				zap.Uint16("ssh_port", sshPort),
+				zap.String("ssh_user", sshUser),
+				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			)
+			return ErrSSHKeyDeployment.WithCause(err)
+		}
 	}
+
 	uc.log.Info(
 		"测试ssh连接通过",
-		zap.String("ssh_ip", ip),
-		zap.Uint16("ssh_port", port),
-		zap.String("ssh_user", user),
+		zap.String("ssh_ip", sshIP),
+		zap.Uint16("ssh_port", sshPort),
+		zap.String("ssh_user", sshUser),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	return nil

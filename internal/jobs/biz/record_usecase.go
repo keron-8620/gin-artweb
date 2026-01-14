@@ -78,7 +78,7 @@ func (m *ScriptRecordModel) InitEnv() []string {
 }
 
 func (m *ScriptRecordModel) LogPath() string {
-	return filepath.Join(config.LogDir, m.CreatedAt.Format(time.DateOnly), m.LogName)
+	return filepath.Join(config.StorageDir, "logs", m.CreatedAt.Format(time.DateOnly), m.LogName)
 }
 
 type ScriptRecordRepo interface {

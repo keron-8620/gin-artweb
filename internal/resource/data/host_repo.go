@@ -2,11 +2,8 @@ package data
 
 import (
 	"context"
-	"io"
-	"os"
 	"time"
 
-	"github.com/pkg/sftp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
@@ -17,6 +14,7 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/pkg/ctxutil"
+	"gin-artweb/pkg/shell"
 )
 
 type hostRepo struct {
@@ -195,25 +193,30 @@ func (r *hostRepo) ListModel(
 
 func (r *hostRepo) NewSSHClient(
 	ctx context.Context,
-	addr string,
-	c ssh.ClientConfig,
+	sshIP string,
+	sshPort uint16,
+	sshUser string,
+	sshAuths []ssh.AuthMethod,
+	timeout time.Duration,
 ) (*ssh.Client, error) {
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, err
 	}
 	r.log.Debug(
 		"开始创建ssh连接",
-		zap.String("addr", addr),
-		zap.String("username", c.User),
+		zap.String("ssh_ip", sshIP),
+		zap.Uint16("ssh_port", sshPort),
+		zap.String("ssh_user", sshUser),
 	)
 	startTime := time.Now()
-	client, err := ssh.Dial("tcp", addr, &c)
+	client, err := shell.NewSSHClient(sshIP, sshPort, sshUser, sshAuths, false, timeout)
 	if err != nil {
 		r.log.Error(
 			"创建ssh连接失败",
 			zap.Error(err),
-			zap.String("addr", addr),
-			zap.String("username", c.User),
+			zap.String("ssh_ip", sshIP),
+			zap.Uint16("ssh_port", sshPort),
+			zap.String("ssh_user", sshUser),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
@@ -221,54 +224,13 @@ func (r *hostRepo) NewSSHClient(
 	}
 	r.log.Debug(
 		"创建ssh连接成功",
-		zap.String("addr", addr),
-		zap.String("username", c.User),
+		zap.String("ssh_ip", sshIP),
+		zap.Uint16("ssh_port", sshPort),
+		zap.String("ssh_user", sshUser),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return client, nil
-}
-
-func (r *hostRepo) NewSession(
-	ctx context.Context,
-	client *ssh.Client,
-) (*ssh.Session, error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, err
-	}
-
-	r.log.Debug(
-		"开始创建ssh会话",
-		zap.String("local_addr", client.LocalAddr().String()),
-		zap.String("remote_addr", client.RemoteAddr().String()),
-		zap.String("username", client.User()),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-	)
-
-	startTime := time.Now()
-	session, err := client.NewSession()
-	if err != nil {
-		r.log.Error(
-			"创建ssh会话失败",
-			zap.Error(err),
-			zap.String("local_addr", client.LocalAddr().String()),
-			zap.String("remote_addr", client.RemoteAddr().String()),
-			zap.String("username", client.User()),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return nil, err
-	}
-
-	r.log.Debug(
-		"创建ssh会话成功",
-		zap.String("local_addr", client.LocalAddr().String()),
-		zap.String("remote_addr", client.RemoteAddr().String()),
-		zap.String("username", client.User()),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		zap.Duration(log.DurationKey, time.Since(startTime)),
-	)
-	return session, nil
 }
 
 func (r *hostRepo) ExecuteCommand(
@@ -301,196 +263,6 @@ func (r *hostRepo) ExecuteCommand(
 	r.log.Debug(
 		"执行命令成功",
 		zap.String("command", command),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		zap.Duration(log.DurationKey, time.Since(startTime)),
-	)
-
-	return nil
-}
-
-func (r *hostRepo) NewSFTPClient(
-	ctx context.Context,
-	client *ssh.Client,
-) (*sftp.Client, error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, err
-	}
-
-	r.log.Debug(
-		"开始创建sftp客户端",
-		zap.String("local_addr", client.LocalAddr().String()),
-		zap.String("remote_addr", client.RemoteAddr().String()),
-		zap.String("username", client.User()),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-	)
-
-	startTime := time.Now()
-	sftpClient, err := sftp.NewClient(client)
-	if err != nil {
-		r.log.Error(
-			"创建SFTP客户端失败",
-			zap.Error(err),
-			zap.String("local_addr", client.LocalAddr().String()),
-			zap.String("remote_addr", client.RemoteAddr().String()),
-			zap.String("username", client.User()),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return nil, err
-	}
-
-	r.log.Debug(
-		"创建sftp客户端成功",
-		zap.String("local_addr", client.LocalAddr().String()),
-		zap.String("remote_addr", client.RemoteAddr().String()),
-		zap.String("username", client.User()),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		zap.Duration(log.DurationKey, time.Since(startTime)),
-	)
-	return sftpClient, nil
-}
-
-// 上传文件
-func (r *hostRepo) UploadFile(
-	ctx context.Context,
-	client *sftp.Client,
-	src, dest string,
-) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
-	}
-
-	r.log.Debug(
-		"开始上传文件",
-		zap.String("src", src),
-		zap.String("dest", dest),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-	)
-
-	startTime := time.Now()
-
-	// 打开源文件
-	localFile, err := os.Open(src)
-	if err != nil {
-		r.log.Error(
-			"打开本地文件失败",
-			zap.Error(err),
-			zap.String("src", src),
-			zap.String("dest", dest),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return err
-	}
-	defer localFile.Close()
-
-	// 创建目标文件
-	remoteFile, err := client.Create(dest)
-	if err != nil {
-		r.log.Error(
-			"创建远程文件失败",
-			zap.Error(err),
-			zap.String("src", src),
-			zap.String("dest", dest),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return err
-	}
-	defer remoteFile.Close()
-
-	// 复制文件内容
-	_, err = io.Copy(remoteFile, localFile)
-	if err != nil {
-		r.log.Error(
-			"复制文件内容失败",
-			zap.Error(err),
-			zap.String("src", src),
-			zap.String("dest", dest),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return err
-	}
-
-	r.log.Debug(
-		"上传文件成功",
-		zap.String("src", src),
-		zap.String("dest", dest),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-		zap.Duration(log.DurationKey, time.Since(startTime)),
-	)
-
-	return nil
-}
-
-// 下载文件
-func (r *hostRepo) DownloadFile(
-	ctx context.Context,
-	client *sftp.Client,
-	src, dest string,
-) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
-	}
-
-	r.log.Debug(
-		"开始下载文件",
-		zap.String("src", src),
-		zap.String("dest", dest),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-	)
-
-	startTime := time.Now()
-
-	// 打开远程文件
-	remoteFile, err := client.Open(src)
-	if err != nil {
-		r.log.Error(
-			"打开远程文件失败",
-			zap.Error(err),
-			zap.String("src", src),
-			zap.String("dest", dest),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return err
-	}
-	defer remoteFile.Close()
-
-	// 创建本地文件
-	localFile, err := os.Create(dest)
-	if err != nil {
-		r.log.Error(
-			"创建本地文件失败",
-			zap.Error(err),
-			zap.String("src", src),
-			zap.String("dest", dest),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return err
-	}
-	defer localFile.Close()
-
-	// 复制文件内容
-	_, err = io.Copy(localFile, remoteFile)
-	if err != nil {
-		r.log.Error(
-			"复制文件内容失败",
-			zap.Error(err),
-			zap.String("src", src),
-			zap.String("dest", dest),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
-			zap.Duration(log.DurationKey, time.Since(startTime)),
-		)
-		return err
-	}
-
-	r.log.Debug(
-		"下载文件成功",
-		zap.String("src", src),
-		zap.String("dest", dest),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)

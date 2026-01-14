@@ -67,3 +67,10 @@ security: # 安全配置
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名
   timeout: 5 # ssh连接超时时间
+
+storage_sync: # 存储同步服务
+  enable: true # 是否启用同步服务
+  remote_host: "192.168.10.12" # 远程主机地址
+  remote_port: 22 # 远程主机端口
+  remote_user: "root" # 远程主机用户名
+  remote_path: "/home/ansible/artweb" # 远程主机路径

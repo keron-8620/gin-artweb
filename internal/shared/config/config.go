@@ -9,13 +9,13 @@ import (
 
 // SystemConf 系统配置结构体
 type SystemConf struct {
-	Server   *ServerConfig `yaml:"server"`
-	Database *DBConf       `yaml:"database"`
-	Log      *LogConfig    `yaml:"log"`
-	CORS     *AllowConfig  `yaml:"cors"`
-	// SMTP     *SMTPConfig      `yaml:"smtp"`
-	Security *SecurityConfig  `yaml:"security"`
-	SSH      *SSHConfig       `yaml:"ssh"`
+	Server            *ServerConfig      `yaml:"server"`
+	Database          *DBConf            `yaml:"database"`
+	Log               *LogConfig         `yaml:"log"`
+	CORS              *AllowConfig       `yaml:"cors"`
+	Security          *SecurityConfig    `yaml:"security"`
+	SSH               *SSHConfig         `yaml:"ssh"`
+	StorageSyncConfig *StorageSyncConfig `yaml:"storage_sync"`
 }
 
 // NewSystemConf 加载系统配置文件

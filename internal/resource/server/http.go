@@ -1,10 +1,12 @@
 package server
 
 import (
+	"encoding/base64"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/ssh"
 
 	"gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/resource/data"
@@ -23,17 +25,17 @@ func NewServer(
 		loggers.Server.Error("数据库自动迁移resource模型失败", zap.Error(err))
 		panic(err)
 	}
+	pubKeys := make([]string, 0, len(init.Signers))
+	for i, signer := range init.Signers {
+		pubKeyBytes := ssh.MarshalAuthorizedKey(signer.PublicKey())
+		pubKeys[i] = base64.StdEncoding.EncodeToString(pubKeyBytes)
+	}
 
 	sshTimeout := time.Duration(init.Conf.SSH.Timeout) * time.Second
-	signer, err := NewSigner(loggers.Data, init.Conf.SSH.Private, sshTimeout)
-	if err != nil {
-		loggers.Server.Error("创建SSH密钥签名失败", zap.Error(err))
-		panic(err)
-	}
 	hostRepo := data.NewHostRepo(loggers.Data, init.DB, init.DBTimeout)
 	pkgRepo := data.NewpackageRepo(loggers.Data, init.DB, init.DBTimeout)
 
-	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, signer, sshTimeout)
+	hostUsecase := biz.NewHostUsecase(loggers.Biz, hostRepo, sshTimeout, ssh.PublicKeys(init.Signers...), pubKeys)
 	pkgUsecase := biz.NewPackageUsecase(loggers.Biz, pkgRepo)
 
 	hostService := service.NewHostService(loggers.Service, hostUsecase)
