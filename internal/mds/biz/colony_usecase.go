@@ -265,22 +265,22 @@ func (uc *MdsColonyUsecase) GetMdsTaskStatus(ctx context.Context, colonyNum stri
 	}
 
 	flagDir := filepath.Join(config.StorageDir, "mds", "flags", colonyNum)
-	flagBaseName := "_collector_" + time.Now().Format("20060102") + ".*"
+	flagBaseName := time.Now().Format("20060102") + ".*"
 
 	// 获取mon任务状态
-	monStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "mon"+flagBaseName))
+	monStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "mon_collector_"+flagBaseName))
 	if err != nil {
 		return nil, errors.FromError(err)
 	}
 
 	// 获取sse任务状态
-	sseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "sse"+flagBaseName))
+	sseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "sse_collector_"+flagBaseName))
 	if err != nil {
 		return nil, errors.FromError(err)
 	}
 
 	// 获取szse任务状态
-	szseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "szse"+flagBaseName))
+	szseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "szse_collector_"+flagBaseName))
 	if err != nil {
 		return nil, errors.FromError(err)
 	}

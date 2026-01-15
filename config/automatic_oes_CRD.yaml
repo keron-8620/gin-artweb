@@ -46,7 +46,7 @@ mon_check_files:                                       # mon获取检查文件�
   - "CrdSecuritySectorDetail.csv"
 #  - "CustTradingBlocklist.csv"
 
-art_to_mon_files:
+mon_crd_cp_files:
   - "CrdSecuritySector.csv"
 ################# mon 相关配置 ##################
 

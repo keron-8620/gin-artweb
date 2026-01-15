@@ -50,7 +50,7 @@ var (
 // logger: 日志记录器
 // tolerance: 时间容忍度（毫秒），默认300000（5分钟）
 // futureTolerance: 允许未来时间的容忍度（毫秒），默认60000（1分钟）
-func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance, futureTolerance int64) gin.HandlerFunc {
+func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance, futureTolerance int64, defaultExpiration time.Duration) gin.HandlerFunc {
 	// 设置默认值
 	if tolerance <= 0 {
 		tolerance = 300000 // 默认5分钟
@@ -122,6 +122,8 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 			c.AbortWithStatusJSON(ErrReplayAttack.Code, ErrReplayAttack.ToMap())
 			return
 		}
+
+		nonceStore.Set(nonce, true, defaultExpiration)
 		c.Next()
 	}
 }

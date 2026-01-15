@@ -1,0 +1,14 @@
+---
+
+- name: send xcounter files to mon
+  command: rsync -az -e 'ssh -p {{ item.slave_port }}' {{ local_path_oes_home_counter_colodir_data_broker }}/ {{ item.slave_user }}@{{ item.slave_host }}:{{ item.slave_path }}/config-upload/config-counter/{{ colony_num }}/
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: yes
+
+- name: copy crd files to mon
+  command: rsync -az -e 'ssh -p {{ item.slave_port }}' {{ items }} {{ item.slave_user }}@{{ item.slave_host }}:{{ item.slave_path }}/config-upload/config-counter/{{ colony_num }}/
+  with_items: "{{ mon_crd_cp_files }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: yes

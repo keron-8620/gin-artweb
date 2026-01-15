@@ -40,12 +40,13 @@ type PagOesColonyReply = common.APIReply[*common.Pag[OesColonyStandardOut]]
 
 // 现货的任务状态
 type StkTaskStatus struct {
-	Mon     string `json:"mon"`
-	Counter string `json:"counter"`
-	Bse     string `json:"bse"`
-	Sse     string `json:"sse"`
-	Szse    string `json:"szse"`
-	Csdc    string `json:"csdc"`
+	Mon               string `json:"mon"`
+	CounterFetch      string `json:"counter_fetch"`
+	CounterDistribute string `json:"counter_distribute"`
+	Bse               string `json:"bse"`
+	Sse               string `json:"sse"`
+	Szse              string `json:"szse"`
+	Csdc              string `json:"csdc"`
 }
 
 // ListStkTaskStatusReply 多个oes现货集群的任务状态响应结构
@@ -53,13 +54,14 @@ type ListStkTaskStatusReply = common.APIReply[map[string]StkTaskStatus]
 
 // 两融的任务状态
 type CrdTaskStatus struct {
-	Mon      string `json:"mon"`
-	Counter  string `json:"counter"`
-	Sse      string `json:"sse"`
-	Szse     string `json:"szse"`
-	SseLate  string `json:"sse_late"`
-	SzseLate string `json:"szse_late"`
-	Csdc     string `json:"csdc"`
+	Mon               string `json:"mon"`
+	CounterFetch      string `json:"counter_fetch"`
+	CounterDistribute string `json:"counter_distribute"`
+	Sse               string `json:"sse"`
+	Szse              string `json:"szse"`
+	SseLate           string `json:"sse_late"`
+	SzseLate          string `json:"szse_late"`
+	Csdc              string `json:"csdc"`
 }
 
 // ListCrdTaskStatusReply 多个oes两融集群的任务状态响应结构
@@ -67,10 +69,11 @@ type ListCrdTaskStatusReply = common.APIReply[map[string]CrdTaskStatus]
 
 // 期权任务状态
 type OptTaskStatus struct {
-	Mon     string `json:"mon"`
-	Counter string `json:"counter"`
-	Sse     string `json:"sse"`
-	Szse    string `json:"szse"`
+	Mon               string `json:"mon"`
+	CounterFetch      string `json:"counter_fetch"`
+	CounterDistribute string `json:"counter_distribute"`
+	Sse               string `json:"sse"`
+	Szse              string `json:"szse"`
 }
 
 // ListOptTaskStatusReply 多个oes期权集群的任务状态响应结构
