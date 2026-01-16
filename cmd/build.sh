@@ -33,12 +33,12 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -X 'main.goOS=$(go env GOOS)' \
     -X 'main.goArch=$(go env GOARCH)'
   " \
-  -o bin/gin-artweb main.go
+  -o bin/artweb main.go
 
 echo "Build success!"
 
 # 构建镜像
-# podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION} .
+# podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/artweb:${VERSION} .
 
 # 推送镜像
-# podman push swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION}
+# podman push swr.cn-north-4.myhuaweicloud.com/danqingzhao/artweb:${VERSION}

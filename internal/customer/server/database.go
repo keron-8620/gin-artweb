@@ -6,7 +6,7 @@ import (
 	"gin-artweb/internal/customer/biz"
 )
 
-func dbAutoMigrate(db *gorm.DB) error {
+func DBAutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&biz.PermissionModel{},
 		&biz.MenuModel{},

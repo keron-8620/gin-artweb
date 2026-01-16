@@ -21,11 +21,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Error("数据库自动迁移customer模型失败", zap.Error(err))
-		panic(err)
-	}
-
 	permissionRepo := data.NewPermissionRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	menuRepo := data.NewMenuRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	buttonRepo := data.NewButtonRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)

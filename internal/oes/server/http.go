@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	"gin-artweb/internal/oes/biz"
 	"gin-artweb/internal/oes/data"
@@ -17,11 +16,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Error("数据库自动迁移oes模型失败", zap.Error(err))
-		panic(err)
-	}
-
 	colonyRepo := data.NewOesColonyRepo(loggers.Data, init.DB, init.DBTimeout)
 	nodeRepo := data.NewOesNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 

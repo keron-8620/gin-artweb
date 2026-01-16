@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
 	"gin-artweb/internal/resource/biz"
@@ -21,10 +20,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Error("数据库自动迁移resource模型失败", zap.Error(err))
-		panic(err)
-	}
 	pubKeys := make([]string, len(init.Signers))
 	for i, signer := range init.Signers {
 		pubKeyBytes := ssh.MarshalAuthorizedKey(signer.PublicKey())

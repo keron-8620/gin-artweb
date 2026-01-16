@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	"gin-artweb/internal/mon/biz"
 	"gin-artweb/internal/mon/data"
@@ -17,11 +16,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Error("数据库自动迁移mon模型失败", zap.Error(err))
-		panic(err)
-	}
-
 	nodeRepo := data.NewMonNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 
 	nodeUsecase := biz.NewMonNodeUsecase(loggers.Biz, nodeRepo)

@@ -21,6 +21,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
+	"gorm.io/gorm"
 
 	customer "gin-artweb/internal/customer/server"
 	jobs "gin-artweb/internal/jobs/server"
@@ -55,11 +56,15 @@ var (
 func main() {
 	// 定义并解析命令行参数，指定配置文件路径，默认为 "../config/system.yaml"
 	var (
-		configPath  string
-		showVersion bool
+		configPath   string
+		showVersion  bool
+		initDatabase bool
+		execSqlPath  string
 	)
 	flag.StringVar(&configPath, "config", filepath.Join(config.ConfigDir, "system.yaml"), "系统配置文件的路径")
 	flag.BoolVar(&showVersion, "v", false, "展示版本信息")
+	flag.BoolVar(&initDatabase, "init-database", false, "初始化数据库")
+	flag.StringVar(&execSqlPath, "exec-sql", "", "执行SQL文件路径")
 	flag.Parse()
 
 	if showVersion {
@@ -74,8 +79,70 @@ func main() {
 		return
 	}
 
+	// 加载系统配置
+	sysConf := config.NewSystemConf(configPath)
+
+	if initDatabase {
+		db, err := initGromDB(sysConf)
+		if err != nil {
+			golog.Fatalf("数据库初始化失败: %v", err)
+		}
+		defer database.CloseGormDB(db)
+
+		migrations := []struct {
+			name string
+			fn   func(*gorm.DB) error
+		}{
+			{"customer", customer.DBAutoMigrate},
+			{"resource", resource.DBAutoMigrate},
+			{"jobs", jobs.DBAutoMigrate},
+			{"mon", mon.DBAutoMigrate},
+			{"mds", mds.DBAutoMigrate},
+			{"oes", oes.DBAutoMigrate},
+		}
+
+		for _, migration := range migrations {
+			if err := migration.fn(db); err != nil {
+				golog.Fatalf("数据库 %s 表迁移失败: %v", migration.name, err)
+			} else {
+				fmt.Printf("数据库 %s 表迁移成功\n", migration.name)
+			}
+		}
+		return
+	}
+
+	if execSqlPath != "" {
+
+		// 检查SQL文件是否存在
+		if _, err := os.Stat(execSqlPath); os.IsNotExist(err) {
+			golog.Fatalf("SQL文件不存在: %s", execSqlPath)
+		}
+
+		sqlBytes, err := os.ReadFile(execSqlPath)
+		if err != nil {
+			golog.Fatalf("读取SQL文件失败: %v", err)
+		}
+
+		sqlScript := string(sqlBytes)
+
+		// 初始化数据库
+		db, err := initGromDB(sysConf)
+		if err != nil {
+			golog.Fatalf("数据库初始化失败: %v", err)
+		}
+		defer database.CloseGormDB(db)
+
+		// 执行SQL脚本
+		if err := db.Exec(sqlScript).Error; err != nil {
+			golog.Fatalf("执行SQL脚本失败: %v", err)
+		}
+
+		fmt.Printf("SQL脚本执行成功: %s\n", execSqlPath)
+		return
+	}
+
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
-	loggers, i, clearFunc, err := newInitialize(configPath)
+	loggers, i, clearFunc, err := newInitialize(sysConf)
 	if err != nil {
 		panic(err)
 	}
@@ -177,10 +244,7 @@ func main() {
 // 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
-func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error) {
-	// 加载系统配置
-	conf := config.NewSystemConf(path)
-
+func newInitialize(conf *config.SystemConf) (*log.Loggers, *common.Initialize, func(), error) {
 	// 初始化服务器日志记录器
 	loggers := NewLoggers(conf.Log)
 
@@ -206,24 +270,18 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 	cronLogger := log.NewZapLoggerMust(conf.Log.Level, cronWrite)
 	ct := crontab.NewCron(cronLogger)
 
-	// 创建GORM数据库配置并连接数据库
-	var dbLog *golog.Logger
-	if conf.Database.LogSQL {
-		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "database.log"))
-		dbLog = golog.New(dbWrite, " ", golog.LstdFlags)
-	}
-	dbConf := database.NewGormConfig(dbLog)
-	db, err := database.NewGormDB(conf.Database, dbConf)
-	if err != nil {
-		loggers.Server.Error("数据库连接失败", zap.Error(err))
-		return nil, nil, nil, err
-	}
-
 	// 初始化数据库超时配置
 	dbTimeout := config.DBTimeout{
 		ListTimeout:  time.Duration(conf.Database.ListTimeout) * time.Second,
 		ReadTimeout:  time.Duration(conf.Database.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
+	}
+
+	// 初始化数据库连接
+	db, err := initGromDB(conf)
+	if err != nil {
+		loggers.Server.Error("数据库初始化失败", zap.Error(err))
+		return nil, nil, nil, err
 	}
 
 	// 返回初始化结构体和清理函数
@@ -252,18 +310,24 @@ func newInitialize(path string) (*log.Loggers, *common.Initialize, func(), error
 			// 关闭数据库连接
 			if db != nil {
 				loggers.Server.Info("正在释放数据库资源...")
-				conn, err := db.DB()
-				if err != nil {
-					loggers.Server.Error("获取数据库连接失败", zap.Error(err))
+				if err := database.CloseGormDB(db); err != nil {
+					loggers.Server.Error("数据库资源释放失败", zap.Error(err))
 				}
-				if err = conn.Close(); err != nil {
-					loggers.Server.Error("关闭数据库连接失败", zap.Error(err))
-				} else {
-					loggers.Server.Info("数据库资源释放成功")
-				}
+				loggers.Server.Info("数据库资源释放成功")
 			}
 			loggers.Server.Info("所有资源清理完成")
 		}, nil
+}
+
+func initGromDB(conf *config.SystemConf) (*gorm.DB, error) {
+	// 创建GORM数据库配置并连接数据库
+	var dbLog *golog.Logger
+	if conf.Database.LogSQL {
+		dbWrite := log.NewLumLogger(conf.Log, filepath.Join(config.LogDir, "database.log"))
+		dbLog = golog.New(dbWrite, " ", golog.LstdFlags)
+	}
+	dbConf := database.NewGormConfig(dbLog)
+	return database.NewGormDB(conf.Database, dbConf)
 }
 
 func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {

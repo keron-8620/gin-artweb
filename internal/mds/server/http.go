@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	"gin-artweb/internal/mds/biz"
 	"gin-artweb/internal/mds/data"
@@ -17,11 +16,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	if err := dbAutoMigrate(init.DB); err != nil {
-		loggers.Server.Error("数据库自动迁移mds模型失败", zap.Error(err))
-		panic(err)
-	}
-
 	colonyRepo := data.NewMdsColonyRepo(loggers.Data, init.DB, init.DBTimeout)
 	nodeRepo := data.NewMdsNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 

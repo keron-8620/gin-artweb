@@ -6,7 +6,7 @@ import (
 	"gin-artweb/internal/oes/biz"
 )
 
-func dbAutoMigrate(db *gorm.DB) error {
+func DBAutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&biz.OesColonyModel{},
 		&biz.OesNodeModel{},
