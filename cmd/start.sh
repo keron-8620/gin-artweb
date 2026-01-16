@@ -4,7 +4,7 @@ basepath=$(cd "$(dirname "$0")/.."; pwd)
 cd "$basepath"
 
 # 定义变量
-process_name="gin-artweb"
+process_name="artweb"
 pid_file="$basepath/${process_name}.pid"
 
 # 检查程序是否存在

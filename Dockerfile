@@ -21,10 +21,10 @@ COPY config ./config
 COPY resource ./resource
 
 # 赋予可执行权限
-RUN chmod +x ./bin/gin-artweb
+RUN chmod +x ./bin/artweb
 
 # 暴露端口
 EXPOSE 8621
 
 # 启动应用
-ENTRYPOINT ["./bin/gin-artweb"]
+ENTRYPOINT ["./bin/artweb"]

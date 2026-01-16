@@ -391,8 +391,8 @@ func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 
 	// 配置 Swagger 文档
 	if init.Conf.Server.EnableSwagger {
-		docs.SwaggerInfo.Title = "gin-artweb"
-		docs.SwaggerInfo.Description = "gin-artweb自动化运维平台"
+		docs.SwaggerInfo.Title = "artweb"
+		docs.SwaggerInfo.Description = "artweb自动化运维平台"
 		docs.SwaggerInfo.Version = version
 		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)
 		docs.SwaggerInfo.Schemes = []string{"http", "https"}

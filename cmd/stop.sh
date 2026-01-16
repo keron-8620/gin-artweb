@@ -2,7 +2,7 @@
 
 basepath=$(cd `dirname $0`; pwd)
 project_path=$(cd "$basepath/.."; pwd)
-process_name="gin-artweb"
+process_name="artweb"
 
 # 查找正在运行的进程
 pid=$(ps aux | grep "$project_path/$process_name" | grep -v grep | awk '{print $2}')

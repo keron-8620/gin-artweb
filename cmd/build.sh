@@ -12,8 +12,8 @@ cd $basepath
 go test -v ./...
 
 # 编译前清理旧的可执行文件
-if [ -f "$basepath/bin/gin-artweb" ]; then
-  rm -rf "$basepath/bin/gin-artweb"
+if [ -f "$basepath/bin/artweb" ]; then
+  rm -rf "$basepath/bin/artweb"
 fi
 
 # 注入版本、Commit ID、构建时间等
