@@ -35,6 +35,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
   " \
   -o bin/gin-artweb main.go
 
+echo "Build success!"
+
 # 构建镜像
 # podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb:${VERSION} .
 
