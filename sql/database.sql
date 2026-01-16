@@ -64,11 +64,33 @@ insert into customer_permission(id,url,method,label,descr) values('4002','/api/v
 insert into customer_permission(id,url,method,label,descr) values('4003','/api/v1/mds/colony/:pk','GET','mds','查询单个mds集群');
 insert into customer_permission(id,url,method,label,descr) values('4004','/api/v1/mds/colony/:pk','PUT','mds','修改单个mds集群');
 insert into customer_permission(id,url,method,label,descr) values('4005','/api/v1/mds/colony/:pk','DELETE','mds','删除单个mds集群');
+insert into customer_permission(id,url,method,label,descr) values('4006','/api/v1/mds/colony/status','GET','mds','查询mds集群的任务状态');
 insert into customer_permission(id,url,method,label,descr) values('4011','/api/v1/mds/node','GET','mds','查询mds节点列表');
 insert into customer_permission(id,url,method,label,descr) values('4012','/api/v1/mds/node','POST','mds','新增mds节点');
 insert into customer_permission(id,url,method,label,descr) values('4013','/api/v1/mds/node/:pk','GET','mds','查询单个mds节点');
 insert into customer_permission(id,url,method,label,descr) values('4014','/api/v1/mds/node/:pk','PUT','mds','修改单个mds节点');
 insert into customer_permission(id,url,method,label,descr) values('4015','/api/v1/mds/node/:pk','DELETE','mds','删除单个mds节点');
+insert into customer_permission(id,url,method,label,descr) values('4021','/api/v1/mds/:colony_num/conf/:dir_name','GET','mds','获取mds配置文件列表');
+insert into customer_permission(id,url,method,label,descr) values('4022','/api/v1/mds/:colony_num/conf/:dir_name','POST','mds','上传mds配置文件');
+insert into customer_permission(id,url,method,label,descr) values('4025','/api/v1/mds/:colony_num/conf/:dir_name/:filename','DELETE','mds','删除mds配置文件');
+insert into customer_permission(id,url,method,label,descr) values('4026','/api/v1/mds/:colony_num/conf/:dir_name/:filename','GET','mds','下载mds配置文件');
+insert into customer_permission(id,url,method,label,descr) values('5001','/api/v1/oes/colony','GET','oes','查询oes集群列表');
+insert into customer_permission(id,url,method,label,descr) values('5002','/api/v1/oes/colony','POST','oes','新增oes集群');
+insert into customer_permission(id,url,method,label,descr) values('5003','/api/v1/oes/colony/:pk','GET','oes','查询单个oes集群');
+insert into customer_permission(id,url,method,label,descr) values('5004','/api/v1/oes/colony/:pk','PUT','oes','修改单个oes集群');
+insert into customer_permission(id,url,method,label,descr) values('5005','/api/v1/oes/colony/:pk','DELETE','oes','删除单个oes集群');
+insert into customer_permission(id,url,method,label,descr) values('5006','/api/v1/oes/colony/status/stk','GET','oes','查询oes现货的任务状态');
+insert into customer_permission(id,url,method,label,descr) values('5007','/api/v1/oes/colony/status/crd','GET','oes','查询oes两融的任务状态');
+insert into customer_permission(id,url,method,label,descr) values('5008','/api/v1/oes/colony/status/opt','GET','oes','查询oes期权的任务状态');
+insert into customer_permission(id,url,method,label,descr) values('5011','/api/v1/oes/node','GET','oes','查询oes节点列表');
+insert into customer_permission(id,url,method,label,descr) values('5012','/api/v1/oes/node','POST','oes','新增oes节点');
+insert into customer_permission(id,url,method,label,descr) values('5013','/api/v1/oes/node/:pk','GET','oes','查询单个oes节点');
+insert into customer_permission(id,url,method,label,descr) values('5014','/api/v1/oes/node/:pk','PUT','oes','修改单个oes节点');
+insert into customer_permission(id,url,method,label,descr) values('5015','/api/v1/oes/node/:pk','DELETE','oes','删除单个oes集群');
+insert into customer_permission(id,url,method,label,descr) values('5021','/api/v1/oes/:colony_num/conf/:dir_name','GET','oes','获取oes配置文件列表');
+insert into customer_permission(id,url,method,label,descr) values('5022','/api/v1/oes/:colony_num/conf/:dir_name','POST','oes','上传oes配置文件');
+insert into customer_permission(id,url,method,label,descr) values('5025','/api/v1/oes/:colony_num/conf/:dir_name/:filename','DELETE','oes','删除oes配置文件');
+insert into customer_permission(id,url,method,label,descr) values('5026','/api/v1/oes/:colony_num/conf/:dir_name/:filename','GET','oes','下载oes配置文件');
 
 
 insert into customer_role(name,descr) values('admin','系统管理员');
@@ -144,9 +166,31 @@ insert into customer_role_permission(role_id,permission_id) values('1','4012');
 insert into customer_role_permission(role_id,permission_id) values('1','4013');
 insert into customer_role_permission(role_id,permission_id) values('1','4014');
 insert into customer_role_permission(role_id,permission_id) values('1','4015');
+insert into customer_role_permission(role_id,permission_id) values('1','4021');
+insert into customer_role_permission(role_id,permission_id) values('1','4022');
+insert into customer_role_permission(role_id,permission_id) values('1','4025');
+insert into customer_role_permission(role_id,permission_id) values('1','4026');
+insert into customer_role_permission(role_id,permission_id) values('1','4006');
+insert into customer_role_permission(role_id,permission_id) values('1','5001');
+insert into customer_role_permission(role_id,permission_id) values('1','5002');
+insert into customer_role_permission(role_id,permission_id) values('1','5003');
+insert into customer_role_permission(role_id,permission_id) values('1','5004');
+insert into customer_role_permission(role_id,permission_id) values('1','5005');
+insert into customer_role_permission(role_id,permission_id) values('1','5006');
+insert into customer_role_permission(role_id,permission_id) values('1','5007');
+insert into customer_role_permission(role_id,permission_id) values('1','5008');
+insert into customer_role_permission(role_id,permission_id) values('1','5011');
+insert into customer_role_permission(role_id,permission_id) values('1','5012');
+insert into customer_role_permission(role_id,permission_id) values('1','5013');
+insert into customer_role_permission(role_id,permission_id) values('1','5014');
+insert into customer_role_permission(role_id,permission_id) values('1','5015');
+insert into customer_role_permission(role_id,permission_id) values('1','5021');
+insert into customer_role_permission(role_id,permission_id) values('1','5022');
+insert into customer_role_permission(role_id,permission_id) values('1','5025');
+insert into customer_role_permission(role_id,permission_id) values('1','5026');
 
 
-insert into customer_user(created_at,updated_at,username,password,is_active,is_staff,role_id) values('2025-12-08 14:02:52.269157+08','2025-12-08 14:02:52.269157+08','mon','$2a$12$vmjs0S6AShmCBJSsXpJ2d.as4F2w0ywm5yzQmn8JLU9UTyM5qwf1i','true','true','1');
+insert into customer_user(username,password,is_active,is_staff,role_id) values('mon','$2a$12$vmjs0S6AShmCBJSsXpJ2d.as4F2w0ywm5yzQmn8JLU9UTyM5qwf1i','true','true','1');
 
 
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','dep','deploy.sh','shell','true','true','部署mds集群');

@@ -18,12 +18,12 @@ import (
 // ctx: 上下文
 // tx: GORM事务对象
 // 返回panic错误信息
-func DBPanic(ctx context.Context, tx *gorm.DB) (err error) {
+func DBPanic(ctx context.Context, db *gorm.DB) (err error) {
 	defer func() {
 		// 捕获panic异常
 		if r := recover(); r != nil {
 			// 发生panic时回滚事务
-			tx.Rollback()
+			db.Rollback()
 
 			// 获取调用栈信息
 			buf := make([]byte, 64<<10)
@@ -32,40 +32,13 @@ func DBPanic(ctx context.Context, tx *gorm.DB) (err error) {
 
 			// 记录错误日志
 			errMsg := "database operation panic occurred"
-			if tx.Logger != nil {
-				tx.Logger.Error(ctx, errMsg, "panic", r, "stack", string(buf))
+			if db.Logger != nil {
+				db.Logger.Error(ctx, errMsg, "panic", r, "stack", string(buf))
 			}
 			err = fmt.Errorf("%s: %v", errMsg, r)
 		}
 	}()
 	return
-}
-
-// dbRollback 回滚数据库事务并记录错误日志
-// ctx: 上下文
-// tx: GORM事务对象
-// 返回回滚操作可能产生的错误
-func dbRollback(ctx context.Context, tx *gorm.DB) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
-	}
-	return tx.Rollback().Error
-}
-
-// dbCommit 提交数据库事务，如果提交失败则自动回滚
-// ctx: 上下文
-// tx: GORM事务对象
-// 返回提交操作可能产生的错误
-func dbCommit(ctx context.Context, tx *gorm.DB) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
-	}
-	// 执行提交操作
-	if err := tx.Commit().Error; err != nil {
-		dbRollback(ctx, tx)
-		return err
-	}
-	return nil
 }
 
 // dbAssociateAppend 添加模型的关联关系
@@ -146,19 +119,23 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 	defer DBPanic(ctx, tx)
 
 	// 创建主表数据
-	if err := db.Model(model).Create(value).Error; err != nil {
+	if err := tx.Model(model).Create(value).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	// 更新关联关系
 	if err := dbAssociateAppend(ctx, tx, value, upmap); err != nil {
-		dbRollback(ctx, tx)
+		tx.Rollback()
 		return err
 	}
 
 	// 提交事务
-	return dbCommit(ctx, tx)
-
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
 }
 
 // DBUpdate 更新数据库记录，支持关联关系更新
@@ -195,18 +172,22 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 
 	// 更新主表数据
 	if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
-		dbRollback(ctx, tx)
+		tx.Rollback()
 		return err
 	}
 
 	// 更新关联关系
 	if err := dbAssociateReplace(ctx, tx, m, upmap); err != nil {
-		dbRollback(ctx, tx)
+		tx.Rollback()
 		return err
 	}
 
 	// 提交事务
-	return dbCommit(ctx, tx)
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
 }
 
 // DBDelete 删除数据库记录
@@ -263,18 +244,26 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	// 初始化查询构建器
 	mdb := db.Model(model)
 
-	// 指定查询字段和忽略字段（如果有同时指定了Select和Omit，Select优先）
+	// 添加查询条件
+	for k, v := range query.Query {
+		mdb = mdb.Where(k, v)
+	}
+
+	// 查询总数
+	var count int64 = 0
+	if query.IsCount {
+		if err := mdb.Count(&count).Error; err != nil {
+			return 0, err
+		}
+	}
+
+	// 指定查询字段和忽略字段（如果有同时指定了Columns和Omit，Columns优先）
 	if len(query.Columns) > 0 {
 		mdb = mdb.Select(query.Columns)
 	} else {
 		if len(query.Omit) > 0 {
 			mdb = mdb.Omit(query.Omit...)
 		}
-	}
-
-	// 添加查询条件
-	for k, v := range query.Query {
-		mdb = mdb.Where(k, v)
 	}
 
 	// 添加排序条件
@@ -296,12 +285,6 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	// 预加载关联关系
 	for _, preload := range query.Preloads {
 		mdb = mdb.Preload(preload)
-	}
-
-	// 查询总数
-	var count int64 = 0
-	if query.IsCount {
-		mdb = mdb.Count(&count)
 	}
 
 	// 执行查询
@@ -348,7 +331,7 @@ func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	} else {
 		enc.AddString(PreloadKey, "")
 	}
-	
+
 	// 记录查询条件
 	enc.AddReflected("query", q.Query)
 
