@@ -35,8 +35,8 @@ func NewMdsNodeService(
 // @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param request body pbMdsNode.CreateOrUpdateMdsNodeRequest true "创建mds节点请求"
-// @Success 200 {object} pbMdsNode.MdsNodeReply "成功返回mds节点信息"
+// @Param request body pbNode.CreateOrUpdateMdsNodeRequest true "创建mds节点请求"
+// @Success 200 {object} pbNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/node [post]
@@ -86,8 +86,8 @@ func (s *MdsNodeService) CreateMdsNode(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "mds节点编号"
-// @Param request body pbMdsNode.CreateOrUpdateMdsNodeRequest true "更新mds节点请求"
-// @Success 200 {object} pbMdsNode.MdsNodeReply "成功返回mds节点信息"
+// @Param request body pbNode.CreateOrUpdateMdsNodeRequest true "更新mds节点请求"
+// @Success 200 {object} pbNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
@@ -204,7 +204,7 @@ func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param pk path uint true "mds节点编号"
-// @Success 200 {object} pbMdsNode.MdsNodeReply "成功返回mds节点信息"
+// @Success 200 {object} pbNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
@@ -265,7 +265,7 @@ func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 // @Param name query string false "mds节点名称"
 // @Param is_enabled query bool false "是否启用"
 // @Param username query string false "创建用户名"
-// @Success 200 {object} pbMdsNode.PagMdsNodeReply "成功返回mds节点列表"
+// @Success 200 {object} pbNode.PagMdsNodeReply "成功返回mds节点列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/node [get]

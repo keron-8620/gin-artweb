@@ -5752,7 +5752,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "用户管理"
                 },
-                "permissions": {
+                "permission_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -6091,36 +6091,6 @@ const docTemplate = `{
                 }
             }
         },
-        "colony.MdsColonyStandardOut": {
-            "type": "object",
-            "properties": {
-                "colony_num": {
-                    "description": "集群号",
-                    "type": "string",
-                    "example": "test"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "extracted_name": {
-                    "description": "解压后名称",
-                    "type": "string",
-                    "example": ""
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
         "colony.OesColonyBaseOut": {
             "type": "object",
             "properties": {
@@ -6211,41 +6181,6 @@ const docTemplate = `{
                 }
             }
         },
-        "colony.OesColonyStandardOut": {
-            "type": "object",
-            "properties": {
-                "colony_num": {
-                    "description": "集群号",
-                    "type": "string",
-                    "example": "test"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "extracted_name": {
-                    "description": "解压后名称",
-                    "type": "string",
-                    "example": ""
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "system_type": {
-                    "description": "系统类型",
-                    "type": "string",
-                    "example": "stk"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
         "colony.PagMdsColonyReply": {
             "type": "object",
             "properties": {
@@ -6257,7 +6192,7 @@ const docTemplate = `{
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.Pag-colony_MdsColonyStandardOut"
+                            "$ref": "#/definitions/common.Pag-colony_MdsColonyDetailOut"
                         }
                     ]
                 },
@@ -6278,7 +6213,7 @@ const docTemplate = `{
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.Pag-colony_OesColonyStandardOut"
+                            "$ref": "#/definitions/common.Pag-colony_OesColonyDetailOut"
                         }
                     ]
                 },
@@ -6338,14 +6273,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-colony_MdsColonyStandardOut": {
+        "common.Pag-colony_MdsColonyDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/colony.MdsColonyStandardOut"
+                        "$ref": "#/definitions/colony.MdsColonyDetailOut"
                     }
                 },
                 "page": {
@@ -6370,14 +6305,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-colony_OesColonyStandardOut": {
+        "common.Pag-colony_OesColonyDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/colony.OesColonyStandardOut"
+                        "$ref": "#/definitions/colony.OesColonyDetailOut"
                     }
                 },
                 "page": {
@@ -7167,6 +7102,11 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1000
                 },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string",
@@ -7208,7 +7148,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "/api/v1/users"
                 },
-                "permissions": {
+                "permission_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -7218,11 +7158,6 @@ const docTemplate = `{
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
-                },
-                "xomponent": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
                 }
             }
         },
@@ -7254,6 +7189,11 @@ const docTemplate = `{
                     "description": "排列顺序",
                     "type": "integer",
                     "example": 1000
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
                 },
                 "created_at": {
                     "description": "创建时间",
@@ -7297,11 +7237,6 @@ const docTemplate = `{
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
-                },
-                "xomponent": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
                 }
             }
         },
@@ -8351,7 +8286,7 @@ const docTemplate = `{
         "role.RoleDetailOut": {
             "type": "object",
             "properties": {
-                "buttons": {
+                "button_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8372,7 +8307,7 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "menus": {
+                "menu_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8383,7 +8318,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "用户管理"
                 },
-                "permissions": {
+                "permission_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8418,6 +8353,11 @@ const docTemplate = `{
                         "$ref": "#/definitions/role.RoleMenuPerm"
                     }
                 },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
                 "descr": {
                     "description": "描述",
                     "type": "string",
@@ -8450,11 +8390,6 @@ const docTemplate = `{
                     "description": "前端路由",
                     "type": "string",
                     "example": "/api/v1/users"
-                },
-                "xomponent": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
                 }
             }
         },

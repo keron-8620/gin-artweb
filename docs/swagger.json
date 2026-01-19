@@ -5741,7 +5741,7 @@
                     "type": "string",
                     "example": "用户管理"
                 },
-                "permissions": {
+                "permission_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -6080,36 +6080,6 @@
                 }
             }
         },
-        "colony.MdsColonyStandardOut": {
-            "type": "object",
-            "properties": {
-                "colony_num": {
-                    "description": "集群号",
-                    "type": "string",
-                    "example": "test"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "extracted_name": {
-                    "description": "解压后名称",
-                    "type": "string",
-                    "example": ""
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
         "colony.OesColonyBaseOut": {
             "type": "object",
             "properties": {
@@ -6200,41 +6170,6 @@
                 }
             }
         },
-        "colony.OesColonyStandardOut": {
-            "type": "object",
-            "properties": {
-                "colony_num": {
-                    "description": "集群号",
-                    "type": "string",
-                    "example": "test"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "extracted_name": {
-                    "description": "解压后名称",
-                    "type": "string",
-                    "example": ""
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "system_type": {
-                    "description": "系统类型",
-                    "type": "string",
-                    "example": "stk"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
         "colony.PagMdsColonyReply": {
             "type": "object",
             "properties": {
@@ -6246,7 +6181,7 @@
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.Pag-colony_MdsColonyStandardOut"
+                            "$ref": "#/definitions/common.Pag-colony_MdsColonyDetailOut"
                         }
                     ]
                 },
@@ -6267,7 +6202,7 @@
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.Pag-colony_OesColonyStandardOut"
+                            "$ref": "#/definitions/common.Pag-colony_OesColonyDetailOut"
                         }
                     ]
                 },
@@ -6327,14 +6262,14 @@
                 }
             }
         },
-        "common.Pag-colony_MdsColonyStandardOut": {
+        "common.Pag-colony_MdsColonyDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/colony.MdsColonyStandardOut"
+                        "$ref": "#/definitions/colony.MdsColonyDetailOut"
                     }
                 },
                 "page": {
@@ -6359,14 +6294,14 @@
                 }
             }
         },
-        "common.Pag-colony_OesColonyStandardOut": {
+        "common.Pag-colony_OesColonyDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/colony.OesColonyStandardOut"
+                        "$ref": "#/definitions/colony.OesColonyDetailOut"
                     }
                 },
                 "page": {
@@ -7156,6 +7091,11 @@
                     "type": "integer",
                     "example": 1000
                 },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string",
@@ -7197,7 +7137,7 @@
                     "type": "string",
                     "example": "/api/v1/users"
                 },
-                "permissions": {
+                "permission_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -7207,11 +7147,6 @@
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
-                },
-                "xomponent": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
                 }
             }
         },
@@ -7243,6 +7178,11 @@
                     "description": "排列顺序",
                     "type": "integer",
                     "example": 1000
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
                 },
                 "created_at": {
                     "description": "创建时间",
@@ -7286,11 +7226,6 @@
                     "description": "更新时间",
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
-                },
-                "xomponent": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
                 }
             }
         },
@@ -8340,7 +8275,7 @@
         "role.RoleDetailOut": {
             "type": "object",
             "properties": {
-                "buttons": {
+                "button_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8361,7 +8296,7 @@
                     "type": "integer",
                     "example": 1
                 },
-                "menus": {
+                "menu_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8372,7 +8307,7 @@
                     "type": "string",
                     "example": "用户管理"
                 },
-                "permissions": {
+                "permission_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8407,6 +8342,11 @@
                         "$ref": "#/definitions/role.RoleMenuPerm"
                     }
                 },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
                 "descr": {
                     "description": "描述",
                     "type": "string",
@@ -8439,11 +8379,6 @@
                     "description": "前端路由",
                     "type": "string",
                     "example": "/api/v1/users"
-                },
-                "xomponent": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
                 }
             }
         },

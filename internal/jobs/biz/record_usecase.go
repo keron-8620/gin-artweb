@@ -246,7 +246,8 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 	}()
 
 	// 生成日志路径并创建日志目录
-	logDir := filepath.Join(config.LogDir, time.Now().Format(time.DateOnly))
+	logPath := record.LogPath()
+	logDir := filepath.Dir(logPath)
 	if taskinfo.Error = os.MkdirAll(logDir, 0755); taskinfo.Error != nil {
 		taskinfo.Status = 5
 		taskinfo.ErrMSG = fmt.Sprintf("创建日志目录失败: %v", taskinfo.Error)
@@ -259,8 +260,7 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 		return taskinfo
 	}
 
-	// 创建并打开日志文件
-	logPath := record.LogPath()
+	// 打开日志文件
 	taskinfo.LogFile, taskinfo.Error = os.Create(logPath)
 	if taskinfo.Error != nil {
 		taskinfo.Status = 5

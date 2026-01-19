@@ -33,7 +33,7 @@ type MdsColonyDetailOut struct {
 type MdsColonyReply = common.APIReply[MdsColonyDetailOut]
 
 // PagMdsColonyReply mds集群配置的分页响应结构
-type PagMdsColonyReply = common.APIReply[*common.Pag[MdsColonyStandardOut]]
+type PagMdsColonyReply = common.APIReply[*common.Pag[MdsColonyDetailOut]]
 
 // mds 任务状态
 type MdsTaskStatus struct {

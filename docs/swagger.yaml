@@ -50,7 +50,7 @@ definitions:
         description: 名称
         example: 用户管理
         type: string
-      permissions:
+      permission_ids:
         items:
           type: integer
         type: array
@@ -357,29 +357,6 @@ definitions:
           Example: "success"
         type: string
     type: object
-  colony.MdsColonyStandardOut:
-    properties:
-      colony_num:
-        description: 集群号
-        example: test
-        type: string
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      extracted_name:
-        description: 解压后名称
-        example: ""
-        type: string
-      id:
-        description: ID
-        example: 1
-        type: integer
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
-        type: string
-    type: object
   colony.OesColonyBaseOut:
     properties:
       colony_num:
@@ -451,33 +428,6 @@ definitions:
           Example: "success"
         type: string
     type: object
-  colony.OesColonyStandardOut:
-    properties:
-      colony_num:
-        description: 集群号
-        example: test
-        type: string
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      extracted_name:
-        description: 解压后名称
-        example: ""
-        type: string
-      id:
-        description: ID
-        example: 1
-        type: integer
-      system_type:
-        description: 系统类型
-        example: stk
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
-        type: string
-    type: object
   colony.PagMdsColonyReply:
     properties:
       code:
@@ -487,7 +437,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-colony_MdsColonyStandardOut'
+        - $ref: '#/definitions/common.Pag-colony_MdsColonyDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -506,7 +456,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-colony_OesColonyStandardOut'
+        - $ref: '#/definitions/common.Pag-colony_OesColonyDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -567,12 +517,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-colony_MdsColonyStandardOut:
+  common.Pag-colony_MdsColonyDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/colony.MdsColonyStandardOut'
+          $ref: '#/definitions/colony.MdsColonyDetailOut'
         type: array
       page:
         description: |-
@@ -599,12 +549,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-colony_OesColonyStandardOut:
+  common.Pag-colony_OesColonyDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/colony.OesColonyStandardOut'
+          $ref: '#/definitions/colony.OesColonyDetailOut'
         type: array
       page:
         description: |-
@@ -1358,6 +1308,10 @@ definitions:
         description: 排列顺序
         example: 1000
         type: integer
+      component:
+        description: 组件路径
+        example: GET
+        type: string
       created_at:
         description: 创建时间
         example: "2023-01-01 12:00:00"
@@ -1388,17 +1342,13 @@ definitions:
         description: 前端路由
         example: /api/v1/users
         type: string
-      permissions:
+      permission_ids:
         items:
           type: integer
         type: array
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
-        type: string
-      xomponent:
-        description: 组件路径
-        example: GET
         type: string
     type: object
   menu.MenuReply:
@@ -1426,6 +1376,10 @@ definitions:
         description: 排列顺序
         example: 1000
         type: integer
+      component:
+        description: 组件路径
+        example: GET
+        type: string
       created_at:
         description: 创建时间
         example: "2023-01-01 12:00:00"
@@ -1457,10 +1411,6 @@ definitions:
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
-        type: string
-      xomponent:
-        description: 组件路径
-        example: GET
         type: string
     type: object
   menu.MetaSchemas:
@@ -2399,7 +2349,7 @@ definitions:
     type: object
   role.RoleDetailOut:
     properties:
-      buttons:
+      button_ids:
         items:
           type: integer
         type: array
@@ -2415,7 +2365,7 @@ definitions:
         description: 角色ID
         example: 1
         type: integer
-      menus:
+      menu_ids:
         items:
           type: integer
         type: array
@@ -2423,7 +2373,7 @@ definitions:
         description: 名称
         example: 用户管理
         type: string
-      permissions:
+      permission_ids:
         items:
           type: integer
         type: array
@@ -2448,6 +2398,10 @@ definitions:
         items:
           $ref: '#/definitions/role.RoleMenuPerm'
         type: array
+      component:
+        description: 组件路径
+        example: GET
+        type: string
       descr:
         description: 描述
         example: 用户管理
@@ -2471,10 +2425,6 @@ definitions:
       path:
         description: 前端路由
         example: /api/v1/users
-        type: string
-      xomponent:
-        description: 组件路径
-        example: GET
         type: string
     type: object
   role.RoleMenuTreeReply:

@@ -462,16 +462,16 @@ func MdsColonyToDetailOut(
 
 func ListMdsColonyToDetailOut(
 	rms *[]biz.MdsColonyModel,
-) *[]pbColony.MdsColonyStandardOut {
+) *[]pbColony.MdsColonyDetailOut {
 	if rms == nil {
-		return &[]pbColony.MdsColonyStandardOut{}
+		return &[]pbColony.MdsColonyDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbColony.MdsColonyStandardOut, 0, len(ms))
+	mso := make([]pbColony.MdsColonyDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := MdsColonyToStandardOut(m)
+			mo := MdsColonyToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

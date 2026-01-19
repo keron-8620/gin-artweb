@@ -36,7 +36,7 @@ type OesColonyDetailOut struct {
 type OesColonyReply = common.APIReply[OesColonyDetailOut]
 
 // PagOesColonyReply 程序包的分页响应结构
-type PagOesColonyReply = common.APIReply[*common.Pag[OesColonyStandardOut]]
+type PagOesColonyReply = common.APIReply[*common.Pag[OesColonyDetailOut]]
 
 // 现货的任务状态
 type StkTaskStatus struct {

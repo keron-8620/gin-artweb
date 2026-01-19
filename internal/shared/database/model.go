@@ -21,7 +21,7 @@ type StandardModel struct {
 
 	CreatedAt time.Time      `gorm:"column:created_at;autoCreateTime;comment:创建时间" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"column:updated_at;autoUpdateTime;comment:修改时间" json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index;comment:删除时间" json:"deleted_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index;comment:删除时间" json:"deleted_at,omitzero"`
 }
 
 func (m *StandardModel) CreateSetTime() {

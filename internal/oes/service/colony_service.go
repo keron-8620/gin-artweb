@@ -630,16 +630,16 @@ func OesColonyToDetailOut(
 
 func ListOesColonyToDetailOut(
 	rms *[]biz.OesColonyModel,
-) *[]pbColony.OesColonyStandardOut {
+) *[]pbColony.OesColonyDetailOut {
 	if rms == nil {
-		return &[]pbColony.OesColonyStandardOut{}
+		return &[]pbColony.OesColonyDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbColony.OesColonyStandardOut, 0, len(ms))
+	mso := make([]pbColony.OesColonyDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := OesColonyToStandardOut(m)
+			mo := OesColonyToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}
