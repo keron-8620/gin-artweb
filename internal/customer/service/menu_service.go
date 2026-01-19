@@ -415,7 +415,7 @@ func MenuModelToDetailOut(
 	if m.Parent != nil {
 		parent = MenuModelToStandardOut(*m.Parent)
 	}
-	var permissionIDs []uint32
+	var permissionIDs = []uint32{}
 	if len(m.Permissions) > 0 {
 		permissionIDs = make([]uint32, len(m.Permissions))
 		for i, p := range m.Permissions {
@@ -425,7 +425,7 @@ func MenuModelToDetailOut(
 	return &pbMenu.MenuDetailOut{
 		MenuStandardOut: *MenuModelToStandardOut(m),
 		Parent:          parent,
-		Permissions:     permissionIDs,
+		PermissionIDs:   permissionIDs,
 	}
 }
 

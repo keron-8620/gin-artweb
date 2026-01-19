@@ -26,9 +26,9 @@ type RoleStandardOut struct {
 
 type RoleDetailOut struct {
 	RoleStandardOut
-	Permissions []uint32 `json:"permissions"`
-	Menus       []uint32 `json:"menus"`
-	Buttons     []uint32 `json:"buttons"`
+	PermissionIDs []uint32 `json:"permission_ids"`
+	MenuIDs       []uint32 `json:"menu_ids"`
+	ButtonIDs     []uint32 `json:"button_ids"`
 }
 
 // RoleBaseReply 角色响应结构

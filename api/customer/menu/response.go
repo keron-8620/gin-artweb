@@ -11,7 +11,7 @@ type MenuBaseOut struct {
 	// 前端路由
 	Path string `json:"path" example:"/api/v1/users"`
 	// 组件路径
-	Component string `json:"xomponent" example:"GET"`
+	Component string `json:"component" example:"GET"`
 	// 名称
 	Name string `json:"name" example:"用户管理"`
 	//菜单信息
@@ -36,8 +36,8 @@ type MenuStandardOut struct {
 // MenuDetailOut 菜单详情输出结构体
 type MenuDetailOut struct {
 	MenuStandardOut
-	Parent      *MenuStandardOut `json:"parent,omitempty"`
-	Permissions []uint32         `json:"permissions"`
+	Parent        *MenuStandardOut `json:"parent"`
+	PermissionIDs []uint32         `json:"permission_ids"`
 }
 
 // MenuReply 菜单响应结构

@@ -387,10 +387,10 @@ func ButtonModelToDetailOut(
 	m biz.ButtonModel,
 ) *pbButton.ButtonDetailOut {
 	var menu *pbMenu.MenuStandardOut
-	if m.Menu.ID != 0 { // 或其他合适的判断条件
+	if m.Menu.ID != 0 {
 		menu = MenuModelToStandardOut(m.Menu)
 	}
-	var permissionIDs []uint32
+	var permissionIDs = []uint32{}
 	if len(m.Permissions) > 0 {
 		permissionIDs = make([]uint32, len(m.Permissions))
 		for i, p := range m.Permissions {
@@ -400,7 +400,7 @@ func ButtonModelToDetailOut(
 	return &pbButton.ButtonDetailOut{
 		ButtonStandardOut: *ButtonModelToStandardOut(m),
 		Menu:              menu,
-		Permissions:       permissionIDs,
+		PermissionIDs:     permissionIDs,
 	}
 }
 

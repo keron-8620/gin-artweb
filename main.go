@@ -81,6 +81,8 @@ func main() {
 
 	// 加载系统配置
 	sysConf := config.NewSystemConf(configPath)
+	// 初始化服务器日志记录器
+	loggers := NewLoggers(sysConf.Log)
 
 	if initDatabase {
 		db, err := initGromDB(sysConf)
@@ -103,16 +105,14 @@ func main() {
 
 		for _, migration := range migrations {
 			if err := migration.fn(db); err != nil {
-				golog.Fatalf("数据库 %s 表迁移失败: %v", migration.name, err)
-			} else {
-				fmt.Printf("数据库 %s 表迁移成功\n", migration.name)
+				golog.Panicf("数据库迁移失败: %v", err)
 			}
 		}
+		golog.Println("数据库迁移成功")
 		return
 	}
 
 	if execSqlPath != "" {
-
 		// 检查SQL文件是否存在
 		if _, err := os.Stat(execSqlPath); os.IsNotExist(err) {
 			golog.Fatalf("SQL文件不存在: %s", execSqlPath)
@@ -122,9 +122,6 @@ func main() {
 		if err != nil {
 			golog.Fatalf("读取SQL文件失败: %v", err)
 		}
-
-		sqlScript := string(sqlBytes)
-
 		// 初始化数据库
 		db, err := initGromDB(sysConf)
 		if err != nil {
@@ -133,8 +130,8 @@ func main() {
 		defer database.CloseGormDB(db)
 
 		// 执行SQL脚本
-		if err := db.Exec(sqlScript).Error; err != nil {
-			golog.Fatalf("执行SQL脚本失败: %v", err)
+		if err := database.ExecSQL(context.Background(), db, string(sqlBytes)); err != nil {
+			golog.Panicf("执行SQL脚本失败: %v", err)
 		}
 
 		fmt.Printf("SQL脚本执行成功: %s\n", execSqlPath)
@@ -142,7 +139,7 @@ func main() {
 	}
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
-	loggers, i, clearFunc, err := newInitialize(sysConf)
+	i, clearFunc, err := newInitialize(sysConf, loggers)
 	if err != nil {
 		panic(err)
 	}
@@ -244,25 +241,22 @@ func main() {
 // 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
-func newInitialize(conf *config.SystemConf) (*log.Loggers, *common.Initialize, func(), error) {
-	// 初始化服务器日志记录器
-	loggers := NewLoggers(conf.Log)
-
+func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initialize, func(), error) {
 	signers, err := shell.GetSignersFromDefaultKeys()
 	if err != nil {
 		loggers.Server.Error("初始化加载ssh密钥失败", zap.Error(err))
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if len(signers) == 0 {
 		loggers.Server.Error("没有可用的SSH密钥")
-		return nil, nil, nil, errors.New("没有可用的SSH密钥")
+		return nil, nil, errors.New("没有可用的SSH密钥")
 	}
 
 	// 初始化casbin 权限管理
 	enf, err := auth.NewCasbinEnforcer()
 	if err != nil {
 		loggers.Server.Error("Casbin 初始化失败", zap.Error(err))
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// 初始化计划任务
@@ -281,11 +275,11 @@ func newInitialize(conf *config.SystemConf) (*log.Loggers, *common.Initialize, f
 	db, err := initGromDB(conf)
 	if err != nil {
 		loggers.Server.Error("数据库初始化失败", zap.Error(err))
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// 返回初始化结构体和清理函数
-	return loggers, &common.Initialize{
+	return &common.Initialize{
 			Conf:      conf,
 			DB:        db,
 			DBTimeout: &dbTimeout,

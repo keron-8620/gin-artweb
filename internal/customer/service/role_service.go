@@ -440,7 +440,7 @@ func RoleModelToStandardOut(
 func RoleModelToDetailOut(
 	m biz.RoleModel,
 ) *pbRole.RoleDetailOut {
-	var permissionIDs []uint32
+	var permissionIDs = []uint32{}
 	if len(m.Permissions) > 0 {
 		permissionIDs = make([]uint32, len(m.Permissions))
 		for i, p := range m.Permissions {
@@ -448,7 +448,7 @@ func RoleModelToDetailOut(
 		}
 	}
 
-	var menuIDs []uint32
+	var menuIDs = []uint32{}
 	if len(m.Menus) > 0 {
 		menuIDs = make([]uint32, len(m.Menus))
 		for i, p := range m.Menus {
@@ -456,7 +456,7 @@ func RoleModelToDetailOut(
 		}
 	}
 
-	var buttonIDs []uint32
+	var buttonIDs = []uint32{}
 	if len(m.Buttons) > 0 {
 		buttonIDs = make([]uint32, len(m.Buttons))
 		for i, p := range m.Buttons {
@@ -465,9 +465,9 @@ func RoleModelToDetailOut(
 	}
 	return &pbRole.RoleDetailOut{
 		RoleStandardOut: *RoleModelToStandardOut(m),
-		Permissions:     permissionIDs,
-		Menus:           menuIDs,
-		Buttons:         buttonIDs,
+		PermissionIDs:   permissionIDs,
+		MenuIDs:         menuIDs,
+		ButtonIDs:       buttonIDs,
 	}
 }
 
@@ -488,7 +488,7 @@ func ListRoleModelToStandardOut(
 	return &mso
 }
 
-// RoleMenuTreeToOut 将菜单树节点转换为 RoleMenuPerm 输出对象
+// RoleMenuTreeToOut 将菜单树节点转换为RoleMenuPerm输出对象
 func RoleMenuTreeToOut(
 	mt *biz.MenuTreeNode,
 ) *pbRole.RoleMenuPerm {

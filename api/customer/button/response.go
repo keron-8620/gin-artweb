@@ -30,8 +30,8 @@ type ButtonStandardOut struct {
 // ButtonDetailOut 按钮详情信息
 type ButtonDetailOut struct {
 	ButtonStandardOut
-	Menu        *menu.MenuStandardOut `json:"menu"`
-	Permissions []uint32              `json:"permissions"`
+	Menu          *menu.MenuStandardOut `json:"menu"`
+	PermissionIDs []uint32              `json:"permission_ids"`
 }
 
 // ButtonBaseReply 按钮响应结构
