@@ -269,10 +269,11 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 	}
 
 	uc.removeJob(ctx, scheduleID)
-	if rErr := uc.addJob(ctx, m); rErr != nil {
-		return nil, rErr
+	if m.IsEnabled {
+		if err := uc.addJob(ctx, m); err != nil {
+			return nil, err
+		}
 	}
-
 	uc.log.Info(
 		"更新计划任务成功",
 		zap.Uint32(ScheduleIDKey, scheduleID),

@@ -22,12 +22,13 @@ func getBaseDir() string {
 		panic(fmt.Sprintf("获取执行路径失败: %v", err))
 	}
 
-	// 处理符号链接和相对路径
+	// 处理相对路径
 	absPath, err := filepath.Abs(exePath)
 	if err != nil {
 		panic(fmt.Sprintf("转换绝对路径失败: %v", err))
 	}
 
+	// 处理符号链接
 	resolvedPath, err := filepath.EvalSymlinks(absPath)
 	if err != nil {
 		panic(fmt.Sprintf("解析符号链接失败: %v", err))
