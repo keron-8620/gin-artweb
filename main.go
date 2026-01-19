@@ -61,7 +61,7 @@ func main() {
 		initDatabase bool
 		execSqlPath  string
 	)
-	flag.StringVar(&configPath, "config", filepath.Join(config.ConfigDir, "system.yaml"), "系统配置文件的路径")
+	flag.StringVar(&configPath, "config", "system.yaml", "系统配置文件的路径")
 	flag.BoolVar(&showVersion, "v", false, "展示版本信息")
 	flag.BoolVar(&initDatabase, "init-database", false, "初始化数据库")
 	flag.StringVar(&execSqlPath, "exec-sql", "", "执行SQL文件路径")
@@ -80,7 +80,7 @@ func main() {
 	}
 
 	// 加载系统配置
-	sysConf := config.NewSystemConf(configPath)
+	sysConf := config.NewSystemConf(filepath.Join(config.ConfigDir, configPath))
 	// 初始化服务器日志记录器
 	loggers := NewLoggers(sysConf.Log)
 

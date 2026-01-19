@@ -42,3 +42,6 @@ echo "Build success!"
 
 # 推送镜像
 # podman push swr.cn-north-4.myhuaweicloud.com/danqingzhao/artweb:${VERSION}
+
+# 部署
+# scp -r bin config resource storage sql cmd ansible@192.168.122.130:/home/ansible/artweb/
