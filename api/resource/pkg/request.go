@@ -66,6 +66,9 @@ type ListPackageRequest struct {
 
 func (req *ListPackageRequest) Query() (int, int, map[string]any) {
 	page, size, query := req.BaseModelQuery.QueryMap(7)
+	if req.Name != "" {
+		query["origin_filename = ?"] = "%" + req.Name + "%"
+	}
 	if req.Label != "" {
 		query["label = ?"] = req.Label
 	}
