@@ -360,7 +360,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 	}
 
 	page, size, query := req.Query()
-	query["system_type = ?"] = "stk"
+	query["system_type = ?"] = "STK"
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
@@ -445,7 +445,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 	}
 
 	page, size, query := req.Query()
-	query["system_type = ?"] = "crd"
+	query["system_type = ?"] = "CRD"
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
@@ -530,7 +530,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 	}
 
 	page, size, query := req.Query()
-	query["system_type = ?"] = "opt"
+	query["system_type = ?"] = "OPT"
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
@@ -591,9 +591,9 @@ func (s *OesColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.DELETE("/colony/:pk", s.DeleteOesColony)
 	r.GET("/colony/:pk", s.GetOesColony)
 	r.GET("/colony", s.ListOesColony)
-	r.GET("/api/v1/oes/colony/status/stk", s.ListStkTaskStatus)
-	r.GET("/api/v1/oes/colony/status/crd", s.ListCrdTaskStatus)
-	r.GET("/api/v1/oes/colony/status/opt", s.ListOptTaskStatus)
+	r.GET("/colony/status/stk", s.ListStkTaskStatus)
+	r.GET("/colony/status/crd", s.ListCrdTaskStatus)
+	r.GET("/colony/status/opt", s.ListOptTaskStatus)
 }
 
 func OesColonyToBaseOut(

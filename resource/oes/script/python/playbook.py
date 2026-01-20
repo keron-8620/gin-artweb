@@ -5,7 +5,6 @@ import sys
 import time
 from pathlib import Path
 import argparse
-import json
 
 import yaml
 import ansible_runner
@@ -84,17 +83,18 @@ def load_mon_conf(mon_id: int) -> Dict:
     :param mon_id: mon主机的id
     :return: mon的配置
     """
-    mon_path = MON_DIR.joinpath("config", str(mon_id), "mon.json")
+    mon_path = MON_DIR.joinpath("config", str(mon_id), "mon.yaml")
     if not mon_path.exists():
         raise FileNotFoundError(f"没有这个文件: {mon_path}")
     with open(mon_path, "r") as f:
-        mon_vars = json.load(f)
-    mon_host_path = HOST_CONF_DIR.joinpath(f"host_{mon_vars['id']}.json")
+        mon_vars = yaml.safe_load(f)
+    mon_host_path = HOST_CONF_DIR.joinpath(f"host_{mon_vars['host_id']}.yaml")
     if not mon_host_path.exists():
         raise FileNotFoundError(f"没有这个文件: {mon_host_path}")
     with open(mon_host_path, "r") as f:
-        mon_host = json.load(f)
+        mon_host = yaml.safe_load(f)
     return {**mon_vars, **mon_host}
+
 
 
 def init_vars(config_path: Path, extravars: str = ""):
@@ -105,11 +105,11 @@ def init_vars(config_path: Path, extravars: str = ""):
     :param extravars: 额外变量
     :return: vars配置
     """
-    colony_path = config_path.joinpath("all", "colony.json")
+    colony_path = config_path.joinpath("all", "colony.yaml")
     if not colony_path.exists():
         raise FileNotFoundError(f"没有这个文件: {colony_path}")
     with open(colony_path, "r") as f:
-        vars = json.load(f)
+        vars = yaml.safe_load(f)
     vars["mon_host"] = load_mon_conf(vars["mon_node_id"])
     if extravars:
         for item in extravars.split(";"):
@@ -146,13 +146,13 @@ def init_hosts(colony_num: str, conf_path: Path) -> Dict:
     oes_cluster_hosts = {}
     for path in conf_path.iterdir():
         if path.is_dir() and path.name in ("host_01", "host_02", "host_03"):
-            with open(path.joinpath("node.json"), "r") as f:
-                node_data = json.load(f)
-            host_path = HOST_CONF_DIR.joinpath(f"host_{node_data['host_id']}.json")
+            with open(path.joinpath("node.yaml"), "r") as f:
+                node_data = yaml.safe_load(f)
+            host_path = HOST_CONF_DIR.joinpath(f"host_{node_data['host_id']}.yaml")
             if not host_path.exists():
                 raise FileNotFoundError(f"没有这个文件: {host_path}")
             with open(host_path, "r") as f:
-                host_data = json.load(f)
+                host_data = yaml.safe_load(f)
             oes_cluster_hosts[f"oes_{colony_num}_{node_data['node_role']}"] = {**node_data, **host_data}
     return oes_cluster_hosts
 
@@ -175,7 +175,7 @@ def main(options):
         playbook=str(playbook_path),
         envvars={
             "ANSIBLE_NOCOLOR": "1", 
-            "ANSIBLE_LOG_PATH": options.log_path,
+            # "ANSIBLE_LOG_PATH": ANSIBLE_LOG_PATH,
         },
         verbosity=options.verbosity,
     )
@@ -193,12 +193,6 @@ if __name__ == "__main__":
         "--playbook_path", 
         type=str, 
         help="playbook文件的相对路径",
-        required=True
-    )
-    parser.add_argument(
-        "--log_path", 
-        type=str, 
-        help="请输入日志文件路径",
         required=True
     )
     parser.add_argument(

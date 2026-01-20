@@ -197,6 +197,7 @@ insert into jobs_script(username,project,label,name,language,status,is_builtin,d
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','dep','backup.sh','shell','true','true','备份mds集群');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','dep','rollback.sh','shell','true','true','回滚mds集群');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','cmd','mon.sh','shell','true','true','拉取mon上场文件');
+insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','cmd','bse.sh','shell','true','true','拉取北京产品文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','cmd','sse.sh','shell','true','true','拉取上海产品文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','cmd','szse.sh','shell','true','true','拉取深圳产品文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','mds','cmd','backup.sh','shell','true','true','mds系统日常备份');
@@ -220,6 +221,7 @@ insert into jobs_script(username,project,label,name,language,status,is_builtin,d
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','mon.sh','shell','true','true','拉取mon上场文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','counter_fetch.sh','shell','true','true','拉取主柜文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','counter_distribute.sh','shell','true','true','分发主柜文件');
+insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','bse.sh','shell','true','true','拉取北京产品文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','sse.sh','shell','true','true','拉取上海产品文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','szse.sh','shell','true','true','拉取深圳产品文件');
 insert into jobs_script(username,project,label,name,language,status,is_builtin,descr) values('mon','oes','cmd','csdc.sh','shell','true','true','拉取中登产品文件');

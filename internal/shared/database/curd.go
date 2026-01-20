@@ -111,7 +111,7 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 	// 开启事务处理
 	tx := db.Begin()
 	if tx.Error != nil {
-		// 事务开启失败时记录错误日志
+		// 事务开启失败时返回错误
 		return tx.Error
 	}
 

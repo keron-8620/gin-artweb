@@ -274,6 +274,12 @@ func (uc *MdsColonyUsecase) GetMdsTaskStatus(ctx context.Context, colonyNum stri
 	}
 
 	// 获取sse任务状态
+	bseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "bse_collector_"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
+	// 获取sse任务状态
 	sseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "sse_collector_"+flagBaseName))
 	if err != nil {
 		return nil, errors.FromError(err)
@@ -286,6 +292,7 @@ func (uc *MdsColonyUsecase) GetMdsTaskStatus(ctx context.Context, colonyNum stri
 	}
 	return &pbColony.MdsTaskStatus{
 		Mon:  monStatus,
+		Bse:  bseStatus,
 		Sse:  sseStatus,
 		Szse: szseStatus,
 	}, nil

@@ -79,6 +79,7 @@ slave_backup_path_oes_curr_date: "{{ slave_backup_path_oes }}/{{ curr_date }}"
 ############################## flag 文件名 ##########################
 fetch_mon_ok: "DATA_FETCH_MON.{{ curr_date }}.OK"
 fetch_counter_ok: "DATA_FETCH_COUNTER.{{ curr_date }}.OK"
+fetch_bse_ok: "DATA_FETCH_BSE.{{ curr_date }}.OK"
 fetch_sse_ok: "DATA_FETCH_SSE.{{ curr_date }}.OK"
 fetch_szse_ok: "DATA_FETCH_SZSE.{{ curr_date }}.OK"
 fetch_csdc_ok: "DATA_FETCH_SDC.{{ curr_date }}.OK"

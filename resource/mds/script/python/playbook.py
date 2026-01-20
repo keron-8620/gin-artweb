@@ -76,48 +76,6 @@ def pre_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> s
         return pre_trd_date(trd_dates, last_date, the_year)
 
 
-# def get_next_trd_date(trd_dates: Dict, curr_date: Optional[str] = None) -> str:
-#     """
-#     获取下一个交易日
-
-#     :param curr_date: 指定的交易日期
-#     :return: 下一个交易日
-#     """
-#     if not curr_date:
-#         curr_date = time.strftime("%Y%m%d", time.localtime())
-#     trd_date_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-#     date = int(curr_date)
-#     if date >= trd_date_info[-1]:
-#         trd_next_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-#         return str(trd_next_info[0])
-#     if date in trd_date_info:
-#         index = trd_date_info.index(date)
-#         return str(trd_date_info[index + 1])
-#     else:
-#         return str(date + 1)
-
-
-# def get_pre_trd_date(trd_dates: Dict, curr_date: Optional[str] = None):
-#     """
-#     获取上一个交易日
-
-#     :param curr_date: 指定的交易日期
-#     :return: 上一个交易日
-#     """
-#     if not curr_date:
-#         curr_date = time.strftime("%Y%m%d", time.localtime())
-#     trd_date_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-#     date = int(curr_date)
-#     if date <= trd_date_info[0]:
-#         trd_pre_info = trd_dates[f"trd_date_{curr_date[:4]}_list"]
-#         return str(trd_pre_info[-1])
-#     if date in trd_date_info:
-#         index = trd_date_info.index(date)
-#         return str(trd_date_info[index - 1])
-#     else:
-#         return str(date - 1)
-
-
 def load_mon_conf(mon_id: int) -> Dict:
     """
     加载mon配置

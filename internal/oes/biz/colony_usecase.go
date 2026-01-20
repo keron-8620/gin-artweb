@@ -291,6 +291,12 @@ func (uc *OesColonyUsecase) GetStkTaskStatus(ctx context.Context, colonyNum stri
 		return nil, errors.FromError(err)
 	}
 
+	// 获取bse任务状态
+	bseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "bse_collector_"+flagBaseName))
+	if err != nil {
+		return nil, errors.FromError(err)
+	}
+
 	// 获取sse任务状态
 	sseStatus, err := uc.getTaskStatus(ctx, filepath.Join(flagDir, "sse_collector_"+flagBaseName))
 	if err != nil {
@@ -313,6 +319,7 @@ func (uc *OesColonyUsecase) GetStkTaskStatus(ctx context.Context, colonyNum stri
 		Mon:               monStatus,
 		CounterFetch:      fetchStatus,
 		CounterDistribute: distributeStatus,
+		Bse:               bseStatus,
 		Sse:               sseStatus,
 		Szse:              szseStatus,
 		Csdc:              csdcStatus,
