@@ -43,7 +43,7 @@
   run_once: true
 
 - name: load sse etf variables
-  include_vars: "{{ local_path_oes_home_tmp_colodir }}/szse_etf.yml"
+  include_vars: "{{ local_path_oes_home_tmp_colodir }}/szse_etf.yaml"
   delegate_to: 127.0.0.1
   run_once: true
 
