@@ -104,7 +104,7 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 // @Tags 脚本管理
 // @Accept mpfd
 // @Produce json
-// @Param pk path uint true "脚本编号"
+// @Param id path uint true "脚本编号"
 // @Param file formData file true "脚本文件"
 // @Param descr formData string false "脚本描述"
 // @Param project formData string true "项目名称"
@@ -116,10 +116,10 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "脚本未找到"
 // @Failure 413 {object} errors.Error "文件过大"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/script/{pk} [put]
+// @Router /api/v1/jobs/script/{id} [put]
 // @Security ApiKeyAuth
 func (s *ScriptService) UpdateScript(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新脚本ID参数失败",
@@ -145,12 +145,12 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		return
 	}
 
-	om, rErr := s.ucScript.FindScriptByID(ctx, uri.PK)
+	om, rErr := s.ucScript.FindScriptByID(ctx, uri.ID)
 	if rErr != nil {
 		s.log.Error(
 			"查询脚本失败",
 			zap.Error(rErr),
-			zap.Uint32(biz.ScriptIDKey, uri.PK),
+			zap.Uint32(biz.ScriptIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
@@ -160,7 +160,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		s.log.Error(
 			"删除原脚本文件失败",
 			zap.Error(rErr),
-			zap.Uint32(biz.ScriptIDKey, uri.PK),
+			zap.Uint32(biz.ScriptIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
@@ -178,13 +178,13 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		IsBuiltin: false,
 		Username:  uc.Subject,
 	}
-	nm.ID = uri.PK
+	nm.ID = uri.ID
 	if err := common.UploadFile(ctx, s.log, s.maxSize, nm.ScriptPath(), req.File, 0o755); err != nil {
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
 	}
 
-	m, rErr := s.ucScript.UpdateScriptByID(ctx, uri.PK, map[string]any{
+	m, rErr := s.ucScript.UpdateScriptByID(ctx, uri.ID, map[string]any{
 		"name":       req.File.Filename,
 		"descr":      req.Descr,
 		"project":    req.Project,
@@ -198,7 +198,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		s.log.Error(
 			"更新脚本失败",
 			zap.Error(rErr),
-			zap.Uint32(biz.ScriptIDKey, uri.PK),
+			zap.Uint32(biz.ScriptIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
@@ -216,15 +216,15 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 // @Tags 脚本管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "脚本编号"
+// @Param id path uint true "脚本编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "脚本未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/script/{pk} [delete]
+// @Router /api/v1/jobs/script/{id} [delete]
 // @Security ApiKeyAuth
 func (s *ScriptService) DeleteScript(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除脚本ID参数失败",
@@ -239,15 +239,15 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除脚本",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucScript.DeleteScriptByID(ctx, uri.PK); err != nil {
+	if err := s.ucScript.DeleteScriptByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除脚本失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -256,7 +256,7 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除脚本成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -267,15 +267,15 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 // @Tags 脚本管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "脚本编号"
+// @Param id path uint true "脚本编号"
 // @Success 200 {object} pbScript.ScriptReply "成功返回脚本信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "脚本未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/script/{pk} [get]
+// @Router /api/v1/jobs/script/{id} [get]
 // @Security ApiKeyAuth
 func (s *ScriptService) GetScript(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询脚本ID参数失败",
@@ -290,16 +290,16 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询脚本详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucScript.FindScriptByID(ctx, uri.PK)
+	m, err := s.ucScript.FindScriptByID(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询脚本详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -308,7 +308,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询脚本详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -389,15 +389,15 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 // @Tags 脚本管理
 // @Accept json
 // @Produce application/octet-stream
-// @Param pk path uint true "脚本编号"
+// @Param id path uint true "脚本编号"
 // @Success 200 {file} file "成功下载脚本文件"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "脚本未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/script/{pk}/download [get]
+// @Router /api/v1/jobs/script/{id}/download [get]
 // @Security ApiKeyAuth
 func (s *ScriptService) DownloadScript(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定下载脚本ID参数失败",
@@ -410,12 +410,12 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 		return
 	}
 
-	m, err := s.ucScript.FindScriptByID(ctx, uri.PK)
+	m, err := s.ucScript.FindScriptByID(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询脚本详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -429,11 +429,11 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 
 func (s *ScriptService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/script", s.CreateScript)
-	r.PUT("/script/:pk", s.UpdateScript)
-	r.DELETE("/script/:pk", s.DeleteScript)
-	r.GET("/script/:pk", s.GetScript)
+	r.PUT("/script/:id", s.UpdateScript)
+	r.DELETE("/script/:id", s.DeleteScript)
+	r.GET("/script/:id", s.GetScript)
 	r.GET("/script", s.ListScript)
-	r.GET("/script/:pk/download", s.DownloadScript)
+	r.GET("/script/:id/download", s.DownloadScript)
 }
 
 func ScriptModelToStandardOut(

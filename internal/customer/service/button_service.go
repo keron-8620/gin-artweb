@@ -86,7 +86,7 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"创建按钮成功",
-		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -102,16 +102,16 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 // @Tags 按钮管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "按钮编号"
+// @Param id path uint true "按钮编号"
 // @Param request body pbButton.UpdateButtonRequest true "更新按钮请求"
 // @Success 200 {object} pbButton.ButtonReply "成功返回按钮信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "按钮未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/button/{pk} [put]
+// @Router /api/v1/customer/button/{id} [put]
 // @Security ApiKeyAuth
 func (s *ButtonService) UpdateButton(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定按钮ID参数失败",
@@ -139,12 +139,12 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始更新按钮",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucButton.UpdateButtonByID(ctx, uri.PK, req.PermissionIDs, map[string]any{
+	m, err := s.ucButton.UpdateButtonByID(ctx, uri.ID, req.PermissionIDs, map[string]any{
 		"name":          req.Name,
 		"arrange_order": req.ArrangeOrder,
 		"is_active":     req.IsActive,
@@ -155,7 +155,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 		s.log.Error(
 			"更新按钮失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -165,7 +165,7 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"更新按钮成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -180,15 +180,15 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 // @Tags 按钮管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "按钮编号"
+// @Param id path uint true "按钮编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "按钮未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/button/{pk} [delete]
+// @Router /api/v1/customer/button/{id} [delete]
 // @Security ApiKeyAuth
 func (s *ButtonService) DeleteButton(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除按钮ID参数失败",
@@ -203,15 +203,15 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除按钮",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucButton.DeleteButtonByID(ctx, uri.PK); err != nil {
+	if err := s.ucButton.DeleteButtonByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除按钮失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -220,7 +220,7 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除按钮成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -232,15 +232,15 @@ func (s *ButtonService) DeleteButton(ctx *gin.Context) {
 // @Tags 按钮管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "按钮编号"
+// @Param id path uint true "按钮编号"
 // @Success 200 {object} pbButton.ButtonReply "成功返回按钮信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "按钮未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/button/{pk} [get]
+// @Router /api/v1/customer/button/{id} [get]
 // @Security ApiKeyAuth
 func (s *ButtonService) GetButton(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询按钮ID参数失败",
@@ -255,16 +255,16 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询按钮详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucButton.FindButtonByID(ctx, []string{"Permissions", "Menu"}, uri.PK)
+	m, err := s.ucButton.FindButtonByID(ctx, []string{"Permissions", "Menu"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询按钮详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -273,7 +273,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询按钮详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -350,9 +350,9 @@ func (s *ButtonService) ListButton(ctx *gin.Context) {
 
 func (s *ButtonService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/button", s.CreateButton)
-	r.PUT("/button/:pk", s.UpdateButton)
-	r.DELETE("/button/:pk", s.DeleteButton)
-	r.GET("/button/:pk", s.GetButton)
+	r.PUT("/button/:id", s.UpdateButton)
+	r.DELETE("/button/:id", s.DeleteButton)
+	r.GET("/button/:id", s.GetButton)
 	r.GET("/button", s.ListButton)
 }
 

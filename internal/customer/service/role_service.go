@@ -87,7 +87,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"创建角色成功",
-		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -103,16 +103,16 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 // @Tags 角色管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "角色编号"
+// @Param id path uint true "角色编号"
 // @Param request body pbRole.CreateOrUpdateRoleRequest true "更新角色请求"
 // @Success 200 {object} pbRole.RoleReply "成功返回角色信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "角色未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/role/{pk} [put]
+// @Router /api/v1/customer/role/{id} [put]
 // @Security ApiKeyAuth
 func (s *RoleService) UpdateRole(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定角色ID参数失败",
@@ -139,13 +139,13 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始更新角色",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucRole.UpdateRoleByID(
-		ctx, uri.PK,
+		ctx, uri.ID,
 		req.PermissionIDs,
 		req.MenuIDs,
 		req.ButtonIDs,
@@ -158,7 +158,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 		s.log.Error(
 			"更新角色失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -168,7 +168,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"更新角色成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -183,15 +183,15 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 // @Tags 角色管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "角色编号"
+// @Param id path uint true "角色编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "角色未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/role/{pk} [delete]
+// @Router /api/v1/customer/role/{id} [delete]
 // @Security ApiKeyAuth
 func (s *RoleService) DeleteRole(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除角色ID参数失败",
@@ -206,15 +206,15 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除角色",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucRole.DeleteRoleByID(ctx, uri.PK); err != nil {
+	if err := s.ucRole.DeleteRoleByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除角色失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -223,7 +223,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除角色成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -235,15 +235,15 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 // @Tags 角色管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "角色编号"
+// @Param id path uint true "角色编号"
 // @Success 200 {object} pbRole.RoleReply "成功返回角色信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "角色未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/role/{pk} [get]
+// @Router /api/v1/customer/role/{id} [get]
 // @Security ApiKeyAuth
 func (s *RoleService) GetRole(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询角色ID参数失败",
@@ -258,16 +258,16 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询角色详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.PK)
+	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询角色详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -276,7 +276,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询角色详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -409,9 +409,9 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 
 func (s *RoleService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/role", s.CreateRole)
-	r.PUT("/role/:pk", s.UpdateRole)
-	r.DELETE("/role/:pk", s.DeleteRole)
-	r.GET("/role/:pk", s.GetRole)
+	r.PUT("/role/:id", s.UpdateRole)
+	r.DELETE("/role/:id", s.DeleteRole)
+	r.GET("/role/:id", s.GetRole)
 	r.GET("/role", s.ListRole)
 }
 

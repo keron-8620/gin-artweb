@@ -88,15 +88,15 @@ func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
 // @Tags 脚本执行记录
 // @Accept json
 // @Produce json
-// @Param pk path uint true "执行记录编号"
+// @Param id path uint true "执行记录编号"
 // @Success 200 {object} pbRecord.ScriptRecordReply "成功返回执行记录信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "执行记录未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/record/{pk} [get]
+// @Router /api/v1/jobs/record/{id} [get]
 // @Security ApiKeyAuth
 func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询脚本执行记录ID参数失败",
@@ -111,16 +111,16 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询脚本执行记录详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucRecord.FindScriptRecordByID(ctx, []string{"Script"}, uri.PK)
+	m, err := s.ucRecord.FindScriptRecordByID(ctx, []string{"Script"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询脚本执行记录详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -129,7 +129,7 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询脚本执行记录详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -211,15 +211,15 @@ func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
 // @Tags 脚本执行记录
 // @Accept json
 // @Produce application/octet-stream
-// @Param pk path uint true "执行记录编号"
+// @Param id path uint true "执行记录编号"
 // @Success 200 {file} file "成功下载日志文件"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "执行记录未找到或日志文件不存在"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/record/{pk}/log [get]
+// @Router /api/v1/jobs/record/{id}/log [get]
 // @Security ApiKeyAuth
 func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定脚本执行记录ID参数失败",
@@ -232,12 +232,12 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 
-	m, err := s.ucRecord.FindScriptRecordByID(ctx, []string{"Script"}, uri.PK)
+	m, err := s.ucRecord.FindScriptRecordByID(ctx, []string{"Script"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询脚本执行记录详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -254,12 +254,12 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 // @Tags 脚本执行记录
 // @Accept json
 // @Produce json
-// @Param pk path uint true "执行记录编号"
+// @Param id path uint true "执行记录编号"
 // @Success 200 {object} pbComm.MapAPIReply "终止信号"
-// @Router /api/v1/jobs/record/{pk} [delete]
+// @Router /api/v1/jobs/record/{id} [delete]
 // @Security ApiKeyAuth
 func (s *ScriptRecordService) CancelScriptRecord(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询脚本执行记录ID参数失败",
@@ -272,16 +272,16 @@ func (s *ScriptRecordService) CancelScriptRecord(ctx *gin.Context) {
 		return
 	}
 
-	s.ucRecord.Cancel(ctx, uri.PK)
+	s.ucRecord.Cancel(ctx, uri.ID)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
 func (s *ScriptRecordService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/record", s.ExecScriptRecord)
-	r.GET("/record/:pk", s.GetScriptRecord)
+	r.GET("/record/:id", s.GetScriptRecord)
 	r.GET("/record", s.ListScriptRecord)
-	r.GET("/record/:pk/log", s.DownloadScriptRecordLog)
-	r.DELETE("/record/:pk", s.CancelScriptRecord)
+	r.GET("/record/:id/log", s.DownloadScriptRecordLog)
+	r.DELETE("/record/:id", s.CancelScriptRecord)
 }
 
 func ScriptRecordToStandardOut(
@@ -299,7 +299,7 @@ func ScriptRecordToStandardOut(
 		Timeout:      m.Timeout,
 		WorkDir:      m.WorkDir,
 		ErrorMessage: m.ErrorMessage,
-		UserName:     m.Username,
+		Username:     m.Username,
 	}
 }
 

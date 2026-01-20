@@ -9,24 +9,32 @@ import (
 type MdsColonyBaseOut struct {
 	// ID
 	ID uint32 `json:"id" example:"1"`
+
 	// 集群号
 	ColonyNum string `json:"colony_num" example:"test"`
+
 	// 解压后名称
 	ExtractedName string `json:"extracted_name" example:""`
 }
 
 type MdsColonyStandardOut struct {
 	MdsColonyBaseOut
+
 	// 创建时间
 	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
+
 	// 更新时间
 	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 }
 
 type MdsColonyDetailOut struct {
 	MdsColonyStandardOut
+
+	// mds程序包
 	Package *pkg.PackageStandardOut `json:"package"`
-	MonNode *mon.MonNodeBaseOut     `json:"mon_node"`
+
+	// mon节点
+	MonNode *mon.MonNodeBaseOut `json:"mon_node"`
 }
 
 // MdsColonyReply mds集群配置的响应结构

@@ -93,16 +93,16 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 // @Tags 计划任务管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "计划任务编号"
+// @Param id path uint true "计划任务编号"
 // @Param request body pbSchedule.UpdateScheduleRequest true "更新计划任务请求"
 // @Success 200 {object} pbSchedule.ScheduleReply "成功返回计划任务信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "计划任务未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/schedule/{pk} [put]
+// @Router /api/v1/jobs/schedule/{id} [put]
 // @Security ApiKeyAuth
 func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新计划任务ID参数失败",
@@ -144,12 +144,12 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 		"script_id":      req.ScriptID,
 	}
 
-	m, err := s.ucSchedule.UpdateScheduleByID(ctx, uri.PK, data)
+	m, err := s.ucSchedule.UpdateScheduleByID(ctx, uri.ID, data)
 	if err != nil {
 		s.log.Error(
 			"更新计划任务失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -168,15 +168,15 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 // @Tags 计划任务管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "计划任务编号"
+// @Param id path uint true "计划任务编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "计划任务未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/schedule/{pk} [delete]
+// @Router /api/v1/jobs/schedule/{id} [delete]
 // @Security ApiKeyAuth
 func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除计划任务ID参数失败",
@@ -191,15 +191,15 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除计划任务",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucSchedule.DeleteScheduleByID(ctx, uri.PK); err != nil {
+	if err := s.ucSchedule.DeleteScheduleByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除计划任务失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -208,7 +208,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除计划任务成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -220,15 +220,15 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 // @Tags 计划任务管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "计划任务编号"
+// @Param id path uint true "计划任务编号"
 // @Success 200 {object} pbSchedule.ScheduleReply "成功返回计划任务信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "计划任务未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/jobs/schedule/{pk} [get]
+// @Router /api/v1/jobs/schedule/{id} [get]
 // @Security ApiKeyAuth
 func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询计划任务ID参数失败",
@@ -243,16 +243,16 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询计划任务详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucSchedule.FindScheduleByID(ctx, []string{"Script"}, uri.PK)
+	m, err := s.ucSchedule.FindScheduleByID(ctx, []string{"Script"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询计划任务详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -261,7 +261,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询计划任务详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -340,9 +340,9 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 
 func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/schedule", s.CreateSchedule)
-	r.PUT("/schedule/:pk", s.UpdateSchedule)
-	r.DELETE("/schedule/:pk", s.DeleteSchedule)
-	r.GET("/schedule/:pk", s.GetSchedule)
+	r.PUT("/schedule/:id", s.UpdateSchedule)
+	r.DELETE("/schedule/:id", s.DeleteSchedule)
+	r.GET("/schedule/:id", s.GetSchedule)
 	r.GET("/schedule", s.ListSchedule)
 }
 

@@ -10,30 +10,25 @@ import (
 //
 // swagger:model CreateButtonRequest
 type CreateButtonRequest struct {
-	// 按钮主键，必须大于0
-	// Required: true
-	// Minimum: 1
+	// 唯一标识
 	ID uint32 `json:"id" form:"id" binding:"required,gt=0"`
 
-	// 名称，最大长度50
-	// Required: true
-	// Max length: 50
+	// 名称
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
-	// 排序字段，必填
+	// 排序字段
 	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"required"`
 
-	// 是否激活，必填
-	IsActive bool `json:"is_active" form:"is_active"`
+	// 是否激活
+	IsActive bool `json:"is_active" form:"is_active" binding:"required"`
 
-	// 按钮描述信息，可选，最大长度254
-	// Max length: 254
+	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 
-	// 菜单ID，必填
+	// 菜单ID
 	MenuID uint32 `json:"menu_id" form:"menu_id" binding:"required"`
 
-	// 关联权限ID列表，可选
+	// 权限ID列表
 	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
 }
 
@@ -57,25 +52,22 @@ func (req *CreateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) erro
 //
 // swagger:model UpdateButtonRequest
 type UpdateButtonRequest struct {
-	// 名称，最大长度50
-	// Required: true
-	// Max length: 50
+	// 名称
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
-	// 排序字段，必填
+	// 排序字段
 	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"omitempty"`
 
-	// 是否激活，必填
+	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active"`
 
-	// 按钮描述信息，可选，最大长度254
-	// Max length: 254
+	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 
-	// 菜单ID，必填
+	// 菜单ID
 	MenuID uint32 `json:"menu_id" form:"menu_id" binding:"required"`
 
-	// 关联权限ID列表，可选
+	// 权限ID列表
 	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
 }
 
@@ -101,18 +93,16 @@ func (req *UpdateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) erro
 type ListButtonRequest struct {
 	common.StandardModelQuery
 
-	// 按钮名称，字符串长度限制
-	// Max length: 50
+	// 按钮名称
 	Name string `form:"name" binding:"omitempty,max=50"`
 
-	// 是否激活筛选
+	// 是否激活
 	IsActive *bool `form:"is_active" binding:"omitempty"`
 
-	// 按钮描述，字符串长度限制
-	// Max length: 254
+	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
-	// 菜单ID，必填
+	// 菜单ID
 	MenuID uint32 `form:"menu_id" binding:"omitempty"`
 }
 

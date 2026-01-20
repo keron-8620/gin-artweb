@@ -6,11 +6,9 @@ import (
 	"time"
 )
 
-type PKUri struct {
-	// 主键，必填，必须大于0
-	// Required: true
-	// Minimum: 1
-	PK uint32 `uri:"pk" binding:"required,gt=0"`
+type IDUri struct {
+	// 唯一标识
+	ID uint32 `uri:"id" binding:"required,gt=0"`
 }
 
 type ModelQuerier interface {
@@ -23,20 +21,16 @@ var (
 )
 
 type BaseModelQuery struct {
-	// 页码必须大于0
-	// Minimum: 1
+	// 分页页码
 	Page int `form:"page" binding:"omitempty,gt=0"`
 
-	// 每页大小必须大于等于0
-	// Minimum: 0
+	// 分页大小
 	Size int `form:"size" binding:"omitempty,gte=0"`
 
-	// 权限主键，可选参数，如果提供则必须大于0
-	// Minimum: 1
+	// 唯一标识
 	Pk uint32 `form:"pk" binding:"omitempty,gt=0"`
 
-	// "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-	// Max length: 100
+	// "唯一标识列表(多个用,隔开)"
 	Pks string `form:"pks" binding:"omitempty,max=100"`
 }
 

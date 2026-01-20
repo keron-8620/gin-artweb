@@ -88,16 +88,16 @@ func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes集群编号"
+// @Param id path uint true "oes集群编号"
 // @Param request body pbColony.CreateOrUpdateOesColonyRequest true "更新oes集群请求"
 // @Success 200 {object} pbColony.OesColonyReply "成功返回oes集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/colony/{pk} [put]
+// @Router /api/v1/oes/colony/{id} [put]
 // @Security ApiKeyAuth
 func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新oes集群ID参数失败",
@@ -132,12 +132,12 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 		"mon_node_id":    req.MonNodeID,
 	}
 
-	m, err := s.ucColony.UpdateOesColonyByID(ctx, uri.PK, data)
+	m, err := s.ucColony.UpdateOesColonyByID(ctx, uri.ID, data)
 	if err != nil {
 		s.log.Error(
 			"更新oes集群失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -156,15 +156,15 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes集群编号"
+// @Param id path uint true "oes集群编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/colony/{pk} [delete]
+// @Router /api/v1/oes/colony/{id} [delete]
 // @Security ApiKeyAuth
 func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除oes集群ID参数失败",
@@ -179,15 +179,15 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除oes集群",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucColony.DeleteOesColonyByID(ctx, uri.PK); err != nil {
+	if err := s.ucColony.DeleteOesColonyByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除oes集群失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -196,7 +196,7 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除oes集群成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -208,15 +208,15 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes集群编号"
+// @Param id path uint true "oes集群编号"
 // @Success 200 {object} pbColony.OesColonyReply "成功返回oes集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/colony/{pk} [get]
+// @Router /api/v1/oes/colony/{id} [get]
 // @Security ApiKeyAuth
 func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询oes集群ID参数失败",
@@ -231,16 +231,16 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询oes集群详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucColony.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, uri.PK)
+	m, err := s.ucColony.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询oes集群详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -249,7 +249,7 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询oes集群详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -397,7 +397,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			s.log.Error(
 				"查询oes现货集群任务状态失败",
 				zap.Error(rErr),
-				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
@@ -482,7 +482,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			s.log.Error(
 				"查询oes两融集群任务状态失败",
 				zap.Error(rErr),
-				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
@@ -567,7 +567,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			s.log.Error(
 				"查询oes期权集群任务状态失败",
 				zap.Error(rErr),
-				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
@@ -583,9 +583,9 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 
 func (s *OesColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/colony", s.CreateOesColony)
-	r.PUT("/colony/:pk", s.UpdateOesColony)
-	r.DELETE("/colony/:pk", s.DeleteOesColony)
-	r.GET("/colony/:pk", s.GetOesColony)
+	r.PUT("/colony/:id", s.UpdateOesColony)
+	r.DELETE("/colony/:id", s.DeleteOesColony)
+	r.GET("/colony/:id", s.GetOesColony)
 	r.GET("/colony", s.ListOesColony)
 	r.GET("/colony/status/stk", s.ListStkTaskStatus)
 	r.GET("/colony/status/crd", s.ListCrdTaskStatus)

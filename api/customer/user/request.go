@@ -10,23 +10,19 @@ import (
 //
 // swagger:model CreateUserRequest
 type CreateUserRequest struct {
-	// 用户名，最大长度50
-	// Required: true
-	// Max length: 50
+	// 用户名
 	Username string `json:"username" form:"username" binding:"required,max=50"`
 
-	// 密码，最大长度20
-	// Required: true
-	// Max length: 20
+	// 密码
 	Password string `json:"password" form:"password" binding:"required,max=20"`
 
-	// 是否激活，必填
+	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active"`
 
-	// 是否是工作人员，必填
+	// 是否是工作人员
 	IsStaff bool `json:"is_staff" form:"is_staff"`
 
-	// 角色ID，必填
+	// 角色ID
 	RoleID uint32 `json:"role_id" form:"role_id" binding:"required"`
 }
 
@@ -43,18 +39,16 @@ func (req *CreateUserRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 //
 // swagger:model UpdateUserRequest
 type UpdateUserRequest struct {
-	// 用户名，最大长度50
-	// Required: true
-	// Max length: 50
+	// 用户名
 	Username string `json:"username" form:"username" binding:"required,max=50"`
 
-	// 是否激活，必填
+	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active"`
 
-	// 是否是工作人员，必填
+	// 是否是工作人员
 	IsStaff bool `json:"is_staff" form:"is_staff"`
 
-	// 角色ID，必填
+	// 角色ID
 	RoleID uint32 `json:"role_id" form:"role_id" binding:"required"`
 }
 
@@ -73,8 +67,7 @@ func (req *UpdateUserRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 type ListUserRequest struct {
 	common.StandardModelQuery
 
-	// 用户名称，字符串长度限制
-	// Max length: 50
+	// 用户名
 	Username string `form:"name" binding:"omitempty,max=50"`
 
 	// 是否激活
@@ -108,14 +101,10 @@ func (req *ListUserRequest) Query() (int, int, map[string]any) {
 //
 // swagger:model ResetPasswordRequest
 type ResetPasswordRequest struct {
-	// 新密码，最大长度20
-	// Required: true
-	// Max length: 20
+	// 新密码
 	NewPassword string `json:"new_password" form:"new_password" binding:"required,max=20"`
 
-	// 确认密码，最大长度20
-	// Required: true
-	// Max length: 20
+	// 确认密码
 	ConfirmPassword string `json:"confirm_password" form:"confirm_password" binding:"required,eqfield=NewPassword"`
 }
 
@@ -123,30 +112,20 @@ type ResetPasswordRequest struct {
 //
 // swagger:model PatchPasswordRequest
 type PatchPasswordRequest struct {
-	// 原密码，必填,
-	// Required: true
-	// Max length: 20
+	// 原密码
 	OldPassword string `json:"old_password" form:"old_password" binding:"required"`
 
-	// 新密码，最大长度20
-	// Required: true
-	// Max length: 20
+	// 新密码
 	NewPassword string `json:"new_password" form:"new_password" binding:"required,max=20"`
 
-	// 确认密码，最大长度20
-	// Required: true
-	// Max length: 20
+	// 确认密码
 	ConfirmPassword string `json:"confirm_password" form:"confirm_password" binding:"required,eqfield=NewPassword"`
 }
 
 type LoginRequest struct {
-	// 用户名，必填,
-	// Required: true
-	// Max length: 50
+	// 用户名
 	Username string `json:"username" form:"username" binding:"required,max=50"`
 
-	// 密码，最大长度20
-	// Required: true
-	// Max length: 20
+	// 密码
 	Password string `json:"password" form:"password" binding:"required,max=20"`
 }

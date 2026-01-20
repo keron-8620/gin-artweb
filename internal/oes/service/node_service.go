@@ -85,16 +85,16 @@ func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
 // @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes节点编号"
+// @Param id path uint true "oes节点编号"
 // @Param request body pbNode.CreateOrUpdateOesNodeRequest true "更新oes节点请求"
 // @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node/{pk} [put]
+// @Router /api/v1/oes/node/{id} [put]
 // @Security ApiKeyAuth
 func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新oes节点ID参数失败",
@@ -127,12 +127,12 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 		"oes_colony_id": req.OesColonyID,
 	}
 
-	m, err := s.ucNode.UpdateOesNodeByID(ctx, uri.PK, data)
+	m, err := s.ucNode.UpdateOesNodeByID(ctx, uri.ID, data)
 	if err != nil {
 		s.log.Error(
 			"更新oes节点失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -151,15 +151,15 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 // @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes节点编号"
+// @Param id path uint true "oes节点编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node/{pk} [delete]
+// @Router /api/v1/oes/node/{id} [delete]
 // @Security ApiKeyAuth
 func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除oes节点ID参数失败",
@@ -174,15 +174,15 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除oes节点",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucNode.DeleteOesNodeByID(ctx, uri.PK); err != nil {
+	if err := s.ucNode.DeleteOesNodeByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除oes节点失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -191,7 +191,7 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除oes节点成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -203,15 +203,15 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 // @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "oes节点编号"
+// @Param id path uint true "oes节点编号"
 // @Success 200 {object} pbNode.OesNodeReply "成功返回oes节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/node/{pk} [get]
+// @Router /api/v1/oes/node/{id} [get]
 // @Security ApiKeyAuth
 func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询oes节点ID参数失败",
@@ -226,16 +226,16 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询oes节点详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucNode.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.PK)
+	m, err := s.ucNode.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询oes节点详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -244,7 +244,7 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询oes节点详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -323,9 +323,9 @@ func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
 
 func (s *OesNodeService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/node", s.CreateOesNode)
-	r.PUT("/node/:pk", s.UpdateOesNode)
-	r.DELETE("/node/:pk", s.DeleteOesNode)
-	r.GET("/node/:pk", s.GetOesNode)
+	r.PUT("/node/:id", s.UpdateOesNode)
+	r.DELETE("/node/:id", s.DeleteOesNode)
+	r.GET("/node/:id", s.GetOesNode)
 	r.GET("/node", s.ListOesNode)
 }
 

@@ -7,29 +7,18 @@ import "gin-artweb/api/common"
 // swagger:model CreateScriptRecordRequest
 type CreateScriptRecordRequest struct {
 	// 脚本ID
-	// required: true
-	// example: 1
 	ScriptID uint32 `json:"script_id" form:"script_id" binding:"required"`
 
-	// 命令行参数 (JSON数组字符串)
-	// required: false
-	// example: "[\"--verbose\", \"--output=/tmp\"]"
+	// 命令行参数
 	CommandArgs string `json:"command_args" form:"command_args" binding:"omitempty"`
 
-	// 环境变量 (JSON对象字符串)
-	// required: false
-	// example: "{\"ENV\":\"production\"}"
+	// 环境变量 (JSON对象)
 	EnvVars string `json:"env_vars" form:"env_vars" binding:"omitempty"`
 
 	// 超时时间(秒)
-	// required: false
-	// default: 300
-	// minimum: 1
 	Timeout int `json:"timeout" form:"timeout" binding:"required"`
 
 	// 工作目录
-	// required: false
-	// example: "/home/user/work"
 	WorkDir string `json:"work_dir" form:"work_dir" binding:"omitempty"`
 }
 
@@ -41,23 +30,18 @@ type ListScriptRecordRequest struct {
 	common.StandardModelQuery
 
 	// 筛选计划任务触发类型
-	// required: false
 	TriggerType string `json:"trigger_type" form:"trigger_type" binding:"omitempty"`
 
 	// 筛选脚本执行的任务状态
-	// required: false
 	Status *int `json:"status" form:"status" binding:"omitempty"`
 
 	// 按脚本退出码筛选
-	// required: false
 	ExitCode *int `json:"exit_code" form:"exit_code" binding:"omitempty"`
 
 	// 按脚本ID筛选
-	// required: false
 	ScriptID uint32 `json:"script_id" form:"script_id" binding:"omitempty"`
 
 	// 按用户名筛选
-	// required: false
 	Username string `json:"username" binding:"omitempty"`
 }
 

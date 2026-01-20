@@ -7,33 +7,21 @@ import "gin-artweb/api/common"
 // swagger:model CreateOrUpdateMonNodeRequest
 type CreateOrUpdateMonNodeRequest struct {
 	// 名称
-	// required: true
-	// example: "mon上海节点"
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
 	// 部署路径
-	// required: true
-	// example: "/home/monuser/mon"
 	DeployPath string `json:"deploy_path" form:"deploy_path" binding:"required"`
 
 	// 导出路径
-	// required: true
-	// example: "/mnt/quant360/import/mon"
 	OutportPath string `json:"outport_path" form:"outport_path" binding:"required"`
 
 	// JAVA_HOME
-	// required: true
-	// example: "/home/monuser/jdk-11.0.1"
 	JavaHome string `json:"java_home" form:"java_home" bunding:"required"`
 
 	// URL地址
-	// required: true
-	// example: "http://192.168.11.189:8080/mon"
 	URL string `json:"url" form:"url" bunding:"required"`
 
 	// 主机ID
-	// required: true
-	// example: 1
 	HostID uint32 `json:"host_id" form:"host_id" binding:"required"`
 }
 
@@ -44,12 +32,10 @@ type CreateOrUpdateMonNodeRequest struct {
 type ListMonNodeRequest struct {
 	common.StandardModelQuery
 
-	// 按名称搜索
-	// required: false
+	// 名称
 	Name string `form:"name"`
 
-	// 按主机ID筛选
-	// required: false
+	// 主机ID
 	HostID uint32 `form:"host_id"`
 }
 

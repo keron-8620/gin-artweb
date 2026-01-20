@@ -11,18 +11,13 @@ import (
 )
 
 type UploadPackageRequest struct {
-	// 标签，最大长度50
-	// Required: true
-	// Max length: 50
+	// 标签
 	Label string `form:"label" binding:"required,oneof=mds oes xcounter"`
 
-	// 版本号，最大长度50
-	// Required: true
-	// Max length: 50
+	// 版本号
 	Version string `form:"version" binding:"required"`
 
 	// 上传的程序包文件
-	// Required: true
 	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
@@ -35,20 +30,16 @@ func (req *UploadPackageRequest) MarshalLogObject(enc zapcore.ObjectEncoder) err
 type ListPackageRequest struct {
 	common.BaseModelQuery
 
-	// 名称，最大长度50
-	// Max length: 50
+	// 文件名
 	Filename string `form:"filename" binding:"omitempty,max=50"`
 
-	// 标签，最大长度50
-	// Max length: 50
+	// 标签
 	Label string `form:"label" binding:"omitempty,max=50"`
 
-	// 标签，最大长度50,多个标签用逗号分隔
-	// Max length: 50
+	// 标签组(多个用,隔开)
 	Labels string `form:"labels" binding:"omitempty,max=50"`
 
-	// 版本号，最大长度50
-	// Max length: 50
+	// 版本号
 	Version string `form:"version" binding:"omitempty" json:"version"`
 
 	// 上传时间之前的记录 (RFC3339格式)
@@ -63,7 +54,7 @@ type ListPackageRequest struct {
 func (req *ListPackageRequest) Query() (int, int, map[string]any) {
 	page, size, query := req.BaseModelQuery.QueryMap(7)
 	if req.Filename != "" {
-		query["origin_filename = ?"] = "%" + req.Filename + "%"
+		query["origin_filename like ?"] = "%" + req.Filename + "%"
 	}
 	if req.Label != "" {
 		query["label = ?"] = req.Label

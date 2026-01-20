@@ -85,16 +85,16 @@ func (s *MdsNodeService) CreateMdsNode(ctx *gin.Context) {
 // @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mds节点编号"
+// @Param id path uint true "mds节点编号"
 // @Param request body pbNode.CreateOrUpdateMdsNodeRequest true "更新mds节点请求"
 // @Success 200 {object} pbNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/node/{pk} [put]
+// @Router /api/v1/mds/node/{id} [put]
 // @Security ApiKeyAuth
 func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新mds节点ID参数失败",
@@ -127,12 +127,12 @@ func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 		"mds_colony_id": req.MdsColonyID,
 	}
 
-	m, err := s.ucNode.UpdateMdsNodeByID(ctx, uri.PK, data)
+	m, err := s.ucNode.UpdateMdsNodeByID(ctx, uri.ID, data)
 	if err != nil {
 		s.log.Error(
 			"更新mds节点失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -151,15 +151,15 @@ func (s *MdsNodeService) UpdateMdsNode(ctx *gin.Context) {
 // @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mds节点编号"
+// @Param id path uint true "mds节点编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/node/{pk} [delete]
+// @Router /api/v1/mds/node/{id} [delete]
 // @Security ApiKeyAuth
 func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除mds节点ID参数失败",
@@ -174,15 +174,15 @@ func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除mds节点",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucNode.DeleteMdsNodeByID(ctx, uri.PK); err != nil {
+	if err := s.ucNode.DeleteMdsNodeByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除mds节点失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -191,7 +191,7 @@ func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除mds节点成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -203,15 +203,15 @@ func (s *MdsNodeService) DeleteMdsNode(ctx *gin.Context) {
 // @Tags mds节点管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mds节点编号"
+// @Param id path uint true "mds节点编号"
 // @Success 200 {object} pbNode.MdsNodeReply "成功返回mds节点信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/node/{pk} [get]
+// @Router /api/v1/mds/node/{id} [get]
 // @Security ApiKeyAuth
 func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询mds节点ID参数失败",
@@ -226,16 +226,16 @@ func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询mds节点详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucNode.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, uri.PK)
+	m, err := s.ucNode.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询mds节点详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -244,7 +244,7 @@ func (s *MdsNodeService) GetMdsNode(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询mds节点详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -323,9 +323,9 @@ func (s *MdsNodeService) ListMdsNode(ctx *gin.Context) {
 
 func (s *MdsNodeService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/node", s.CreateMdsNode)
-	r.PUT("/node/:pk", s.UpdateMdsNode)
-	r.DELETE("/node/:pk", s.DeleteMdsNode)
-	r.GET("/node/:pk", s.GetMdsNode)
+	r.PUT("/node/:id", s.UpdateMdsNode)
+	r.DELETE("/node/:id", s.DeleteMdsNode)
+	r.GET("/node/:id", s.GetMdsNode)
 	r.GET("/node", s.ListMdsNode)
 }
 

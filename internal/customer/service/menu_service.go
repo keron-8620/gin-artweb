@@ -95,7 +95,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"创建菜单成功",
-		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -112,16 +112,16 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 // @Tags 菜单管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "菜单编号"
+// @Param id path uint true "菜单编号"
 // @Param request body pbMenu.UpdateMenuRequest true "更新菜单请求"
 // @Success 200 {object} pbMenu.MenuReply "成功返回菜单信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "菜单未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/menu/{pk} [put]
+// @Router /api/v1/customer/menu/{id} [put]
 // @Security ApiKeyAuth
 func (s *MenuService) UpdateMenu(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定菜单ID参数失败",
@@ -149,7 +149,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始更新菜单",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -167,12 +167,12 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 		data["parent_id"] = req.ParentID
 	}
 
-	m, err := s.ucMenu.UpdateMenuByID(ctx, uri.PK, req.PermissionIDs, data)
+	m, err := s.ucMenu.UpdateMenuByID(ctx, uri.ID, req.PermissionIDs, data)
 	if err != nil {
 		s.log.Error(
 			"更新菜单失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -182,7 +182,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"更新菜单成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -198,15 +198,15 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 // @Tags 菜单管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "菜单编号"
+// @Param id path uint true "菜单编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "菜单未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/menu/{pk} [delete]
+// @Router /api/v1/customer/menu/{id} [delete]
 // @Security ApiKeyAuth
 func (s *MenuService) DeleteMenu(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除菜单ID参数失败",
@@ -221,15 +221,15 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除菜单",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucMenu.DeleteMenuByID(ctx, uri.PK); err != nil {
+	if err := s.ucMenu.DeleteMenuByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除菜单失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -238,7 +238,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除菜单成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -250,15 +250,15 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 // @Tags 菜单管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "菜单编号"
+// @Param id path uint true "菜单编号"
 // @Success 200 {object} pbMenu.MenuReply "成功返回用户信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "菜单未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/menu/{pk} [get]
+// @Router /api/v1/customer/menu/{id} [get]
 // @Security ApiKeyAuth
 func (s *MenuService) GetMenu(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询菜单ID参数失败",
@@ -273,16 +273,16 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询菜单详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.PK)
+	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询菜单详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -291,7 +291,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询菜单详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -369,9 +369,9 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 
 func (s *MenuService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/menu", s.CreateMenu)
-	r.PUT("/menu/:pk", s.UpdateMenu)
-	r.DELETE("/menu/:pk", s.DeleteMenu)
-	r.GET("/menu/:pk", s.GetMenu)
+	r.PUT("/menu/:id", s.UpdateMenu)
+	r.DELETE("/menu/:id", s.DeleteMenu)
+	r.GET("/menu/:id", s.GetMenu)
 	r.GET("/menu", s.ListMenu)
 }
 

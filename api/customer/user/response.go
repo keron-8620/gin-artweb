@@ -6,12 +6,15 @@ import (
 )
 
 type UserBaseOut struct {
-	// 用户ID
+	// 唯一标识
 	ID uint32 `json:"id" example:"1"`
-	// 名称
+
+	// 用户名
 	Username string `json:"username" example:"judgement"`
+
 	// 是否激活
 	IsActive bool `json:"is_active" example:"true"`
+
 	// 是否是工作人员
 	IsStaff bool `json:"is_staff" example:"false"`
 }
@@ -19,14 +22,18 @@ type UserBaseOut struct {
 // UserStandardOut用户基础信息
 type UserStandardOut struct {
 	UserBaseOut
+
 	// 创建时间
 	CreatedAt string `json:"created_at" example:"2023-01-01 12:00:00"`
+
 	// 更新时间
 	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 }
 
 type UserDetailOut struct {
 	UserStandardOut
+
+	// 角色
 	Role *role.RoleBaseOut `json:"role"`
 }
 
@@ -37,6 +44,7 @@ type UserReply = common.APIReply[*UserDetailOut]
 type PagUserReply = common.APIReply[*common.Pag[UserDetailOut]]
 
 type LoginOut struct {
+	// 登录令牌
 	Token string `json:"token"`
 }
 

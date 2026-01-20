@@ -13,12 +13,10 @@ import (
 type ListLoginRecordRequest struct {
 	common.BaseModelQuery
 
-	// 用户名称，字符串长度限制
-	// Max length: 50
+	// 用户名
 	Username string `form:"name" binding:"omitempty,max=50"`
 
-	// IP 地址，字符串长度限制
-	// Max length: 108
+	// IP 地址
 	IPAddress string `form:"ip_address" binding:"omitempty,max=108"`
 
 	// 登陆状态

@@ -99,15 +99,15 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 // @Tags 权限管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "权限编号"
+// @Param id path uint true "权限编号"
 // @Param request body pbPerm.UpdatePermissionRequest true "更新权限请求"
 // @Success 200 {object} pbPerm.PermissionReply "更新权限成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "权限未找到"
-// @Router /api/v1/customer/permission/{pk} [put]
+// @Router /api/v1/customer/permission/{id} [put]
 // @Security ApiKeyAuth
 func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定权限ID参数失败",
@@ -135,12 +135,12 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始更新权限",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucPerm.UpdatePermissionByID(ctx, uri.PK, map[string]any{
+	m, err := s.ucPerm.UpdatePermissionByID(ctx, uri.ID, map[string]any{
 		"url":    req.URL,
 		"method": req.Method,
 		"label":  req.Label,
@@ -150,7 +150,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 		s.log.Error(
 			"更新权限失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -160,7 +160,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 
 	s.log.Info(
 		"更新权限成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -176,14 +176,14 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 // @Tags 权限管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "权限编号"
+// @Param id path uint true "权限编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "权限未找到"
-// @Router /api/v1/customer/permission/{pk} [delete]
+// @Router /api/v1/customer/permission/{id} [delete]
 // @Security ApiKeyAuth
 func (s *PermissionService) DeletePermission(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除权限ID参数失败",
@@ -198,15 +198,15 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除权限",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucPerm.DeletePermissionByID(ctx, uri.PK); err != nil {
+	if err := s.ucPerm.DeletePermissionByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除权限失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -215,7 +215,7 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除权限成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -227,14 +227,14 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 // @Tags 权限管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "权限编号"
+// @Param id path uint true "权限编号"
 // @Success 200 {object} pbPerm.PermissionReply "获取权限详情成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "权限未找到"
-// @Router /api/v1/customer/permission/{pk} [get]
+// @Router /api/v1/customer/permission/{id} [get]
 // @Security ApiKeyAuth
 func (s *PermissionService) GetPermission(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询权限ID参数失败",
@@ -249,16 +249,16 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询权限详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucPerm.FindPermissionByID(ctx, uri.PK)
+	m, err := s.ucPerm.FindPermissionByID(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询权限详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -267,7 +267,7 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询权限详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -345,9 +345,9 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 
 func (s *PermissionService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/permission", s.CreatePermission)
-	r.PUT("/permission/:pk", s.UpdatePermission)
-	r.DELETE("/permission/:pk", s.DeletePermission)
-	r.GET("/permission/:pk", s.GetPermission)
+	r.PUT("/permission/:id", s.UpdatePermission)
+	r.DELETE("/permission/:id", s.DeletePermission)
+	r.GET("/permission/:id", s.GetPermission)
 	r.GET("/permission", s.ListPermission)
 }
 

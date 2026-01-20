@@ -94,14 +94,14 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 // @Description  本接口用于删除指定ID的程序包
 // @Tags         程序包管理
 // @Produce      json
-// @Param        pk path uint32 true "程序包唯一标识符"
+// @Param        id path uint32 true "程序包唯一标识符"
 // @Success      200  {object} pbComm.MapAPIReply "删除成功"
 // @Failure      400  {object} errors.Error "请求参数错误"
 // @Failure      500  {object} errors.Error "服务器内部错误"
-// @Router       /api/v1/resource/package/{pk} [delete]
+// @Router       /api/v1/resource/package/{id} [delete]
 // @Security ApiKeyAuth
 func (s *PackageService) DeletePackage(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除程序包ID参数失败",
@@ -116,15 +116,15 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除程序包",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucPkg.DeletePackageById(ctx, uri.PK); err != nil {
+	if err := s.ucPkg.DeletePackageById(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除程序包失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -133,7 +133,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除程序包成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -143,14 +143,14 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 // @Description  本接口用于查询指定ID的程序包详细信息
 // @Tags         程序包管理
 // @Produce      json
-// @Param        pk path uint32 true "程序包唯一标识符"
+// @Param        id path uint32 true "程序包唯一标识符"
 // @Success      200  {object} pbPkg.PackageReply "成功返回程序包详情"
 // @Failure      400  {object} errors.Error "请求参数错误"
 // @Failure      500  {object} errors.Error "服务器内部错误"
-// @Router       /api/v1/resource/package/{pk} [get]
+// @Router       /api/v1/resource/package/{id} [get]
 // @Security ApiKeyAuth
 func (s *PackageService) GetPackage(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询程序包ID参数失败",
@@ -165,16 +165,16 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询程序包详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucPkg.FindPackageById(ctx, uri.PK)
+	m, err := s.ucPkg.FindPackageById(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询程序包详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -183,7 +183,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询程序包详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -262,15 +262,15 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 // @Description  本接口用于下载指定ID的程序包文件
 // @Tags         程序包管理
 // @Produce      application/octet-stream
-// @Param        pk path uint32 true "程序包唯一标识符"
+// @Param        id path uint32 true "程序包唯一标识符"
 // @Success      200  {file} file "成功下载程序包文件"
 // @Failure      400  {object} errors.Error "请求参数错误"
 // @Failure      404  {object} errors.Error "文件未找到"
 // @Failure      500  {object} errors.Error "服务器内部错误"
-// @Router       /api/v1/resource/package/{pk}/download [get]
+// @Router       /api/v1/resource/package/{id}/download [get]
 // @Security ApiKeyAuth
 func (s *PackageService) DownloadPackage(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定下载程序包ID参数失败",
@@ -284,12 +284,12 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 	}
 
 	// 获取包信息
-	pkg, err := s.ucPkg.FindPackageById(ctx, uri.PK)
+	pkg, err := s.ucPkg.FindPackageById(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询程序包详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -305,10 +305,10 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 
 func (s *PackageService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/package", s.UploadPackage)
-	r.DELETE("/package/:pk", s.DeletePackage)
-	r.GET("/package/:pk", s.GetPackage)
+	r.DELETE("/package/:id", s.DeletePackage)
+	r.GET("/package/:id", s.GetPackage)
 	r.GET("/package", s.ListPackage)
-	r.GET("/package/:pk/download", s.DownloadPackage)
+	r.GET("/package/:id/download", s.DownloadPackage)
 }
 
 func PackageModelToOutBase(

@@ -10,22 +10,19 @@ import (
 //
 // swagger:model CreateOrUpdateRoleRequest
 type CreateOrUpdateRoleRequest struct {
-	// 名称，最大长度50
-	// Required: true
-	// Max length: 50
+	// 名称
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
-	// 描述，可选，最大长度254
-	// Max length: 254
+	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 
-	// 关联权限ID列表，可选
+	// 权限ID列表
 	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
 
-	// 关联菜单ID列表，可选
+	// 菜单ID列表
 	MenuIDs []uint32 `json:"menu_ids" form:"menu_ids" binding:"omitempty"`
 
-	// 关联按钮ID列表，可选
+	// 按钮ID列表
 	ButtonIDs []uint32 `json:"button_ids" form:"button_ids" binding:"omitempty"`
 }
 
@@ -60,12 +57,10 @@ func (req *CreateOrUpdateRoleRequest) MarshalLogObject(enc zapcore.ObjectEncoder
 type ListRoleRequest struct {
 	common.StandardModelQuery
 
-	// 角色名称，字符串长度限制
-	// Max length: 50
+	// 名称
 	Name string `form:"name" binding:"omitempty,max=50"`
 
-	// 角色描述，字符串长度限制
-	// Max length: 254
+	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 }
 

@@ -100,16 +100,16 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 // @Tags 主机管理
 // @Accept json,application/x-www-form-urlencoded,multipart/form-data
 // @Produce json
-// @Param pk path uint true "主机编号"
+// @Param id path uint true "主机编号"
 // @Param request body pbHost.CreateOrUpdateHosrRequest true "更新主机请求"
 // @Success 200 {object} pbHost.HostReply "更新主机成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/resource/host/{pk} [put]
+// @Router /api/v1/resource/host/{id} [put]
 // @Security ApiKeyAuth
 func (s *HostService) UpdateHost(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定主机ID参数失败",
@@ -137,14 +137,14 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始更新主机",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucHost.UpdateHostById(ctx, biz.HostModel{
 		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{ID: uri.PK},
+			BaseModel: database.BaseModel{ID: uri.ID},
 		},
 		Name:    req.Name,
 		Label:   req.Label,
@@ -158,7 +158,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		s.log.Error(
 			"更新主机失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -168,7 +168,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"更新主机成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -184,15 +184,15 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 // @Tags 主机管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "主机编号"
+// @Param id path uint true "主机编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/resource/host/{pk} [delete]
+// @Router /api/v1/resource/host/{id} [delete]
 // @Security ApiKeyAuth
 func (s *HostService) DeleteHost(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除主机ID参数失败",
@@ -207,15 +207,15 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除主机",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucHost.DeleteHostById(ctx, uri.PK); err != nil {
+	if err := s.ucHost.DeleteHostById(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除主机失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -224,7 +224,7 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除主机成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -236,15 +236,15 @@ func (s *HostService) DeleteHost(ctx *gin.Context) {
 // @Tags 主机管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "主机编号"
+// @Param id path uint true "主机编号"
 // @Success 200 {object} pbHost.HostReply "获取主机详情成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/resource/host/{pk} [get]
+// @Router /api/v1/resource/host/{id} [get]
 // @Security ApiKeyAuth
 func (s *HostService) GetHost(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询主机ID参数失败",
@@ -259,16 +259,16 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询主机详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucHost.FindHostById(ctx, uri.PK)
+	m, err := s.ucHost.FindHostById(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询主机详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -277,7 +277,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询主机详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -355,9 +355,9 @@ func (s *HostService) ListHost(ctx *gin.Context) {
 
 func (s *HostService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/host", s.CreateHost)
-	r.PUT("/host/:pk", s.UpdateHost)
-	r.DELETE("/host/:pk", s.DeleteHost)
-	r.GET("/host/:pk", s.GetHost)
+	r.PUT("/host/:id", s.UpdateHost)
+	r.DELETE("/host/:id", s.DeleteHost)
+	r.GET("/host/:id", s.GetHost)
 	r.GET("/host", s.ListHost)
 }
 

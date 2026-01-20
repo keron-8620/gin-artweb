@@ -13,26 +13,19 @@ type UploadScriptRequest struct {
 	// 上传的程序包文件
 	File *multipart.FileHeader `form:"file" binding:"required"`
 
-	// 脚本描述，字符串长度限制
-	// Max length: 254
+	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
-	// 项目，最大长度50
-	// Required: true
-	// Max length: 50
+	// 项目
 	Project string `form:"project" binding:"required"`
 
-	// 标签，最大长度50
-	// Required: true
-	// Max length: 50
+	// 标签
 	Label string `form:"label" binding:"required"`
 
-	// 语言，最大长度50
-	// Required: true
-	// Max length: 50
+	// 脚本语言
 	Language string `form:"language" binding:"required"`
 
-	// 状态，必填
+	// 状态
 	Status bool `form:"status"`
 }
 
@@ -52,24 +45,19 @@ func (req *UploadScriptRequest) MarshalLogObject(enc zapcore.ObjectEncoder) erro
 type ListScriptRequest struct {
 	common.StandardModelQuery
 
-	// 名称，最大长度50
-	// Max length: 50
+	// 名称
 	Name string `json:"name" binding:"omitempty,max=50"`
 
-	// 脚本描述，字符串长度限制
-	// Max length: 254
+	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
-	// 项目，最大长度50
-	// Max length: 50
+	// 项目
 	Project string `form:"project" binding:"omitempty"`
 
-	// 标签，最大长度50
-	// Max length: 50
+	// 标签
 	Label string `form:"label" binding:"omitempty"`
 
-	// 语言，最大长度50
-	// Max length: 50
+	// 脚本语言
 	Language string `form:"language" binding:"omitempty"`
 
 	// 状态

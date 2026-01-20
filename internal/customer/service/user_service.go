@@ -88,7 +88,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"创建用户成功",
-		zap.Uint32(pbComm.RequestPKKey, m.ID),
+		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
@@ -104,16 +104,16 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "用户编号"
+// @Param id path uint true "用户编号"
 // @Param request body pbUser.UpdateUserRequest true "更新用户请求"
 // @Success 200 {object} pbUser.UserReply "成功返回用户信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/user/{pk} [put]
+// @Router /api/v1/customer/user/{id} [put]
 // @Security ApiKeyAuth
 func (s *UserService) UpdateUser(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定用户ID参数失败",
@@ -141,12 +141,12 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始更新用户",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucUser.UpdateUserByID(ctx, uri.PK, map[string]any{
+	if err := s.ucUser.UpdateUserByID(ctx, uri.ID, map[string]any{
 		"username":  req.Username,
 		"is_active": req.IsActive,
 		"is_staff":  req.IsStaff,
@@ -155,7 +155,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 		s.log.Error(
 			"更新用户失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -165,16 +165,16 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"更新用户成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.PK)
+	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询更新后的用户信息失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -191,15 +191,15 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "用户编号"
+// @Param id path uint true "用户编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/user/{pk} [delete]
+// @Router /api/v1/customer/user/{id} [delete]
 // @Security ApiKeyAuth
 func (s *UserService) DeleteUser(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除用户ID参数失败",
@@ -214,15 +214,15 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除用户",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucUser.DeleteUserByID(ctx, uri.PK); err != nil {
+	if err := s.ucUser.DeleteUserByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除用户失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -231,7 +231,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除用户成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -243,15 +243,15 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "用户编号"
+// @Param id path uint true "用户编号"
 // @Success 200 {object} pbUser.UserReply "成功返回用户信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/user/{pk} [get]
+// @Router /api/v1/customer/user/{id} [get]
 // @Security ApiKeyAuth
 func (s *UserService) GetUser(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询用户ID参数失败",
@@ -266,16 +266,16 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询用户详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.PK)
+	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询用户详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -284,7 +284,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询用户详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -365,16 +365,16 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "用户编号"
+// @Param id path uint true "用户编号"
 // @Param request body pbUser.ResetPasswordRequest true "重置用户密码请求"
 // @Success 200 {object} pbComm.MapAPIReply "密码重置成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "用户未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/customer/user/password/{pk} [patch]
+// @Router /api/v1/customer/user/password/{id} [patch]
 // @Security ApiKeyAuth
 func (s *UserService) ResetPassword(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询用户ID参数失败",
@@ -401,16 +401,16 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始重置用户密码",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucUser.UpdateUserByID(ctx, uri.PK, map[string]any{
+	if err := s.ucUser.UpdateUserByID(ctx, uri.ID, map[string]any{
 		"password": req.NewPassword,
 	}); err != nil {
 		s.log.Error(
 			"重置用户密码失败",
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -418,7 +418,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 	}
 	s.log.Info(
 		"重置用户密码成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -603,11 +603,11 @@ func (s *UserService) Login(ctx *gin.Context) {
 
 func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/user", s.CreateUser)
-	r.PUT("/user/:pk", s.UpdateUser)
-	r.DELETE("/user/:pk", s.DeleteUser)
-	r.GET("/user/:pk", s.GetUser)
+	r.PUT("/user/:id", s.UpdateUser)
+	r.DELETE("/user/:id", s.DeleteUser)
+	r.GET("/user/:id", s.GetUser)
 	r.GET("/user", s.ListUser)
-	r.PATCH("/user/password/:pk", s.ResetPassword)
+	r.PATCH("/user/password/:id", s.ResetPassword)
 }
 
 func UserModelToBaseOut(

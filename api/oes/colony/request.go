@@ -7,33 +7,21 @@ import "gin-artweb/api/common"
 // swagger:model CreateOrUpdateOesColonyRequest
 type CreateOrUpdateOesColonyRequest struct {
 	// 系统类型
-	// required: true
-	// example: "stk"
 	SystemType string `json:"system_type" form:"system_type" binding:"required,oneof=STK CRD OPT"`
 
 	// 集群号
-	// required: true
-	// example: "01"
 	ColonyNum string `json:"colony_num" form:"colony_num" binding:"required,max=2"`
 
 	// 解压后名称
-	// required: true
-	// example: "oes"
 	ExtractedName string `json:"extracted_name" form:"extracted_name" binding:"required,max=50"`
 
 	// 程序包ID
-	// required: true
-	// example: 1
 	PackageID uint32 `json:"package_id" form:"package_id" binding:"required"`
 
 	// xcounter包ID
-	// required: true
-	// example: 1
 	XCounterID uint32 `json:"xcounter_id" form:"xcounter_id" binding:"required"`
 
 	// mon节点ID
-	// required: true
-	// example: 1
 	MonNodeID uint32 `json:"mon_node_id" form:"mon_node_id" binding:"required"`
 }
 
@@ -45,33 +33,21 @@ type ListOesColonyRequest struct {
 	common.StandardModelQuery
 
 	// 系统类型
-	// required: true
-	// example: "stk"
 	SystemType string `form:"system_type"`
 
 	// 集群号
-	// required: false
-	// example: "01"
 	ColonyNum string `form:"colony_num"`
 
 	// 解压后名称
-	// required: false
-	// example: "oes"
 	ExtractedName string `form:"extracted_name"`
 
 	// 程序包ID
-	// required: false
-	// example: 1
 	PackageID uint32 `form:"package_id"`
 
 	// xcounter包ID
-	// required: false
-	// example: 1
 	XCounterID uint32 `form:"xcounter_id"`
 
 	// mon节点ID
-	// required: false
-	// example: 1
 	MonNodeID uint32 `form:"mon_node_id"`
 }
 

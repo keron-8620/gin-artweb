@@ -86,16 +86,16 @@ func (s *MdsColonyService) CreateMdsColony(ctx *gin.Context) {
 // @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mds集群编号"
+// @Param id path uint true "mds集群编号"
 // @Param request body pbColony.CreateOrUpdateMdsColonyRequest true "更新mds集群请求"
 // @Success 200 {object} pbColony.MdsColonyReply "成功返回mds集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/colony/{pk} [put]
+// @Router /api/v1/mds/colony/{id} [put]
 // @Security ApiKeyAuth
 func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定更新mds集群ID参数失败",
@@ -128,12 +128,12 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 		"mon_node_id":    req.MonNodeID,
 	}
 
-	m, err := s.ucColony.UpdateMdsColonyByID(ctx, uri.PK, data)
+	m, err := s.ucColony.UpdateMdsColonyByID(ctx, uri.ID, data)
 	if err != nil {
 		s.log.Error(
 			"更新mds集群失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
@@ -152,15 +152,15 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 // @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mds集群编号"
+// @Param id path uint true "mds集群编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/colony/{pk} [delete]
+// @Router /api/v1/mds/colony/{id} [delete]
 // @Security ApiKeyAuth
 func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定删除mds集群ID参数失败",
@@ -175,15 +175,15 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始删除mds集群",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	if err := s.ucColony.DeleteMdsColonyByID(ctx, uri.PK); err != nil {
+	if err := s.ucColony.DeleteMdsColonyByID(ctx, uri.ID); err != nil {
 		s.log.Error(
 			"删除mds集群失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -192,7 +192,7 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"删除mds集群成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -204,15 +204,15 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 // @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param pk path uint true "mds集群编号"
+// @Param id path uint true "mds集群编号"
 // @Success 200 {object} pbColony.MdsColonyReply "成功返回mds集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/colony/{pk} [get]
+// @Router /api/v1/mds/colony/{id} [get]
 // @Security ApiKeyAuth
 func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
-	var uri pbComm.PKUri
+	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
 			"绑定查询mds集群ID参数失败",
@@ -227,16 +227,16 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"开始查询mds集群详情",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucColony.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.PK)
+	m, err := s.ucColony.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询mds集群详情失败",
 			zap.Error(err),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
@@ -247,7 +247,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 		s.log.Error(
 			"查询mds集群详情失败",
 			zap.Error(biz.ErrMdsColonyNotFound),
-			zap.Uint32(pbComm.RequestPKKey, uri.PK),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(biz.ErrMdsColonyNotFound.Code, biz.ErrMdsColonyNotFound.ToMap())
@@ -256,7 +256,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 
 	s.log.Info(
 		"查询mds集群详情成功",
-		zap.Uint32(pbComm.RequestPKKey, uri.PK),
+		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 	)
 
@@ -403,7 +403,7 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 			s.log.Error(
 				"查询mds集群任务状态失败",
 				zap.Error(rErr),
-				zap.Uint32(pbComm.RequestPKKey, m.ID),
+				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
 				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 			)
@@ -419,9 +419,9 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 
 func (s *MdsColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/colony", s.CreateMdsColony)
-	r.PUT("/colony/:pk", s.UpdateMdsColony)
-	r.DELETE("/colony/:pk", s.DeleteMdsColony)
-	r.GET("/colony/:pk", s.GetMdsColony)
+	r.PUT("/colony/:id", s.UpdateMdsColony)
+	r.DELETE("/colony/:id", s.DeleteMdsColony)
+	r.GET("/colony/:id", s.GetMdsColony)
 	r.GET("/colony", s.ListMdsColony)
 	r.GET("/colony/status", s.ListMdsTaskStatus)
 }

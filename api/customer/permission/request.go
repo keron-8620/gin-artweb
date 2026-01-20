@@ -10,28 +10,19 @@ import (
 //
 // swagger:model CreatePermissionRequest
 type CreatePermissionRequest struct {
-	// 权限主键，必须大于0
-	// Required: true
-	// Minimum: 1
+	// 唯一标识
 	ID uint32 `json:"id" form:"id" binding:"required,gt=0"`
 
-	// 权限对应的HTTP URL，最大长度150
-	// Required: true
-	// Max length: 150
+	// URL地址
 	URL string `json:"url" form:"url" binding:"required,max=150"`
 
-	// HTTP请求方法，枚举值验证
-	// Required: true
-	// Enum: GET,POST,PUT,DELETE,PATCH,WS
+	// 请求方法
 	Method string `json:"method" form:"method" binding:"required,oneof=GET POST PUT DELETE PATCH WS"`
 
-	// 权限描述信息，最大长度50
-	// Required: true
-	// Max length: 50
+	// 标签
 	Label string `json:"label" form:"label" binding:"required,max=50"`
 
-	// 权限描述信息，可选，最大长度254
-	// Max length: 254
+	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"max=254"`
 }
 
@@ -49,23 +40,16 @@ func (req *CreatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) 
 //
 // swagger:model UpdatePermissionRequest
 type UpdatePermissionRequest struct {
-	// 权限对应的HTTP URL，最大长度150
-	// Required: true
-	// Max length: 150
+	// URL地址
 	URL string `json:"url" form:"url" binding:"required,max=150"`
 
-	// HTTP请求方法，枚举值验证
-	// Required: true
-	// Enum: GET,POST,PUT,DELETE,PATCH,WS
+	// 请求方法
 	Method string `json:"method" form:"method" binding:"required,oneof=GET POST PUT DELETE PATCH WS"`
 
-	// 权限描述信息，最大长度50
-	// Required: true
-	// Max length: 50
+	// 标签
 	Label string `json:"label" form:"label" binding:"required,max=50"`
 
-	// 权限描述信息，可选，最大长度254
-	// Max length: 254
+	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 }
 
@@ -84,19 +68,16 @@ func (req *UpdatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) 
 type ListPermissionRequest struct {
 	common.StandardModelQuery
 
-	// 权限对应的HTTP URL，字符串长度限制
-	// Max length: 150
+	// URL地址
 	URL string `form:"url" binding:"omitempty,max=150"`
 
-	// HTTP请求方法，枚举值验证
-	// Enum: GET,POST,PUT,DELETE,PATCH,WS
+	// 请求方法
 	Method string `form:"method" binding:"omitempty,oneof=GET POST PUT DELETE PATCH WS"`
-	// 权限描述信息，最大长度50
-	// Max length: 50
+
+	// 标签
 	Label string `form:"label" binding:"omitempty,max=50"`
 
-	// 描述信息，字符串长度限制
-	// Max length: 254
+	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 }
 
