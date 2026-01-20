@@ -14,7 +14,7 @@ type UploadPackageRequest struct {
 	// 标签，最大长度50
 	// Required: true
 	// Max length: 50
-	Label string `form:"label" binding:"required"`
+	Label string `form:"label" binding:"required,oneof=mds oes xcounter"`
 
 	// 版本号，最大长度50
 	// Required: true
