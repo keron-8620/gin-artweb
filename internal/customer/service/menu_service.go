@@ -307,12 +307,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 // @Tags 菜单管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "菜单名称"
-// @Param path query string false "菜单路径"
-// @Param is_active query bool false "是否激活"
-// @Param parent_id query int false "父级菜单ID"
+// @Param request query pbMenu.ListMenuRequest false "查询参数"
 // @Success 200 {object} pbMenu.PagMenuReply "成功返回菜单列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

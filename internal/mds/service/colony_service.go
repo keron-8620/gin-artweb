@@ -342,11 +342,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 // @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "mds集群名称"
-// @Param is_enabled query bool false "是否启用"
-// @Param username query string false "创建用户名"
+// @Param request query pbColony.ListMdsColonyRequest false "查询参数"
 // @Success 200 {object} pbColony.ListMdsTaskStatusReply "成功返回mds集群列表的任务状态"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

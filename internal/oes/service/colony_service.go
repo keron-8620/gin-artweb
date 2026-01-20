@@ -265,11 +265,7 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "oes集群名称"
-// @Param is_enabled query bool false "是否启用"
-// @Param username query string false "创建用户名"
+// @Param request query pbColony.ListOesColonyRequest false "查询参数"
 // @Success 200 {object} pbColony.PagOesColonyReply "成功返回oes集群列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

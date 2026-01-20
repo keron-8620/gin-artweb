@@ -293,11 +293,7 @@ func (s *HostService) GetHost(ctx *gin.Context) {
 // @Tags 主机管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "主机名称"
-// @Param label query string false "主机标签"
-// @Param ip_addr query string false "IP地址"
+// @Param request query pbHost.ListHostRequest false "查询参数"
 // @Success 200 {object} pbHost.PagHostReply "成功返回主机列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

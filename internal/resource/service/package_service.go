@@ -198,9 +198,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 // @Description  本接口用于查询程序包列表
 // @Tags         程序包管理
 // @Produce      json
-// @Param        page query int false "页码，默认为1"
-// @Param        size query int false "每页数量，默认为10"
-// @Param        query query string false "搜索关键字"
+// @Param        request query pbPkg.ListPackageRequest false "查询参数"
 // @Success      200  {object} pbPkg.PagPackageReply "成功返回程序包列表"
 // @Failure      400  {object} errors.Error "请求参数错误"
 // @Failure      500  {object} errors.Error "服务器内部错误"

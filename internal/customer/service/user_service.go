@@ -299,12 +299,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param username query string false "用户名"
-// @Param is_active query bool false "是否激活"
-// @Param is_staff query bool false "是否是工作人员"
-// @Param role_id query uint false "角色ID"
+// @Param request query pbUser.ListUserRequest false "查询参数"
 // @Success 200 {object} pbUser.PagUserReply "成功返回用户列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

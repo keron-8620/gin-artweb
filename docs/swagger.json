@@ -24,42 +24,79 @@
                 "summary": "查询按钮列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "按钮名称",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "按钮描述，字符串长度限制\nMax length: 254",
+                        "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否激活筛选",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "菜单ID，必填",
+                        "name": "menu_id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "按钮名称，字符串长度限制\nMax length: 50",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "菜单ID",
-                        "name": "menu_id",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "是否激活",
-                        "name": "is_active",
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
                         "in": "query"
                     },
                     {
+                        "maxLength": 100,
                         "type": "string",
-                        "description": "按钮描述",
-                        "name": "descr",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -421,42 +458,61 @@
                 "summary": "查询当前用户的登录记录列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "登陆时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_login_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "ip地址",
-                        "name": "ip_address",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "登录状态",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "登录时间之前的记录 (RFC3339格式)",
+                        "description": "登陆时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "before_login_at",
                         "in": "query"
                     },
                     {
+                        "maxLength": 108,
                         "type": "string",
-                        "description": "登录时间之后的记录 (RFC3339格式)",
-                        "name": "after_login_at",
+                        "description": "IP 地址，字符串长度限制\nMax length: 108",
+                        "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "用户名称，字符串长度限制\nMax length: 50",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "登陆状态",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -508,42 +564,93 @@
                 "summary": "查询菜单列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "菜单名称",
-                        "name": "name",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "菜单路径",
-                        "name": "path",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 200,
+                        "type": "string",
+                        "description": "组件路径，字符串长度限制\nMax length: 200",
+                        "name": "component",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "菜单描述，字符串长度限制\nMax length: 254",
+                        "name": "descr",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "是否激活",
+                        "description": "是否激活筛选",
                         "name": "is_active",
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "菜单名称，字符串长度限制\nMax length: 50",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "父级菜单ID",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "父级菜单ID筛选",
                         "name": "parent_id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "前端路由路径，字符串长度限制\nMax length: 100",
+                        "name": "path",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -808,60 +915,41 @@
                 "summary": "查询权限列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0",
-                        "name": "pk",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "权限主键列表，可选参数，多个用,隔开，如1,2,3",
-                        "name": "pks",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "创建时间之前的记录 (RFC3339格式)",
-                        "name": "before_create_at",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "创建时间之后的记录 (RFC3339格式)",
-                        "name": "after_create_at",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
                         "in": "query"
                     },
                     {
+                        "maxLength": 254,
                         "type": "string",
-                        "description": "更新时间之前的记录 (RFC3339格式)",
-                        "name": "before_update_at",
+                        "description": "描述信息，字符串长度限制\nMax length: 254",
+                        "name": "descr",
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
                         "type": "string",
-                        "description": "更新时间之后的记录 (RFC3339格式)",
-                        "name": "after_update_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "HTTP路径",
-                        "name": "url",
+                        "description": "权限描述信息，最大长度50\nMax length: 50",
+                        "name": "label",
                         "in": "query"
                     },
                     {
@@ -870,11 +958,45 @@
                             "POST",
                             "PUT",
                             "DELETE",
-                            "PATCH"
+                            "PATCH",
+                            "WS"
                         ],
                         "type": "string",
-                        "description": "HTTP方法",
+                        "description": "HTTP请求方法，枚举值验证\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
                         "name": "method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 150,
+                        "type": "string",
+                        "description": "权限对应的HTTP URL，字符串长度限制\nMax length: 150",
+                        "name": "url",
                         "in": "query"
                     }
                 ],
@@ -887,6 +1009,12 @@
                     },
                     "400": {
                         "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "内部服务错误",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -1109,24 +1237,67 @@
                 "summary": "查询角色列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "角色名称",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "角色描述，字符串长度限制\nMax length: 254",
+                        "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "角色名称，字符串长度限制\nMax length: 50",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -1391,24 +1562,27 @@
                 "summary": "查询用户列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "用户名",
-                        "name": "username",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
                         "in": "query"
                     },
                     {
@@ -1424,9 +1598,42 @@
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "用户名称，字符串长度限制\nMax length: 50",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "角色ID",
                         "name": "role_id",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -1585,48 +1792,61 @@
                 "summary": "查询用户的登录记录列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "登陆时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_login_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "用户名",
-                        "name": "username",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "ip地址",
-                        "name": "ip_address",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "登录状态",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "登录时间之前的记录 (RFC3339格式)",
+                        "description": "登陆时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "before_login_at",
                         "in": "query"
                     },
                     {
+                        "maxLength": 108,
                         "type": "string",
-                        "description": "登录时间之后的记录 (RFC3339格式)",
-                        "name": "after_login_at",
+                        "description": "IP 地址，字符串长度限制\nMax length: 108",
+                        "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "用户名称，字符串长度限制\nMax length: 50",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "登陆状态",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -1842,41 +2062,82 @@
                 "summary": "查询脚本执行记录列表",
                 "parameters": [
                     {
-                        "minimum": 1,
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "页码",
+                        "description": "按脚本退出码筛选\nrequired: false",
+                        "name": "exit_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "maximum": 100,
-                        "minimum": 1,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按脚本ID筛选\nrequired: false",
+                        "name": "script_id",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "脚本ID",
-                        "name": "script_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "触发类型",
-                        "name": "trigger_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "执行状态",
+                        "description": "筛选脚本执行的任务状态\nrequired: false",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "执行用户名",
+                        "description": "筛选计划任务触发类型\nrequired: false",
+                        "name": "trigger_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按用户名筛选\nrequired: false",
                         "name": "username",
                         "in": "query"
                     }
@@ -2117,35 +2378,76 @@
                 "summary": "查询计划任务列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "计划任务名称",
-                        "name": "name",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "是否启用",
+                        "description": "按启用状态筛选\nrequired: false",
                         "name": "is_enabled",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "创建用户名",
+                        "description": "按名称搜索\nrequired: false",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按脚本ID筛选\nrequired: false",
+                        "name": "script_id",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按用户名筛选\nrequired: false",
                         "name": "username",
                         "in": "query"
                     }
@@ -2411,36 +2713,103 @@
                 "summary": "查询脚本列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "项目名称",
-                        "name": "project",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "脚本语言",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "脚本描述，字符串长度限制\nMax length: 254",
+                        "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否是内置脚本",
+                        "name": "is_builtin",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "标签，最大长度50\nMax length: 50",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "语言，最大长度50\nMax length: 50",
                         "name": "language",
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
                         "type": "string",
-                        "description": "脚本状态",
+                        "description": "名称，最大长度50\nMax length: 50",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "项目，最大长度50\nMax length: 50",
+                        "name": "project",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "状态",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最后修改的用户",
+                        "name": "user_id",
                         "in": "query"
                     }
                 ],
@@ -3010,36 +3379,77 @@
                 "summary": "查询mds集群列表的任务状态",
                 "parameters": [
                     {
-                        "minimum": 1,
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "集群号\nrequired: false\nexample: \"01\"",
+                        "name": "colony_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "解压后名称\nrequired: false\nexample: \"mds\"",
+                        "name": "extracted_name",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "页码",
+                        "description": "mon节点ID\nrequired: false\nexample: 1",
+                        "name": "mon_node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "程序包ID\nrequired: false\nexample: 1",
+                        "name": "package_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "maximum": 100,
-                        "minimum": 1,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
                         "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "mds集群名称",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
                         "in": "query"
                     }
                 ],
@@ -3255,36 +3665,77 @@
                 "summary": "查询mds节点列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "mds节点名称",
-                        "name": "name",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "主机ID\nrequired: false\nexample: 1",
+                        "name": "host_id",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
+                        "description": "是否启用\nrequired: false\nexample: true",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mds集群ID\nrequired: false\nexample: 1",
+                        "name": "mds_colony_id",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
+                        "description": "节点角色\nexample: \"master\"",
+                        "name": "node_role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -3787,36 +4238,65 @@
                 "summary": "查询mon节点列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "mon节点名称",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按主机ID筛选\nrequired: false",
+                        "name": "host_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按名称搜索\nrequired: false",
                         "name": "name",
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
                         "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -4081,36 +4561,89 @@
                 "summary": "查询oes集群列表",
                 "parameters": [
                     {
-                        "minimum": 1,
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "集群号\nrequired: false\nexample: \"01\"",
+                        "name": "colony_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "解压后名称\nrequired: false\nexample: \"oes\"",
+                        "name": "extracted_name",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "页码",
+                        "description": "mon节点ID\nrequired: false\nexample: 1",
+                        "name": "mon_node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "程序包ID\nrequired: false\nexample: 1",
+                        "name": "package_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "maximum": 100,
-                        "minimum": 1,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "oes集群名称",
-                        "name": "name",
+                        "description": "系统类型\nrequired: true\nexample: \"stk\"",
+                        "name": "system_type",
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
+                        "type": "integer",
+                        "description": "xcounter包ID\nrequired: false\nexample: 1",
+                        "name": "xcounter_id",
                         "in": "query"
                     }
                 ],
@@ -4600,36 +5133,77 @@
                 "summary": "查询oes节点列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "oes节点名称",
-                        "name": "name",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "主机ID\nrequired: false\nexample: 1",
+                        "name": "host_id",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
+                        "description": "是否启用\nrequired: false\nexample: true",
+                        "name": "is_enable",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
+                        "description": "节点角色\nexample: \"master\"",
+                        "name": "node_role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "oes集群ID\nrequired: false\nexample: 1",
+                        "name": "oes_colony_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -5132,36 +5706,101 @@
                 "summary": "查询主机列表",
                 "parameters": [
                     {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "主机名称",
-                        "name": "name",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "主机标签",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签，最大长度50\nRequired: true\nMax length: 50",
                         "name": "label",
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
                         "type": "string",
-                        "description": "IP地址",
-                        "name": "ip_addr",
+                        "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码必须大于0\nMinimum: 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
+                        "name": "py_path",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "备注，最大长度254\nMax length: 254",
+                        "name": "remark",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 108,
+                        "type": "string",
+                        "description": "ip地址，最大长度108\nRequired: true\nMax length: 108",
+                        "name": "ssh_ip",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "端口，必填\nRequired: true",
+                        "name": "ssh_port",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                        "name": "ssh_user",
                         "in": "query"
                     }
                 ],
@@ -5427,21 +6066,68 @@
                 "summary": "查询程序包列表",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "上传时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_uploaded_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_uploaded_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称，最大长度50\nMax length: 50",
+                        "name": "filename",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签，最大长度50\nMax length: 50",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签，最大长度50,多个标签用逗号分隔\nMax length: 50",
+                        "name": "labels",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "页码，默认为1",
+                        "description": "页码必须大于0\nMinimum: 1",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认为10",
+                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
+                        "name": "pk",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
+                        "name": "pks",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "每页大小必须大于等于0\nMinimum: 0",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "搜索关键字",
-                        "name": "query",
+                        "description": "版本号，最大长度50\nMax length: 50",
+                        "name": "version",
                         "in": "query"
                     }
                 ],

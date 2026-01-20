@@ -288,12 +288,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 // @Tags 按钮管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "按钮名称"
-// @Param menu_id query uint false "菜单ID"
-// @Param is_active query bool false "是否激活"
-// @Param descr query string false "按钮描述"
+// @Param request query pbButton.ListButtonRequest false "查询参数"
 // @Success 200 {object} pbButton.PagButtonReply "成功返回按钮列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

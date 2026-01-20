@@ -283,18 +283,10 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 // @Tags 权限管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param pk query uint false "权限主键，可选参数，如果提供则必须大于0"
-// @Param pks query string false "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-// @Param before_create_at query string false "创建时间之前的记录 (RFC3339格式)"
-// @Param after_create_at query string false "创建时间之后的记录 (RFC3339格式)"
-// @Param before_update_at query string false "更新时间之前的记录 (RFC3339格式)"
-// @Param after_update_at query string false "更新时间之后的记录 (RFC3339格式)"
-// @Param url query string false "HTTP路径"
-// @Param method query string false "HTTP方法" Enums(GET, POST, PUT, DELETE, PATCH)
+// @Param request query pbPerm.ListPermissionRequest false "查询参数"
 // @Success 200 {object} pbPerm.PagPermissionReply "成功返回权限列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "内部服务错误"
 // @Router /api/v1/customer/permission [get]
 // @Security ApiKeyAuth
 func (s *PermissionService) ListPermission(ctx *gin.Context) {

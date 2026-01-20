@@ -324,11 +324,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 // @Tags 脚本管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param project query string false "项目名称"
-// @Param language query string false "脚本语言"
-// @Param status query string false "脚本状态"
+// @Param request query pbScript.ListScriptRequest false "查询参数"
 // @Success 200 {object} pbScript.PagScriptReply "成功返回脚本列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

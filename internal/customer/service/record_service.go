@@ -35,13 +35,7 @@ func NewRecordService(
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param username query string false "用户名"
-// @Param ip_address query string false "ip地址"
-// @Param status query bool false "登录状态"
-// @Param before_login_at query string false "登录时间之前的记录 (RFC3339格式)"
-// @Param after_login_at query string false "登录时间之后的记录 (RFC3339格式)"
+// @Param request query pbRecord.ListLoginRecordRequest false "查询参数"
 // @Success 200 {object} pbRecord.PagLoginRecordReply "成功返回用户登录记录列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
@@ -106,12 +100,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 // @Tags 用户管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param ip_address query string false "ip地址"
-// @Param status query bool false "登录状态"
-// @Param before_login_at query string false "登录时间之前的记录 (RFC3339格式)"
-// @Param after_login_at query string false "登录时间之后的记录 (RFC3339格式)"
+// @Param request query pbRecord.ListLoginRecordRequest false "查询参数"
 // @Success 200 {object} pbRecord.PagLoginRecordReply "成功返回用户登录记录列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 401 {object} errors.Error "未授权访问"

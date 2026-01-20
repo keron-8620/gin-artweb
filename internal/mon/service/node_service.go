@@ -264,11 +264,7 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 // @Tags mon节点管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "mon节点名称"
-// @Param is_enabled query bool false "是否启用"
-// @Param username query string false "创建用户名"
+// @Param request query pbNode.ListMonNodeRequest false "查询参数"
 // @Success 200 {object} pbNode.PagMonNodeReply "成功返回mon节点列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

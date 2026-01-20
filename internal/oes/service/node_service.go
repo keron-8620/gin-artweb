@@ -260,11 +260,7 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 // @Tags oes节点管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "oes节点名称"
-// @Param is_enabled query bool false "是否启用"
-// @Param username query string false "创建用户名"
+// @Param request query pbNode.ListOesNodeRequest false "查询参数"
 // @Success 200 {object} pbNode.PagOesNodeReply "成功返回oes节点列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

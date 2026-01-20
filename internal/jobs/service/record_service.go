@@ -145,12 +145,7 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 // @Tags 脚本执行记录
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param script_id query int false "脚本ID"
-// @Param trigger_type query string false "触发类型"
-// @Param status query string false "执行状态"
-// @Param username query string false "执行用户名"
+// @Param request query pbRecord.ListScriptRecordRequest false "查询参数"
 // @Success 200 {object} pbRecord.PagScriptRecordReply "成功返回执行记录列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"

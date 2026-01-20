@@ -277,11 +277,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 // @Tags 计划任务管理
 // @Accept json
 // @Produce json
-// @Param page query int false "页码" minimum(1)
-// @Param size query int false "每页数量" minimum(1) maximum(100)
-// @Param name query string false "计划任务名称"
-// @Param is_enabled query bool false "是否启用"
-// @Param username query string false "创建用户名"
+// @Param request query pbSchedule.ListScheduleRequest false "查询参数"
 // @Success 200 {object} pbSchedule.PagScheduleReply "成功返回计划任务列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
