@@ -38,7 +38,7 @@ type ListPackageRequest struct {
 	// 名称，最大长度50
 	// Required: true
 	// Max length: 50
-	Name string `form:"name" binding:"omitempty,max=50"`
+	Filename string `form:"filename" binding:"omitempty,max=50"`
 
 	// 标签，最大长度50
 	// Required: true
@@ -66,8 +66,8 @@ type ListPackageRequest struct {
 
 func (req *ListPackageRequest) Query() (int, int, map[string]any) {
 	page, size, query := req.BaseModelQuery.QueryMap(7)
-	if req.Name != "" {
-		query["origin_filename = ?"] = "%" + req.Name + "%"
+	if req.Filename != "" {
+		query["origin_filename = ?"] = "%" + req.Filename + "%"
 	}
 	if req.Label != "" {
 		query["label = ?"] = req.Label
