@@ -8,21 +8,21 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"gin-artweb/internal/shared/common"
+	"gin-artweb/pkg/ctxutil"
 )
 
 func TracingMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 生成或获取请求ID
 		traceID := uuid.NewString()
-		c.Set(common.TraceIDKey, traceID)
+		c.Set(ctxutil.TraceIDKey, traceID)
 
 		// 开始时间
 		start := time.Now()
 
 		// 记录请求开始
 		logger.Info("请求开始",
-			zap.String(common.TraceIDKey, traceID),
+			zap.String(string(ctxutil.TraceIDKey), traceID),
 			zap.String("method", c.Request.Method),
 			zap.String("path", c.Request.URL.Path),
 			zap.String("client_ip", c.ClientIP()),
@@ -33,7 +33,7 @@ func TracingMiddleware(logger *zap.Logger) gin.HandlerFunc {
 
 		// 记录请求结束
 		logger.Info("请求结束",
-			zap.String(common.TraceIDKey, traceID),
+			zap.String(string(ctxutil.TraceIDKey), traceID),
 			zap.String("method", c.Request.Method),
 			zap.String("path", c.Request.URL.Path),
 			zap.Int("status_code", c.Writer.Status()),

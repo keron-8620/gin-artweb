@@ -3,10 +3,10 @@ package data
 import (
 	"context"
 	"gin-artweb/internal/mds/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 	"time"
 
 	"go.uber.org/zap"
@@ -35,7 +35,7 @@ func (r *mdsColonyRepo) CreateModel(ctx context.Context, m *biz.MdsColonyModel) 
 	r.log.Debug(
 		"开始创建mds集群",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -45,7 +45,7 @@ func (r *mdsColonyRepo) CreateModel(ctx context.Context, m *biz.MdsColonyModel) 
 			"创建mds集群失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -53,7 +53,7 @@ func (r *mdsColonyRepo) CreateModel(ctx context.Context, m *biz.MdsColonyModel) 
 	r.log.Debug(
 		"创建mds集群成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -64,7 +64,7 @@ func (r *mdsColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 		"开始更新mds集群",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -75,7 +75,7 @@ func (r *mdsColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -84,7 +84,7 @@ func (r *mdsColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 		"更新mds集群成功",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -94,7 +94,7 @@ func (r *mdsColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除mds集群",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -104,7 +104,7 @@ func (r *mdsColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除mds集群失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -112,7 +112,7 @@ func (r *mdsColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除mds集群成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -126,7 +126,7 @@ func (r *mdsColonyRepo) FindModel(
 	r.log.Debug(
 		"开始查询mds集群",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var m biz.MdsColonyModel
@@ -137,7 +137,7 @@ func (r *mdsColonyRepo) FindModel(
 			"查询mds集群失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -146,7 +146,7 @@ func (r *mdsColonyRepo) FindModel(
 		"查询mds集群成功",
 		zap.Object(database.ModelKey, &m),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return &m, nil
@@ -159,7 +159,7 @@ func (r *mdsColonyRepo) ListModel(
 	r.log.Debug(
 		"开始查询mds集群列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var ms []biz.MdsColonyModel
@@ -171,7 +171,7 @@ func (r *mdsColonyRepo) ListModel(
 			"查询mds集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return 0, nil, err
@@ -179,7 +179,7 @@ func (r *mdsColonyRepo) ListModel(
 	r.log.Debug(
 		"查询mds集群列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil

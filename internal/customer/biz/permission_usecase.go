@@ -6,7 +6,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/ctxutil"
@@ -96,7 +95,7 @@ func (uc *PermissionUsecase) CreatePermission(
 	uc.log.Info(
 		"开始创建权限",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.permRepo.CreateModel(ctx, &m); err != nil {
@@ -104,7 +103,7 @@ func (uc *PermissionUsecase) CreatePermission(
 			"创建权限失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -114,7 +113,7 @@ func (uc *PermissionUsecase) CreatePermission(
 			"添加权限策略失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrAddPolicy.WithCause(err)
 	}
@@ -122,7 +121,7 @@ func (uc *PermissionUsecase) CreatePermission(
 	uc.log.Info(
 		"创建权限成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -140,7 +139,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 		"开始更新权限",
 		zap.Uint32(PermissionIDKey, permID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.permRepo.UpdateModel(ctx, data, "id = ?", permID); err != nil {
@@ -149,7 +148,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Error(err),
 			zap.Uint32(PermissionIDKey, permID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -160,7 +159,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			"查询更新后的权限失败",
 			zap.Error(rErr),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, rErr
 	}
@@ -170,7 +169,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			"移除旧权限策略失败",
 			zap.Error(err),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrRemovePolicy.WithCause(err)
 	}
@@ -180,7 +179,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			"添加新权限策略失败",
 			zap.Error(err),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrAddPolicy.WithCause(err)
 	}
@@ -188,7 +187,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 	uc.log.Info(
 		"更新权限成功",
 		zap.Uint32(PermissionIDKey, permID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -204,7 +203,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 	uc.log.Info(
 		"开始删除权限",
 		zap.Uint32(PermissionIDKey, permID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, rErr := uc.FindPermissionByID(ctx, permID)
@@ -213,7 +212,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 			"查询待删除权限失败",
 			zap.Error(rErr),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return rErr
 	}
@@ -223,7 +222,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 			"删除权限失败",
 			zap.Error(err),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": permID})
 	}
@@ -233,7 +232,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 			"移除权限策略失败",
 			zap.Error(err),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrRemovePolicy.WithCause(err)
 	}
@@ -241,7 +240,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 	uc.log.Info(
 		"删除权限成功",
 		zap.Uint32(PermissionIDKey, permID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -257,7 +256,7 @@ func (uc *PermissionUsecase) FindPermissionByID(
 	uc.log.Info(
 		"开始查询权限",
 		zap.Uint32(PermissionIDKey, permID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.permRepo.FindModel(ctx, permID)
@@ -266,7 +265,7 @@ func (uc *PermissionUsecase) FindPermissionByID(
 			"查询权限失败",
 			zap.Error(err),
 			zap.Uint32(PermissionIDKey, permID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": permID})
 	}
@@ -274,7 +273,7 @@ func (uc *PermissionUsecase) FindPermissionByID(
 	uc.log.Info(
 		"查询权限成功",
 		zap.Uint32(PermissionIDKey, permID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -290,7 +289,7 @@ func (uc *PermissionUsecase) ListPermission(
 	uc.log.Info(
 		"开始查询权限列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.permRepo.ListModel(ctx, qp)
@@ -299,7 +298,7 @@ func (uc *PermissionUsecase) ListPermission(
 			"查询权限列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -307,7 +306,7 @@ func (uc *PermissionUsecase) ListPermission(
 	uc.log.Info(
 		"查询权限列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -319,7 +318,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 
 	uc.log.Info(
 		"开始加载权限策略",
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -331,7 +330,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 		uc.log.Error(
 			"加载权限策略时查询权限列表失败",
 			zap.Error(err),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return err
 	}
@@ -346,7 +345,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 					"加载权限策略失败",
 					zap.Error(err),
 					zap.Uint32(PermissionIDKey, ms[i].ID),
-					zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+					zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 				)
 				return ErrAddPolicy.WithCause(err)
 			}
@@ -356,7 +355,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 	uc.log.Info(
 		"加载权限策略成功",
 		zap.Int("policy_count", policyCount),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

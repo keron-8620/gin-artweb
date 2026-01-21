@@ -11,9 +11,9 @@ import (
 	"gin-artweb/internal/mds/biz"
 	svMon "gin-artweb/internal/mon/service"
 	svReso "gin-artweb/internal/resource/service"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type MdsColonyService struct {
@@ -49,7 +49,7 @@ func (s *MdsColonyService) CreateMdsColony(ctx *gin.Context) {
 			"绑定创建mds集群参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -69,7 +69,7 @@ func (s *MdsColonyService) CreateMdsColony(ctx *gin.Context) {
 			"创建mds集群失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
@@ -101,7 +101,7 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 			"绑定更新mds集群ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -114,7 +114,7 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 			"绑定更新mds集群参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -135,7 +135,7 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -166,7 +166,7 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 			"绑定删除mds集群ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -176,7 +176,7 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除mds集群",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucColony.DeleteMdsColonyByID(ctx, uri.ID); err != nil {
@@ -184,7 +184,7 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 			"删除mds集群失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -193,7 +193,7 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 	s.log.Info(
 		"删除mds集群成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -218,7 +218,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 			"绑定查询mds集群ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -228,7 +228,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询mds集群详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucColony.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.ID)
@@ -237,7 +237,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 			"查询mds集群详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -248,7 +248,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 			"查询mds集群详情失败",
 			zap.Error(biz.ErrMdsColonyNotFound),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(biz.ErrMdsColonyNotFound.Code, biz.ErrMdsColonyNotFound.ToMap())
 		return
@@ -257,7 +257,7 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 	s.log.Info(
 		"查询mds集群详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := MdsColonyToDetailOut(*m)
@@ -289,7 +289,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 			"绑定查询mds集群列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -299,7 +299,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询mds集群列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -318,7 +318,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -327,7 +327,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 	s.log.Info(
 		"查询mds集群列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListMdsColonyToDetailOut(ms)
@@ -355,7 +355,7 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 			"绑定查询mds集群列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -379,7 +379,7 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -390,7 +390,7 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 			"查询mds集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(biz.ErrMdsColonyListEmpty.Code, biz.ErrMdsColonyListEmpty.ToMap())
 		return
@@ -405,7 +405,7 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 				zap.Error(rErr),
 				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 		}
 		data[m.ColonyNum] = *taskStatus

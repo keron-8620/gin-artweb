@@ -17,7 +17,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -255,7 +254,7 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 			"创建日志目录失败",
 			zap.Error(taskinfo.Error),
 			zap.String("path", logDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return taskinfo
 	}
@@ -269,7 +268,7 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 			"创建日志文件失败",
 			zap.Error(taskinfo.Error),
 			zap.String("path", logPath),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return taskinfo
 	}
@@ -359,20 +358,20 @@ func (uc *RecordUsecase) Cancel(ctx context.Context, recordID uint32) {
 		uc.log.Warn(
 			"未找到要取消的脚本任务",
 			zap.Uint32(ScriptRecordIDKey, recordID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 	} else {
 		uc.log.Info(
 			"取消脚本执行",
 			zap.Uint32(ScriptRecordIDKey, recordID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		cancel()
 		uc.DeleteCancel(recordID)
 		uc.log.Info(
 			"取消脚本执行成功",
 			zap.Uint32(ScriptRecordIDKey, recordID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 	}
 }
@@ -391,7 +390,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 			"查询脚本失败",
 			zap.Error(err),
 			zap.Uint32(ScriptIDKey, req.ScriptID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": req.ScriptID})
 	}
@@ -400,7 +399,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 		uc.log.Error(
 			"脚本已禁用",
 			zap.Uint32(ScriptIDKey, req.ScriptID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrScriptDisabled
 	}
@@ -429,7 +428,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 			"创建执行记录失败",
 			zap.Error(err),
 			zap.Uint32(ScriptIDKey, req.ScriptID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -470,7 +469,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 	uc.log.Info(
 		"开始查询脚本执行记录",
 		zap.Uint32(ScriptRecordIDKey, recordID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.recordRepo.FindModel(ctx, preloads, recordID)
@@ -479,7 +478,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 			"查询脚本执行记录失败",
 			zap.Error(err),
 			zap.Uint32(ScriptRecordIDKey, recordID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": recordID})
 
@@ -488,7 +487,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 	uc.log.Info(
 		"查询脚本执行记录成功",
 		zap.Uint32(ScriptRecordIDKey, recordID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -504,7 +503,7 @@ func (uc *RecordUsecase) ListcriptRecord(
 	uc.log.Info(
 		"开始查询脚本执行记录列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.recordRepo.ListModel(ctx, qp)
@@ -513,7 +512,7 @@ func (uc *RecordUsecase) ListcriptRecord(
 			"查询脚本执行记录列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -521,7 +520,7 @@ func (uc *RecordUsecase) ListcriptRecord(
 	uc.log.Info(
 		"查询脚本执行记录列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }

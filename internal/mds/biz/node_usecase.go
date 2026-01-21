@@ -8,12 +8,11 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	bizReso "gin-artweb/internal/resource/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/serializer"
 	"gin-artweb/pkg/ctxutil"
+	"gin-artweb/pkg/serializer"
 )
 
 const MdsNodeIDKey = "mds_node_id"
@@ -77,7 +76,7 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 	uc.log.Info(
 		"开始创建mds节点",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.nodeRepo.CreateModel(ctx, &m); err != nil {
@@ -85,7 +84,7 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 			"创建mds节点失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -102,7 +101,7 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 	uc.log.Info(
 		"创建mds节点成功",
 		zap.Object(database.ModelKey, nm),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nm, nil
 }
@@ -120,7 +119,7 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 		"开始更新mds节点",
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	data["id"] = mdsNodeID
@@ -130,7 +129,7 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 			zap.Error(err),
 			zap.Uint32(MdsNodeIDKey, mdsNodeID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -147,7 +146,7 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 	uc.log.Info(
 		"更新mds节点成功",
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -163,7 +162,7 @@ func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
 	uc.log.Info(
 		"开始删除mds节点",
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.nodeRepo.DeleteModel(ctx, mdsNodeID); err != nil {
@@ -171,7 +170,7 @@ func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
 			"删除mds节点失败",
 			zap.Error(err),
 			zap.Uint32(MdsNodeIDKey, mdsNodeID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": mdsNodeID})
 	}
@@ -179,7 +178,7 @@ func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
 	uc.log.Info(
 		"删除mds节点成功",
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -197,7 +196,7 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 		"开始查询mds节点",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.nodeRepo.FindModel(ctx, preloads, mdsNodeID)
@@ -206,7 +205,7 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 			"查询mds节点失败",
 			zap.Error(err),
 			zap.Uint32(MdsNodeIDKey, mdsNodeID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": mdsNodeID})
 	}
@@ -214,7 +213,7 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 	uc.log.Info(
 		"查询mds节点成功",
 		zap.Uint32(MdsNodeIDKey, mdsNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -230,7 +229,7 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 	uc.log.Info(
 		"开始查询角色列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.nodeRepo.ListModel(ctx, qp)
@@ -239,7 +238,7 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 			"查询mds节点列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -247,7 +246,7 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 	uc.log.Info(
 		"查询mds节点列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -260,7 +259,7 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 	uc.log.Info(
 		"开始导出mds节点变量文件",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	var specdir string
 	switch m.NodeRole {
@@ -286,7 +285,7 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 			zap.String("colony_num", m.MdsColony.ColonyNum),
 			zap.String("path", mdsColonyConf),
 			zap.Object("mds_node_vars", &mdsVars),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportMdsColonyFailed.WithCause(err)
 	}
@@ -295,7 +294,7 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 		"导出mds节点变量文件失败",
 		zap.String("path", mdsColonyConf),
 		zap.Object("mds_colony_vars", &mdsVars),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

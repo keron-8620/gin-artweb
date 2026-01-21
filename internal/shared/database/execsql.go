@@ -4,17 +4,11 @@ import (
 	"context"
 
 	"gorm.io/gorm"
-
-	"gin-artweb/pkg/ctxutil"
 )
 
 func ExecSQL(ctx context.Context, db *gorm.DB, sql string, args ...any) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
-	}
-
 	// 开启事务
-	tx := db.Begin()
+	tx := db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}

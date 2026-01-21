@@ -6,7 +6,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/ctxutil"
@@ -116,7 +115,7 @@ func (uc *RoleUsecase) GetPermissions(
 	uc.log.Info(
 		"开始查询角色关联的权限列表",
 		zap.Uint32s(PermissionIDsKey, permIDs),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -128,7 +127,7 @@ func (uc *RoleUsecase) GetPermissions(
 			"查询角色关联的权限列表失败",
 			zap.Error(err),
 			zap.Uint32s(PermissionIDsKey, permIDs),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -136,7 +135,7 @@ func (uc *RoleUsecase) GetPermissions(
 	uc.log.Info(
 		"查询角色关联的权限列表成功",
 		zap.Uint32s(PermissionIDsKey, permIDs),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
 }
@@ -156,7 +155,7 @@ func (uc *RoleUsecase) GetMenus(
 	uc.log.Info(
 		"开始角色关联的菜单列表",
 		zap.Uint32s(MenuIDsKey, menuIDs),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -168,7 +167,7 @@ func (uc *RoleUsecase) GetMenus(
 			"查询角色关联的菜单列表失败",
 			zap.Error(err),
 			zap.Uint32s(MenuIDsKey, menuIDs),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -176,7 +175,7 @@ func (uc *RoleUsecase) GetMenus(
 	uc.log.Info(
 		"查询角色关联的菜单列表成功",
 		zap.Uint32s(MenuIDsKey, menuIDs),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
 }
@@ -196,7 +195,7 @@ func (uc *RoleUsecase) GetButtons(
 	uc.log.Info(
 		"开始查询角色关联的按钮列表",
 		zap.Uint32s(ButtonIDsKey, buttonIDs),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -208,7 +207,7 @@ func (uc *RoleUsecase) GetButtons(
 			"查询角色关联的按钮列表失败",
 			zap.Error(err),
 			zap.Uint32s(ButtonIDsKey, buttonIDs),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -216,7 +215,7 @@ func (uc *RoleUsecase) GetButtons(
 	uc.log.Info(
 		"查询角色关联的按钮列表成功",
 		zap.Uint32s(ButtonIDsKey, buttonIDs),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
 }
@@ -236,7 +235,7 @@ func (uc *RoleUsecase) CreateRole(
 		"开始创建角色",
 		zap.Uint32s(PermissionIDsKey, permIDs),
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	perms, err := uc.GetPermissions(ctx, permIDs)
@@ -259,7 +258,7 @@ func (uc *RoleUsecase) CreateRole(
 			"创建角色失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -285,7 +284,7 @@ func (uc *RoleUsecase) CreateRole(
 			"添加角色组策略失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
@@ -293,7 +292,7 @@ func (uc *RoleUsecase) CreateRole(
 	uc.log.Info(
 		"创建角色成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -317,7 +316,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 		zap.Uint32s(MenuIDsKey, menuIDs),
 		zap.Uint32s(ButtonIDsKey, buttonIDs),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	perms, err := uc.GetPermissions(ctx, permIDs)
@@ -342,7 +341,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -357,7 +356,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			"移除旧角色组策略失败",
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrRemoveGroupPolicy.WithCause(err)
 	}
@@ -367,7 +366,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			"添加新角色组策略失败",
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
@@ -375,7 +374,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 	uc.log.Info(
 		"更新角色成功",
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -391,7 +390,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 	uc.log.Info(
 		"开始删除角色",
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
@@ -404,7 +403,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 			"删除角色失败",
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": roleID})
 	}
@@ -414,7 +413,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 			"移除角色组策略失败",
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrRemoveGroupPolicy.WithCause(err)
 	}
@@ -422,7 +421,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 	uc.log.Info(
 		"删除角色成功",
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -440,7 +439,7 @@ func (uc *RoleUsecase) FindRoleByID(
 		"开始查询角色",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.roleRepo.FindModel(ctx, preloads, roleID)
@@ -449,7 +448,7 @@ func (uc *RoleUsecase) FindRoleByID(
 			"查询角色失败",
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": roleID})
 	}
@@ -457,7 +456,7 @@ func (uc *RoleUsecase) FindRoleByID(
 	uc.log.Info(
 		"查询角色成功",
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -473,7 +472,7 @@ func (uc *RoleUsecase) ListRole(
 	uc.log.Info(
 		"开始查询角色列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.roleRepo.ListModel(ctx, qp)
@@ -482,14 +481,14 @@ func (uc *RoleUsecase) ListRole(
 			"查询角色列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
 		"查询角色列表成功",
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -501,7 +500,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 
 	uc.log.Info(
 		"开始加载角色策略",
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -514,7 +513,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 		uc.log.Error(
 			"加载角色策略时查询角色列表失败",
 			zap.Error(err),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return err
 	}
@@ -529,7 +528,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 					"加载角色策略失败",
 					zap.Error(err),
 					zap.Uint32(MenuIDKey, ms[i].ID),
-					zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+					zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 				)
 				return ErrAddGroupPolicy.WithCause(err)
 			}
@@ -539,7 +538,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 	uc.log.Info(
 		"加载角色策略成功",
 		zap.Int("policy_count", policyCount),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

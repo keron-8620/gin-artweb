@@ -14,6 +14,7 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type PackageService struct {
@@ -54,7 +55,7 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 			"绑定上传程序包参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -78,7 +79,7 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 		s.log.Error(
 			"创建 Package 记录失败",
 			zap.Error(rErr),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
@@ -107,7 +108,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			"绑定删除程序包ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -117,7 +118,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除程序包",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucPkg.DeletePackageById(ctx, uri.ID); err != nil {
@@ -125,7 +126,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			"删除程序包失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -134,7 +135,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 	s.log.Info(
 		"删除程序包成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
@@ -156,7 +157,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			"绑定查询程序包ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -166,7 +167,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询程序包详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucPkg.FindPackageById(ctx, uri.ID)
@@ -175,7 +176,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			"查询程序包详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -184,7 +185,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 	s.log.Info(
 		"查询程序包详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := PackageModelToOutBase(*m)
@@ -211,7 +212,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			"绑定查询程序包列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -221,7 +222,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询程序包列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -239,7 +240,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -248,7 +249,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 	s.log.Info(
 		"查询程序包列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListPkgModelToOut(ms)
@@ -276,7 +277,7 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			"绑定下载程序包ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -290,7 +291,7 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			"查询程序包详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return

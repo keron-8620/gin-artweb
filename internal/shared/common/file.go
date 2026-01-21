@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 func UploadFile(
@@ -25,7 +26,7 @@ func UploadFile(
 			"上传的程序包文件过大",
 			zap.Int64("file_size", upFile.Size),
 			zap.Int64("max_size", maxSize),
-			zap.String(TraceIDKey, GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrFileTooLarge.WithData(
 			map[string]any{
@@ -40,7 +41,7 @@ func UploadFile(
 			"创建上传文件目录失败",
 			zap.Error(err),
 			zap.String("save_path", savePath),
-			zap.String(TraceIDKey, GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrUploadFile.WithCause(err)
 	}
@@ -50,7 +51,7 @@ func UploadFile(
 			"保存上传文件失败",
 			zap.Error(err),
 			zap.String("save_path", savePath),
-			zap.String(TraceIDKey, GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrUploadFile.WithCause(err)
 	}
@@ -61,7 +62,7 @@ func UploadFile(
 			zap.Error(err),
 			zap.String("save_path", savePath),
 			zap.String("file_perm", filePerm.String()),
-			zap.String(TraceIDKey, GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrSetFilePermission.WithCause(err)
 	}
@@ -74,14 +75,14 @@ func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, rename string)
 		logger.Error(
 			"文件不存在",
 			zap.String("file_path", filePath),
-			zap.String(TraceIDKey, GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrFileNotFound.WithData(map[string]any{"file_path": filePath})
 	} else if statErr != nil {
 		logger.Error(
 			"文件状态检查失败",
 			zap.String("file_path", filePath),
-			zap.String(TraceIDKey, GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Error(statErr),
 		)
 		return errors.ErrFileStatusCheckFailed.WithCause(statErr)

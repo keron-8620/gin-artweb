@@ -11,9 +11,9 @@ import (
 	pbRole "gin-artweb/api/customer/role"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type RoleService struct {
@@ -49,7 +49,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 			"绑定创建角色请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -60,7 +60,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 		"开始创建角色",
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucRole.CreateRole(
@@ -79,7 +79,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -89,7 +89,7 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 		"创建角色成功",
 		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(http.StatusCreated, &pbRole.RoleReply{
@@ -118,7 +118,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			"绑定角色ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -130,7 +130,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			"绑定更新角色请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -141,7 +141,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 		"开始更新角色",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucRole.UpdateRoleByID(
@@ -160,7 +160,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -169,7 +169,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 	s.log.Info(
 		"更新角色成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
@@ -197,7 +197,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 			"绑定删除角色ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -207,7 +207,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除角色",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucRole.DeleteRoleByID(ctx, uri.ID); err != nil {
@@ -215,7 +215,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 			"删除角色失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -224,7 +224,7 @@ func (s *RoleService) DeleteRole(ctx *gin.Context) {
 	s.log.Info(
 		"删除角色成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -249,7 +249,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 			"绑定查询角色ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -259,7 +259,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询角色详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.ID)
@@ -268,7 +268,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 			"查询角色详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -277,7 +277,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 	s.log.Info(
 		"查询角色详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(http.StatusOK, &pbRole.RoleReply{
@@ -304,7 +304,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 			"绑定查询角色列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -314,7 +314,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询角色列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -332,7 +332,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -341,7 +341,7 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 	s.log.Info(
 		"查询角色列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListRoleModelToStandardOut(ms)
@@ -367,7 +367,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
 		return
@@ -376,7 +376,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 		"开始获取当前用户菜单树",
 		zap.Uint32(auth.UserIDKey, claims.UserID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	menuTree, err := s.ucRole.GetRoleMenuTree(ctx, claims.RoleID)
 	if err != nil {
@@ -384,7 +384,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 			"获取当前用户菜单树失败",
 			zap.Error(err),
 			zap.Uint32(auth.UserIDKey, claims.UserID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -392,7 +392,7 @@ func (s *RoleService) GetRoleMenuTree(ctx *gin.Context) {
 	s.log.Info(
 		"当前用户菜单树获取成功",
 		zap.Uint32(auth.UserIDKey, claims.UserID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	roleMenuPerms := make([]pbRole.RoleMenuPerm, 0)
 	for _, node := range menuTree {

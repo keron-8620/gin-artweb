@@ -10,9 +10,9 @@ import (
 	pbRecord "gin-artweb/api/customer/record"
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type RecordService struct {
@@ -48,7 +48,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 			"绑定查询用户登录记录列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -58,7 +58,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询用户登录记录列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -76,7 +76,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -85,7 +85,7 @@ func (s *RecordService) ListLoginRecord(ctx *gin.Context) {
 	s.log.Info(
 		"查询用户登录记录列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListLoginRecordModelToStandardOut(ms)
@@ -114,7 +114,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 			"绑定查询个人登录记录列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -126,7 +126,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
 		return
@@ -137,7 +137,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 		"开始查询个人登录记录列表",
 		zap.Uint32(auth.UserIDKey, claims.UserID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -156,7 +156,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 			zap.Uint32(auth.UserIDKey, claims.UserID),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -166,7 +166,7 @@ func (s *RecordService) ListMeLoginRecord(ctx *gin.Context) {
 		"查询个人登录记录列表成功",
 		zap.Uint32(auth.UserIDKey, claims.UserID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListLoginRecordModelToStandardOut(ms)

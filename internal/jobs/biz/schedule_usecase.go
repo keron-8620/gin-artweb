@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/ctxutil"
@@ -153,7 +152,7 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 			"添加计划任务到调度器中失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrAddScheduleFailed.WithCause(err)
 	}
@@ -173,7 +172,7 @@ func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) *er
 	uc.log.Info(
 		"开始从调度器中移除计划任务",
 		zap.Uint32(ScheduleIDKey, scheduleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	if entryID, exists := uc.entryMap[scheduleID]; exists {
 		uc.crontab.Remove(entryID)
@@ -183,13 +182,13 @@ func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) *er
 			"计划任务从调度器中移除成功",
 			zap.Uint32(ScheduleIDKey, scheduleID),
 			zap.Int64("entry_id", int64(entryID)),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 	} else {
 		uc.log.Info(
 			"计划任务在调度器中不存在, 无需移除",
 			zap.Uint32(ScheduleIDKey, scheduleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 	}
 	return nil
@@ -206,7 +205,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 	uc.log.Info(
 		"开始创建计划任务",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	script, err := uc.scriptRepo.FindModel(ctx, "id = ?", m.ScriptID)
@@ -215,7 +214,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 			"查询脚本失败",
 			zap.Error(err),
 			zap.Uint32(ScriptIDKey, m.ScriptID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": m.ScriptID})
 	}
@@ -226,7 +225,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 			"创建计划任务失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -240,7 +239,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 	uc.log.Info(
 		"创建计划任务成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -258,7 +257,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 		"开始更新计划任务",
 		zap.Uint32(ScheduleIDKey, scheduleID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.scheduleRepo.UpdateModel(ctx, data, "id = ?", scheduleID); err != nil {
@@ -267,7 +266,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 			zap.Error(err),
 			zap.Uint32(ScheduleIDKey, scheduleID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -289,7 +288,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 	uc.log.Info(
 		"更新计划任务成功",
 		zap.Uint32(ScheduleIDKey, scheduleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -305,7 +304,7 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 	uc.log.Info(
 		"开始删除计划任务",
 		zap.Uint32(ScheduleIDKey, scheduleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.scheduleRepo.DeleteModel(ctx, scheduleID); err != nil {
@@ -313,7 +312,7 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 			"删除计划任务失败",
 			zap.Error(err),
 			zap.Uint32(ScheduleIDKey, scheduleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": scheduleID})
 	}
@@ -325,7 +324,7 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 	uc.log.Info(
 		"计划任务删除成功",
 		zap.Uint32(ScheduleIDKey, scheduleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -342,7 +341,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 	uc.log.Info(
 		"开始查询计划任务",
 		zap.Uint32(ScheduleIDKey, scheduleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.scheduleRepo.FindModel(ctx, preloads, scheduleID)
@@ -351,7 +350,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 			"查询计划任务失败",
 			zap.Error(err),
 			zap.Uint32(ScheduleIDKey, scheduleID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": scheduleID})
 	}
@@ -359,7 +358,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 	uc.log.Info(
 		"查询计划任务成功",
 		zap.Uint32(ScheduleIDKey, scheduleID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -375,7 +374,7 @@ func (uc *ScheduleUsecase) ListSchedule(
 	uc.log.Info(
 		"开始查询计划任务列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.scheduleRepo.ListModel(ctx, qp)
@@ -384,7 +383,7 @@ func (uc *ScheduleUsecase) ListSchedule(
 			"查询计划任务列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -392,7 +391,7 @@ func (uc *ScheduleUsecase) ListSchedule(
 	uc.log.Info(
 		"查询计划任务列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -465,7 +464,7 @@ func (uc *ScheduleUsecase) ListScheduleJob(
 	uc.log.Info(
 		"获取调度器任务列表成功",
 		zap.Int("job_count", len(jobs)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	return &jobs, nil

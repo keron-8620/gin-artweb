@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/jobs/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type recordRepo struct {
@@ -36,7 +36,7 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.ScriptRecordModel) 
 	r.log.Debug(
 		"开始创建脚本执行记录模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -46,7 +46,7 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.ScriptRecordModel) 
 			"创建脚本执行记录模型失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -54,7 +54,7 @@ func (r *recordRepo) CreateModel(ctx context.Context, m *biz.ScriptRecordModel) 
 	r.log.Debug(
 		"创建脚本执行记录模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -65,7 +65,7 @@ func (r *recordRepo) UpdateModel(ctx context.Context, data map[string]any, conds
 		"开始更新脚本执行记录模型",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -76,7 +76,7 @@ func (r *recordRepo) UpdateModel(ctx context.Context, data map[string]any, conds
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -85,7 +85,7 @@ func (r *recordRepo) UpdateModel(ctx context.Context, data map[string]any, conds
 		"更新脚本执行记录模型成功",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -95,7 +95,7 @@ func (r *recordRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除脚本执行记录模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -105,7 +105,7 @@ func (r *recordRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除脚本执行记录模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -113,7 +113,7 @@ func (r *recordRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除脚本执行记录模型成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -127,7 +127,7 @@ func (r *recordRepo) FindModel(
 	r.log.Debug(
 		"开始查询脚本执行记录模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var m biz.ScriptRecordModel
@@ -138,7 +138,7 @@ func (r *recordRepo) FindModel(
 			"查询脚本执行记录模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -147,7 +147,7 @@ func (r *recordRepo) FindModel(
 		"查询脚本执行记录模型成功",
 		zap.Object(database.ModelKey, &m),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return &m, nil
@@ -160,7 +160,7 @@ func (r *recordRepo) ListModel(
 	r.log.Debug(
 		"开始查询脚本执行记录模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var ms []biz.ScriptRecordModel
@@ -172,7 +172,7 @@ func (r *recordRepo) ListModel(
 			"查询脚本执行记录模型列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return 0, nil, err
@@ -180,7 +180,7 @@ func (r *recordRepo) ListModel(
 	r.log.Debug(
 		"查询脚本执行记录模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil

@@ -11,9 +11,9 @@ import (
 	svMon "gin-artweb/internal/mon/service"
 	"gin-artweb/internal/oes/biz"
 	svReso "gin-artweb/internal/resource/service"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type OesColonyService struct {
@@ -49,7 +49,7 @@ func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
 			"绑定创建oes集群参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -71,7 +71,7 @@ func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
 			"创建oes集群失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
@@ -103,7 +103,7 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 			"绑定更新oes集群ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -116,7 +116,7 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 			"绑定更新oes集群参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -139,7 +139,7 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -170,7 +170,7 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 			"绑定删除oes集群ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -180,7 +180,7 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除oes集群",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucColony.DeleteOesColonyByID(ctx, uri.ID); err != nil {
@@ -188,7 +188,7 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 			"删除oes集群失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -197,7 +197,7 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 	s.log.Info(
 		"删除oes集群成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -222,7 +222,7 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 			"绑定查询oes集群ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -232,7 +232,7 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询oes集群详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucColony.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, uri.ID)
@@ -241,7 +241,7 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 			"查询oes集群详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -250,7 +250,7 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 	s.log.Info(
 		"查询oes集群详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := OesColonyToDetailOut(*m)
@@ -278,7 +278,7 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 			"绑定查询oes集群列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -288,7 +288,7 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询oes集群列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -307,7 +307,7 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -316,7 +316,7 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 	s.log.Info(
 		"查询oes集群列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListOesColonyToDetailOut(ms)
@@ -348,7 +348,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			"绑定查询oes现货集群列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -373,7 +373,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -384,7 +384,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			"查询oes现货集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
 		return
@@ -399,7 +399,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 				zap.Error(rErr),
 				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 		}
 		data[m.ColonyNum] = *taskStatus
@@ -433,7 +433,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			"绑定查询oes两融集群列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -458,7 +458,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -469,7 +469,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			"查询oes两融集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
 		return
@@ -484,7 +484,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 				zap.Error(rErr),
 				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 		}
 		data[m.ColonyNum] = *taskStatus
@@ -518,7 +518,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			"绑定查询oes期权集群列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -543,7 +543,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -554,7 +554,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			"查询oes期权集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
 		return
@@ -569,7 +569,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 				zap.Error(rErr),
 				zap.Uint32(pbComm.RequestIDKey, m.ID),
 				zap.String("colony_num", m.ColonyNum),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 		}
 		data[m.ColonyNum] = *taskStatus

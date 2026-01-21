@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/ctxutil"
@@ -76,7 +75,7 @@ func (uc *LoginRecordUsecase) CreateLoginRecord(
 	uc.log.Info(
 		"开始创建用户登录记录",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.recordRepo.CreateModel(ctx, &m); err != nil {
@@ -84,7 +83,7 @@ func (uc *LoginRecordUsecase) CreateLoginRecord(
 			"创建用户登录记录失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -92,7 +91,7 @@ func (uc *LoginRecordUsecase) CreateLoginRecord(
 	uc.log.Info(
 		"创建用户登录记录成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -108,7 +107,7 @@ func (uc *LoginRecordUsecase) ListLoginRecord(
 	uc.log.Info(
 		"开始查询用户登录记录列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.recordRepo.ListModel(ctx, qp)
@@ -117,7 +116,7 @@ func (uc *LoginRecordUsecase) ListLoginRecord(
 			"查询用户登录记录列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -125,7 +124,7 @@ func (uc *LoginRecordUsecase) ListLoginRecord(
 	uc.log.Info(
 		"查询用户登录记录列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }

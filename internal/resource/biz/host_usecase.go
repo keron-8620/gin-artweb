@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/crypto/ssh"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -98,7 +97,7 @@ func (uc *HostUsecase) CreateHost(
 	uc.log.Info(
 		"开始创建主机",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.TestSSHConnection(ctx, m.SSHIP, m.SSHPort, m.SSHUser, password); err != nil {
@@ -110,7 +109,7 @@ func (uc *HostUsecase) CreateHost(
 			"创建主机失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -122,7 +121,7 @@ func (uc *HostUsecase) CreateHost(
 	uc.log.Info(
 		"主机创建成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -140,7 +139,7 @@ func (uc *HostUsecase) UpdateHostById(
 		"开始更新主机",
 		zap.Uint32(HostIDKey, m.ID),
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.TestSSHConnection(ctx, m.SSHIP, m.SSHPort, m.SSHUser, password); err != nil {
@@ -162,7 +161,7 @@ func (uc *HostUsecase) UpdateHostById(
 			zap.Error(err),
 			zap.Uint32(HostIDKey, m.ID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -174,7 +173,7 @@ func (uc *HostUsecase) UpdateHostById(
 	uc.log.Info(
 		"更新主机成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return uc.FindHostById(ctx, m.ID)
 }
@@ -190,7 +189,7 @@ func (uc *HostUsecase) DeleteHostById(
 	uc.log.Info(
 		"开始删除主机",
 		zap.Uint32(HostIDKey, hostId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.hostRepo.DeleteModel(ctx, hostId); err != nil {
@@ -198,7 +197,7 @@ func (uc *HostUsecase) DeleteHostById(
 			"删除主机失败",
 			zap.Error(err),
 			zap.Uint32(HostIDKey, hostId),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": hostId})
 	}
@@ -210,7 +209,7 @@ func (uc *HostUsecase) DeleteHostById(
 			zap.Error(err),
 			zap.String("path", path),
 			zap.Uint32("host_id", hostId),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrDeleteHostFileFailed.WithCause(err)
 	}
@@ -218,7 +217,7 @@ func (uc *HostUsecase) DeleteHostById(
 	uc.log.Info(
 		"删除主机成功",
 		zap.Uint32(HostIDKey, hostId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -234,7 +233,7 @@ func (uc *HostUsecase) FindHostById(
 	uc.log.Info(
 		"开始查询主机",
 		zap.Uint32(HostIDKey, hostId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.hostRepo.FindModel(ctx, nil, hostId)
@@ -243,7 +242,7 @@ func (uc *HostUsecase) FindHostById(
 			"查询主机失败",
 			zap.Error(err),
 			zap.Uint32(HostIDKey, hostId),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": hostId})
 	}
@@ -251,7 +250,7 @@ func (uc *HostUsecase) FindHostById(
 	uc.log.Info(
 		"查询主机成功",
 		zap.Uint32(HostIDKey, hostId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -267,7 +266,7 @@ func (uc *HostUsecase) ListHost(
 	uc.log.Info(
 		"开始查询主机列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.hostRepo.ListModel(ctx, qp)
@@ -276,7 +275,7 @@ func (uc *HostUsecase) ListHost(
 			"查询主机列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -284,7 +283,7 @@ func (uc *HostUsecase) ListHost(
 	uc.log.Info(
 		"查询主机列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -304,7 +303,7 @@ func (uc *HostUsecase) TestSSHConnection(
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	cli, err := uc.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, []ssh.AuthMethod{uc.authMethod}, uc.sshTimeout)
@@ -314,7 +313,7 @@ func (uc *HostUsecase) TestSSHConnection(
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
 			zap.String("ssh_user", sshUser),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		cli.Close()
 		return nil
@@ -332,7 +331,7 @@ func (uc *HostUsecase) TestSSHConnection(
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
 			zap.String("ssh_user", sshUser),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
 	}
@@ -346,7 +345,7 @@ func (uc *HostUsecase) TestSSHConnection(
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
 			zap.String("ssh_user", sshUser),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrSSHConnect.WithCause(err)
 	}
@@ -371,7 +370,7 @@ func (uc *HostUsecase) TestSSHConnection(
 				zap.String("ssh_ip", sshIP),
 				zap.Uint16("ssh_port", sshPort),
 				zap.String("ssh_user", sshUser),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return ErrSSHKeyDeployment.WithCause(err)
 		}
@@ -382,7 +381,7 @@ func (uc *HostUsecase) TestSSHConnection(
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -395,7 +394,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 	uc.log.Info(
 		"开始导出ansible主机变量文件",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	ansibleHost := AnsibleHostVars{
@@ -413,7 +412,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 			zap.Error(err),
 			zap.String("path", path),
 			zap.Object("ansible_host", &ansibleHost),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportHostFailed.WithCause(err)
 	}
@@ -422,7 +421,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 		"导出ansible主机变量文件成功",
 		zap.String("path", path),
 		zap.Object("ansible_host", &ansibleHost),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

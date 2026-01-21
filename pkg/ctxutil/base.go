@@ -1,6 +1,10 @@
 package ctxutil
 
-import "context"
+import (
+	"context"
+)
+
+type ContextKey string
 
 func CheckContext(ctx context.Context) error {
 	select {

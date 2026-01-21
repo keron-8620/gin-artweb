@@ -14,7 +14,6 @@ import (
 	pbColony "gin-artweb/api/oes/colony"
 	bizMon "gin-artweb/internal/mon/biz"
 	bizReso "gin-artweb/internal/resource/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -90,7 +89,7 @@ func (uc *OesColonyUsecase) CreateOesColony(
 	uc.log.Info(
 		"开始创建oes集群",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.colonyRepo.CreateModel(ctx, &m); err != nil {
@@ -98,7 +97,7 @@ func (uc *OesColonyUsecase) CreateOesColony(
 			"创建oes集群失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -115,7 +114,7 @@ func (uc *OesColonyUsecase) CreateOesColony(
 	uc.log.Info(
 		"创建oes集群成功",
 		zap.Object(database.ModelKey, nm),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nm, nil
 }
@@ -133,7 +132,7 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 		"开始更新oes集群",
 		zap.Uint32(OesColonyIDKey, oesColonyID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	data["id"] = oesColonyID
@@ -143,7 +142,7 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 			zap.Error(err),
 			zap.Uint32(OesColonyIDKey, oesColonyID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -160,7 +159,7 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 	uc.log.Info(
 		"更新oes集群成功",
 		zap.Uint32(OesColonyIDKey, oesColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -176,7 +175,7 @@ func (uc *OesColonyUsecase) DeleteOesColonyByID(
 	uc.log.Info(
 		"开始删除oes集群",
 		zap.Uint32(OesColonyIDKey, oesColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.colonyRepo.DeleteModel(ctx, oesColonyID); err != nil {
@@ -184,7 +183,7 @@ func (uc *OesColonyUsecase) DeleteOesColonyByID(
 			"删除oes集群失败",
 			zap.Error(err),
 			zap.Uint32(OesColonyIDKey, oesColonyID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": oesColonyID})
 	}
@@ -192,7 +191,7 @@ func (uc *OesColonyUsecase) DeleteOesColonyByID(
 	uc.log.Info(
 		"删除oes集群成功",
 		zap.Uint32(OesColonyIDKey, oesColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -210,7 +209,7 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 		"开始查询oes集群",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Uint32(OesColonyIDKey, oesColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.colonyRepo.FindModel(ctx, preloads, oesColonyID)
@@ -219,7 +218,7 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 			"查询oes集群失败",
 			zap.Error(err),
 			zap.Uint32(OesColonyIDKey, oesColonyID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": oesColonyID})
 	}
@@ -227,7 +226,7 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 	uc.log.Info(
 		"查询oes集群成功",
 		zap.Uint32(OesColonyIDKey, oesColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -243,7 +242,7 @@ func (uc *OesColonyUsecase) ListOesColony(
 	uc.log.Info(
 		"开始查询角色列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.colonyRepo.ListModel(ctx, qp)
@@ -252,7 +251,7 @@ func (uc *OesColonyUsecase) ListOesColony(
 			"查询oes集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -260,7 +259,7 @@ func (uc *OesColonyUsecase) ListOesColony(
 	uc.log.Info(
 		"查询oes集群列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -444,7 +443,7 @@ func (uc *OesColonyUsecase) getTaskStatus(ctx context.Context, pattern string) (
 			"查询mds任务标识文件失败",
 			zap.Error(err),
 			zap.String("pattern", pattern),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return "", errors.FromError(err)
 	}
@@ -465,7 +464,7 @@ func (uc *OesColonyUsecase) getTaskStatus(ctx context.Context, pattern string) (
 				"检查mds的running标志文件时出错",
 				zap.Error(err),
 				zap.String("running_flag", runningFlag),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return "", errors.FromError(err)
 		}
@@ -492,7 +491,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 	uc.log.Info(
 		"开始解压oes程序包并初始化集群配置文件",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	colonyBinDir := uc.GetOesColonyBinDir(m.ColonyNum)
@@ -514,7 +513,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 		uc.log.Error(
 			"创建oes程序包解压的tmp文件夹失败",
 			zap.Error(mErr),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportOesColonyFailed.WithCause(mErr)
 	}
@@ -535,7 +534,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			"oes程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", oesPkgPath),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportOesColonyFailed.WithCause(valiErr)
 	}
@@ -546,7 +545,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Error(err),
 			zap.String("src_path", oesPkgPath),
 			zap.String("dst_path", colonyBinDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrUntarGzOesPackage.WithCause(err)
 	}
@@ -558,7 +557,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Error(err),
 			zap.String("src_path", oesTmpDir),
 			zap.String("dst_path", colonyBinDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrUntarGzOesPackage.WithCause(err)
 	}
@@ -570,7 +569,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			"xcounter程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", xcterPkgPath),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportOesColonyFailed.WithCause(valiErr)
 	}
@@ -580,7 +579,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Error(err),
 			zap.String("src_path", xcterPkgPath),
 			zap.String("dst_path", tmpDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrUntarGzXCounterPackage.WithCause(err)
 	}
@@ -592,7 +591,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Error(err),
 			zap.String("src_path", xcterTmpDir),
 			zap.String("dst_path", oesBinDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrUntarGzOesPackage.WithCause(err)
 	}
@@ -606,7 +605,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 				zap.Error(err),
 				zap.String("src_path", colonyBinConf),
 				zap.String("dst_path", colonyConfAll),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return errors.FromError(err)
 		}
@@ -618,7 +617,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 				zap.Error(err),
 				zap.String("src_path", colonyConfDir),
 				zap.String("dst_path", dstPath),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return errors.FromError(err)
 		}
@@ -638,7 +637,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Error(err),
 			zap.String("path", oesColonyConf),
 			zap.Object("oes_colony_vars", &oesVars),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportOesColonyFailed.WithCause(err)
 	}
@@ -647,7 +646,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 		"解压oes程序包并初始化集群配置文件成功",
 		zap.String("path", oesColonyConf),
 		zap.Object("oes_colony_vars", &oesVars),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

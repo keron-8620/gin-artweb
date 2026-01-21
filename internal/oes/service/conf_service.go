@@ -12,6 +12,7 @@ import (
 	"gin-artweb/internal/oes/biz"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/fileutil"
 )
 
@@ -55,7 +56,7 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 			"绑定上传的oes配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -69,7 +70,7 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 			"绑定上传的oes配置文件表单参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -108,7 +109,7 @@ func (s *OesConfService) DownloadOesConf(ctx *gin.Context) {
 			"绑定删除的oes配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -143,7 +144,7 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 			"绑定删除的oes配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -157,7 +158,7 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 			"删除oes配置文件失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.FromError(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -187,7 +188,7 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 			"绑定oes配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -201,7 +202,7 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 			"获取oes配置文件列表失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.FromError(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())

@@ -11,7 +11,6 @@ import (
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
@@ -45,14 +44,14 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 		r.log.Error(
 			"权限模型不能为空",
 			zap.Error(err),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return err
 	}
 	r.log.Debug(
 		"开始创建权限模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	now := time.Now()
@@ -66,7 +65,7 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 			"创建权限模型失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -75,7 +74,7 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 	r.log.Debug(
 		"创建权限模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -89,7 +88,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return err
 	}
@@ -98,7 +97,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 		"开始更新权限模型",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	startTime := time.Now()
@@ -110,7 +109,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -120,7 +119,7 @@ func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, c
 		"更新权限模型成功",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -130,7 +129,7 @@ func (r *permissionRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除权限模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	startTime := time.Now()
@@ -141,7 +140,7 @@ func (r *permissionRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除权限模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -150,7 +149,7 @@ func (r *permissionRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除权限模型成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -163,7 +162,7 @@ func (r *permissionRepo) FindModel(
 	r.log.Debug(
 		"开始查询权限模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	startTime := time.Now()
@@ -175,7 +174,7 @@ func (r *permissionRepo) FindModel(
 			"查询权限模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -185,7 +184,7 @@ func (r *permissionRepo) FindModel(
 		"查询权限模型成功",
 		zap.Object(database.ModelKey, &m),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return &m, nil
@@ -198,7 +197,7 @@ func (r *permissionRepo) ListModel(
 	r.log.Debug(
 		"开始查询权限模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	startTime := time.Now()
@@ -211,7 +210,7 @@ func (r *permissionRepo) ListModel(
 			"查询权限模型列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return 0, nil, err
@@ -220,7 +219,7 @@ func (r *permissionRepo) ListModel(
 	r.log.Debug(
 		"查询权限模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil
@@ -238,7 +237,7 @@ func (r *permissionRepo) AddPolicy(
 	r.log.Debug(
 		"AddPolicy: 传入参数",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	// 检查权限模型的有效性
@@ -255,7 +254,7 @@ func (r *permissionRepo) AddPolicy(
 	r.log.Debug(
 		"开始添加权限策略",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	sub := auth.PermissionToSubject(m.ID)
@@ -266,7 +265,7 @@ func (r *permissionRepo) AddPolicy(
 			zap.String(auth.SubKey, sub),
 			zap.String(auth.ObjKey, m.URL),
 			zap.String(auth.ActKey, m.Method),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -275,7 +274,7 @@ func (r *permissionRepo) AddPolicy(
 		"添加权限策略成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(auth.SubKey, sub),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -295,7 +294,7 @@ func (r *permissionRepo) RemovePolicy(
 		"RemoveGroupPolicy: 传入参数",
 		zap.Object(database.ModelKey, &m),
 		zap.Bool("removeInherited", removeInherited),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	// 检查权限模型的有效性
@@ -312,7 +311,7 @@ func (r *permissionRepo) RemovePolicy(
 	r.log.Debug(
 		"开始删除权限策略",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	rmSubStartTime := time.Now()
 	sub := auth.PermissionToSubject(m.ID)
@@ -324,7 +323,7 @@ func (r *permissionRepo) RemovePolicy(
 			zap.String(auth.SubKey, sub),
 			zap.String(auth.ObjKey, m.URL),
 			zap.String(auth.ActKey, m.Method),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 		return err
@@ -333,7 +332,7 @@ func (r *permissionRepo) RemovePolicy(
 		"删除权限策略成功",
 		zap.Object(database.ModelKey, &m),
 		zap.String(auth.SubKey, sub),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 	)
 
@@ -344,7 +343,7 @@ func (r *permissionRepo) RemovePolicy(
 			"开始删除继承该权限的组策略",
 			zap.Object(database.ModelKey, &m),
 			zap.String(auth.GroupObjKey, sub),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 		if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 1, sub); err != nil {
@@ -353,7 +352,7 @@ func (r *permissionRepo) RemovePolicy(
 				zap.Error(err),
 				zap.Object(database.ModelKey, &m),
 				zap.String(auth.GroupObjKey, sub),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 			)
 			return err
@@ -362,7 +361,7 @@ func (r *permissionRepo) RemovePolicy(
 			"删除继承该权限的组策略成功",
 			zap.Object(database.ModelKey, &m),
 			zap.String(auth.GroupObjKey, sub),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 	}

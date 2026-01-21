@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/resource/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
@@ -39,7 +38,7 @@ func (r *hostRepo) CreateModel(ctx context.Context, m *biz.HostModel) error {
 	r.log.Debug(
 		"开始创建主机模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	m.CreatedAt = now
@@ -51,7 +50,7 @@ func (r *hostRepo) CreateModel(ctx context.Context, m *biz.HostModel) error {
 			"创建主机模型失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -59,7 +58,7 @@ func (r *hostRepo) CreateModel(ctx context.Context, m *biz.HostModel) error {
 	r.log.Debug(
 		"创建主机模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -70,7 +69,7 @@ func (r *hostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 		"开始更新主机模型",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -81,7 +80,7 @@ func (r *hostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -90,7 +89,7 @@ func (r *hostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 		"更新主机模型成功",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -100,7 +99,7 @@ func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除主机模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -110,7 +109,7 @@ func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除主机模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -118,7 +117,7 @@ func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除主机模型成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -132,7 +131,7 @@ func (r *hostRepo) FindModel(
 	r.log.Debug(
 		"开始查询主机模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var m biz.HostModel
@@ -143,7 +142,7 @@ func (r *hostRepo) FindModel(
 			"查询主机模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -152,7 +151,7 @@ func (r *hostRepo) FindModel(
 		"查询主机模型成功",
 		zap.Object(database.ModelKey, &m),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return &m, nil
@@ -165,7 +164,7 @@ func (r *hostRepo) ListModel(
 	r.log.Debug(
 		"开始查询主机模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var ms []biz.HostModel
@@ -177,7 +176,7 @@ func (r *hostRepo) ListModel(
 			"查询主机模型列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return 0, nil, err
@@ -185,7 +184,7 @@ func (r *hostRepo) ListModel(
 	r.log.Debug(
 		"查询主机模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil
@@ -217,7 +216,7 @@ func (r *hostRepo) NewSSHClient(
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
 			zap.String("ssh_user", sshUser),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -227,7 +226,7 @@ func (r *hostRepo) NewSSHClient(
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return client, nil
@@ -245,7 +244,7 @@ func (r *hostRepo) ExecuteCommand(
 	r.log.Debug(
 		"开始执行命令",
 		zap.String("command", command),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	startTime := time.Now()
@@ -254,7 +253,7 @@ func (r *hostRepo) ExecuteCommand(
 			"执行命令失败",
 			zap.Error(err),
 			zap.String("command", command),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -263,7 +262,7 @@ func (r *hostRepo) ExecuteCommand(
 	r.log.Debug(
 		"执行命令成功",
 		zap.String("command", command),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 

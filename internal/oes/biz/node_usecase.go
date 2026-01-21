@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	bizReso "gin-artweb/internal/resource/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -77,7 +76,7 @@ func (uc *OesNodeUsecase) CreateOesNode(
 	uc.log.Info(
 		"开始创建oes节点",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.nodeRepo.CreateModel(ctx, &m); err != nil {
@@ -85,7 +84,7 @@ func (uc *OesNodeUsecase) CreateOesNode(
 			"创建oes节点失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -102,7 +101,7 @@ func (uc *OesNodeUsecase) CreateOesNode(
 	uc.log.Info(
 		"创建oes节点成功",
 		zap.Object(database.ModelKey, nm),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nm, nil
 }
@@ -120,7 +119,7 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 		"开始更新oes节点",
 		zap.Uint32(OesNodeIDKey, oesNodeID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	data["id"] = oesNodeID
@@ -130,7 +129,7 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 			zap.Error(err),
 			zap.Uint32(OesNodeIDKey, oesNodeID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -147,7 +146,7 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 	uc.log.Info(
 		"更新oes节点成功",
 		zap.Uint32(OesNodeIDKey, oesNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -163,7 +162,7 @@ func (uc *OesNodeUsecase) DeleteOesNodeByID(
 	uc.log.Info(
 		"开始删除oes节点",
 		zap.Uint32(OesNodeIDKey, oesNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.nodeRepo.DeleteModel(ctx, oesNodeID); err != nil {
@@ -171,7 +170,7 @@ func (uc *OesNodeUsecase) DeleteOesNodeByID(
 			"删除oes节点失败",
 			zap.Error(err),
 			zap.Uint32(OesNodeIDKey, oesNodeID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": oesNodeID})
 	}
@@ -179,7 +178,7 @@ func (uc *OesNodeUsecase) DeleteOesNodeByID(
 	uc.log.Info(
 		"删除oes节点成功",
 		zap.Uint32(OesNodeIDKey, oesNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -197,7 +196,7 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 		"开始查询oes节点",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Uint32(OesNodeIDKey, oesNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.nodeRepo.FindModel(ctx, preloads, oesNodeID)
@@ -206,7 +205,7 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 			"查询oes节点失败",
 			zap.Error(err),
 			zap.Uint32(OesNodeIDKey, oesNodeID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": oesNodeID})
 	}
@@ -214,7 +213,7 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 	uc.log.Info(
 		"查询oes节点成功",
 		zap.Uint32(OesNodeIDKey, oesNodeID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -230,7 +229,7 @@ func (uc *OesNodeUsecase) ListOesNode(
 	uc.log.Info(
 		"开始查询角色列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.nodeRepo.ListModel(ctx, qp)
@@ -239,7 +238,7 @@ func (uc *OesNodeUsecase) ListOesNode(
 			"查询oes节点列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -247,7 +246,7 @@ func (uc *OesNodeUsecase) ListOesNode(
 	uc.log.Info(
 		"查询oes节点列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -260,7 +259,7 @@ func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeMode
 	uc.log.Info(
 		"开始导出oes节点变量文件",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	var specdir string
 	switch m.NodeRole {
@@ -286,7 +285,7 @@ func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeMode
 			zap.String("colony_num", m.OesColony.ColonyNum),
 			zap.String("path", oesColonyConf),
 			zap.Object("oes_node_vars", &oesVars),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportOesColonyFailed.WithCause(err)
 	}
@@ -295,7 +294,7 @@ func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeMode
 		"导出oes节点变量文件失败",
 		zap.String("path", oesColonyConf),
 		zap.Object("oes_colony_vars", &oesVars),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

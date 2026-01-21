@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -78,7 +77,7 @@ func (uc *PackageUsecase) CreatePackage(
 	uc.log.Info(
 		"开始创建程序包",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.pkgRepo.CreateModel(ctx, &m); err != nil {
@@ -86,7 +85,7 @@ func (uc *PackageUsecase) CreatePackage(
 			"创建程序包失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -94,7 +93,7 @@ func (uc *PackageUsecase) CreatePackage(
 	uc.log.Info(
 		"创建程序包成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -110,7 +109,7 @@ func (uc *PackageUsecase) DeletePackageById(
 	uc.log.Info(
 		"开始删除程序包",
 		zap.Uint32(PackageIDKey, pkgId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.FindPackageById(ctx, pkgId)
@@ -124,7 +123,7 @@ func (uc *PackageUsecase) DeletePackageById(
 			"删除程序包失败",
 			zap.Error(err),
 			zap.Uint32(PackageIDKey, pkgId),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": pkgId})
 	}
@@ -137,7 +136,7 @@ func (uc *PackageUsecase) DeletePackageById(
 	uc.log.Info(
 		"删除程序包成功",
 		zap.Uint32(PackageIDKey, pkgId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -153,7 +152,7 @@ func (uc *PackageUsecase) FindPackageById(
 	uc.log.Info(
 		"开始查询程序包",
 		zap.Uint32(PackageIDKey, pkgId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.pkgRepo.FindModel(ctx, nil, pkgId)
@@ -162,7 +161,7 @@ func (uc *PackageUsecase) FindPackageById(
 			"查询程序包失败",
 			zap.Error(err),
 			zap.Uint32(PackageIDKey, pkgId),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": pkgId})
 	}
@@ -170,7 +169,7 @@ func (uc *PackageUsecase) FindPackageById(
 	uc.log.Info(
 		"查询程序包成功",
 		zap.Uint32(PackageIDKey, pkgId),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -186,7 +185,7 @@ func (uc *PackageUsecase) ListPackage(
 	uc.log.Info(
 		"开始查询程序包列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.pkgRepo.ListModel(ctx, qp)
@@ -195,7 +194,7 @@ func (uc *PackageUsecase) ListPackage(
 			"查询程序包列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -203,7 +202,7 @@ func (uc *PackageUsecase) ListPackage(
 	uc.log.Info(
 		"查询程序包列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -219,7 +218,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 		"开始删除程序包文件",
 		zap.String("path", savePath),
 		zap.Uint32(PackageIDKey, m.ID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	// 检查文件是否存在
@@ -229,7 +228,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 			"程序包文件不存在，无需删除",
 			zap.String("path", savePath),
 			zap.Uint32(PackageIDKey, m.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil
 	} else if statErr != nil {
@@ -238,7 +237,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 			"检查程序包文件状态失败",
 			zap.Error(statErr),
 			zap.String("path", savePath),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(statErr)
 	}
@@ -250,7 +249,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 			zap.Error(rmErr),
 			zap.String("path", savePath),
 			zap.Uint32(PackageIDKey, m.ID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(rmErr)
 	}

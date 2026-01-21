@@ -13,7 +13,6 @@ import (
 	pbColony "gin-artweb/api/mds/colony"
 	bizMon "gin-artweb/internal/mon/biz"
 	bizReso "gin-artweb/internal/resource/biz"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -84,7 +83,7 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 	uc.log.Info(
 		"开始创建mds集群",
 		zap.Object(database.ModelKey, &m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.colonyRepo.CreateModel(ctx, &m); err != nil {
@@ -92,7 +91,7 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 			"创建mds集群失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, nil)
 	}
@@ -109,7 +108,7 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 	uc.log.Info(
 		"创建mds集群成功",
 		zap.Object(database.ModelKey, nm),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nm, nil
 }
@@ -127,7 +126,7 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 		"开始更新mds集群",
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	data["id"] = mdsColonyID
@@ -137,7 +136,7 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 			zap.Error(err),
 			zap.Uint32(MdsColonyIDKey, mdsColonyID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, data)
 	}
@@ -154,7 +153,7 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 	uc.log.Info(
 		"更新mds集群成功",
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -170,7 +169,7 @@ func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
 	uc.log.Info(
 		"开始删除mds集群",
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.colonyRepo.DeleteModel(ctx, mdsColonyID); err != nil {
@@ -178,7 +177,7 @@ func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
 			"删除mds集群失败",
 			zap.Error(err),
 			zap.Uint32(MdsColonyIDKey, mdsColonyID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return database.NewGormError(err, map[string]any{"id": mdsColonyID})
 	}
@@ -186,7 +185,7 @@ func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
 	uc.log.Info(
 		"删除mds集群成功",
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -204,7 +203,7 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 		"开始查询mds集群",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.colonyRepo.FindModel(ctx, preloads, mdsColonyID)
@@ -213,7 +212,7 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 			"查询mds集群失败",
 			zap.Error(err),
 			zap.Uint32(MdsColonyIDKey, mdsColonyID),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return nil, database.NewGormError(err, map[string]any{"id": mdsColonyID})
 	}
@@ -221,7 +220,7 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 	uc.log.Info(
 		"查询mds集群成功",
 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -237,7 +236,7 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 	uc.log.Info(
 		"开始查询角色列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.colonyRepo.ListModel(ctx, qp)
@@ -246,7 +245,7 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 			"查询mds集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, database.NewGormError(err, nil)
 	}
@@ -254,7 +253,7 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 	uc.log.Info(
 		"查询mds集群列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -309,7 +308,7 @@ func (uc *MdsColonyUsecase) getTaskInfo(ctx context.Context, pattern string) (st
 			"查询mds任务标识文件失败",
 			zap.Error(err),
 			zap.String("pattern", pattern),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return "", errors.FromError(err)
 	}
@@ -330,7 +329,7 @@ func (uc *MdsColonyUsecase) getTaskInfo(ctx context.Context, pattern string) (st
 				"检查mds的running标志文件时出错",
 				zap.Error(err),
 				zap.String("running_flag", runningFlag),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return "", errors.FromError(err)
 		}
@@ -357,7 +356,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	uc.log.Info(
 		"开始解压mds程序包并初始化集群配置文件",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	colonyBinDir := uc.GetMdsColonyBinDir(m.ColonyNum)
@@ -379,7 +378,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		uc.log.Error(
 			"创建mds程序包解压的tmp文件夹失败",
 			zap.Error(mErr),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportMdsColonyFailed.WithCause(mErr)
 	}
@@ -400,7 +399,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			"mds程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", mdsPkgPath),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportMdsColonyFailed.WithCause(valiErr)
 	}
@@ -410,7 +409,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.Error(err),
 			zap.String("path", m.Package.StorageFilename),
 			zap.String("dest", colonyBinDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrUntarGzMdsPackage.WithCause(err)
 	}
@@ -422,7 +421,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.Error(err),
 			zap.String("src_path", mdsTmpDir),
 			zap.String("dst_path", colonyBinDir),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrUntarGzMdsPackage.WithCause(err)
 	}
@@ -436,7 +435,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 				zap.Error(err),
 				zap.String("src_path", colonyBinConf),
 				zap.String("dst_path", colonyConfAll),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return errors.FromError(err)
 		}
@@ -448,7 +447,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 				zap.Error(err),
 				zap.String("src_path", colonyConfDir),
 				zap.String("dst_path", dstPath),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			return errors.FromError(err)
 		}
@@ -468,7 +467,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.Error(err),
 			zap.String("path", mdsColonyConf),
 			zap.Object("mds_colony_vars", &mdsVars),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return ErrExportMdsColonyFailed.WithCause(err)
 	}
@@ -477,7 +476,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		"解压mds程序包并初始化集群配置文件成功",
 		zap.String("path", mdsColonyConf),
 		zap.Object("mds_colony_vars", &mdsVars),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

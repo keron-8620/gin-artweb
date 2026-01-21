@@ -11,10 +11,10 @@ import (
 
 	"gin-artweb/internal/customer/biz"
 	"gin-artweb/internal/shared/auth"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
+	"gin-artweb/pkg/ctxutil"
 )
 
 type roleRepo struct {
@@ -53,7 +53,7 @@ func (r *roleRepo) CreateModel(
 	r.log.Debug(
 		"开始创建角色模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	now := time.Now()
@@ -82,7 +82,7 @@ func (r *roleRepo) CreateModel(
 			"创建角色模型失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -91,7 +91,7 @@ func (r *roleRepo) CreateModel(
 	r.log.Debug(
 		"创建角色模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -112,7 +112,7 @@ func (r *roleRepo) UpdateModel(
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
 		zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(menus)),
 		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(buttons)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	upmap := make(map[string]any, 3)
@@ -140,7 +140,7 @@ func (r *roleRepo) UpdateModel(
 			zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(menus)),
 			zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(buttons)),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -152,7 +152,7 @@ func (r *roleRepo) UpdateModel(
 		zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(menus)),
 		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(buttons)),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -162,7 +162,7 @@ func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除角色模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	if err := database.DBDelete(ctx, r.gormDB, &biz.RoleModel{}, conds...); err != nil {
@@ -170,7 +170,7 @@ func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除角色模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -178,7 +178,7 @@ func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除角色模型成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -193,7 +193,7 @@ func (r *roleRepo) FindModel(
 		"开始查询角色模型",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	var m biz.RoleModel
@@ -203,7 +203,7 @@ func (r *roleRepo) FindModel(
 			zap.Error(err),
 			zap.Strings(database.PreloadKey, preloads),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return nil, err
@@ -213,7 +213,7 @@ func (r *roleRepo) FindModel(
 		zap.Object(database.ModelKey, &m),
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return &m, nil
@@ -226,7 +226,7 @@ func (r *roleRepo) ListModel(
 	r.log.Debug(
 		"开始查询角色模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	var ms []biz.RoleModel
@@ -236,7 +236,7 @@ func (r *roleRepo) ListModel(
 			"查询角色列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return 0, nil, err
@@ -244,7 +244,7 @@ func (r *roleRepo) ListModel(
 	r.log.Debug(
 		"查询角色模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return count, &ms, nil
@@ -262,7 +262,7 @@ func (r *roleRepo) AddGroupPolicy(
 	r.log.Debug(
 		"AddGroupPolicy: 传入参数",
 		zap.Object(database.ModelKey, role),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m := *role
@@ -278,7 +278,7 @@ func (r *roleRepo) AddGroupPolicy(
 		"开始添加角色与权限的关联策略",
 		zap.Object(database.ModelKey, role),
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(&m.Permissions)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	permStartTime := time.Now()
 	// 批量处理权限
@@ -289,7 +289,7 @@ func (r *roleRepo) AddGroupPolicy(
 				"跳过无效权限",
 				zap.Object(database.ModelKey, role),
 				zap.Int("permission_index", i),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			continue
 		}
@@ -302,7 +302,7 @@ func (r *roleRepo) AddGroupPolicy(
 				zap.Object(database.ModelKey, role),
 				zap.String(auth.GroupSubKey, sub),
 				zap.String(auth.GroupObjKey, obj),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(permStartTime)),
 			)
 			return err
@@ -312,7 +312,7 @@ func (r *roleRepo) AddGroupPolicy(
 		"添加角色与权限的关联策略成功",
 		zap.Object(database.ModelKey, role),
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(&m.Permissions)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(permStartTime)),
 	)
 
@@ -320,7 +320,7 @@ func (r *roleRepo) AddGroupPolicy(
 		"开始添加角色与菜单的关联策略",
 		zap.Object(database.ModelKey, role),
 		zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(&m.Menus)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	menuStartTime := time.Now()
 	// 批量处理菜单
@@ -331,7 +331,7 @@ func (r *roleRepo) AddGroupPolicy(
 				"跳过无效菜单",
 				zap.Object(database.ModelKey, role),
 				zap.Int("menu_index", i),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			continue
 		}
@@ -344,7 +344,7 @@ func (r *roleRepo) AddGroupPolicy(
 				zap.Object(database.ModelKey, role),
 				zap.String(auth.GroupSubKey, sub),
 				zap.String(auth.GroupObjKey, obj),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(menuStartTime)),
 			)
 			return err
@@ -354,7 +354,7 @@ func (r *roleRepo) AddGroupPolicy(
 		"添加角色与菜单的关联策略成功",
 		zap.Object(database.ModelKey, role),
 		zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(&m.Menus)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(menuStartTime)),
 	)
 
@@ -362,7 +362,7 @@ func (r *roleRepo) AddGroupPolicy(
 		"开始添加角色与按钮的关联策略",
 		zap.Object(database.ModelKey, role),
 		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(&m.Buttons)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	buttonStartTime := time.Now()
 	// 批量处理按钮
@@ -373,7 +373,7 @@ func (r *roleRepo) AddGroupPolicy(
 				"跳过无效按钮",
 				zap.Object(database.ModelKey, role),
 				zap.Int("button_index", i),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
 			continue
 		}
@@ -386,7 +386,7 @@ func (r *roleRepo) AddGroupPolicy(
 				zap.Object(database.ModelKey, role),
 				zap.String(auth.GroupSubKey, sub),
 				zap.String(auth.GroupObjKey, obj),
-				zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(buttonStartTime)),
 			)
 			return err
@@ -396,7 +396,7 @@ func (r *roleRepo) AddGroupPolicy(
 		"添加角色与按钮的关联策略成功",
 		zap.Object(database.ModelKey, role),
 		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(&m.Buttons)),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(buttonStartTime)),
 	)
 	return nil
@@ -414,7 +414,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 	r.log.Debug(
 		"RemoveGroupPolicy: 传入参数",
 		zap.Object(database.ModelKey, role),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
 	m := *role
@@ -428,7 +428,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 		"开始删除该角色作为子级的组策略",
 		zap.Object(database.ModelKey, role),
 		zap.String(auth.GroupSubKey, sub),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	rmSubStartTime := time.Now()
 
@@ -439,7 +439,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 			zap.Error(err),
 			zap.Object(database.ModelKey, role),
 			zap.String(auth.GroupSubKey, sub),
-			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 		return err
@@ -448,7 +448,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 		"删除该角色作为子级的组策略成功",
 		zap.Object(database.ModelKey, role),
 		zap.String(auth.GroupSubKey, sub),
-		zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
+		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 	)
 	return nil
