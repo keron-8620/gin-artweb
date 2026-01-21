@@ -14,7 +14,10 @@ import (
 	"gin-artweb/pkg/ctxutil"
 )
 
-const ScriptIDKey = "script_id"
+const (
+	ScriptTableName = "jobs_script"
+	ScriptIDKey     = "script_id"
+)
 
 type ScriptModel struct {
 	database.StandardModel
@@ -29,10 +32,13 @@ type ScriptModel struct {
 }
 
 func (m *ScriptModel) TableName() string {
-	return "jobs_script"
+	return ScriptTableName
 }
 
 func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(ScriptTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -98,7 +104,7 @@ func (uc *ScriptUsecase) CreateScript(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -146,7 +152,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	uc.log.Info(
@@ -191,7 +197,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 			zap.Uint32(ScriptIDKey, scriptID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": scriptID})
+		return errors.NewGormError(err, map[string]any{"id": scriptID})
 	}
 
 	if rErr := uc.RemoveScript(ctx, *m); rErr != nil {
@@ -228,7 +234,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 			zap.Uint32(ScriptIDKey, scriptID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": scriptID})
+		return nil, errors.NewGormError(err, map[string]any{"id": scriptID})
 	}
 
 	uc.log.Info(
@@ -261,7 +267,7 @@ func (uc *ScriptUsecase) ListScript(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

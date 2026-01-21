@@ -15,7 +15,10 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-const MdsNodeIDKey = "mds_node_id"
+const (
+	MdsNodeTableName = "mds_node"
+	MdsNodeIDKey     = "mds_node_id"
+)
 
 type MdsNodeModel struct {
 	database.StandardModel
@@ -28,10 +31,13 @@ type MdsNodeModel struct {
 }
 
 func (m *MdsNodeModel) TableName() string {
-	return "mds_node"
+	return MdsNodeTableName
 }
 
 func (m *MdsNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(MdsNodeTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -86,7 +92,7 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	nm, rErr := uc.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, m.ID)
@@ -131,7 +137,7 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, mdsNodeID)
@@ -172,7 +178,7 @@ func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
 			zap.Uint32(MdsNodeIDKey, mdsNodeID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": mdsNodeID})
+		return errors.NewGormError(err, map[string]any{"id": mdsNodeID})
 	}
 
 	uc.log.Info(
@@ -207,7 +213,7 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 			zap.Uint32(MdsNodeIDKey, mdsNodeID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": mdsNodeID})
+		return nil, errors.NewGormError(err, map[string]any{"id": mdsNodeID})
 	}
 
 	uc.log.Info(
@@ -240,7 +246,7 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

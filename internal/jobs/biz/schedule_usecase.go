@@ -14,7 +14,10 @@ import (
 	"gin-artweb/pkg/ctxutil"
 )
 
-const ScheduleIDKey = "schedule_id"
+const (
+	ScheduleTableName = "jobs_schedule"
+	ScheduleIDKey = "schedule_id"
+)
 
 type ScheduleModel struct {
 	database.StandardModel
@@ -34,10 +37,16 @@ type ScheduleModel struct {
 }
 
 func (m *ScheduleModel) TableName() string {
-	return "jobs_schedule"
+	return ScheduleTableName
 }
 
 func (m *ScheduleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(ScheduleTableName)
+	}
+	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
+		return err
+	}
 	enc.AddString("name", m.Name)
 	enc.AddString("specification", m.Specification)
 	enc.AddBool("is_enabled", m.IsEnabled)
@@ -216,7 +225,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 			zap.Uint32(ScriptIDKey, m.ScriptID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": m.ScriptID})
+		return nil, errors.NewGormError(err, map[string]any{"id": m.ScriptID})
 	}
 	m.Script = *script
 
@@ -227,7 +236,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if m.IsEnabled {
@@ -268,7 +277,7 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindScheduleByID(ctx, []string{"Script"}, scheduleID)
@@ -314,7 +323,7 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 			zap.Uint32(ScheduleIDKey, scheduleID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": scheduleID})
+		return errors.NewGormError(err, map[string]any{"id": scheduleID})
 	}
 
 	if err := uc.removeJob(ctx, scheduleID); err != nil {
@@ -352,7 +361,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 			zap.Uint32(ScheduleIDKey, scheduleID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": scheduleID})
+		return nil, errors.NewGormError(err, map[string]any{"id": scheduleID})
 	}
 
 	uc.log.Info(
@@ -385,7 +394,7 @@ func (uc *ScheduleUsecase) ListSchedule(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

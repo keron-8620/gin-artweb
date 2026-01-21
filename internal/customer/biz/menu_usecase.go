@@ -48,7 +48,7 @@ func (m *MenuModel) TableName() string {
 
 func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return database.GormModelIsNil(MenuTableName)
+		return errors.GormModelIsNil(MenuTableName)
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -142,7 +142,7 @@ func (uc *MenuUsecase) GetParentMenu(
 			zap.Uint32("parent_id", *parentID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"parent_id": *parentID})
+		return nil, errors.NewGormError(err, map[string]any{"parent_id": *parentID})
 	}
 
 	uc.log.Info(
@@ -183,7 +183,7 @@ func (uc *MenuUsecase) GetPermissions(
 			zap.Uint32s(PermissionIDsKey, permIDs),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -230,7 +230,7 @@ func (uc *MenuUsecase) CreateMenu(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if perms != nil && len(*perms) > 0 {
@@ -287,7 +287,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
@@ -348,7 +348,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 			zap.Uint32(MenuIDKey, menuID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": menuID})
+		return errors.NewGormError(err, map[string]any{"id": menuID})
 	}
 
 	if err := uc.menuRepo.RemoveGroupPolicy(ctx, m, true); err != nil {
@@ -393,7 +393,7 @@ func (uc *MenuUsecase) FindMenuByID(
 			zap.Uint32(MenuIDKey, menuID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": menuID})
+		return nil, errors.NewGormError(err, map[string]any{"id": menuID})
 	}
 
 	uc.log.Info(
@@ -426,7 +426,7 @@ func (uc *MenuUsecase) ListMenu(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

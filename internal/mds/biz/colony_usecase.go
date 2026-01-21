@@ -22,7 +22,10 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-const MdsColonyIDKey = "mds_colony_id"
+const (
+	MdsColonyTableName = "mds_colony"
+	MdsColonyIDKey     = "mds_colony_id"
+)
 
 type MdsColonyModel struct {
 	database.StandardModel
@@ -35,10 +38,13 @@ type MdsColonyModel struct {
 }
 
 func (m *MdsColonyModel) TableName() string {
-	return "mds_colony"
+	return MdsColonyTableName
 }
 
 func (m *MdsColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(MdsColonyTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -93,7 +99,7 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	nm, rErr := uc.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, m.ID)
@@ -138,7 +144,7 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, mdsColonyID)
@@ -179,7 +185,7 @@ func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
 			zap.Uint32(MdsColonyIDKey, mdsColonyID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": mdsColonyID})
+		return errors.NewGormError(err, map[string]any{"id": mdsColonyID})
 	}
 
 	uc.log.Info(
@@ -214,7 +220,7 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 			zap.Uint32(MdsColonyIDKey, mdsColonyID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": mdsColonyID})
+		return nil, errors.NewGormError(err, map[string]any{"id": mdsColonyID})
 	}
 
 	uc.log.Info(
@@ -247,7 +253,7 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

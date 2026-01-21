@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	PackageIDKey = "package_id"
+	PackageTableName = "resource_package"
+	PackageIDKey     = "package_id"
 )
 
 type PackageModel struct {
@@ -33,6 +34,9 @@ func (m *PackageModel) TableName() string {
 }
 
 func (m *PackageModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(PackageTableName)
+	}
 	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -87,7 +91,7 @@ func (uc *PackageUsecase) CreatePackage(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -125,7 +129,7 @@ func (uc *PackageUsecase) DeletePackageById(
 			zap.Uint32(PackageIDKey, pkgId),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": pkgId})
+		return errors.NewGormError(err, map[string]any{"id": pkgId})
 	}
 
 	// 再删除物理文件
@@ -163,7 +167,7 @@ func (uc *PackageUsecase) FindPackageById(
 			zap.Uint32(PackageIDKey, pkgId),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": pkgId})
+		return nil, errors.NewGormError(err, map[string]any{"id": pkgId})
 	}
 
 	uc.log.Info(
@@ -196,7 +200,7 @@ func (uc *PackageUsecase) ListPackage(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

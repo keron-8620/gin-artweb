@@ -38,7 +38,7 @@ func (m *UserModel) TableName() string {
 
 func (m *UserModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return database.GormModelIsNil(UserTableName)
+		return errors.GormModelIsNil(UserTableName)
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -107,7 +107,7 @@ func (uc *UserUsecase) GetRole(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"role_id": roleID})
+		return nil, errors.NewGormError(err, map[string]any{"role_id": roleID})
 	}
 
 	uc.log.Info(
@@ -159,7 +159,7 @@ func (uc *UserUsecase) CreateUser(
 			zap.String(UsernameKey, m.Username),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -241,7 +241,7 @@ func (uc *UserUsecase) UpdateUserByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, data)
+		return errors.NewGormError(err, data)
 	}
 
 	uc.log.Info(
@@ -273,7 +273,7 @@ func (uc *UserUsecase) DeleteUserByID(
 			zap.Uint32(UserIDKey, userID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": userID})
+		return errors.NewGormError(err, map[string]any{"id": userID})
 	}
 
 	uc.log.Info(
@@ -308,7 +308,7 @@ func (uc *UserUsecase) FindUserByID(
 			zap.Uint32(UserIDKey, userID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": userID})
+		return nil, errors.NewGormError(err, map[string]any{"id": userID})
 	}
 
 	uc.log.Info(
@@ -344,7 +344,7 @@ func (uc *UserUsecase) FindUserByName(
 			zap.String(UsernameKey, username),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"username": username})
+		return nil, errors.NewGormError(err, map[string]any{"username": username})
 	}
 
 	uc.log.Info(
@@ -378,7 +378,7 @@ func (uc *UserUsecase) ListUser(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

@@ -15,7 +15,10 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-const OesNodeIDKey = "oes_node_id"
+const (
+	OesNodeTableName = "oes_node"
+	OesNodeIDKey     = "oes_node_id"
+)
 
 type OesNodeModel struct {
 	database.StandardModel
@@ -28,10 +31,13 @@ type OesNodeModel struct {
 }
 
 func (m *OesNodeModel) TableName() string {
-	return "oes_node"
+	return OesNodeTableName
 }
 
 func (m *OesNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(OesNodeTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -86,7 +92,7 @@ func (uc *OesNodeUsecase) CreateOesNode(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	nm, rErr := uc.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, m.ID)
@@ -131,7 +137,7 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, oesNodeID)
@@ -172,7 +178,7 @@ func (uc *OesNodeUsecase) DeleteOesNodeByID(
 			zap.Uint32(OesNodeIDKey, oesNodeID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": oesNodeID})
+		return errors.NewGormError(err, map[string]any{"id": oesNodeID})
 	}
 
 	uc.log.Info(
@@ -207,7 +213,7 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 			zap.Uint32(OesNodeIDKey, oesNodeID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": oesNodeID})
+		return nil, errors.NewGormError(err, map[string]any{"id": oesNodeID})
 	}
 
 	uc.log.Info(
@@ -240,7 +246,7 @@ func (uc *OesNodeUsecase) ListOesNode(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

@@ -34,7 +34,7 @@ func (m *ButtonModel) TableName() string {
 
 func (m *ButtonModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return database.GormModelIsNil(ButtonTableName)
+		return errors.GormModelIsNil(ButtonTableName)
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -122,7 +122,7 @@ func (uc *ButtonUsecase) GetMenu(
 			zap.Uint32(MenuIDKey, menuID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"menu_id": menuID})
+		return nil, errors.NewGormError(err, map[string]any{"menu_id": menuID})
 	}
 
 	uc.log.Info(
@@ -162,7 +162,7 @@ func (uc *ButtonUsecase) GetPermissions(
 			zap.Uint32s(PermissionIDsKey, permIDs),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -207,7 +207,7 @@ func (uc *ButtonUsecase) CreateButton(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if len(*perms) > 0 {
@@ -264,7 +264,7 @@ func (uc *ButtonUsecase) UpdateButtonByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindButtonByID(ctx, []string{"Menu", "Permissions"}, buttonID)
@@ -326,7 +326,7 @@ func (uc *ButtonUsecase) DeleteButtonByID(
 			zap.Uint32(ButtonIDKey, buttonID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": buttonID})
+		return errors.NewGormError(err, map[string]any{"id": buttonID})
 	}
 
 	if err := uc.buttonRepo.RemoveGroupPolicy(ctx, m, true); err != nil {
@@ -371,7 +371,7 @@ func (uc *ButtonUsecase) FindButtonByID(
 			zap.Uint32(ButtonIDKey, buttonID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": buttonID})
+		return nil, errors.NewGormError(err, map[string]any{"id": buttonID})
 	}
 
 	uc.log.Info(
@@ -404,7 +404,7 @@ func (uc *ButtonUsecase) ListButton(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

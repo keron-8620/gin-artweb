@@ -23,7 +23,10 @@ import (
 	"gin-artweb/pkg/ctxutil"
 )
 
-const ScriptRecordIDKey = "script_record_id"
+const (
+	ScriptRecordTableName = "jobs_script_record"
+	ScriptRecordIDKey = "script_record_id"
+)
 
 type ScriptRecordModel struct {
 	database.StandardModel
@@ -42,10 +45,13 @@ type ScriptRecordModel struct {
 }
 
 func (m *ScriptRecordModel) TableName() string {
-	return "jobs_script_record"
+	return ScriptRecordTableName
 }
 
 func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(ScriptRecordTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -392,7 +398,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 			zap.Uint32(ScriptIDKey, req.ScriptID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": req.ScriptID})
+		return nil, errors.NewGormError(err, map[string]any{"id": req.ScriptID})
 	}
 
 	if !script.Status {
@@ -430,7 +436,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 			zap.Uint32(ScriptIDKey, req.ScriptID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	record.Script = *script
@@ -452,7 +458,7 @@ func (uc *RecordUsecase) UpdateScriptRecord(
 			zap.Uint32(ScriptRecordIDKey, recordID),
 			zap.Object("taskinfo", taskinfo),
 		)
-		return database.NewGormError(err, taskinfo.ToMap())
+		return errors.NewGormError(err, taskinfo.ToMap())
 	}
 	return nil
 }
@@ -480,7 +486,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 			zap.Uint32(ScriptRecordIDKey, recordID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": recordID})
+		return nil, errors.NewGormError(err, map[string]any{"id": recordID})
 
 	}
 
@@ -514,7 +520,7 @@ func (uc *RecordUsecase) ListcriptRecord(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

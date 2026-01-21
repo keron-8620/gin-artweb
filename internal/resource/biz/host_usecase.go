@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	HostIDKey = "host_id"
+	HostTableName = "resource_host"
+	HostIDKey     = "host_id"
 )
 
 type HostModel struct {
@@ -34,10 +35,13 @@ type HostModel struct {
 }
 
 func (m *HostModel) TableName() string {
-	return "resource_host"
+	return HostTableName
 }
 
 func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(HostTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -111,7 +115,7 @@ func (uc *HostUsecase) CreateHost(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if err := uc.ExportHost(ctx, m); err != nil {
@@ -163,7 +167,7 @@ func (uc *HostUsecase) UpdateHostById(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	if err := uc.ExportHost(ctx, m); err != nil {
@@ -199,7 +203,7 @@ func (uc *HostUsecase) DeleteHostById(
 			zap.Uint32(HostIDKey, hostId),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": hostId})
+		return errors.NewGormError(err, map[string]any{"id": hostId})
 	}
 
 	path := HostVarsStoragePath(hostId)
@@ -244,7 +248,7 @@ func (uc *HostUsecase) FindHostById(
 			zap.Uint32(HostIDKey, hostId),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": hostId})
+		return nil, errors.NewGormError(err, map[string]any{"id": hostId})
 	}
 
 	uc.log.Info(
@@ -277,7 +281,7 @@ func (uc *HostUsecase) ListHost(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

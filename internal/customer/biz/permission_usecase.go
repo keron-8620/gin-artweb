@@ -31,7 +31,7 @@ func (m *PermissionModel) TableName() string {
 
 func (m *PermissionModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return database.GormModelIsNil(PermissionTableName)
+		return errors.GormModelIsNil(PermissionTableName)
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -105,7 +105,7 @@ func (uc *PermissionUsecase) CreatePermission(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if err := uc.permRepo.AddPolicy(ctx, m); err != nil {
@@ -150,7 +150,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindPermissionByID(ctx, permID)
@@ -224,7 +224,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": permID})
+		return errors.NewGormError(err, map[string]any{"id": permID})
 	}
 
 	if err := uc.permRepo.RemovePolicy(ctx, *m, true); err != nil {
@@ -267,7 +267,7 @@ func (uc *PermissionUsecase) FindPermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": permID})
+		return nil, errors.NewGormError(err, map[string]any{"id": permID})
 	}
 
 	uc.log.Info(
@@ -300,7 +300,7 @@ func (uc *PermissionUsecase) ListPermission(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

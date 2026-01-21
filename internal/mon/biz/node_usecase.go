@@ -17,7 +17,10 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-const MonNodeIDKey = "node_id"
+const (
+	MonNodeTableName = "mon_node"
+	MonNodeIDKey = "node_id"
+)
 
 type MonNodeModel struct {
 	database.StandardModel
@@ -31,7 +34,7 @@ type MonNodeModel struct {
 }
 
 func (m *MonNodeModel) TableName() string {
-	return "mon_node"
+	return MonNodeTableName
 }
 
 func (m *MonNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -91,7 +94,7 @@ func (uc *MonNodeUsecase) CreateMonNode(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if err := uc.ExportMonNode(ctx, m); err != nil {
@@ -130,7 +133,7 @@ func (uc *MonNodeUsecase) UpdateMonNodeByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindMonNodeByID(ctx, []string{"Host"}, nodeID)
@@ -171,7 +174,7 @@ func (uc *MonNodeUsecase) DeleteMonNodeByID(
 			zap.Uint32(MonNodeIDKey, nodeID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": nodeID})
+		return errors.NewGormError(err, map[string]any{"id": nodeID})
 	}
 
 	path := MonNodeExportPath(nodeID)
@@ -217,7 +220,7 @@ func (uc *MonNodeUsecase) FindMonNodeByID(
 			zap.Uint32(MonNodeIDKey, nodeID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": nodeID})
+		return nil, errors.NewGormError(err, map[string]any{"id": nodeID})
 	}
 
 	uc.log.Info(
@@ -250,7 +253,7 @@ func (uc *MonNodeUsecase) ListMonNode(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

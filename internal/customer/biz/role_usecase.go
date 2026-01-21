@@ -32,7 +32,7 @@ func (m *RoleModel) TableName() string {
 
 func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return database.GormModelIsNil(RoleTableName)
+		return errors.GormModelIsNil(RoleTableName)
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -129,7 +129,7 @@ func (uc *RoleUsecase) GetPermissions(
 			zap.Uint32s(PermissionIDsKey, permIDs),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -169,7 +169,7 @@ func (uc *RoleUsecase) GetMenus(
 			zap.Uint32s(MenuIDsKey, menuIDs),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -209,7 +209,7 @@ func (uc *RoleUsecase) GetButtons(
 			zap.Uint32s(ButtonIDsKey, buttonIDs),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -260,7 +260,7 @@ func (uc *RoleUsecase) CreateRole(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	if perms != nil {
@@ -343,7 +343,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
@@ -405,7 +405,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": roleID})
+		return errors.NewGormError(err, map[string]any{"id": roleID})
 	}
 
 	if err := uc.roleRepo.RemoveGroupPolicy(ctx, m); err != nil {
@@ -450,7 +450,7 @@ func (uc *RoleUsecase) FindRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": roleID})
+		return nil, errors.NewGormError(err, map[string]any{"id": roleID})
 	}
 
 	uc.log.Info(
@@ -483,7 +483,7 @@ func (uc *RoleUsecase) ListRole(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

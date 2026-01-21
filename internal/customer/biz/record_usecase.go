@@ -29,7 +29,7 @@ func (m *LoginRecordModel) TableName() string {
 
 func (m *LoginRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return database.GormModelIsNil(LoginRecordTableName)
+		return errors.GormModelIsNil(LoginRecordTableName)
 	}
 	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -85,7 +85,7 @@ func (uc *LoginRecordUsecase) CreateLoginRecord(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
@@ -118,7 +118,7 @@ func (uc *LoginRecordUsecase) ListLoginRecord(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(

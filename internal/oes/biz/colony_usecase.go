@@ -23,7 +23,10 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-const OesColonyIDKey = "oes_colony_id"
+const (
+	OesColonyTableName = "oes_colony"
+	OesColonyIDKey     = "oes_colony_id"
+)
 
 type OesColonyModel struct {
 	database.StandardModel
@@ -39,10 +42,13 @@ type OesColonyModel struct {
 }
 
 func (m *OesColonyModel) TableName() string {
-	return "oes_colony"
+	return OesColonyTableName
 }
 
 func (m *OesColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if m == nil {
+		return errors.GormModelIsNil(OesColonyTableName)
+	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -99,7 +105,7 @@ func (uc *OesColonyUsecase) CreateOesColony(
 			zap.Object(database.ModelKey, &m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, nil)
+		return nil, errors.NewGormError(err, nil)
 	}
 
 	nm, rErr := uc.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, m.ID)
@@ -144,7 +150,7 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, data)
+		return nil, errors.NewGormError(err, data)
 	}
 
 	m, rErr := uc.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, oesColonyID)
@@ -185,7 +191,7 @@ func (uc *OesColonyUsecase) DeleteOesColonyByID(
 			zap.Uint32(OesColonyIDKey, oesColonyID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return database.NewGormError(err, map[string]any{"id": oesColonyID})
+		return errors.NewGormError(err, map[string]any{"id": oesColonyID})
 	}
 
 	uc.log.Info(
@@ -220,7 +226,7 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 			zap.Uint32(OesColonyIDKey, oesColonyID),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return nil, database.NewGormError(err, map[string]any{"id": oesColonyID})
+		return nil, errors.NewGormError(err, map[string]any{"id": oesColonyID})
 	}
 
 	uc.log.Info(
@@ -253,7 +259,7 @@ func (uc *OesColonyUsecase) ListOesColony(
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return 0, nil, database.NewGormError(err, nil)
+		return 0, nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
