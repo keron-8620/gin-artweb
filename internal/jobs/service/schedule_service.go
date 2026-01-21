@@ -338,14 +338,11 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 	})
 }
 
-func (s *ScheduleService) ListScheduleJobs(ctx *gin.Context) {
+// func (s *ScheduleService) ListScheduleJobs(ctx *gin.Context) {
+// }
 
-}
-
-func (s *ScheduleService) ReoloadScheduleJobs(ctx *gin.Context) {
-
-}
-
+// func (s *ScheduleService) ReoloadScheduleJobs(ctx *gin.Context) {
+// }
 
 func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/schedule", s.CreateSchedule)
@@ -353,8 +350,8 @@ func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
 	r.DELETE("/schedule/:id", s.DeleteSchedule)
 	r.GET("/schedule/:id", s.GetSchedule)
 	r.GET("/schedule", s.ListSchedule)
-	r.GET("/schedulejob", s.ListScheduleJobs)
-	r.POST("/schedule/reload", s.ReoloadScheduleJobs)
+	// r.GET("/schedulejob", s.ListScheduleJobs)
+	// r.POST("/schedule/reload", s.ReoloadScheduleJobs)
 }
 
 func ScheduleToStandardOut(
@@ -371,6 +368,9 @@ func ScheduleToStandardOut(
 		CommandArgs:   m.CommandArgs,
 		WorkDir:       m.WorkDir,
 		Timeout:       m.Timeout,
+		IsRetry:       m.IsRetry,
+		MaxRetries:    m.MaxRetries,
+		RetryInterval: m.RetryInterval,
 		Username:      m.Username,
 	}
 }

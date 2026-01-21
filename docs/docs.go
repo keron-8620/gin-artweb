@@ -9252,10 +9252,22 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
+                "is_retry": {
+                    "description": "是否重试",
+                    "type": "boolean"
+                },
+                "max_retries": {
+                    "description": "最大重试次数",
+                    "type": "integer"
+                },
                 "name": {
                     "description": "名称",
                     "type": "string",
                     "example": "test"
+                },
+                "retry_interval": {
+                    "description": "重试间隔时间(秒)",
+                    "type": "integer"
                 },
                 "script": {
                     "description": "脚本",

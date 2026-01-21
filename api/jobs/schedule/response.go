@@ -36,6 +36,15 @@ type ScheduleStandardOut struct {
 	// 超时时间(秒)
 	Timeout int `json:"timeout" example:"300"`
 
+	// 是否重试
+	IsRetry bool `json:"is_retry"`
+
+	// 重试间隔时间(秒)
+	RetryInterval int `json:"retry_interval"`
+
+	// 最大重试次数
+	MaxRetries int `json:"max_retries"`
+
 	// 用户名
 	Username string `json:"username" example:"admin"`
 }
