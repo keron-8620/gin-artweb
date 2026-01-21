@@ -3,7 +3,6 @@ package archive
 import (
 	"context"
 	"fmt"
-	"gin-artweb/pkg/ctxutil"
 	"io"
 	"os"
 	"path/filepath"
@@ -83,13 +82,22 @@ func applyOptions(opts ...ArchiveOption) ArchiveOptions {
 	return options
 }
 
+func checkContext(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
+}
+
 // safeCopy 安全复制，带大小限制和上下文检查
 func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, bufferSize int) (int64, error) {
 	var written int64
 	buf := make([]byte, bufferSize)
 
 	for {
-		if err := ctxutil.CheckContext(ctx); err != nil {
+		if err := checkContext(ctx); err != nil {
 			return written, err
 		}
 

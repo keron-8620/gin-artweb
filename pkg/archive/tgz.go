@@ -8,8 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"gin-artweb/pkg/ctxutil"
 )
 
 // TarGz 将指定路径的文件或目录压缩为 tar.gz 格式
@@ -17,7 +15,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
 
 	// 检查上下文
-	if err := ctxutil.CheckContext(options.Context); err != nil {
+	if err := checkContext(options.Context); err != nil {
 		return err
 	}
 
@@ -52,7 +50,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 			}
 
 			// 检查上下文
-			if err := ctxutil.CheckContext(options.Context); err != nil {
+			if err := checkContext(options.Context); err != nil {
 				return err
 			}
 
@@ -147,7 +145,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
 
 	// 检查上下文
-	if err := ctxutil.CheckContext(options.Context); err != nil {
+	if err := checkContext(options.Context); err != nil {
 		return err
 	}
 
@@ -178,7 +176,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	// 遍历 tar 中的每个文件
 	for {
 		// 检查上下文
-		if err := ctxutil.CheckContext(options.Context); err != nil {
+		if err := checkContext(options.Context); err != nil {
 			return err
 		}
 
@@ -270,7 +268,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 	options := applyOptions(opts...)
 
 	// 检查上下文
-	if err := ctxutil.CheckContext(options.Context); err != nil {
+	if err := checkContext(options.Context); err != nil {
 		return "", err
 	}
 
@@ -298,7 +296,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 	// 遍历 tar 中的每个文件
 	for {
 		// 检查上下文
-		if err := ctxutil.CheckContext(options.Context); err != nil {
+		if err := checkContext(options.Context); err != nil {
 			return "", err
 		}
 
