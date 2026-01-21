@@ -46,7 +46,7 @@ type ListScriptRequest struct {
 	common.StandardModelQuery
 
 	// 名称
-	Name string `json:"name" binding:"omitempty,max=50"`
+	Name string `form:"name" binding:"omitempty,max=50"`
 
 	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
@@ -64,10 +64,10 @@ type ListScriptRequest struct {
 	Status *bool `form:"status"`
 
 	// 是否是内置脚本
-	IsBuiltin *bool `json:"is_builtin" binding:"omitempty"`
+	IsBuiltin *bool `form:"is_builtin" binding:"omitempty"`
 
 	// 最后修改的用户
-	UserID uint32 `json:"user_id" binding:"omitempty"`
+	UserID uint32 `form:"user_id" binding:"omitempty"`
 }
 
 func (req *ListScriptRequest) Query() (int, int, map[string]any) {

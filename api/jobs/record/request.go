@@ -30,19 +30,19 @@ type ListScriptRecordRequest struct {
 	common.StandardModelQuery
 
 	// 筛选计划任务触发类型
-	TriggerType string `json:"trigger_type" form:"trigger_type" binding:"omitempty"`
+	TriggerType string `form:"trigger_type" binding:"omitempty"`
 
 	// 筛选脚本执行的任务状态
-	Status *int `json:"status" form:"status" binding:"omitempty"`
+	Status *int `form:"status" binding:"omitempty"`
 
 	// 按脚本退出码筛选
-	ExitCode *int `json:"exit_code" form:"exit_code" binding:"omitempty"`
+	ExitCode *int `form:"exit_code" binding:"omitempty"`
 
 	// 按脚本ID筛选
-	ScriptID uint32 `json:"script_id" form:"script_id" binding:"omitempty"`
+	ScriptID uint32 `form:"script_id" binding:"omitempty"`
 
 	// 按用户名筛选
-	Username string `json:"username" binding:"omitempty"`
+	Username string `form:"username" binding:"omitempty"`
 }
 
 func (req *ListScriptRecordRequest) Query() (int, int, map[string]any) {

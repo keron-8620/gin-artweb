@@ -28,10 +28,10 @@ type BaseModelQuery struct {
 	Size int `form:"size" binding:"omitempty,gte=0"`
 
 	// 唯一标识
-	Pk uint32 `form:"pk" binding:"omitempty,gt=0"`
+	ID uint32 `form:"id" binding:"omitempty,gt=0"`
 
 	// "唯一标识列表(多个用,隔开)"
-	Pks string `form:"pks" binding:"omitempty,max=100"`
+	IDs string `form:"ids" binding:"omitempty,max=100"`
 }
 
 func (q *BaseModelQuery) QueryMap(l int) (int, int, map[string]any) {
@@ -46,11 +46,11 @@ func (q *BaseModelQuery) QueryMap(l int) (int, int, map[string]any) {
 		size = q.Size
 	}
 	query := make(map[string]any, l)
-	if q.Pk > 0 {
-		query["id = ?"] = q.Pk
+	if q.ID > 0 {
+		query["id = ?"] = q.ID
 	}
-	if q.Pks != "" {
-		pks := stringToListUint32(q.Pks)
+	if q.IDs != "" {
+		pks := stringToListUint32(q.IDs)
 		if len(pks) > 1 {
 			query["id in ?"] = pks
 		}

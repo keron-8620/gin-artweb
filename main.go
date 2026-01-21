@@ -309,7 +309,7 @@ func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initi
 				}
 				loggers.Server.Info("数据库资源释放成功")
 			}
-			loggers.Server.Info("所有资源清理完成")
+			loggers.Server.Info("资源清理结束")
 		}, nil
 }
 

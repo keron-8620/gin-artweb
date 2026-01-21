@@ -61,52 +61,52 @@ const docTemplate = `{
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "按钮描述，字符串长度限制\nMax length: 254",
+                        "description": "描述信息",
                         "name": "descr",
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
-                        "description": "是否激活筛选",
+                        "description": "是否激活",
                         "name": "is_active",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "菜单ID，必填",
+                        "description": "菜单ID",
                         "name": "menu_id",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "按钮名称，字符串长度限制\nMax length: 50",
+                        "description": "按钮名称",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -182,7 +182,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/customer/button/{pk}": {
+        "/api/v1/customer/button/{id}": {
             "get": {
                 "security": [
                     {
@@ -204,7 +204,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "按钮编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -257,7 +257,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "按钮编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -319,7 +319,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "按钮编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -481,42 +481,42 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "maxLength": 108,
                         "type": "string",
-                        "description": "IP 地址，字符串长度限制\nMax length: 108",
+                        "description": "IP 地址",
                         "name": "ip_address",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "用户名称，字符串长度限制\nMax length: 50",
+                        "description": "用户名",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
@@ -601,66 +601,66 @@ const docTemplate = `{
                     {
                         "maxLength": 200,
                         "type": "string",
-                        "description": "组件路径，字符串长度限制\nMax length: 200",
+                        "description": "组件路径",
                         "name": "component",
                         "in": "query"
                     },
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "菜单描述，字符串长度限制\nMax length: 254",
+                        "description": "菜单描述",
                         "name": "descr",
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
-                        "description": "是否激活筛选",
+                        "description": "是否激活",
                         "name": "is_active",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "菜单名称，字符串长度限制\nMax length: 50",
+                        "description": "名称",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "父级菜单ID筛选",
+                        "description": "父级菜单ID",
                         "name": "parent_id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "前端路由路径，字符串长度限制\nMax length: 100",
+                        "description": "前端路由路径",
                         "name": "path",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -736,7 +736,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/customer/menu/{pk}": {
+        "/api/v1/customer/menu/{id}": {
             "get": {
                 "security": [
                     {
@@ -758,7 +758,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "菜单编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -811,7 +811,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "菜单编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -873,7 +873,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "菜单编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -952,14 +952,27 @@ const docTemplate = `{
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "描述信息，字符串长度限制\nMax length: 254",
+                        "description": "描述信息",
                         "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "权限描述信息，最大长度50\nMax length: 50",
+                        "description": "标签",
                         "name": "label",
                         "in": "query"
                     },
@@ -973,40 +986,27 @@ const docTemplate = `{
                             "WS"
                         ],
                         "type": "string",
-                        "description": "HTTP请求方法，枚举值验证\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
+                        "description": "请求方法",
                         "name": "method",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "maxLength": 150,
                         "type": "string",
-                        "description": "权限对应的HTTP URL，字符串长度限制\nMax length: 150",
+                        "description": "URL地址",
                         "name": "url",
                         "in": "query"
                     }
@@ -1076,7 +1076,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/customer/permission/{pk}": {
+        "/api/v1/customer/permission/{id}": {
             "get": {
                 "security": [
                     {
@@ -1098,7 +1098,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "权限编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1145,7 +1145,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "权限编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -1201,7 +1201,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "权限编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1274,40 +1274,40 @@ const docTemplate = `{
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "角色描述，字符串长度限制\nMax length: 254",
+                        "description": "描述信息",
                         "name": "descr",
                         "in": "query"
                     },
                     {
-                        "maxLength": 50,
-                        "type": "string",
-                        "description": "角色名称，字符串长度限制\nMax length: 50",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -1383,7 +1383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/customer/role/{pk}": {
+        "/api/v1/customer/role/{id}": {
             "get": {
                 "security": [
                     {
@@ -1405,7 +1405,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "角色编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1458,7 +1458,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "角色编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -1520,7 +1520,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "角色编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1597,6 +1597,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "description": "是否激活",
                         "name": "is_active",
@@ -1611,27 +1624,14 @@ const docTemplate = `{
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "用户名称，字符串长度限制\nMax length: 50",
+                        "description": "用户名",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
@@ -1643,7 +1643,7 @@ const docTemplate = `{
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -1719,7 +1719,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/customer/user/password/{pk}": {
+        "/api/v1/customer/user/password/{id}": {
             "patch": {
                 "security": [
                     {
@@ -1741,7 +1741,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "用户编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -1815,42 +1815,42 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "maxLength": 108,
                         "type": "string",
-                        "description": "IP 地址，字符串长度限制\nMax length: 108",
+                        "description": "IP 地址",
                         "name": "ip_address",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "用户名称，字符串长度限制\nMax length: 50",
+                        "description": "用户名",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
@@ -1883,7 +1883,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/customer/user/{pk}": {
+        "/api/v1/customer/user/{id}": {
             "get": {
                 "security": [
                     {
@@ -1905,7 +1905,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "用户编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1958,7 +1958,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "用户编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -2020,7 +2020,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "用户编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2098,57 +2098,57 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "按脚本退出码筛选\nrequired: false",
+                        "description": "按脚本退出码筛选",
                         "name": "exit_code",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "按脚本ID筛选\nrequired: false",
+                        "description": "分页页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按脚本ID筛选",
                         "name": "script_id",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "筛选脚本执行的任务状态\nrequired: false",
+                        "description": "筛选脚本执行的任务状态",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "筛选计划任务触发类型\nrequired: false",
+                        "description": "筛选计划任务触发类型",
                         "name": "trigger_type",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "按用户名筛选\nrequired: false",
+                        "description": "按用户名筛选",
                         "name": "username",
                         "in": "query"
                     }
@@ -2224,7 +2224,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/jobs/record/{pk}": {
+        "/api/v1/jobs/record/{id}": {
             "get": {
                 "security": [
                     {
@@ -2246,7 +2246,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "执行记录编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2299,7 +2299,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "执行记录编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2314,7 +2314,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/jobs/record/{pk}/log": {
+        "/api/v1/jobs/record/{id}/log": {
             "get": {
                 "security": [
                     {
@@ -2336,7 +2336,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "执行记录编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2413,52 +2413,52 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "按启用状态筛选\nrequired: false",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "按名称搜索\nrequired: false",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "名称",
+                        "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "按脚本ID筛选\nrequired: false",
+                        "description": "分页页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "脚本ID",
                         "name": "script_id",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "按用户名筛选\nrequired: false",
+                        "description": "用户名",
                         "name": "username",
                         "in": "query"
                     }
@@ -2534,7 +2534,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/jobs/schedule/{pk}": {
+        "/api/v1/jobs/schedule/{id}": {
             "get": {
                 "security": [
                     {
@@ -2556,7 +2556,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "计划任务编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2609,7 +2609,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "计划任务编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -2671,7 +2671,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "计划任务编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2750,8 +2750,21 @@ const docTemplate = `{
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "脚本描述，字符串长度限制\nMax length: 254",
+                        "description": "描述信息",
                         "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
                         "in": "query"
                     },
                     {
@@ -2762,52 +2775,39 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "标签，最大长度50\nMax length: 50",
+                        "description": "标签",
                         "name": "label",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "语言，最大长度50\nMax length: 50",
+                        "description": "脚本语言",
                         "name": "language",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "名称，最大长度50\nMax length: 50",
+                        "description": "名称",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "项目，最大长度50\nMax length: 50",
+                        "description": "项目",
                         "name": "project",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
@@ -2932,7 +2932,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/jobs/script/{pk}": {
+        "/api/v1/jobs/script/{id}": {
             "get": {
                 "security": [
                     {
@@ -2954,7 +2954,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "脚本编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -3007,7 +3007,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "脚本编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -3106,7 +3106,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "脚本编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -3139,7 +3139,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/jobs/script/{pk}/download": {
+        "/api/v1/jobs/script/{id}/download": {
             "get": {
                 "security": [
                     {
@@ -3161,7 +3161,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "脚本编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -3415,51 +3415,51 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "集群号\nrequired: false\nexample: \"01\"",
+                        "description": "集群号",
                         "name": "colony_num",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "解压后名称\nrequired: false\nexample: \"mds\"",
+                        "description": "解压后名称",
                         "name": "extracted_name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "mon节点ID\nrequired: false\nexample: 1",
-                        "name": "mon_node_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "程序包ID\nrequired: false\nexample: 1",
-                        "name": "package_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mon节点ID",
+                        "name": "mon_node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "程序包ID",
+                        "name": "package_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -3486,7 +3486,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/mds/colony/{pk}": {
+        "/api/v1/mds/colony/{id}": {
             "get": {
                 "security": [
                     {
@@ -3508,7 +3508,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mds集群编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -3561,7 +3561,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mds集群编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -3623,7 +3623,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mds集群编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -3701,51 +3701,51 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "主机ID\nrequired: false\nexample: 1",
+                        "description": "主机ID",
                         "name": "host_id",
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "是否启用\nrequired: false\nexample: true",
-                        "name": "is_enable",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
-                        "description": "mds集群ID\nrequired: false\nexample: 1",
-                        "name": "mds_colony_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "节点角色\nexample: \"master\"",
-                        "name": "node_role",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mds集群ID",
+                        "name": "mds_colony_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "节点角色",
+                        "name": "node_role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -3821,7 +3821,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/mds/node/{pk}": {
+        "/api/v1/mds/node/{id}": {
             "get": {
                 "security": [
                     {
@@ -3843,7 +3843,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mds节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -3896,7 +3896,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mds节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -3958,7 +3958,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mds节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -4274,39 +4274,39 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "按主机ID筛选\nrequired: false",
+                        "description": "主机ID",
                         "name": "host_id",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "按名称搜索\nrequired: false",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -4382,7 +4382,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/mon/node/{pk}": {
+        "/api/v1/mon/node/{id}": {
             "get": {
                 "security": [
                     {
@@ -4404,7 +4404,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mon节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -4457,7 +4457,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mon节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -4519,7 +4519,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "mon节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -4597,63 +4597,63 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "集群号\nrequired: false\nexample: \"01\"",
+                        "description": "集群号",
                         "name": "colony_num",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "解压后名称\nrequired: false\nexample: \"oes\"",
+                        "description": "解压后名称",
                         "name": "extracted_name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "mon节点ID\nrequired: false\nexample: 1",
-                        "name": "mon_node_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "程序包ID\nrequired: false\nexample: 1",
-                        "name": "package_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
+                        "description": "唯一标识",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "maxLength": 100,
                         "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mon节点ID",
+                        "name": "mon_node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "程序包ID",
+                        "name": "package_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "系统类型\nrequired: true\nexample: \"stk\"",
+                        "description": "系统类型",
                         "name": "system_type",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "xcounter包ID\nrequired: false\nexample: 1",
+                        "description": "xcounter包ID",
                         "name": "xcounter_id",
                         "in": "query"
                     }
@@ -4954,7 +4954,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/oes/colony/{pk}": {
+        "/api/v1/oes/colony/{id}": {
             "get": {
                 "security": [
                     {
@@ -4976,7 +4976,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "oes集群编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -5029,7 +5029,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "oes集群编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -5091,7 +5091,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "oes集群编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -5174,6 +5174,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "description": "是否启用\nrequired: false\nexample: true",
                         "name": "is_enable",
@@ -5193,27 +5206,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     }
@@ -5289,7 +5289,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/oes/node/{pk}": {
+        "/api/v1/oes/node/{id}": {
             "get": {
                 "security": [
                     {
@@ -5311,7 +5311,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "oes节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -5364,7 +5364,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "oes节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -5426,7 +5426,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "oes节点编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -5741,76 +5741,76 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "标签，最大长度50\nRequired: true\nMax length: 50",
+                        "description": "标签",
                         "name": "label",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                        "description": "名称",
                         "name": "name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
+                        "description": "python路径",
                         "name": "py_path",
                         "in": "query"
                     },
                     {
                         "maxLength": 254,
                         "type": "string",
-                        "description": "备注，最大长度254\nMax length: 254",
+                        "description": "备注",
                         "name": "remark",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "maxLength": 108,
                         "type": "string",
-                        "description": "ip地址，最大长度108\nRequired: true\nMax length: 108",
+                        "description": "ip地址",
                         "name": "ssh_ip",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "端口，必填\nRequired: true",
+                        "description": "端口",
                         "name": "ssh_port",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                        "description": "用户名",
                         "name": "ssh_user",
                         "in": "query"
                     }
@@ -5888,7 +5888,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/resource/host/{pk}": {
+        "/api/v1/resource/host/{id}": {
             "get": {
                 "security": [
                     {
@@ -5910,7 +5910,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "主机编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -5965,7 +5965,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "主机编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -6027,7 +6027,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "主机编号",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -6091,53 +6091,53 @@ const docTemplate = `{
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "名称，最大长度50\nMax length: 50",
+                        "description": "文件名",
                         "name": "filename",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "标签，最大长度50\nMax length: 50",
+                        "description": "标签",
                         "name": "label",
                         "in": "query"
                     },
                     {
                         "maxLength": 50,
                         "type": "string",
-                        "description": "标签，最大长度50,多个标签用逗号分隔\nMax length: 50",
+                        "description": "标签组(多个用,隔开)",
                         "name": "labels",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码必须大于0\nMinimum: 1",
+                        "description": "分页页码",
                         "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "权限主键，可选参数，如果提供则必须大于0\nMinimum: 1",
-                        "name": "pk",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"权限主键列表，可选参数，多个用,隔开，如1,2,3\"\nMax length: 100",
-                        "name": "pks",
                         "in": "query"
                     },
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "description": "每页大小必须大于等于0\nMinimum: 0",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "版本号，最大长度50\nMax length: 50",
+                        "description": "版本号",
                         "name": "version",
                         "in": "query"
                     }
@@ -6225,7 +6225,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/resource/package/{pk}": {
+        "/api/v1/resource/package/{id}": {
             "get": {
                 "security": [
                     {
@@ -6245,7 +6245,7 @@ const docTemplate = `{
                         "type": "integer",
                         "format": "int32",
                         "description": "程序包唯一标识符",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -6290,7 +6290,7 @@ const docTemplate = `{
                         "type": "integer",
                         "format": "int32",
                         "description": "程序包唯一标识符",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -6317,7 +6317,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/resource/package/{pk}/download": {
+        "/api/v1/resource/package/{id}/download": {
             "get": {
                 "security": [
                     {
@@ -6337,7 +6337,7 @@ const docTemplate = `{
                         "type": "integer",
                         "format": "int32",
                         "description": "程序包唯一标识符",
-                        "name": "pk",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -6386,7 +6386,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "按钮ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -6421,7 +6421,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "按钮ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -6431,7 +6431,12 @@ const docTemplate = `{
                     "example": true
                 },
                 "menu": {
-                    "$ref": "#/definitions/menu.MenuStandardOut"
+                    "description": "菜单",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/menu.MenuStandardOut"
+                        }
+                    ]
                 },
                 "name": {
                     "description": "名称",
@@ -6439,6 +6444,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "permission_ids": {
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -6491,7 +6497,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "按钮ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -6517,38 +6523,39 @@ const docTemplate = `{
             "required": [
                 "arrange_order",
                 "id",
+                "is_active",
                 "menu_id",
                 "name"
             ],
             "properties": {
                 "arrange_order": {
-                    "description": "排序字段，必填",
+                    "description": "排序字段",
                     "type": "integer"
                 },
                 "descr": {
-                    "description": "按钮描述信息，可选，最大长度254\nMax length: 254",
+                    "description": "描述信息",
                     "type": "string",
                     "maxLength": 254
                 },
                 "id": {
-                    "description": "按钮主键，必须大于0\nRequired: true\nMinimum: 1",
+                    "description": "唯一标识",
                     "type": "integer"
                 },
                 "is_active": {
-                    "description": "是否激活，必填",
+                    "description": "是否激活",
                     "type": "boolean"
                 },
                 "menu_id": {
-                    "description": "菜单ID，必填",
+                    "description": "菜单ID",
                     "type": "integer"
                 },
                 "name": {
-                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "permission_ids": {
-                    "description": "关联权限ID列表，可选",
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -6585,29 +6592,29 @@ const docTemplate = `{
             ],
             "properties": {
                 "arrange_order": {
-                    "description": "排序字段，必填",
+                    "description": "排序字段",
                     "type": "integer"
                 },
                 "descr": {
-                    "description": "按钮描述信息，可选，最大长度254\nMax length: 254",
+                    "description": "描述信息",
                     "type": "string",
                     "maxLength": 254
                 },
                 "is_active": {
-                    "description": "是否激活，必填",
+                    "description": "是否激活",
                     "type": "boolean"
                 },
                 "menu_id": {
-                    "description": "菜单ID，必填",
+                    "description": "菜单ID",
                     "type": "integer"
                 },
                 "name": {
-                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "permission_ids": {
-                    "description": "关联权限ID列表，可选",
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -6625,21 +6632,21 @@ const docTemplate = `{
             ],
             "properties": {
                 "colony_num": {
-                    "description": "集群号\nrequired: true\nexample: \"01\"",
+                    "description": "集群号",
                     "type": "string",
                     "maxLength": 2
                 },
                 "extracted_name": {
-                    "description": "解压后名称\nrequired: true\nexample: \"mds\"",
+                    "description": "解压后名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "mon_node_id": {
-                    "description": "mon节点ID\nrequired: true\nexample: 1",
+                    "description": "mon节点ID",
                     "type": "integer"
                 },
                 "package_id": {
-                    "description": "程序包ID\nrequired: true\nexample: 1",
+                    "description": "程序包ID",
                     "type": "integer"
                 }
             }
@@ -6656,25 +6663,25 @@ const docTemplate = `{
             ],
             "properties": {
                 "colony_num": {
-                    "description": "集群号\nrequired: true\nexample: \"01\"",
+                    "description": "集群号",
                     "type": "string",
                     "maxLength": 2
                 },
                 "extracted_name": {
-                    "description": "解压后名称\nrequired: true\nexample: \"oes\"",
+                    "description": "解压后名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "mon_node_id": {
-                    "description": "mon节点ID\nrequired: true\nexample: 1",
+                    "description": "mon节点ID",
                     "type": "integer"
                 },
                 "package_id": {
-                    "description": "程序包ID\nrequired: true\nexample: 1",
+                    "description": "程序包ID",
                     "type": "integer"
                 },
                 "system_type": {
-                    "description": "系统类型\nrequired: true\nexample: \"stk\"",
+                    "description": "系统类型",
                     "type": "string",
                     "enum": [
                         "STK",
@@ -6683,7 +6690,7 @@ const docTemplate = `{
                     ]
                 },
                 "xcounter_id": {
-                    "description": "xcounter包ID\nrequired: true\nexample: 1",
+                    "description": "xcounter包ID",
                     "type": "integer"
                 }
             }
@@ -6744,10 +6751,20 @@ const docTemplate = `{
                     "example": 1
                 },
                 "mon_node": {
-                    "$ref": "#/definitions/node.MonNodeBaseOut"
+                    "description": "mon节点",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/node.MonNodeBaseOut"
+                        }
+                    ]
                 },
                 "package": {
-                    "$ref": "#/definitions/pkg.PackageStandardOut"
+                    "description": "mds程序包",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/pkg.PackageStandardOut"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -6826,10 +6843,20 @@ const docTemplate = `{
                     "example": 1
                 },
                 "mon_node": {
-                    "$ref": "#/definitions/node.MonNodeBaseOut"
+                    "description": "mon节点",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/node.MonNodeBaseOut"
+                        }
+                    ]
                 },
                 "package": {
-                    "$ref": "#/definitions/pkg.PackageStandardOut"
+                    "description": "oes程序包",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/pkg.PackageStandardOut"
+                        }
+                    ]
                 },
                 "system_type": {
                     "description": "系统类型",
@@ -6842,7 +6869,12 @@ const docTemplate = `{
                     "example": "2023-01-01 12:00:00"
                 },
                 "xcounter": {
-                    "$ref": "#/definitions/pkg.PackageStandardOut"
+                    "description": "xcounter程序包",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/pkg.PackageStandardOut"
+                        }
+                    ]
                 }
             }
         },
@@ -7534,41 +7566,41 @@ const docTemplate = `{
             ],
             "properties": {
                 "label": {
-                    "description": "标签，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "标签",
                     "type": "string",
                     "maxLength": 50
                 },
                 "name": {
-                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "py_path": {
-                    "description": "python路径，最大长度254\nRequired: true\nMax length: 254",
+                    "description": "python路径",
                     "type": "string",
                     "maxLength": 254
                 },
                 "remark": {
-                    "description": "备注，最大长度254\nMax length: 254",
+                    "description": "备注",
                     "type": "string",
                     "maxLength": 254
                 },
                 "ssh_ip": {
-                    "description": "ip地址，最大长度108\nRequired: true\nMax length: 108",
+                    "description": "ip地址",
                     "type": "string",
                     "maxLength": 108
                 },
                 "ssh_password": {
-                    "description": "密码，最大长度150\nRequired: true\nMax length: 150",
+                    "description": "密码",
                     "type": "string",
                     "maxLength": 150
                 },
                 "ssh_port": {
-                    "description": "端口，必填\nRequired: true",
+                    "description": "端口",
                     "type": "integer"
                 },
                 "ssh_user": {
-                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "用户名",
                     "type": "string",
                     "maxLength": 50
                 }
@@ -7728,29 +7760,29 @@ const docTemplate = `{
             ],
             "properties": {
                 "arrange_order": {
-                    "description": "排序字段，必填",
+                    "description": "排序字段",
                     "type": "integer"
                 },
                 "component": {
-                    "description": "组件路径，最大长度200\nRequired: true\nMax length: 200",
+                    "description": "组件路径",
                     "type": "string",
                     "maxLength": 200
                 },
                 "descr": {
-                    "description": "描述，最大长度254\nMax length: 254",
+                    "description": "描述",
                     "type": "string",
                     "maxLength": 254
                 },
                 "id": {
-                    "description": "菜单主键，必须大于0\nRequired: true\nMinimum: 1",
+                    "description": "唯一标识",
                     "type": "integer"
                 },
                 "is_active": {
-                    "description": "是否激活，必填",
+                    "description": "是否激活",
                     "type": "boolean"
                 },
                 "meta": {
-                    "description": "菜单元信息，必填",
+                    "description": "菜单元信息",
                     "allOf": [
                         {
                             "$ref": "#/definitions/menu.MetaSchemas"
@@ -7758,21 +7790,21 @@ const docTemplate = `{
                     ]
                 },
                 "name": {
-                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "parent_id": {
-                    "description": "父级菜单ID，可选",
+                    "description": "父级菜单ID",
                     "type": "integer"
                 },
                 "path": {
-                    "description": "前端路由路径，最大长度100\nRequired: true\nMax length: 100",
+                    "description": "前端路由路径",
                     "type": "string",
                     "maxLength": 100
                 },
                 "permission_ids": {
-                    "description": "关联权限ID列表，可选",
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -7804,7 +7836,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "菜单ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -7827,7 +7859,12 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "parent": {
-                    "$ref": "#/definitions/menu.MenuStandardOut"
+                    "description": "父级菜单",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/menu.MenuStandardOut"
+                        }
+                    ]
                 },
                 "path": {
                     "description": "前端路由",
@@ -7835,6 +7872,7 @@ const docTemplate = `{
                     "example": "/api/v1/users"
                 },
                 "permission_ids": {
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -7892,7 +7930,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "菜单ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -7973,25 +8011,25 @@ const docTemplate = `{
             ],
             "properties": {
                 "arrange_order": {
-                    "description": "排序字段，必填",
+                    "description": "排序字段",
                     "type": "integer"
                 },
                 "component": {
-                    "description": "组件路径，最大长度200\nRequired: true\nMax length: 200",
+                    "description": "组件路径",
                     "type": "string",
                     "maxLength": 200
                 },
                 "descr": {
-                    "description": "菜单描述信息，可选，最大长度254\nMax length: 254",
+                    "description": "描述信息",
                     "type": "string",
                     "maxLength": 254
                 },
                 "is_active": {
-                    "description": "是否激活，必填",
+                    "description": "是否激活",
                     "type": "boolean"
                 },
                 "meta": {
-                    "description": "菜单元信息，必填",
+                    "description": "菜单元信息",
                     "allOf": [
                         {
                             "$ref": "#/definitions/menu.MetaSchemas"
@@ -7999,21 +8037,21 @@ const docTemplate = `{
                     ]
                 },
                 "name": {
-                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "parent_id": {
-                    "description": "父级菜单ID，可选",
+                    "description": "父级菜单ID",
                     "type": "integer"
                 },
                 "path": {
-                    "description": "前端路由路径，最大长度100\nRequired: true\nMax length: 100",
+                    "description": "前端路由路径",
                     "type": "string",
                     "maxLength": 100
                 },
                 "permission_ids": {
-                    "description": "关联权限ID列表，可选",
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8030,19 +8068,19 @@ const docTemplate = `{
             ],
             "properties": {
                 "host_id": {
-                    "description": "主机ID\nrequired: true\nexample: 1",
+                    "description": "主机ID",
                     "type": "integer"
                 },
                 "is_enable": {
-                    "description": "是否启用\nrequired: true\nexample: true",
+                    "description": "是否启用",
                     "type": "boolean"
                 },
                 "mds_colony_id": {
-                    "description": "mds集群ID\nrequired: true\nexample: 1",
+                    "description": "mds集群ID",
                     "type": "integer"
                 },
                 "node_role": {
-                    "description": "节点角色\nrequired: true\nexample: \"01\"",
+                    "description": "节点角色",
                     "type": "string",
                     "enum": [
                         "master",
@@ -8062,28 +8100,28 @@ const docTemplate = `{
             ],
             "properties": {
                 "deploy_path": {
-                    "description": "部署路径\nrequired: true\nexample: \"/home/monuser/mon\"",
+                    "description": "部署路径",
                     "type": "string"
                 },
                 "host_id": {
-                    "description": "主机ID\nrequired: true\nexample: 1",
+                    "description": "主机ID",
                     "type": "integer"
                 },
                 "java_home": {
-                    "description": "JAVA_HOME\nrequired: true\nexample: \"/home/monuser/jdk-11.0.1\"",
+                    "description": "JAVA_HOME",
                     "type": "string"
                 },
                 "name": {
-                    "description": "名称\nrequired: true\nexample: \"mon上海节点\"",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "outport_path": {
-                    "description": "导出路径\nrequired: true\nexample: \"/mnt/quant360/import/mon\"",
+                    "description": "导出路径",
                     "type": "string"
                 },
                 "url": {
-                    "description": "URL地址\nrequired: true\nexample: \"http://192.168.11.189:8080/mon\"",
+                    "description": "URL地址",
                     "type": "string"
                 }
             }
@@ -8128,7 +8166,12 @@ const docTemplate = `{
                     "example": "2023-01-01 12:00:00"
                 },
                 "host": {
-                    "$ref": "#/definitions/host.HostBaseOut"
+                    "description": "主机",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/host.HostBaseOut"
+                        }
+                    ]
                 },
                 "id": {
                     "description": "ID",
@@ -8140,7 +8183,12 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "mds_colony": {
-                    "$ref": "#/definitions/colony.MdsColonyBaseOut"
+                    "description": "mds集群",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/colony.MdsColonyBaseOut"
+                        }
+                    ]
                 },
                 "node_role": {
                     "description": "节点角色",
@@ -8253,7 +8301,12 @@ const docTemplate = `{
                     "example": ""
                 },
                 "host": {
-                    "$ref": "#/definitions/host.HostBaseOut"
+                    "description": "主机",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/host.HostBaseOut"
+                        }
+                    ]
                 },
                 "id": {
                     "description": "计划任务ID",
@@ -8466,21 +8519,21 @@ const docTemplate = `{
             ],
             "properties": {
                 "descr": {
-                    "description": "权限描述信息，可选，最大长度254\nMax length: 254",
+                    "description": "描述信息",
                     "type": "string",
                     "maxLength": 254
                 },
                 "id": {
-                    "description": "权限主键，必须大于0\nRequired: true\nMinimum: 1",
+                    "description": "唯一标识",
                     "type": "integer"
                 },
                 "label": {
-                    "description": "权限描述信息，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "标签",
                     "type": "string",
                     "maxLength": 50
                 },
                 "method": {
-                    "description": "HTTP请求方法，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
+                    "description": "请求方法",
                     "type": "string",
                     "enum": [
                         "GET",
@@ -8492,7 +8545,7 @@ const docTemplate = `{
                     ]
                 },
                 "url": {
-                    "description": "权限对应的HTTP URL，最大长度150\nRequired: true\nMax length: 150",
+                    "description": "URL地址",
                     "type": "string",
                     "maxLength": 150
                 }
@@ -8554,7 +8607,7 @@ const docTemplate = `{
                     "example": "用户管理权限"
                 },
                 "id": {
-                    "description": "权限ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -8589,17 +8642,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "descr": {
-                    "description": "权限描述信息，可选，最大长度254\nMax length: 254",
+                    "description": "描述信息",
                     "type": "string",
                     "maxLength": 254
                 },
                 "label": {
-                    "description": "权限描述信息，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "标签",
                     "type": "string",
                     "maxLength": 50
                 },
                 "method": {
-                    "description": "HTTP请求方法，枚举值验证\nRequired: true\nEnum: GET,POST,PUT,DELETE,PATCH,WS",
+                    "description": "请求方法",
                     "type": "string",
                     "enum": [
                         "GET",
@@ -8611,7 +8664,7 @@ const docTemplate = `{
                     ]
                 },
                 "url": {
-                    "description": "权限对应的HTTP URL，最大长度150\nRequired: true\nMax length: 150",
+                    "description": "URL地址",
                     "type": "string",
                     "maxLength": 150
                 }
@@ -8697,23 +8750,23 @@ const docTemplate = `{
             ],
             "properties": {
                 "command_args": {
-                    "description": "命令行参数 (JSON数组字符串)\nrequired: false\nexample: \"[\\\"--verbose\\\", \\\"--output=/tmp\\\"]\"",
+                    "description": "命令行参数",
                     "type": "string"
                 },
                 "env_vars": {
-                    "description": "环境变量 (JSON对象字符串)\nrequired: false\nexample: \"{\\\"ENV\\\":\\\"production\\\"}\"",
+                    "description": "环境变量 (JSON对象)",
                     "type": "string"
                 },
                 "script_id": {
-                    "description": "脚本ID\nrequired: true\nexample: 1",
+                    "description": "脚本ID",
                     "type": "integer"
                 },
                 "timeout": {
-                    "description": "超时时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "description": "超时时间(秒)",
                     "type": "integer"
                 },
                 "work_dir": {
-                    "description": "工作目录\nrequired: false\nexample: \"/home/user/work\"",
+                    "description": "工作目录",
                     "type": "string"
                 }
             }
@@ -8722,7 +8775,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "用户ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -8799,7 +8852,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "command_args": {
-                    "description": "命令行参数(JSON数组)",
+                    "description": "命令行参数",
                     "type": "string",
                     "example": "[\"--verbose\"]"
                 },
@@ -8856,7 +8909,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2023-01-01 12:00:00"
                 },
-                "user_name": {
+                "username": {
                     "description": "用户名",
                     "type": "string",
                     "example": "admin"
@@ -8896,31 +8949,31 @@ const docTemplate = `{
             ],
             "properties": {
                 "button_ids": {
-                    "description": "关联按钮ID列表，可选",
+                    "description": "按钮ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
                 "descr": {
-                    "description": "描述，可选，最大长度254\nMax length: 254",
+                    "description": "描述信息",
                     "type": "string",
                     "maxLength": 254
                 },
                 "menu_ids": {
-                    "description": "关联菜单ID列表，可选",
+                    "description": "菜单ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
                 "name": {
-                    "description": "名称，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "permission_ids": {
-                    "description": "关联权限ID列表，可选",
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8958,7 +9011,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "角色ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -8973,6 +9026,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "button_ids": {
+                    "description": "按钮ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -8989,11 +9043,12 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "角色ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
                 "menu_ids": {
+                    "description": "菜单ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -9005,6 +9060,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "permission_ids": {
+                    "description": "权限ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -9050,7 +9106,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "菜单ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -9134,7 +9190,7 @@ const docTemplate = `{
                     "example": "用户管理"
                 },
                 "id": {
-                    "description": "角色ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -9159,48 +9215,48 @@ const docTemplate = `{
             ],
             "properties": {
                 "command_args": {
-                    "description": "命令行参数\nrequired: false\nexample: \"[\\\"--verbose\\\", \\\"--output=/tmp\\\"]\"",
+                    "description": "命令行参数",
                     "type": "string"
                 },
                 "env_vars": {
-                    "description": "环境变量 (JSON对象字符串)\nrequired: false\nexample: \"{\\\"ENV\\\":\\\"production\\\"}\"",
+                    "description": "环境变量(JSON对象)",
                     "type": "string"
                 },
                 "is_enabled": {
-                    "description": "是否启用\nrequired: false\ndefault: true",
+                    "description": "是否启用",
                     "type": "boolean"
                 },
                 "is_retry": {
-                    "description": "是否重试\nrequired: false\ndefault: false",
+                    "description": "是否重试",
                     "type": "boolean"
                 },
                 "max_retries": {
-                    "description": "最大重试次数\nrequired: false\ndefault: 3",
+                    "description": "最大重试次数",
                     "type": "integer"
                 },
                 "name": {
-                    "description": "计划任务名称\nrequired: true\nexample: \"每日备份\"",
+                    "description": "计划任务名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "retry_interval": {
-                    "description": "重试间隔时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "description": "重试间隔时间(秒)",
                     "type": "integer"
                 },
                 "script_id": {
-                    "description": "脚本ID\nrequired: true\nexample: 1",
+                    "description": "脚本ID",
                     "type": "integer"
                 },
                 "specification": {
-                    "description": "Cron 表达式\nrequired: true\nexample: \"0 2 * * *\"",
+                    "description": "Cron 表达式",
                     "type": "string"
                 },
                 "timeout": {
-                    "description": "超时时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "description": "超时时间(秒)",
                     "type": "integer"
                 },
                 "work_dir": {
-                    "description": "工作目录\nrequired: false\nexample: \"/home/user/work\"",
+                    "description": "工作目录",
                     "type": "string"
                 }
             }
@@ -9240,7 +9296,7 @@ const docTemplate = `{
                     "example": "2023-01-01 12:00:00"
                 },
                 "env_vars": {
-                    "description": "环境变量 (JSON对象字符串)",
+                    "description": "环境变量(JSON对象)",
                     "type": "string",
                     "example": "{}"
                 },
@@ -9324,48 +9380,48 @@ const docTemplate = `{
             ],
             "properties": {
                 "command_args": {
-                    "description": "命令行参数\nrequired: false\nexample: \"[\\\"--verbose\\\", \\\"--output=/tmp\\\"]\"",
+                    "description": "命令行参数",
                     "type": "string"
                 },
                 "env_vars": {
-                    "description": "环境变量 (JSON对象字符串)\nrequired: false\nexample: \"{\\\"ENV\\\":\\\"production\\\"}\"",
+                    "description": "环境变量(JSON对象)",
                     "type": "string"
                 },
                 "is_enabled": {
-                    "description": "是否启用\nrequired: false\ndefault: true",
+                    "description": "是否启用",
                     "type": "boolean"
                 },
                 "is_retry": {
-                    "description": "是否重试\nrequired: false\ndefault: false",
+                    "description": "是否重试",
                     "type": "boolean"
                 },
                 "max_retries": {
-                    "description": "最大重试次数\nrequired: false\ndefault: 3",
+                    "description": "最大重试次数",
                     "type": "integer"
                 },
                 "name": {
-                    "description": "计划任务名称\nrequired: true\nexample: \"每日备份\"",
+                    "description": "计划任务名称",
                     "type": "string",
                     "maxLength": 50
                 },
                 "retry_interval": {
-                    "description": "重试间隔时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "description": "重试间隔时间(秒)",
                     "type": "integer"
                 },
                 "script_id": {
-                    "description": "脚本ID\nrequired: true\nexample: 1",
+                    "description": "脚本ID",
                     "type": "integer"
                 },
                 "specification": {
-                    "description": "Cron 表达式\nrequired: true\nexample: \"0 2 * * *\"",
+                    "description": "Cron 表达式",
                     "type": "string"
                 },
                 "timeout": {
-                    "description": "超时时间(秒)\nrequired: false\ndefault: 300\nminimum: 1",
+                    "description": "超时时间(秒)",
                     "type": "integer"
                 },
                 "work_dir": {
-                    "description": "工作目录\nrequired: false\nexample: \"/home/user/work\"",
+                    "description": "工作目录",
                     "type": "string"
                 }
             }
@@ -9421,12 +9477,12 @@ const docTemplate = `{
                     "example": "2023-01-01 12:00:00"
                 },
                 "descr": {
-                    "description": "描述",
+                    "description": "描述信息",
                     "type": "string",
                     "example": "这是一个测试脚本"
                 },
                 "id": {
-                    "description": "脚本ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -9441,7 +9497,7 @@ const docTemplate = `{
                     "example": "cmd"
                 },
                 "language": {
-                    "description": "语言",
+                    "description": "脚本语言",
                     "type": "string",
                     "example": "bash"
                 },
@@ -9481,24 +9537,24 @@ const docTemplate = `{
             ],
             "properties": {
                 "is_active": {
-                    "description": "是否激活，必填",
+                    "description": "是否激活",
                     "type": "boolean"
                 },
                 "is_staff": {
-                    "description": "是否是工作人员，必填",
+                    "description": "是否是工作人员",
                     "type": "boolean"
                 },
                 "password": {
-                    "description": "密码，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "密码",
                     "type": "string",
                     "maxLength": 20
                 },
                 "role_id": {
-                    "description": "角色ID，必填",
+                    "description": "角色ID",
                     "type": "integer"
                 },
                 "username": {
-                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "用户名",
                     "type": "string",
                     "maxLength": 50
                 }
@@ -9508,6 +9564,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "token": {
+                    "description": "登录令牌",
                     "type": "string"
                 }
             }
@@ -9541,12 +9598,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "description": "密码，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "密码",
                     "type": "string",
                     "maxLength": 20
                 },
                 "username": {
-                    "description": "用户名，必填,\nRequired: true\nMax length: 50",
+                    "description": "用户名",
                     "type": "string",
                     "maxLength": 50
                 }
@@ -9582,16 +9639,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "confirm_password": {
-                    "description": "确认密码，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "确认密码",
                     "type": "string"
                 },
                 "new_password": {
-                    "description": "新密码，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "新密码",
                     "type": "string",
                     "maxLength": 20
                 },
                 "old_password": {
-                    "description": "原密码，必填,\nRequired: true\nMax length: 20",
+                    "description": "原密码",
                     "type": "string"
                 }
             }
@@ -9604,11 +9661,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "confirm_password": {
-                    "description": "确认密码，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "确认密码",
                     "type": "string"
                 },
                 "new_password": {
-                    "description": "新密码，最大长度20\nRequired: true\nMax length: 20",
+                    "description": "新密码",
                     "type": "string",
                     "maxLength": 20
                 }
@@ -9622,19 +9679,19 @@ const docTemplate = `{
             ],
             "properties": {
                 "is_active": {
-                    "description": "是否激活，必填",
+                    "description": "是否激活",
                     "type": "boolean"
                 },
                 "is_staff": {
-                    "description": "是否是工作人员，必填",
+                    "description": "是否是工作人员",
                     "type": "boolean"
                 },
                 "role_id": {
-                    "description": "角色ID，必填",
+                    "description": "角色ID",
                     "type": "integer"
                 },
                 "username": {
-                    "description": "用户名，最大长度50\nRequired: true\nMax length: 50",
+                    "description": "用户名",
                     "type": "string",
                     "maxLength": 50
                 }
@@ -9649,7 +9706,7 @@ const docTemplate = `{
                     "example": "2023-01-01 12:00:00"
                 },
                 "id": {
-                    "description": "用户ID",
+                    "description": "唯一标识",
                     "type": "integer",
                     "example": 1
                 },
@@ -9664,7 +9721,12 @@ const docTemplate = `{
                     "example": false
                 },
                 "role": {
-                    "$ref": "#/definitions/role.RoleBaseOut"
+                    "description": "角色",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/role.RoleBaseOut"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -9672,7 +9734,7 @@ const docTemplate = `{
                     "example": "2023-01-01 12:00:00"
                 },
                 "username": {
-                    "description": "名称",
+                    "description": "用户名",
                     "type": "string",
                     "example": "judgement"
                 }

@@ -170,13 +170,11 @@ def main(options):
     vars = init_vars(config_path, options.extravars)
     vars["colony_num"] = colony_num
     hosts = init_hosts(colony_num, config_path)
+    envvars = {"ANSIBLE_LOG_PATH": ANSIBLE_LOG_PATH} if options.enable_ansible_log else {"ANSIBLE_NOCOLOR": "1"}
     return ansible_runner.run(
         inventory={"all": {"hosts": hosts, "vars": vars}},
         playbook=str(playbook_path),
-        envvars={
-            "ANSIBLE_NOCOLOR": "1", 
-            # "ANSIBLE_LOG_PATH": ANSIBLE_LOG_PATH,
-        },
+        envvars=envvars,
         verbosity=options.verbosity,
     )
     
@@ -207,6 +205,12 @@ if __name__ == "__main__":
         type=str, 
         default="",
         help="请输入额外的变量(a=b,c=d)",
+    )
+    parser.add_argument(
+        "--enable_ansible_log", 
+        type=bool,
+        default=False,
+        help="是否启用ansible日志",
     )
     options = parser.parse_args()
     result = main(options)

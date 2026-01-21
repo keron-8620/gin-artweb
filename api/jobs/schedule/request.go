@@ -95,7 +95,7 @@ type ListScheduleRequest struct {
 	ScriptID uint32 `form:"script_id"`
 
 	// 用户名
-	Username string `json:"username" binding:"omitempty"`
+	Username string `form:"username" binding:"omitempty"`
 }
 
 func (req *ListScheduleRequest) Query() (int, int, map[string]any) {

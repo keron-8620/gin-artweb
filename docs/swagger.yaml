@@ -10,7 +10,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 按钮ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -37,7 +37,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 按钮ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -45,12 +45,15 @@ definitions:
         example: true
         type: boolean
       menu:
-        $ref: '#/definitions/menu.MenuStandardOut'
+        allOf:
+        - $ref: '#/definitions/menu.MenuStandardOut'
+        description: 菜单
       name:
         description: 名称
         example: 用户管理
         type: string
       permission_ids:
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -93,7 +96,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 按钮ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -112,41 +115,34 @@ definitions:
   button.CreateButtonRequest:
     properties:
       arrange_order:
-        description: 排序字段，必填
+        description: 排序字段
         type: integer
       descr:
-        description: |-
-          按钮描述信息，可选，最大长度254
-          Max length: 254
+        description: 描述信息
         maxLength: 254
         type: string
       id:
-        description: |-
-          按钮主键，必须大于0
-          Required: true
-          Minimum: 1
+        description: 唯一标识
         type: integer
       is_active:
-        description: 是否激活，必填
+        description: 是否激活
         type: boolean
       menu_id:
-        description: 菜单ID，必填
+        description: 菜单ID
         type: integer
       name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+        description: 名称
         maxLength: 50
         type: string
       permission_ids:
-        description: 关联权限ID列表，可选
+        description: 权限ID列表
         items:
           type: integer
         type: array
     required:
     - arrange_order
     - id
+    - is_active
     - menu_id
     - name
     type: object
@@ -172,29 +168,24 @@ definitions:
   button.UpdateButtonRequest:
     properties:
       arrange_order:
-        description: 排序字段，必填
+        description: 排序字段
         type: integer
       descr:
-        description: |-
-          按钮描述信息，可选，最大长度254
-          Max length: 254
+        description: 描述信息
         maxLength: 254
         type: string
       is_active:
-        description: 是否激活，必填
+        description: 是否激活
         type: boolean
       menu_id:
-        description: 菜单ID，必填
+        description: 菜单ID
         type: integer
       name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+        description: 名称
         maxLength: 50
         type: string
       permission_ids:
-        description: 关联权限ID列表，可选
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -205,30 +196,18 @@ definitions:
   colony.CreateOrUpdateMdsColonyRequest:
     properties:
       colony_num:
-        description: |-
-          集群号
-          required: true
-          example: "01"
+        description: 集群号
         maxLength: 2
         type: string
       extracted_name:
-        description: |-
-          解压后名称
-          required: true
-          example: "mds"
+        description: 解压后名称
         maxLength: 50
         type: string
       mon_node_id:
-        description: |-
-          mon节点ID
-          required: true
-          example: 1
+        description: mon节点ID
         type: integer
       package_id:
-        description: |-
-          程序包ID
-          required: true
-          example: 1
+        description: 程序包ID
         type: integer
     required:
     - colony_num
@@ -239,46 +218,28 @@ definitions:
   colony.CreateOrUpdateOesColonyRequest:
     properties:
       colony_num:
-        description: |-
-          集群号
-          required: true
-          example: "01"
+        description: 集群号
         maxLength: 2
         type: string
       extracted_name:
-        description: |-
-          解压后名称
-          required: true
-          example: "oes"
+        description: 解压后名称
         maxLength: 50
         type: string
       mon_node_id:
-        description: |-
-          mon节点ID
-          required: true
-          example: 1
+        description: mon节点ID
         type: integer
       package_id:
-        description: |-
-          程序包ID
-          required: true
-          example: 1
+        description: 程序包ID
         type: integer
       system_type:
-        description: |-
-          系统类型
-          required: true
-          example: "stk"
+        description: 系统类型
         enum:
         - STK
         - CRD
         - OPT
         type: string
       xcounter_id:
-        description: |-
-          xcounter包ID
-          required: true
-          example: 1
+        description: xcounter包ID
         type: integer
     required:
     - colony_num
@@ -330,9 +291,13 @@ definitions:
         example: 1
         type: integer
       mon_node:
-        $ref: '#/definitions/node.MonNodeBaseOut'
+        allOf:
+        - $ref: '#/definitions/node.MonNodeBaseOut'
+        description: mon节点
       package:
-        $ref: '#/definitions/pkg.PackageStandardOut'
+        allOf:
+        - $ref: '#/definitions/pkg.PackageStandardOut'
+        description: mds程序包
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -395,9 +360,13 @@ definitions:
         example: 1
         type: integer
       mon_node:
-        $ref: '#/definitions/node.MonNodeBaseOut'
+        allOf:
+        - $ref: '#/definitions/node.MonNodeBaseOut'
+        description: mon节点
       package:
-        $ref: '#/definitions/pkg.PackageStandardOut'
+        allOf:
+        - $ref: '#/definitions/pkg.PackageStandardOut'
+        description: oes程序包
       system_type:
         description: 系统类型
         example: stk
@@ -407,7 +376,9 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
       xcounter:
-        $ref: '#/definitions/pkg.PackageStandardOut'
+        allOf:
+        - $ref: '#/definitions/pkg.PackageStandardOut'
+        description: xcounter程序包
     type: object
   colony.OesColonyReply:
     properties:
@@ -1065,56 +1036,34 @@ definitions:
   host.CreateOrUpdateHosrRequest:
     properties:
       label:
-        description: |-
-          标签，最大长度50
-          Required: true
-          Max length: 50
+        description: 标签
         maxLength: 50
         type: string
       name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+        description: 名称
         maxLength: 50
         type: string
       py_path:
-        description: |-
-          python路径，最大长度254
-          Required: true
-          Max length: 254
+        description: python路径
         maxLength: 254
         type: string
       remark:
-        description: |-
-          备注，最大长度254
-          Max length: 254
+        description: 备注
         maxLength: 254
         type: string
       ssh_ip:
-        description: |-
-          ip地址，最大长度108
-          Required: true
-          Max length: 108
+        description: ip地址
         maxLength: 108
         type: string
       ssh_password:
-        description: |-
-          密码，最大长度150
-          Required: true
-          Max length: 150
+        description: 密码
         maxLength: 150
         type: string
       ssh_port:
-        description: |-
-          端口，必填
-          Required: true
+        description: 端口
         type: integer
       ssh_user:
-        description: |-
-          用户名，最大长度50
-          Required: true
-          Max length: 50
+        description: 用户名
         maxLength: 50
         type: string
     required:
@@ -1244,53 +1193,39 @@ definitions:
   menu.CreateMenuRequest:
     properties:
       arrange_order:
-        description: 排序字段，必填
+        description: 排序字段
         type: integer
       component:
-        description: |-
-          组件路径，最大长度200
-          Required: true
-          Max length: 200
+        description: 组件路径
         maxLength: 200
         type: string
       descr:
-        description: |-
-          描述，最大长度254
-          Max length: 254
+        description: 描述
         maxLength: 254
         type: string
       id:
-        description: |-
-          菜单主键，必须大于0
-          Required: true
-          Minimum: 1
+        description: 唯一标识
         type: integer
       is_active:
-        description: 是否激活，必填
+        description: 是否激活
         type: boolean
       meta:
         allOf:
         - $ref: '#/definitions/menu.MetaSchemas'
-        description: 菜单元信息，必填
+        description: 菜单元信息
       name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+        description: 名称
         maxLength: 50
         type: string
       parent_id:
-        description: 父级菜单ID，可选
+        description: 父级菜单ID
         type: integer
       path:
-        description: |-
-          前端路由路径，最大长度100
-          Required: true
-          Max length: 100
+        description: 前端路由路径
         maxLength: 100
         type: string
       permission_ids:
-        description: 关联权限ID列表，可选
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -1321,7 +1256,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 菜单ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -1337,12 +1272,15 @@ definitions:
         example: 用户管理
         type: string
       parent:
-        $ref: '#/definitions/menu.MenuStandardOut'
+        allOf:
+        - $ref: '#/definitions/menu.MenuStandardOut'
+        description: 父级菜单
       path:
         description: 前端路由
         example: /api/v1/users
         type: string
       permission_ids:
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -1389,7 +1327,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 菜单ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -1446,47 +1384,36 @@ definitions:
   menu.UpdateMenuRequest:
     properties:
       arrange_order:
-        description: 排序字段，必填
+        description: 排序字段
         type: integer
       component:
-        description: |-
-          组件路径，最大长度200
-          Required: true
-          Max length: 200
+        description: 组件路径
         maxLength: 200
         type: string
       descr:
-        description: |-
-          菜单描述信息，可选，最大长度254
-          Max length: 254
+        description: 描述信息
         maxLength: 254
         type: string
       is_active:
-        description: 是否激活，必填
+        description: 是否激活
         type: boolean
       meta:
         allOf:
         - $ref: '#/definitions/menu.MetaSchemas'
-        description: 菜单元信息，必填
+        description: 菜单元信息
       name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+        description: 名称
         maxLength: 50
         type: string
       parent_id:
-        description: 父级菜单ID，可选
+        description: 父级菜单ID
         type: integer
       path:
-        description: |-
-          前端路由路径，最大长度100
-          Required: true
-          Max length: 100
+        description: 前端路由路径
         maxLength: 100
         type: string
       permission_ids:
-        description: 关联权限ID列表，可选
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -1500,28 +1427,16 @@ definitions:
   node.CreateOrUpdateMdsNodeRequest:
     properties:
       host_id:
-        description: |-
-          主机ID
-          required: true
-          example: 1
+        description: 主机ID
         type: integer
       is_enable:
-        description: |-
-          是否启用
-          required: true
-          example: true
+        description: 是否启用
         type: boolean
       mds_colony_id:
-        description: |-
-          mds集群ID
-          required: true
-          example: 1
+        description: mds集群ID
         type: integer
       node_role:
-        description: |-
-          节点角色
-          required: true
-          example: "01"
+        description: 节点角色
         enum:
         - master
         - follow
@@ -1535,41 +1450,23 @@ definitions:
   node.CreateOrUpdateMonNodeRequest:
     properties:
       deploy_path:
-        description: |-
-          部署路径
-          required: true
-          example: "/home/monuser/mon"
+        description: 部署路径
         type: string
       host_id:
-        description: |-
-          主机ID
-          required: true
-          example: 1
+        description: 主机ID
         type: integer
       java_home:
-        description: |-
-          JAVA_HOME
-          required: true
-          example: "/home/monuser/jdk-11.0.1"
+        description: JAVA_HOME
         type: string
       name:
-        description: |-
-          名称
-          required: true
-          example: "mon上海节点"
+        description: 名称
         maxLength: 50
         type: string
       outport_path:
-        description: |-
-          导出路径
-          required: true
-          example: "/mnt/quant360/import/mon"
+        description: 导出路径
         type: string
       url:
-        description: |-
-          URL地址
-          required: true
-          example: "http://192.168.11.189:8080/mon"
+        description: URL地址
         type: string
     required:
     - deploy_path
@@ -1619,7 +1516,9 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
       host:
-        $ref: '#/definitions/host.HostBaseOut'
+        allOf:
+        - $ref: '#/definitions/host.HostBaseOut'
+        description: 主机
       id:
         description: ID
         example: 1
@@ -1628,7 +1527,9 @@ definitions:
         description: 是否启用
         type: boolean
       mds_colony:
-        $ref: '#/definitions/colony.MdsColonyBaseOut'
+        allOf:
+        - $ref: '#/definitions/colony.MdsColonyBaseOut'
+        description: mds集群
       node_role:
         description: 节点角色
         example: master
@@ -1717,7 +1618,9 @@ definitions:
         example: ""
         type: string
       host:
-        $ref: '#/definitions/host.HostBaseOut'
+        allOf:
+        - $ref: '#/definitions/host.HostBaseOut'
+        description: 主机
       id:
         description: 计划任务ID
         example: 1
@@ -1889,29 +1792,18 @@ definitions:
   permission.CreatePermissionRequest:
     properties:
       descr:
-        description: |-
-          权限描述信息，可选，最大长度254
-          Max length: 254
+        description: 描述信息
         maxLength: 254
         type: string
       id:
-        description: |-
-          权限主键，必须大于0
-          Required: true
-          Minimum: 1
+        description: 唯一标识
         type: integer
       label:
-        description: |-
-          权限描述信息，最大长度50
-          Required: true
-          Max length: 50
+        description: 标签
         maxLength: 50
         type: string
       method:
-        description: |-
-          HTTP请求方法，枚举值验证
-          Required: true
-          Enum: GET,POST,PUT,DELETE,PATCH,WS
+        description: 请求方法
         enum:
         - GET
         - POST
@@ -1921,10 +1813,7 @@ definitions:
         - WS
         type: string
       url:
-        description: |-
-          权限对应的HTTP URL，最大长度150
-          Required: true
-          Max length: 150
+        description: URL地址
         maxLength: 150
         type: string
     required:
@@ -1982,7 +1871,7 @@ definitions:
         example: 用户管理权限
         type: string
       id:
-        description: 权限ID
+        description: 唯一标识
         example: 1
         type: integer
       label:
@@ -2005,23 +1894,15 @@ definitions:
   permission.UpdatePermissionRequest:
     properties:
       descr:
-        description: |-
-          权限描述信息，可选，最大长度254
-          Max length: 254
+        description: 描述信息
         maxLength: 254
         type: string
       label:
-        description: |-
-          权限描述信息，最大长度50
-          Required: true
-          Max length: 50
+        description: 标签
         maxLength: 50
         type: string
       method:
-        description: |-
-          HTTP请求方法，枚举值验证
-          Required: true
-          Enum: GET,POST,PUT,DELETE,PATCH,WS
+        description: 请求方法
         enum:
         - GET
         - POST
@@ -2031,10 +1912,7 @@ definitions:
         - WS
         type: string
       url:
-        description: |-
-          权限对应的HTTP URL，最大长度150
-          Required: true
-          Max length: 150
+        description: URL地址
         maxLength: 150
         type: string
     required:
@@ -2106,35 +1984,19 @@ definitions:
   record.CreateScriptRecordRequest:
     properties:
       command_args:
-        description: |-
-          命令行参数 (JSON数组字符串)
-          required: false
-          example: "[\"--verbose\", \"--output=/tmp\"]"
+        description: 命令行参数
         type: string
       env_vars:
-        description: |-
-          环境变量 (JSON对象字符串)
-          required: false
-          example: "{\"ENV\":\"production\"}"
+        description: 环境变量 (JSON对象)
         type: string
       script_id:
-        description: |-
-          脚本ID
-          required: true
-          example: 1
+        description: 脚本ID
         type: integer
       timeout:
-        description: |-
-          超时时间(秒)
-          required: false
-          default: 300
-          minimum: 1
+        description: 超时时间(秒)
         type: integer
       work_dir:
-        description: |-
-          工作目录
-          required: false
-          example: "/home/user/work"
+        description: 工作目录
         type: string
     required:
     - script_id
@@ -2143,7 +2005,7 @@ definitions:
   record.LoginRecordStandardOut:
     properties:
       id:
-        description: 用户ID
+        description: 唯一标识
         example: 1
         type: integer
       ip_address:
@@ -2209,7 +2071,7 @@ definitions:
   record.ScriptRecordDetailOut:
     properties:
       command_args:
-        description: 命令行参数(JSON数组)
+        description: 命令行参数
         example: '["--verbose"]'
         type: string
       created_at:
@@ -2252,7 +2114,7 @@ definitions:
         description: 更新时间
         example: "2023-01-01 12:00:00"
         type: string
-      user_name:
+      username:
         description: 用户名
         example: admin
         type: string
@@ -2283,30 +2145,25 @@ definitions:
   role.CreateOrUpdateRoleRequest:
     properties:
       button_ids:
-        description: 关联按钮ID列表，可选
+        description: 按钮ID列表
         items:
           type: integer
         type: array
       descr:
-        description: |-
-          描述，可选，最大长度254
-          Max length: 254
+        description: 描述信息
         maxLength: 254
         type: string
       menu_ids:
-        description: 关联菜单ID列表，可选
+        description: 菜单ID列表
         items:
           type: integer
         type: array
       name:
-        description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+        description: 名称
         maxLength: 50
         type: string
       permission_ids:
-        description: 关联权限ID列表，可选
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -2339,7 +2196,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 角色ID
+        description: 唯一标识
         example: 1
         type: integer
       name:
@@ -2350,6 +2207,7 @@ definitions:
   role.RoleDetailOut:
     properties:
       button_ids:
+        description: 按钮ID列表
         items:
           type: integer
         type: array
@@ -2362,10 +2220,11 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 角色ID
+        description: 唯一标识
         example: 1
         type: integer
       menu_ids:
+        description: 菜单ID列表
         items:
           type: integer
         type: array
@@ -2374,6 +2233,7 @@ definitions:
         example: 用户管理
         type: string
       permission_ids:
+        description: 权限ID列表
         items:
           type: integer
         type: array
@@ -2407,7 +2267,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 菜单ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -2477,7 +2337,7 @@ definitions:
         example: 用户管理
         type: string
       id:
-        description: 角色ID
+        description: 唯一标识
         example: 1
         type: integer
       name:
@@ -2492,73 +2352,38 @@ definitions:
   schedule.CreateScheduleRequest:
     properties:
       command_args:
-        description: |-
-          命令行参数
-          required: false
-          example: "[\"--verbose\", \"--output=/tmp\"]"
+        description: 命令行参数
         type: string
       env_vars:
-        description: |-
-          环境变量 (JSON对象字符串)
-          required: false
-          example: "{\"ENV\":\"production\"}"
+        description: 环境变量(JSON对象)
         type: string
       is_enabled:
-        description: |-
-          是否启用
-          required: false
-          default: true
+        description: 是否启用
         type: boolean
       is_retry:
-        description: |-
-          是否重试
-          required: false
-          default: false
+        description: 是否重试
         type: boolean
       max_retries:
-        description: |-
-          最大重试次数
-          required: false
-          default: 3
+        description: 最大重试次数
         type: integer
       name:
-        description: |-
-          计划任务名称
-          required: true
-          example: "每日备份"
+        description: 计划任务名称
         maxLength: 50
         type: string
       retry_interval:
-        description: |-
-          重试间隔时间(秒)
-          required: false
-          default: 300
-          minimum: 1
+        description: 重试间隔时间(秒)
         type: integer
       script_id:
-        description: |-
-          脚本ID
-          required: true
-          example: 1
+        description: 脚本ID
         type: integer
       specification:
-        description: |-
-          Cron 表达式
-          required: true
-          example: "0 2 * * *"
+        description: Cron 表达式
         type: string
       timeout:
-        description: |-
-          超时时间(秒)
-          required: false
-          default: 300
-          minimum: 1
+        description: 超时时间(秒)
         type: integer
       work_dir:
-        description: |-
-          工作目录
-          required: false
-          example: "/home/user/work"
+        description: 工作目录
         type: string
     required:
     - name
@@ -2595,7 +2420,7 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
       env_vars:
-        description: 环境变量 (JSON对象字符串)
+        description: 环境变量(JSON对象)
         example: '{}'
         type: string
       id:
@@ -2657,73 +2482,38 @@ definitions:
   schedule.UpdateScheduleRequest:
     properties:
       command_args:
-        description: |-
-          命令行参数
-          required: false
-          example: "[\"--verbose\", \"--output=/tmp\"]"
+        description: 命令行参数
         type: string
       env_vars:
-        description: |-
-          环境变量 (JSON对象字符串)
-          required: false
-          example: "{\"ENV\":\"production\"}"
+        description: 环境变量(JSON对象)
         type: string
       is_enabled:
-        description: |-
-          是否启用
-          required: false
-          default: true
+        description: 是否启用
         type: boolean
       is_retry:
-        description: |-
-          是否重试
-          required: false
-          default: false
+        description: 是否重试
         type: boolean
       max_retries:
-        description: |-
-          最大重试次数
-          required: false
-          default: 3
+        description: 最大重试次数
         type: integer
       name:
-        description: |-
-          计划任务名称
-          required: true
-          example: "每日备份"
+        description: 计划任务名称
         maxLength: 50
         type: string
       retry_interval:
-        description: |-
-          重试间隔时间(秒)
-          required: false
-          default: 300
-          minimum: 1
+        description: 重试间隔时间(秒)
         type: integer
       script_id:
-        description: |-
-          脚本ID
-          required: true
-          example: 1
+        description: 脚本ID
         type: integer
       specification:
-        description: |-
-          Cron 表达式
-          required: true
-          example: "0 2 * * *"
+        description: Cron 表达式
         type: string
       timeout:
-        description: |-
-          超时时间(秒)
-          required: false
-          default: 300
-          minimum: 1
+        description: 超时时间(秒)
         type: integer
       work_dir:
-        description: |-
-          工作目录
-          required: false
-          example: "/home/user/work"
+        description: 工作目录
         type: string
     required:
     - name
@@ -2775,11 +2565,11 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
       descr:
-        description: 描述
+        description: 描述信息
         example: 这是一个测试脚本
         type: string
       id:
-        description: 脚本ID
+        description: 唯一标识
         example: 1
         type: integer
       is_builtin:
@@ -2791,7 +2581,7 @@ definitions:
         example: cmd
         type: string
       language:
-        description: 语言
+        description: 脚本语言
         example: bash
         type: string
       name:
@@ -2818,26 +2608,20 @@ definitions:
   user.CreateUserRequest:
     properties:
       is_active:
-        description: 是否激活，必填
+        description: 是否激活
         type: boolean
       is_staff:
-        description: 是否是工作人员，必填
+        description: 是否是工作人员
         type: boolean
       password:
-        description: |-
-          密码，最大长度20
-          Required: true
-          Max length: 20
+        description: 密码
         maxLength: 20
         type: string
       role_id:
-        description: 角色ID，必填
+        description: 角色ID
         type: integer
       username:
-        description: |-
-          用户名，最大长度50
-          Required: true
-          Max length: 50
+        description: 用户名
         maxLength: 50
         type: string
     required:
@@ -2848,6 +2632,7 @@ definitions:
   user.LoginOut:
     properties:
       token:
+        description: 登录令牌
         type: string
     type: object
   user.LoginReply:
@@ -2872,17 +2657,11 @@ definitions:
   user.LoginRequest:
     properties:
       password:
-        description: |-
-          密码，最大长度20
-          Required: true
-          Max length: 20
+        description: 密码
         maxLength: 20
         type: string
       username:
-        description: |-
-          用户名，必填,
-          Required: true
-          Max length: 50
+        description: 用户名
         maxLength: 50
         type: string
     required:
@@ -2911,23 +2690,14 @@ definitions:
   user.PatchPasswordRequest:
     properties:
       confirm_password:
-        description: |-
-          确认密码，最大长度20
-          Required: true
-          Max length: 20
+        description: 确认密码
         type: string
       new_password:
-        description: |-
-          新密码，最大长度20
-          Required: true
-          Max length: 20
+        description: 新密码
         maxLength: 20
         type: string
       old_password:
-        description: |-
-          原密码，必填,
-          Required: true
-          Max length: 20
+        description: 原密码
         type: string
     required:
     - confirm_password
@@ -2937,16 +2707,10 @@ definitions:
   user.ResetPasswordRequest:
     properties:
       confirm_password:
-        description: |-
-          确认密码，最大长度20
-          Required: true
-          Max length: 20
+        description: 确认密码
         type: string
       new_password:
-        description: |-
-          新密码，最大长度20
-          Required: true
-          Max length: 20
+        description: 新密码
         maxLength: 20
         type: string
     required:
@@ -2956,19 +2720,16 @@ definitions:
   user.UpdateUserRequest:
     properties:
       is_active:
-        description: 是否激活，必填
+        description: 是否激活
         type: boolean
       is_staff:
-        description: 是否是工作人员，必填
+        description: 是否是工作人员
         type: boolean
       role_id:
-        description: 角色ID，必填
+        description: 角色ID
         type: integer
       username:
-        description: |-
-          用户名，最大长度50
-          Required: true
-          Max length: 50
+        description: 用户名
         maxLength: 50
         type: string
     required:
@@ -2982,7 +2743,7 @@ definitions:
         example: "2023-01-01 12:00:00"
         type: string
       id:
-        description: 用户ID
+        description: 唯一标识
         example: 1
         type: integer
       is_active:
@@ -2994,13 +2755,15 @@ definitions:
         example: false
         type: boolean
       role:
-        $ref: '#/definitions/role.RoleBaseOut'
+        allOf:
+        - $ref: '#/definitions/role.RoleBaseOut'
+        description: 角色
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
         type: string
       username:
-        description: 名称
+        description: 用户名
         example: judgement
         type: string
     type: object
@@ -3056,50 +2819,38 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          按钮描述，字符串长度限制
-          Max length: 254
+      - description: 描述信息
         in: query
         maxLength: 254
         name: descr
         type: string
-      - description: 是否激活筛选
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 是否激活
         in: query
         name: is_active
         type: boolean
-      - description: 菜单ID，必填
+      - description: 菜单ID
         in: query
         name: menu_id
         type: integer
-      - description: |-
-          按钮名称，字符串长度限制
-          Max length: 50
+      - description: 按钮名称
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -3155,7 +2906,7 @@ paths:
       summary: 新增按钮
       tags:
       - 按钮管理
-  /api/v1/customer/button/{pk}:
+  /api/v1/customer/button/{id}:
     delete:
       consumes:
       - application/json
@@ -3163,7 +2914,7 @@ paths:
       parameters:
       - description: 按钮编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -3197,7 +2948,7 @@ paths:
       parameters:
       - description: 按钮编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -3231,7 +2982,7 @@ paths:
       parameters:
       - description: 按钮编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新按钮请求
@@ -3343,42 +3094,30 @@ paths:
         in: query
         name: before_login_at
         type: string
-      - description: |-
-          IP 地址，字符串长度限制
-          Max length: 108
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: IP 地址
         in: query
         maxLength: 108
         name: ip_address
         type: string
-      - description: |-
-          用户名称，字符串长度限制
-          Max length: 50
+      - description: 用户名
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -3441,64 +3180,48 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          组件路径，字符串长度限制
-          Max length: 200
+      - description: 组件路径
         in: query
         maxLength: 200
         name: component
         type: string
-      - description: |-
-          菜单描述，字符串长度限制
-          Max length: 254
+      - description: 菜单描述
         in: query
         maxLength: 254
         name: descr
         type: string
-      - description: 是否激活筛选
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 是否激活
         in: query
         name: is_active
         type: boolean
-      - description: |-
-          菜单名称，字符串长度限制
-          Max length: 50
+      - description: 名称
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: 父级菜单ID筛选
+      - description: 父级菜单ID
         in: query
         name: parent_id
         type: integer
-      - description: |-
-          前端路由路径，字符串长度限制
-          Max length: 100
+      - description: 前端路由路径
         in: query
         maxLength: 100
         name: path
         type: string
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -3554,7 +3277,7 @@ paths:
       summary: 新增菜单
       tags:
       - 菜单管理
-  /api/v1/customer/menu/{pk}:
+  /api/v1/customer/menu/{id}:
     delete:
       consumes:
       - application/json
@@ -3562,7 +3285,7 @@ paths:
       parameters:
       - description: 菜单编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -3596,7 +3319,7 @@ paths:
       parameters:
       - description: 菜单编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -3630,7 +3353,7 @@ paths:
       parameters:
       - description: 菜单编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新菜单请求
@@ -3693,23 +3416,26 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          描述信息，字符串长度限制
-          Max length: 254
+      - description: 描述信息
         in: query
         maxLength: 254
         name: descr
         type: string
-      - description: |-
-          权限描述信息，最大长度50
-          Max length: 50
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 标签
         in: query
         maxLength: 50
         name: label
         type: string
-      - description: |-
-          HTTP请求方法，枚举值验证
-          Enum: GET,POST,PUT,DELETE,PATCH,WS
+      - description: 请求方法
         enum:
         - GET
         - POST
@@ -3720,35 +3446,16 @@ paths:
         in: query
         name: method
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
         type: integer
-      - description: |-
-          权限对应的HTTP URL，字符串长度限制
-          Max length: 150
+      - description: URL地址
         in: query
         maxLength: 150
         name: url
@@ -3800,7 +3507,7 @@ paths:
       summary: 新增权限
       tags:
       - 权限管理
-  /api/v1/customer/permission/{pk}:
+  /api/v1/customer/permission/{id}:
     delete:
       consumes:
       - application/json
@@ -3808,7 +3515,7 @@ paths:
       parameters:
       - description: 权限编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -3838,7 +3545,7 @@ paths:
       parameters:
       - description: 权限编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -3868,7 +3575,7 @@ paths:
       parameters:
       - description: 权限编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新权限请求
@@ -3927,42 +3634,30 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          角色描述，字符串长度限制
-          Max length: 254
+      - description: 描述信息
         in: query
         maxLength: 254
         name: descr
         type: string
-      - description: |-
-          角色名称，字符串长度限制
-          Max length: 50
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 名称
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -4018,7 +3713,7 @@ paths:
       summary: 新增角色
       tags:
       - 角色管理
-  /api/v1/customer/role/{pk}:
+  /api/v1/customer/role/{id}:
     delete:
       consumes:
       - application/json
@@ -4026,7 +3721,7 @@ paths:
       parameters:
       - description: 角色编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4060,7 +3755,7 @@ paths:
       parameters:
       - description: 角色编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4094,7 +3789,7 @@ paths:
       parameters:
       - description: 角色编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新角色请求
@@ -4157,6 +3852,15 @@ paths:
         in: query
         name: before_updated_at
         type: string
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
       - description: 是否激活
         in: query
         name: is_active
@@ -4165,39 +3869,20 @@ paths:
         in: query
         name: is_staff
         type: boolean
-      - description: |-
-          用户名称，字符串长度限制
-          Max length: 50
+      - description: 用户名
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
       - description: 角色ID
         in: query
         name: role_id
         type: integer
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -4253,7 +3938,7 @@ paths:
       summary: 新增用户
       tags:
       - 用户管理
-  /api/v1/customer/user/{pk}:
+  /api/v1/customer/user/{id}:
     delete:
       consumes:
       - application/json
@@ -4261,7 +3946,7 @@ paths:
       parameters:
       - description: 用户编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4295,7 +3980,7 @@ paths:
       parameters:
       - description: 用户编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4329,7 +4014,7 @@ paths:
       parameters:
       - description: 用户编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新用户请求
@@ -4362,7 +4047,7 @@ paths:
       summary: 更新用户
       tags:
       - 用户管理
-  /api/v1/customer/user/password/{pk}:
+  /api/v1/customer/user/password/{id}:
     patch:
       consumes:
       - application/json
@@ -4370,7 +4055,7 @@ paths:
       parameters:
       - description: 用户编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 重置用户密码请求
@@ -4421,42 +4106,30 @@ paths:
         in: query
         name: before_login_at
         type: string
-      - description: |-
-          IP 地址，字符串长度限制
-          Max length: 108
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: IP 地址
         in: query
         maxLength: 108
         name: ip_address
         type: string
-      - description: |-
-          用户名称，字符串长度限制
-          Max length: 50
+      - description: 用户名
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -4515,59 +4188,41 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          按脚本退出码筛选
-          required: false
+      - description: 按脚本退出码筛选
         in: query
         name: exit_code
         type: integer
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          按脚本ID筛选
-          required: false
+      - description: 按脚本ID筛选
         in: query
         name: script_id
         type: integer
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
         type: integer
-      - description: |-
-          筛选脚本执行的任务状态
-          required: false
+      - description: 筛选脚本执行的任务状态
         in: query
         name: status
         type: integer
-      - description: |-
-          筛选计划任务触发类型
-          required: false
+      - description: 筛选计划任务触发类型
         in: query
         name: trigger_type
         type: string
-      - description: |-
-          按用户名筛选
-          required: false
+      - description: 按用户名筛选
         in: query
         name: username
         type: string
@@ -4622,7 +4277,7 @@ paths:
       summary: 执行脚本
       tags:
       - 脚本执行记录
-  /api/v1/jobs/record/{pk}:
+  /api/v1/jobs/record/{id}:
     delete:
       consumes:
       - application/json
@@ -4630,7 +4285,7 @@ paths:
       parameters:
       - description: 执行记录编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4652,7 +4307,7 @@ paths:
       parameters:
       - description: 执行记录编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4679,7 +4334,7 @@ paths:
       summary: 查询脚本执行记录详情
       tags:
       - 脚本执行记录
-  /api/v1/jobs/record/{pk}/log:
+  /api/v1/jobs/record/{id}/log:
     get:
       consumes:
       - application/json
@@ -4687,7 +4342,7 @@ paths:
       parameters:
       - description: 执行记录编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4744,53 +4399,37 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          按启用状态筛选
-          required: false
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 是否启用
         in: query
         name: is_enabled
         type: boolean
-      - description: |-
-          按名称搜索
-          required: false
+      - description: 名称
         in: query
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          按脚本ID筛选
-          required: false
+      - description: 脚本ID
         in: query
         name: script_id
         type: integer
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
         type: integer
-      - description: |-
-          按用户名筛选
-          required: false
+      - description: 用户名
         in: query
         name: username
         type: string
@@ -4845,7 +4484,7 @@ paths:
       summary: 创建计划任务
       tags:
       - 计划任务管理
-  /api/v1/jobs/schedule/{pk}:
+  /api/v1/jobs/schedule/{id}:
     delete:
       consumes:
       - application/json
@@ -4853,7 +4492,7 @@ paths:
       parameters:
       - description: 计划任务编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4887,7 +4526,7 @@ paths:
       parameters:
       - description: 计划任务编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -4921,7 +4560,7 @@ paths:
       parameters:
       - description: 计划任务编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新计划任务请求
@@ -4984,64 +4623,46 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          脚本描述，字符串长度限制
-          Max length: 254
+      - description: 描述信息
         in: query
         maxLength: 254
         name: descr
+        type: string
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
         type: string
       - description: 是否是内置脚本
         in: query
         name: is_builtin
         type: boolean
-      - description: |-
-          标签，最大长度50
-          Max length: 50
+      - description: 标签
         in: query
         name: label
         type: string
-      - description: |-
-          语言，最大长度50
-          Max length: 50
+      - description: 脚本语言
         in: query
         name: language
         type: string
-      - description: |-
-          名称，最大长度50
-          Max length: 50
+      - description: 名称
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          项目，最大长度50
-          Max length: 50
+      - description: 项目
         in: query
         name: project
         type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -5131,7 +4752,7 @@ paths:
       summary: 上传脚本
       tags:
       - 脚本管理
-  /api/v1/jobs/script/{pk}:
+  /api/v1/jobs/script/{id}:
     delete:
       consumes:
       - application/json
@@ -5139,7 +4760,7 @@ paths:
       parameters:
       - description: 脚本编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5173,7 +4794,7 @@ paths:
       parameters:
       - description: 脚本编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5207,7 +4828,7 @@ paths:
       parameters:
       - description: 脚本编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 脚本文件
@@ -5266,7 +4887,7 @@ paths:
       summary: 更新脚本
       tags:
       - 脚本管理
-  /api/v1/jobs/script/{pk}/download:
+  /api/v1/jobs/script/{id}/download:
     get:
       consumes:
       - application/json
@@ -5274,7 +4895,7 @@ paths:
       parameters:
       - description: 脚本编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5570,7 +5191,7 @@ paths:
       summary: 创建mds集群
       tags:
       - mds集群管理
-  /api/v1/mds/colony/{pk}:
+  /api/v1/mds/colony/{id}:
     delete:
       consumes:
       - application/json
@@ -5578,7 +5199,7 @@ paths:
       parameters:
       - description: mds集群编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5612,7 +5233,7 @@ paths:
       parameters:
       - description: mds集群编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5646,7 +5267,7 @@ paths:
       parameters:
       - description: mds集群编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新mds集群请求
@@ -5709,56 +5330,36 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          集群号
-          required: false
-          example: "01"
+      - description: 集群号
         in: query
         name: colony_num
         type: string
-      - description: |-
-          解压后名称
-          required: false
-          example: "mds"
+      - description: 解压后名称
         in: query
         name: extracted_name
         type: string
-      - description: |-
-          mon节点ID
-          required: false
-          example: 1
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: mon节点ID
         in: query
         name: mon_node_id
         type: integer
-      - description: |-
-          程序包ID
-          required: false
-          example: 1
+      - description: 程序包ID
         in: query
         name: package_id
         type: integer
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -5813,55 +5414,36 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          主机ID
-          required: false
-          example: 1
+      - description: 主机ID
         in: query
         name: host_id
         type: integer
-      - description: |-
-          是否启用
-          required: false
-          example: true
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 是否启用
         in: query
         name: is_enable
         type: boolean
-      - description: |-
-          mds集群ID
-          required: false
-          example: 1
+      - description: mds集群ID
         in: query
         name: mds_colony_id
         type: integer
-      - description: |-
-          节点角色
-          example: "master"
+      - description: 节点角色
         in: query
         name: node_role
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -5917,7 +5499,7 @@ paths:
       summary: 创建mds节点
       tags:
       - mds节点管理
-  /api/v1/mds/node/{pk}:
+  /api/v1/mds/node/{id}:
     delete:
       consumes:
       - application/json
@@ -5925,7 +5507,7 @@ paths:
       parameters:
       - description: mds节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5959,7 +5541,7 @@ paths:
       parameters:
       - description: mds节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -5993,7 +5575,7 @@ paths:
       parameters:
       - description: mds节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新mds节点请求
@@ -6056,40 +5638,28 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          按主机ID筛选
-          required: false
+      - description: 主机ID
         in: query
         name: host_id
         type: integer
-      - description: |-
-          按名称搜索
-          required: false
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 名称
         in: query
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -6145,7 +5715,7 @@ paths:
       summary: 创建mon节点
       tags:
       - mon节点管理
-  /api/v1/mon/node/{pk}:
+  /api/v1/mon/node/{id}:
     delete:
       consumes:
       - application/json
@@ -6153,7 +5723,7 @@ paths:
       parameters:
       - description: mon节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -6187,7 +5757,7 @@ paths:
       parameters:
       - description: mon节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -6221,7 +5791,7 @@ paths:
       parameters:
       - description: mon节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新mon节点请求
@@ -6439,71 +6009,45 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          集群号
-          required: false
-          example: "01"
+      - description: 集群号
         in: query
         name: colony_num
         type: string
-      - description: |-
-          解压后名称
-          required: false
-          example: "oes"
+      - description: 解压后名称
         in: query
         name: extracted_name
         type: string
-      - description: |-
-          mon节点ID
-          required: false
-          example: 1
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: mon节点ID
         in: query
         name: mon_node_id
         type: integer
-      - description: |-
-          程序包ID
-          required: false
-          example: 1
+      - description: 程序包ID
         in: query
         name: package_id
         type: integer
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
         type: integer
-      - description: |-
-          系统类型
-          required: true
-          example: "stk"
+      - description: 系统类型
         in: query
         name: system_type
         type: string
-      - description: |-
-          xcounter包ID
-          required: false
-          example: 1
+      - description: xcounter包ID
         in: query
         name: xcounter_id
         type: integer
@@ -6558,7 +6102,7 @@ paths:
       summary: 创建oes集群
       tags:
       - oes集群管理
-  /api/v1/oes/colony/{pk}:
+  /api/v1/oes/colony/{id}:
     delete:
       consumes:
       - application/json
@@ -6566,7 +6110,7 @@ paths:
       parameters:
       - description: oes集群编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -6600,7 +6144,7 @@ paths:
       parameters:
       - description: oes集群编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -6634,7 +6178,7 @@ paths:
       parameters:
       - description: oes集群编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新oes集群请求
@@ -6851,6 +6395,15 @@ paths:
         in: query
         name: host_id
         type: integer
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
       - description: |-
           是否启用
           required: false
@@ -6871,28 +6424,11 @@ paths:
         in: query
         name: oes_colony_id
         type: integer
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
@@ -6948,7 +6484,7 @@ paths:
       summary: 创建oes节点
       tags:
       - oes节点管理
-  /api/v1/oes/node/{pk}:
+  /api/v1/oes/node/{id}:
     delete:
       consumes:
       - application/json
@@ -6956,7 +6492,7 @@ paths:
       parameters:
       - description: oes节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -6990,7 +6526,7 @@ paths:
       parameters:
       - description: oes节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -7024,7 +6560,7 @@ paths:
       parameters:
       - description: oes节点编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新oes节点请求
@@ -7087,81 +6623,54 @@ paths:
         in: query
         name: before_updated_at
         type: string
-      - description: |-
-          标签，最大长度50
-          Required: true
-          Max length: 50
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 标签
         in: query
         maxLength: 50
         name: label
         type: string
-      - description: |-
-          名称，最大长度50
-          Required: true
-          Max length: 50
+      - description: 名称
         in: query
         maxLength: 50
         name: name
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          python路径，最大长度254
-          Required: true
-          Max length: 254
+      - description: python路径
         in: query
         maxLength: 254
         name: py_path
         type: string
-      - description: |-
-          备注，最大长度254
-          Max length: 254
+      - description: 备注
         in: query
         maxLength: 254
         name: remark
         type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
         type: integer
-      - description: |-
-          ip地址，最大长度108
-          Required: true
-          Max length: 108
+      - description: ip地址
         in: query
         maxLength: 108
         name: ssh_ip
         type: string
-      - description: |-
-          端口，必填
-          Required: true
+      - description: 端口
         in: query
         name: ssh_port
         type: integer
-      - description: |-
-          用户名，最大长度50
-          Required: true
-          Max length: 50
+      - description: 用户名
         in: query
         maxLength: 50
         name: ssh_user
@@ -7219,7 +6728,7 @@ paths:
       summary: 创建主机
       tags:
       - 主机管理
-  /api/v1/resource/host/{pk}:
+  /api/v1/resource/host/{id}:
     delete:
       consumes:
       - application/json
@@ -7227,7 +6736,7 @@ paths:
       parameters:
       - description: 主机编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -7261,7 +6770,7 @@ paths:
       parameters:
       - description: 主机编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -7297,7 +6806,7 @@ paths:
       parameters:
       - description: 主机编号
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       - description: 更新主机请求
@@ -7346,56 +6855,40 @@ paths:
         in: query
         name: before_uploaded_at
         type: string
-      - description: |-
-          名称，最大长度50
-          Max length: 50
+      - description: 文件名
         in: query
         maxLength: 50
         name: filename
         type: string
-      - description: |-
-          标签，最大长度50
-          Max length: 50
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 标签
         in: query
         maxLength: 50
         name: label
         type: string
-      - description: |-
-          标签，最大长度50,多个标签用逗号分隔
-          Max length: 50
+      - description: 标签组(多个用,隔开)
         in: query
         maxLength: 50
         name: labels
         type: string
-      - description: |-
-          页码必须大于0
-          Minimum: 1
+      - description: 分页页码
         in: query
         name: page
         type: integer
-      - description: |-
-          权限主键，可选参数，如果提供则必须大于0
-          Minimum: 1
-        in: query
-        name: pk
-        type: integer
-      - description: |-
-          "权限主键列表，可选参数，多个用,隔开，如1,2,3"
-          Max length: 100
-        in: query
-        maxLength: 100
-        name: pks
-        type: string
-      - description: |-
-          每页大小必须大于等于0
-          Minimum: 0
+      - description: 分页大小
         in: query
         minimum: 0
         name: size
         type: integer
-      - description: |-
-          版本号，最大长度50
-          Max length: 50
+      - description: 版本号
         in: query
         name: version
         type: string
@@ -7459,14 +6952,14 @@ paths:
       summary: 上传程序包
       tags:
       - 程序包管理
-  /api/v1/resource/package/{pk}:
+  /api/v1/resource/package/{id}:
     delete:
       description: 本接口用于删除指定ID的程序包
       parameters:
       - description: 程序包唯一标识符
         format: int32
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -7495,7 +6988,7 @@ paths:
       - description: 程序包唯一标识符
         format: int32
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
@@ -7518,14 +7011,14 @@ paths:
       summary: 查询程序包详情
       tags:
       - 程序包管理
-  /api/v1/resource/package/{pk}/download:
+  /api/v1/resource/package/{id}/download:
     get:
       description: 本接口用于下载指定ID的程序包文件
       parameters:
       - description: 程序包唯一标识符
         format: int32
         in: path
-        name: pk
+        name: id
         required: true
         type: integer
       produces:
