@@ -361,16 +361,16 @@ func MdsNodeToDetailOut(
 
 func ListMdsNodeToDetailOut(
 	rms *[]biz.MdsNodeModel,
-) *[]pbNode.MdsNodeStandardOut {
+) *[]pbNode.MdsNodeDetailOut {
 	if rms == nil {
-		return &[]pbNode.MdsNodeStandardOut{}
+		return &[]pbNode.MdsNodeDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbNode.MdsNodeStandardOut, 0, len(ms))
+	mso := make([]pbNode.MdsNodeDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := MdsNodeToStandardOut(m)
+			mo := MdsNodeToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

@@ -361,16 +361,16 @@ func OesNodeToDetailOut(
 
 func ListOesNodeToDetailOut(
 	rms *[]biz.OesNodeModel,
-) *[]pbNode.OesNodeStandardOut {
+) *[]pbNode.OesNodeDetailOut {
 	if rms == nil {
-		return &[]pbNode.OesNodeStandardOut{}
+		return &[]pbNode.OesNodeDetailOut{}
 	}
 
 	ms := *rms
-	mso := make([]pbNode.OesNodeStandardOut, 0, len(ms))
+	mso := make([]pbNode.OesNodeDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := OesNodeToStandardOut(m)
+			mo := OesNodeToDetailOut(m)
 			mso = append(mso, *mo)
 		}
 	}

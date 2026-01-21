@@ -41,4 +41,4 @@ type MdsNodeDetailOut struct {
 type MdsNodeReply = common.APIReply[MdsNodeDetailOut]
 
 // PagMdsNodeReply mds节点配置的分页响应结构
-type PagMdsNodeReply = common.APIReply[*common.Pag[MdsNodeStandardOut]]
+type PagMdsNodeReply = common.APIReply[*common.Pag[MdsNodeDetailOut]]

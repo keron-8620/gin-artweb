@@ -33,4 +33,4 @@ type OesNodeDetailOut struct {
 type OesNodeReply = common.APIReply[OesNodeDetailOut]
 
 // PagMonNodeReply 程序包的分页响应结构
-type PagOesNodeReply = common.APIReply[*common.Pag[OesNodeStandardOut]]
+type PagOesNodeReply = common.APIReply[*common.Pag[OesNodeDetailOut]]

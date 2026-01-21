@@ -99,6 +99,10 @@ func NewScheduleUsecase(
 }
 
 func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors.Error {
+	if err := ctxutil.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
 	uc.mutex.Lock()
 	defer uc.mutex.Unlock()
 
@@ -158,7 +162,11 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 	return nil
 }
 
-func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) {
+func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) *errors.Error {
+	if err := ctxutil.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+
 	uc.mutex.Lock()
 	defer uc.mutex.Unlock()
 
@@ -184,6 +192,7 @@ func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) {
 			zap.String(common.TraceIDKey, common.GetTraceID(ctx)),
 		)
 	}
+	return nil
 }
 
 func (uc *ScheduleUsecase) CreateSchedule(
@@ -268,13 +277,15 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 		return nil, rErr
 	}
 
-	uc.removeJob(ctx, scheduleID)
+	if err := uc.removeJob(ctx, scheduleID); err != nil {
+		return nil, err
+	}
 	if m.IsEnabled {
 		if err := uc.addJob(ctx, m); err != nil {
 			return nil, err
 		}
 	}
-	
+
 	uc.log.Info(
 		"更新计划任务成功",
 		zap.Uint32(ScheduleIDKey, scheduleID),
@@ -307,7 +318,9 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 		return database.NewGormError(err, map[string]any{"id": scheduleID})
 	}
 
-	uc.removeJob(ctx, scheduleID)
+	if err := uc.removeJob(ctx, scheduleID); err != nil {
+		return err
+	}
 
 	uc.log.Info(
 		"计划任务删除成功",
@@ -384,16 +397,31 @@ func (uc *ScheduleUsecase) ListSchedule(
 	return count, ms, nil
 }
 
-func (uc *ScheduleUsecase) ReloadScheduleJob(
-	ctx context.Context,
-	scheduleID uint32,
-) *errors.Error {
-	schedule, rErr := uc.FindScheduleByID(ctx, []string{""}, scheduleID)
+func (uc *ScheduleUsecase) ReloadScheduleJobs(ctx context.Context, query map[string]any) *errors.Error {
+	if err := ctxutil.CheckContext(ctx); err != nil {
+		return errors.FromError(err)
+	}
+	qp := database.QueryParams{
+		Query:   query,
+		IsCount: false,
+	}
+	_, ms, rErr := uc.ListSchedule(ctx, qp)
 	if rErr != nil {
 		return rErr
 	}
-	uc.removeJob(ctx, scheduleID)
-	return uc.addJob(ctx, schedule)
+	if ms != nil {
+		for _, m := range *ms {
+			if err := uc.removeJob(ctx, m.ID); err != nil {
+				return err
+			}
+			if m.IsEnabled {
+				if err := uc.addJob(ctx, &m); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (uc *ScheduleUsecase) ListScheduleJob(

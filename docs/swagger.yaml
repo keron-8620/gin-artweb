@@ -616,12 +616,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-node_MdsNodeStandardOut:
+  common.Pag-node_MdsNodeDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/node.MdsNodeStandardOut'
+          $ref: '#/definitions/node.MdsNodeDetailOut'
         type: array
       page:
         description: |-
@@ -680,12 +680,12 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-node_OesNodeStandardOut:
+  common.Pag-node_OesNodeDetailOut:
     properties:
       items:
         description: 对象数组
         items:
-          $ref: '#/definitions/node.OesNodeStandardOut'
+          $ref: '#/definitions/node.OesNodeDetailOut'
         type: array
       page:
         description: |-
@@ -1558,28 +1558,6 @@ definitions:
           Example: "success"
         type: string
     type: object
-  node.MdsNodeStandardOut:
-    properties:
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      id:
-        description: ID
-        example: 1
-        type: integer
-      is_enable:
-        description: 是否启用
-        type: boolean
-      node_role:
-        description: 节点角色
-        example: master
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
-        type: string
-    type: object
   node.MonNodeBaseOut:
     properties:
       deploy_path:
@@ -1710,28 +1688,6 @@ definitions:
           Example: "success"
         type: string
     type: object
-  node.OesNodeStandardOut:
-    properties:
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      id:
-        description: ID
-        example: 1
-        type: integer
-      is_enable:
-        description: 是否启用
-        type: boolean
-      node_role:
-        description: 节点角色
-        example: master
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
-        type: string
-    type: object
   node.PagMdsNodeReply:
     properties:
       code:
@@ -1741,7 +1697,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-node_MdsNodeStandardOut'
+        - $ref: '#/definitions/common.Pag-node_MdsNodeDetailOut'
         description: |-
           数据
           可以是任意类型的数据
@@ -1779,7 +1735,7 @@ definitions:
         type: integer
       data:
         allOf:
-        - $ref: '#/definitions/common.Pag-node_OesNodeStandardOut'
+        - $ref: '#/definitions/common.Pag-node_OesNodeDetailOut'
         description: |-
           数据
           可以是任意类型的数据

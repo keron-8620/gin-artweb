@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
 	"gin-artweb/internal/jobs/biz"
@@ -23,6 +25,9 @@ func NewServer(
 	scriptUsecase := biz.NewScriptUsecase(loggers.Biz, scriptRepo)
 	recordUsecase := biz.NewScriptRecordUsecase(loggers.Biz, scriptRepo, recordRepo)
 	scheduleUsecase := biz.NewScheduleUsecase(loggers.Biz, scriptRepo, scheduleRepo, recordUsecase, init.Crontab)
+
+	// 加载计划任务
+	scheduleUsecase.ReloadScheduleJobs(context.Background(), nil)
 
 	scriptService := service.NewScriptService(loggers.Service, scriptUsecase, int64(init.Conf.Security.Upload.MaxScriptSize)*1024*1024)
 	recordService := service.NewScriptRecordService(loggers.Service, recordUsecase)

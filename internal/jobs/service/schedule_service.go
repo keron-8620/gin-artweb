@@ -338,12 +338,23 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 	})
 }
 
+func (s *ScheduleService) ListScheduleJobs(ctx *gin.Context) {
+
+}
+
+func (s *ScheduleService) ReoloadScheduleJobs(ctx *gin.Context) {
+
+}
+
+
 func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/schedule", s.CreateSchedule)
 	r.PUT("/schedule/:id", s.UpdateSchedule)
 	r.DELETE("/schedule/:id", s.DeleteSchedule)
 	r.GET("/schedule/:id", s.GetSchedule)
 	r.GET("/schedule", s.ListSchedule)
+	r.GET("/schedulejob", s.ListScheduleJobs)
+	r.POST("/schedule/reload", s.ReoloadScheduleJobs)
 }
 
 func ScheduleToStandardOut(

@@ -7119,14 +7119,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-node_MdsNodeStandardOut": {
+        "common.Pag-node_MdsNodeDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/node.MdsNodeStandardOut"
+                        "$ref": "#/definitions/node.MdsNodeDetailOut"
                     }
                 },
                 "page": {
@@ -7183,14 +7183,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-node_OesNodeStandardOut": {
+        "common.Pag-node_OesNodeDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/node.OesNodeStandardOut"
+                        "$ref": "#/definitions/node.OesNodeDetailOut"
                     }
                 },
                 "page": {
@@ -8223,35 +8223,6 @@ const docTemplate = `{
                 }
             }
         },
-        "node.MdsNodeStandardOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_enable": {
-                    "description": "是否启用",
-                    "type": "boolean"
-                },
-                "node_role": {
-                    "description": "节点角色",
-                    "type": "string",
-                    "example": "master"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
         "node.MonNodeBaseOut": {
             "type": "object",
             "properties": {
@@ -8417,35 +8388,6 @@ const docTemplate = `{
                 }
             }
         },
-        "node.OesNodeStandardOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_enable": {
-                    "description": "是否启用",
-                    "type": "boolean"
-                },
-                "node_role": {
-                    "description": "节点角色",
-                    "type": "string",
-                    "example": "master"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
         "node.PagMdsNodeReply": {
             "type": "object",
             "properties": {
@@ -8457,7 +8399,7 @@ const docTemplate = `{
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.Pag-node_MdsNodeStandardOut"
+                            "$ref": "#/definitions/common.Pag-node_MdsNodeDetailOut"
                         }
                     ]
                 },
@@ -8499,7 +8441,7 @@ const docTemplate = `{
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.Pag-node_OesNodeStandardOut"
+                            "$ref": "#/definitions/common.Pag-node_OesNodeDetailOut"
                         }
                     ]
                 },
