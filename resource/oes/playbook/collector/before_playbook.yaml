@@ -19,13 +19,6 @@
     msg: "{{ cron_job_name }} is running, please wait for it to finish"
   when: flag_running.stat.exists
 
-- name: touch running flag
-  file:
-    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
-    state: touch
-  delegate_to: 127.0.0.1
-  run_once: yes
-
 - name: rm success or failed flag
   file:
     path: "{{ local_path_oes_home_flag_colodir }}/{{ item }}"
@@ -36,6 +29,11 @@
     - "{{ flag_timeout }}"
     - "{{ flag_cancel }}"
     - "{{ flag_crash }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
+- name: touch running flag
+  shell: "echo {{ ANSIBLE_RECORD_ID }} > {{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
   delegate_to: 127.0.0.1
   run_once: true
 

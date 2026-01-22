@@ -25,7 +25,7 @@ import (
 
 const (
 	ScriptRecordTableName = "jobs_script_record"
-	ScriptRecordIDKey = "script_record_id"
+	ScriptRecordIDKey     = "script_record_id"
 )
 
 type ScriptRecordModel struct {
@@ -69,13 +69,16 @@ func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *ScriptRecordModel) InitEnv() []string {
 	env := os.Environ()
-	env = append(env, fmt.Sprintf("JOB_LOG_PATH=%s", m.LogPath()))
-	env = append(env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir))
+	env = append(env, fmt.Sprintf("JOBS_RECORD_ID=%d", m.ID))
+	env = append(env, fmt.Sprintf("JOBS_LOG_PATH=%s", m.LogPath()))
+	env = append(env, fmt.Sprintf("JOBS_BASE_DIR=%s", config.BaseDir))
 	if m.EnvVars != "" {
 		var envMap map[string]string
 		if err := json.Unmarshal([]byte(m.EnvVars), &envMap); err == nil {
 			for k, v := range envMap {
-				env = append(env, fmt.Sprintf("%s=%s", k, v))
+				if k != "" {
+					env = append(env, fmt.Sprintf("%s=%s", k, v))
+				}
 			}
 		}
 	}

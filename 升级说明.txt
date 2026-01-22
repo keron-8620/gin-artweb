@@ -21,6 +21,3 @@
 删除
 1. 删除了artweb对nginx,uwsgi，supervisor的依赖
 2. 删除了单点登录的限制
-
-待完成
-1. 完善单元测试

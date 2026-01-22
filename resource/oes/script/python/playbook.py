@@ -9,11 +9,15 @@ import argparse
 import yaml
 import ansible_runner
 
-ANSIBLE_LOG_PATH = os.getenv("JOB_LOG_PATH")
+ANSIBLE_RECORD_ID = os.getenv("JOBS_RECORD_ID")
+if not ANSIBLE_RECORD_ID:
+    ANSIBLE_RECORD_ID = 0
+
+ANSIBLE_LOG_PATH = os.getenv("JOBS_LOG_PATH")
 if not ANSIBLE_LOG_PATH:
     raise AssertionError("环境变量没有设置JOB_LOG_PATH")
 
-ANSIBLE_BASE_DIR = os.getenv("JOB_BASE_DIR")
+ANSIBLE_BASE_DIR = os.getenv("JOBS_BASE_DIR")
 if not ANSIBLE_BASE_DIR:
     raise AssertionError("环境变量没有设置JOB_BASE_DIR")
 
@@ -170,7 +174,11 @@ def main(options):
     vars = init_vars(config_path, options.extravars)
     vars["colony_num"] = colony_num
     hosts = init_hosts(colony_num, config_path)
-    envvars = {"ANSIBLE_LOG_PATH": ANSIBLE_LOG_PATH} if options.enable_ansible_log else {"ANSIBLE_NOCOLOR": "1"}
+    envvars = {"ANSIBLE_RECORD_ID": ANSIBLE_RECORD_ID}
+    if options.enable_ansible_log:
+        envvars["ANSIBLE_LOG_PATH"] = ANSIBLE_LOG_PATH
+    if options.enable_ansible_color:
+        envvars["ANSIBLE_NOCOLOR"] = "1"
     return ansible_runner.run(
         inventory={"all": {"hosts": hosts, "vars": vars}},
         playbook=str(playbook_path),
@@ -211,6 +219,12 @@ if __name__ == "__main__":
         type=bool,
         default=False,
         help="是否启用ansible日志",
+    )
+    parser.add_argument(
+        "--enable_ansible_color", 
+        type=bool,
+        default=False,
+        help="是否启用ansible颜色输出",
     )
     options = parser.parse_args()
     result = main(options)

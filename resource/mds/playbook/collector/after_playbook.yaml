@@ -15,13 +15,13 @@
 
 ######################## 本地标志文件模块 ##################
 - name: touch local success flag
-  shell: "echo 'success' > {{ local_path_mds_home_flag_colodir }}/{{ flag_success }}"
+  shell: "echo {{ ANSIBLE_RECORD_ID }} > {{ local_path_mds_home_flag_colodir }}/{{ flag_success }}"
   when: check_result is success
   delegate_to: 127.0.0.1
   run_once: true
 
 - name: touch local failed flag
-  shell: "echo 'fail' > {{ local_path_mds_home_flag_colodir }}/{{ flag_failed }}"
+  shell: "echo {{ ANSIBLE_RECORD_ID }} > {{ local_path_mds_home_flag_colodir }}/{{ flag_failed }}"
   when: check_result is failed
   delegate_to: 127.0.0.1
   run_once: true
