@@ -11,10 +11,10 @@ type MdsColonyBaseOut struct {
 	ID uint32 `json:"id" example:"1"`
 
 	// 集群号
-	ColonyNum string `json:"colony_num" example:"test"`
+	ColonyNum string `json:"colony_num" example:"01"`
 
 	// 解压后名称
-	ExtractedName string `json:"extracted_name" example:""`
+	ExtractedName string `json:"extracted_name" example:"mds"`
 }
 
 type MdsColonyStandardOut struct {
@@ -44,12 +44,13 @@ type MdsColonyReply = common.APIReply[MdsColonyDetailOut]
 type PagMdsColonyReply = common.APIReply[*common.Pag[MdsColonyDetailOut]]
 
 // mds 任务状态
-type MdsTaskStatus struct {
-	Mon  string `json:"mon"`
-	Bse  string `json:"bse"`
-	Sse  string `json:"sse"`
-	Szse string `json:"szse"`
+type MdsColonyTaskInfo struct {
+	// 集群号
+	ColonyNum string `json:"colony_num" example:"01"`
+
+	// 任务状态
+	Tasks []common.TaskInfo `json:"tasks"`
 }
 
-// ListMdsTaskStatusReply 多个mds集群的任务状态响应结构
-type ListMdsTaskStatusReply = common.APIReply[map[string]MdsTaskStatus]
+// ListMdsTasksInfoReply 多个mds集群的任务状态响应结构
+type ListMdsTasksInfoReply = common.APIReply[[]MdsColonyTaskInfo]

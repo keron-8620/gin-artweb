@@ -19,15 +19,18 @@ import (
 type MdsColonyService struct {
 	log      *zap.Logger
 	ucColony *biz.MdsColonyUsecase
+	ucTask   *biz.MdsTaskInfoUsecase
 }
 
 func NewMdsColonyService(
 	logger *zap.Logger,
 	ucColony *biz.MdsColonyUsecase,
+	ucTask *biz.MdsTaskInfoUsecase,
 ) *MdsColonyService {
 	return &MdsColonyService{
 		log:      logger,
 		ucColony: ucColony,
+		ucTask:   ucTask,
 	}
 }
 
@@ -343,7 +346,7 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request query pbColony.ListMdsColonyRequest false "查询参数"
-// @Success 200 {object} pbColony.ListMdsTaskStatusReply "成功返回mds集群列表的任务状态"
+// @Success 200 {object} pbColony.ListMdsTasksInfoReply "成功返回mds集群列表的任务状态"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/status [get]
@@ -395,25 +398,26 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 		ctx.JSON(biz.ErrMdsColonyListEmpty.Code, biz.ErrMdsColonyListEmpty.ToMap())
 		return
 	}
-
-	data := make(map[string]pbColony.MdsTaskStatus, len(*ms))
-	for _, m := range *ms {
-		taskStatus, rErr := s.ucColony.GetMdsTaskStatus(ctx, m.ColonyNum)
-		if rErr != nil {
+	mdsModels := *ms
+	tasks := make([]pbColony.MdsColonyTaskInfo, len(mdsModels))
+	for i, m := range mdsModels {
+		taskInfo, err := s.ucTask.GetColonyTaskInfo(ctx, m.ColonyNum)
+		if err != nil {
 			s.log.Error(
 				"查询mds集群任务状态失败",
-				zap.Error(rErr),
-				zap.Uint32(pbComm.RequestIDKey, m.ID),
-				zap.String("colony_num", m.ColonyNum),
+				zap.Error(err),
+				zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			)
+			ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+			return
 		}
-		data[m.ColonyNum] = *taskStatus
+		tasks[i] = *taskInfo
 	}
 
-	ctx.JSON(http.StatusOK, &pbColony.ListMdsTaskStatusReply{
+	ctx.JSON(http.StatusOK, &pbColony.ListMdsTasksInfoReply{
 		Code: http.StatusOK,
-		Data: data,
+		Data: tasks,
 	})
 }
 

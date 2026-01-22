@@ -176,14 +176,13 @@ func (s *MdsConfService) DeleteMdsConf(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param colony_num path string true "集群编号"
-// @Param dir_name path string true "目录名称"
 // @Success 200 {object} pbConf.PagMdsConfReply "成功返回配置文件列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/{colony_num}/conf/{dir_name} [get]
+// @Router /api/v1/mds/{colony_num}/conf [get]
 // @Security ApiKeyAuth
 func (s *MdsConfService) ListMdsConf(ctx *gin.Context) {
-	var req pbConf.GetMdsConfRequest
+	var req pbConf.ListMdsConfRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		s.log.Error(
 			"绑定mds配置文件路径参数失败",
@@ -197,11 +196,12 @@ func (s *MdsConfService) ListMdsConf(ctx *gin.Context) {
 	}
 
 	dirName := s.ucColony.GetMdsColonyConfigDir(req.ColonyNum)
-	info, err := fileutil.ListFileInfo(filepath.Join(dirName, req.DirName))
+	info, err := fileutil.ListFileInfo(dirName)
 	if err != nil {
 		s.log.Error(
 			"获取mds配置文件列表失败",
 			zap.Error(err),
+			zap.String("dirname", dirName),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
@@ -218,5 +218,5 @@ func (s *MdsConfService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/:colony_num/conf/:dir_name", s.UploadMdsConf)
 	r.GET("/:colony_num/conf/:dir_name/:filename", s.DownloadMdsConf)
 	r.DELETE("/:colony_num/conf/:dir_name/:filename", s.DeleteMdsConf)
-	r.GET("/:colony_num/conf/:dir_name", s.ListMdsConf)
+	r.GET("/:colony_num/conf", s.ListMdsConf)
 }

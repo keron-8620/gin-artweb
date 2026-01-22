@@ -31,4 +31,16 @@ var (
 		"mds集群列表为空",
 		nil,
 	)
+	ErrMdsColonyHasTooManyFlags = errors.New(
+		http.StatusBadRequest,
+		"mds_colony_has_too_many_flags",
+		"mds集群任务存在多个标识文件",
+		nil,
+	)
+	ErrMdsColonyInvalidFlag = errors.New(
+		http.StatusBadRequest,
+		"mds_colony_invalid_flag",
+		"mds集群的标识文件非法",
+		nil,
+	)
 )

@@ -11,13 +11,13 @@ type OesColonyBaseOut struct {
 	ID uint32 `json:"id" example:"1"`
 
 	// 系统类型
-	SystemType string `json:"system_type" example:"stk"`
+	SystemType string `json:"system_type" example:"STK"`
 
 	// 集群号
-	ColonyNum string `json:"colony_num" example:"test"`
+	ColonyNum string `json:"colony_num" example:"01"`
 
 	// 解压后名称
-	ExtractedName string `json:"extracted_name" example:""`
+	ExtractedName string `json:"extracted_name" example:"oes"`
 }
 
 type OesColonyStandardOut struct {
@@ -49,43 +49,14 @@ type OesColonyReply = common.APIReply[OesColonyDetailOut]
 // PagOesColonyReply 程序包的分页响应结构
 type PagOesColonyReply = common.APIReply[*common.Pag[OesColonyDetailOut]]
 
-// 现货的任务状态
-type StkTaskStatus struct {
-	Mon               string `json:"mon"`
-	CounterFetch      string `json:"counter_fetch"`
-	CounterDistribute string `json:"counter_distribute"`
-	Bse               string `json:"bse"`
-	Sse               string `json:"sse"`
-	Szse              string `json:"szse"`
-	Csdc              string `json:"csdc"`
+// oes 任务状态
+type OesColonyTaskInfo struct {
+	// 集群号
+	ColonyNum string `json:"colony_num" example:"01"`
+
+	// 任务状态
+	Tasks []common.TaskInfo `json:"tasks"`
 }
 
-// ListStkTaskStatusReply 多个oes现货集群的任务状态响应结构
-type ListStkTaskStatusReply = common.APIReply[map[string]StkTaskStatus]
-
-// 两融的任务状态
-type CrdTaskStatus struct {
-	Mon               string `json:"mon"`
-	CounterFetch      string `json:"counter_fetch"`
-	CounterDistribute string `json:"counter_distribute"`
-	Sse               string `json:"sse"`
-	Szse              string `json:"szse"`
-	SseLate           string `json:"sse_late"`
-	SzseLate          string `json:"szse_late"`
-	Csdc              string `json:"csdc"`
-}
-
-// ListCrdTaskStatusReply 多个oes两融集群的任务状态响应结构
-type ListCrdTaskStatusReply = common.APIReply[map[string]CrdTaskStatus]
-
-// 期权任务状态
-type OptTaskStatus struct {
-	Mon               string `json:"mon"`
-	CounterFetch      string `json:"counter_fetch"`
-	CounterDistribute string `json:"counter_distribute"`
-	Sse               string `json:"sse"`
-	Szse              string `json:"szse"`
-}
-
-// ListOptTaskStatusReply 多个oes期权集群的任务状态响应结构
-type ListOptTaskStatusReply = common.APIReply[map[string]OptTaskStatus]
+// ListOesTasksInfoReply 多个oes集群的任务状态响应结构
+type ListOesTasksInfoReply = common.APIReply[[]OesColonyTaskInfo]

@@ -21,8 +21,9 @@ func NewServer(
 
 	colonyUsecase := biz.NewOesColonyUsecase(loggers.Biz, colonyRepo)
 	nodeUsecase := biz.NewOesNodeUsecase(loggers.Biz, nodeRepo)
+	taskUsecase := biz.NewOesTaskInfoUsecase(loggers.Biz)
 
-	colonyService := service.NewOesColonyService(loggers.Service, colonyUsecase)
+	colonyService := service.NewOesColonyService(loggers.Service, colonyUsecase, taskUsecase)
 	nodeService := service.NewOesNodeService(loggers.Service, nodeUsecase)
 	confService := service.NewOesConfService(loggers.Service, colonyUsecase, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
 

@@ -25,3 +25,8 @@ type GetOesConfRequest struct {
 	// 文件夹名称
 	DirName string `uri:"dir_name" binding:"required,oneof=all host_01 host_02 host_03"`
 }
+
+type ListOesConfRequest struct {
+	// 集群号
+	ColonyNum string `uri:"colony_num" binding:"required,max=2"`
+}

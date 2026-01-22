@@ -31,4 +31,22 @@ var (
 		"oes集群列表为空",
 		nil,
 	)
+	ErrOesColonySystemTypeInvalid = errors.New(
+		http.StatusBadRequest,
+		"oes_colony_system_type_invalid",
+		"oes集群系统类型非法",
+		nil,
+	)
+	ErrOesColonyHasTooManyFlags = errors.New(
+		http.StatusBadRequest,
+		"oes_colony_has_too_many_flags",
+		"oes集群任务存在多个标识文件",
+		nil,
+	)
+	ErrOesColonyInvalidFlag = errors.New(
+		http.StatusBadRequest,
+		"oes_colony_invalid_flag",
+		"oes集群的标识文件非法",
+		nil,
+	)
 )

@@ -21,8 +21,9 @@ func NewServer(
 
 	colonyUsecase := biz.NewMdsColonyUsecase(loggers.Biz, colonyRepo)
 	nodeUsecase := biz.NewMdsNodeUsecase(loggers.Biz, nodeRepo)
+	taskUsecase := biz.NewMdsTaskInfoUsecase(loggers.Biz)
 
-	colonyService := service.NewMdsColonyService(loggers.Service, colonyUsecase)
+	colonyService := service.NewMdsColonyService(loggers.Service, colonyUsecase, taskUsecase)
 	nodeService := service.NewMdsNodeService(loggers.Service, nodeUsecase)
 	confService := service.NewMdsConfService(loggers.Service, colonyUsecase, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
 

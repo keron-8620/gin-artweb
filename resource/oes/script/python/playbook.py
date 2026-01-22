@@ -9,19 +9,19 @@ import argparse
 import yaml
 import ansible_runner
 
-ANSIBLE_RECORD_ID = os.getenv("JOBS_RECORD_ID")
-if not ANSIBLE_RECORD_ID:
-    ANSIBLE_RECORD_ID = 0
+JOBS_RECORD_ID = os.getenv("JOBS_RECORD_ID")
+if not JOBS_RECORD_ID:
+    JOBS_RECORD_ID = 0
 
-ANSIBLE_LOG_PATH = os.getenv("JOBS_LOG_PATH")
-if not ANSIBLE_LOG_PATH:
+JOBS_LOG_PATH = os.getenv("JOBS_LOG_PATH")
+if not JOBS_LOG_PATH:
     raise AssertionError("环境变量没有设置JOB_LOG_PATH")
 
-ANSIBLE_BASE_DIR = os.getenv("JOBS_BASE_DIR")
-if not ANSIBLE_BASE_DIR:
+JOBS_BASE_DIR = os.getenv("JOBS_BASE_DIR")
+if not JOBS_BASE_DIR:
     raise AssertionError("环境变量没有设置JOB_BASE_DIR")
 
-BASE_DIR = Path(ANSIBLE_BASE_DIR)
+BASE_DIR = Path(JOBS_BASE_DIR)
 STORAGE_DIR = BASE_DIR.joinpath("storage")
 HOST_CONF_DIR = STORAGE_DIR.joinpath("host_vars")
 MON_DIR = STORAGE_DIR.joinpath("mon")
@@ -133,6 +133,10 @@ def init_vars(config_path: Path, extravars: str = ""):
         vars["next_trd_date"] = next_trd_date(trd_dates, curr_date_int, curr_year)
     if "pre_trd_date" not in vars:
         vars["pre_trd_date"] = pre_trd_date(trd_dates, curr_date_int, curr_year)
+    trd_year = trd_dates.get(f"trd_date_{curr_year}_list", [])
+    vars["is_trading_day"] = True if vars["curr_date"] in trd_year else False
+    vars["JOBS_RECORD_ID"] = JOBS_RECORD_ID
+    vars["JOBS_LOG_PATH"] = JOBS_LOG_PATH
     vars["local_path_script_home"] = str(SCRIPT_DIR)
     vars["local_path_playbook_home"] = str(PLAYBOOK_DIR)
     vars["local_path_oes_home"] = str(OES_DIR)
@@ -174,10 +178,10 @@ def main(options):
     vars = init_vars(config_path, options.extravars)
     vars["colony_num"] = colony_num
     hosts = init_hosts(colony_num, config_path)
-    envvars = {"ANSIBLE_RECORD_ID": ANSIBLE_RECORD_ID}
+    envvars = {}
     if options.enable_ansible_log:
-        envvars["ANSIBLE_LOG_PATH"] = ANSIBLE_LOG_PATH
-    if options.enable_ansible_color:
+        envvars["ANSIBLE_LOG_PATH"] = JOBS_LOG_PATH
+    if not options.enable_ansible_color:
         envvars["ANSIBLE_NOCOLOR"] = "1"
     return ansible_runner.run(
         inventory={"all": {"hosts": hosts, "vars": vars}},

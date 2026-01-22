@@ -249,23 +249,55 @@ definitions:
     - system_type
     - xcounter_id
     type: object
-  colony.ListCrdTaskStatusReply:
+  colony.ListMdsTasksInfoReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        description: |-
+          数据
+          可以是任意类型的数据
+        items:
+          $ref: '#/definitions/colony.MdsColonyTaskInfo'
+        type: array
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
-  colony.ListMdsTaskStatusReply:
-    type: object
-  colony.ListOptTaskStatusReply:
-    type: object
-  colony.ListStkTaskStatusReply:
+  colony.ListOesTasksInfoReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        description: |-
+          数据
+          可以是任意类型的数据
+        items:
+          $ref: '#/definitions/colony.OesColonyTaskInfo'
+        type: array
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
   colony.MdsColonyBaseOut:
     properties:
       colony_num:
         description: 集群号
-        example: test
+        example: "01"
         type: string
       extracted_name:
         description: 解压后名称
-        example: ""
+        example: mds
         type: string
       id:
         description: ID
@@ -276,7 +308,7 @@ definitions:
     properties:
       colony_num:
         description: 集群号
-        example: test
+        example: "01"
         type: string
       created_at:
         description: 创建时间
@@ -284,7 +316,7 @@ definitions:
         type: string
       extracted_name:
         description: 解压后名称
-        example: ""
+        example: mds
         type: string
       id:
         description: ID
@@ -322,15 +354,27 @@ definitions:
           Example: "success"
         type: string
     type: object
+  colony.MdsColonyTaskInfo:
+    properties:
+      colony_num:
+        description: 集群号
+        example: "01"
+        type: string
+      tasks:
+        description: 任务状态
+        items:
+          $ref: '#/definitions/common.TaskInfo'
+        type: array
+    type: object
   colony.OesColonyBaseOut:
     properties:
       colony_num:
         description: 集群号
-        example: test
+        example: "01"
         type: string
       extracted_name:
         description: 解压后名称
-        example: ""
+        example: oes
         type: string
       id:
         description: ID
@@ -338,14 +382,14 @@ definitions:
         type: integer
       system_type:
         description: 系统类型
-        example: stk
+        example: STK
         type: string
     type: object
   colony.OesColonyDetailOut:
     properties:
       colony_num:
         description: 集群号
-        example: test
+        example: "01"
         type: string
       created_at:
         description: 创建时间
@@ -353,7 +397,7 @@ definitions:
         type: string
       extracted_name:
         description: 解压后名称
-        example: ""
+        example: oes
         type: string
       id:
         description: ID
@@ -369,7 +413,7 @@ definitions:
         description: oes程序包
       system_type:
         description: 系统类型
-        example: stk
+        example: STK
         type: string
       updated_at:
         description: 更新时间
@@ -398,6 +442,18 @@ definitions:
           信息
           Example: "success"
         type: string
+    type: object
+  colony.OesColonyTaskInfo:
+    properties:
+      colony_num:
+        description: 集群号
+        example: "01"
+        type: string
+      tasks:
+        description: 任务状态
+        items:
+          $ref: '#/definitions/common.TaskInfo'
+        type: array
     type: object
   colony.PagMdsColonyReply:
     properties:
@@ -967,6 +1023,20 @@ definitions:
           Example: 100
         example: 100
         type: integer
+    type: object
+  common.TaskInfo:
+    properties:
+      record_id:
+        description: 执行记录ID(0表示非正常执行的任务)
+        type: integer
+      task_name:
+        description: 任务名称
+        example: mon
+        type: string
+      task_status:
+        description: 执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)
+        example: --
+        type: string
     type: object
   conf.PagMdsConfReply:
     properties:
@@ -4921,7 +4991,7 @@ paths:
       summary: 登陆接口
       tags:
       - 用户管理
-  /api/v1/mds/{colony_num}/conf/{dir_name}:
+  /api/v1/mds/{colony_num}/conf:
     get:
       consumes:
       - application/json
@@ -4930,11 +5000,6 @@ paths:
       - description: 集群编号
         in: path
         name: colony_num
-        required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
         required: true
         type: string
       produces:
@@ -4957,6 +5022,7 @@ paths:
       summary: 获取mds配置文件列表
       tags:
       - mds配置管理
+  /api/v1/mds/{colony_num}/conf/{dir_name}:
     post:
       consumes:
       - multipart/form-data
@@ -5335,7 +5401,7 @@ paths:
         "200":
           description: 成功返回mds集群列表的任务状态
           schema:
-            $ref: '#/definitions/colony.ListMdsTaskStatusReply'
+            $ref: '#/definitions/colony.ListMdsTasksInfoReply'
         "400":
           description: 请求参数错误
           schema:
@@ -5789,7 +5855,7 @@ paths:
       summary: 更新mon节点
       tags:
       - mon节点管理
-  /api/v1/oes/{colony_num}/conf/{dir_name}:
+  /api/v1/oes/{colony_num}/conf:
     get:
       consumes:
       - application/json
@@ -5798,11 +5864,6 @@ paths:
       - description: 集群编号
         in: path
         name: colony_num
-        required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
         required: true
         type: string
       produces:
@@ -5825,6 +5886,7 @@ paths:
       summary: 获取oes配置文件列表
       tags:
       - oes配置管理
+  /api/v1/oes/{colony_num}/conf/{dir_name}:
     post:
       consumes:
       - multipart/form-data
@@ -6176,42 +6238,85 @@ paths:
       summary: 更新oes集群
       tags:
       - oes集群管理
-  /api/v1/oes/colony/status/crd:
+  /api/v1/oes/colony/status:
     get:
       consumes:
       - application/json
-      description: 本接口用于查询oes两融集群列表的任务状态
+      description: 本接口用于查询oes集群列表的任务状态
       parameters:
-      - description: 页码
+      - description: |-
+          创建时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
         in: query
-        minimum: 1
+        name: after_created_at
+        type: string
+      - description: |-
+          更新时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_updated_at
+        type: string
+      - description: |-
+          创建时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_created_at
+        type: string
+      - description: |-
+          更新时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_updated_at
+        type: string
+      - description: 集群号
+        in: query
+        name: colony_num
+        type: string
+      - description: 解压后名称
+        in: query
+        name: extracted_name
+        type: string
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: mon节点ID
+        in: query
+        name: mon_node_id
+        type: integer
+      - description: 程序包ID
+        in: query
+        name: package_id
+        type: integer
+      - description: 分页页码
+        in: query
         name: page
         type: integer
-      - description: 每页数量
+      - description: 分页大小
         in: query
-        maximum: 100
-        minimum: 1
+        minimum: 0
         name: size
         type: integer
-      - description: oes集群名称
+      - description: 系统类型
         in: query
-        name: name
+        name: system_type
         type: string
-      - description: 是否启用
+      - description: xcounter包ID
         in: query
-        name: is_enabled
-        type: boolean
-      - description: 创建用户名
-        in: query
-        name: username
-        type: string
+        name: xcounter_id
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: 成功返回oes两融集群列表的任务状态
+          description: 成功返回oes集群列表的任务状态
           schema:
-            $ref: '#/definitions/colony.ListCrdTaskStatusReply'
+            $ref: '#/definitions/colony.ListOesTasksInfoReply'
         "400":
           description: 请求参数错误
           schema:
@@ -6222,105 +6327,7 @@ paths:
             $ref: '#/definitions/errors.Error'
       security:
       - ApiKeyAuth: []
-      summary: 查询oes两融集群列表的任务状态
-      tags:
-      - oes集群管理
-  /api/v1/oes/colony/status/opt:
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询oes期权集群列表的任务状态
-      parameters:
-      - description: 页码
-        in: query
-        minimum: 1
-        name: page
-        type: integer
-      - description: 每页数量
-        in: query
-        maximum: 100
-        minimum: 1
-        name: size
-        type: integer
-      - description: oes集群名称
-        in: query
-        name: name
-        type: string
-      - description: 是否启用
-        in: query
-        name: is_enabled
-        type: boolean
-      - description: 创建用户名
-        in: query
-        name: username
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回oes期权集群列表的任务状态
-          schema:
-            $ref: '#/definitions/colony.ListOptTaskStatusReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 查询oes期权集群列表的任务状态
-      tags:
-      - oes集群管理
-  /api/v1/oes/colony/status/stk:
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询oes现货集群列表的任务状态
-      parameters:
-      - description: 页码
-        in: query
-        minimum: 1
-        name: page
-        type: integer
-      - description: 每页数量
-        in: query
-        maximum: 100
-        minimum: 1
-        name: size
-        type: integer
-      - description: oes集群名称
-        in: query
-        name: name
-        type: string
-      - description: 是否启用
-        in: query
-        name: is_enabled
-        type: boolean
-      - description: 创建用户名
-        in: query
-        name: username
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回oes现货集群列表的任务状态
-          schema:
-            $ref: '#/definitions/colony.ListStkTaskStatusReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 查询oes现货集群列表的任务状态
+      summary: 查询oes集群列表的任务状态
       tags:
       - oes集群管理
   /api/v1/oes/node:

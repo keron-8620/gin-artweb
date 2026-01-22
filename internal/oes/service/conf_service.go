@@ -175,14 +175,13 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param colony_num path string true "集群编号"
-// @Param dir_name path string true "目录名称"
 // @Success 200 {object} pbConf.PagOesConfReply "成功返回配置文件列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/oes/{colony_num}/conf/{dir_name} [get]
+// @Router /api/v1/oes/{colony_num}/conf [get]
 // @Security ApiKeyAuth
 func (s *OesConfService) ListOesConf(ctx *gin.Context) {
-	var req pbConf.GetOesConfRequest
+	var req pbConf.ListOesConfRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		s.log.Error(
 			"绑定oes配置文件路径参数失败",
@@ -196,7 +195,7 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 	}
 
 	dirName := s.ucColony.GetOesColonyConfigDir(req.ColonyNum)
-	info, err := fileutil.ListFileInfo(filepath.Join(dirName, req.DirName))
+	info, err := fileutil.ListFileInfo(dirName)
 	if err != nil {
 		s.log.Error(
 			"获取oes配置文件列表失败",
@@ -217,5 +216,5 @@ func (s *OesConfService) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/:colony_num/conf/:dir_name", s.UploadOesConf)
 	r.GET("/:colony_num/conf/:dir_name/:filename", s.DownloadOesConf)
 	r.DELETE("/:colony_num/conf/:dir_name/:filename", s.DeleteOesConf)
-	r.GET("/:colony_num/conf/:dir_name", s.ListOesConf)
+	r.GET("/:colony_num/conf", s.ListOesConf)
 }

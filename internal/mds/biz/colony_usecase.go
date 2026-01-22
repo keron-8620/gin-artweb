@@ -4,13 +4,10 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	pbColony "gin-artweb/api/mds/colony"
 	bizMon "gin-artweb/internal/mon/biz"
 	bizReso "gin-artweb/internal/resource/biz"
 	"gin-artweb/internal/shared/config"
@@ -262,85 +259,6 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
-}
-
-func (uc *MdsColonyUsecase) GetMdsTaskStatus(ctx context.Context, colonyNum string) (*pbColony.MdsTaskStatus, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
-	}
-
-	flagDir := filepath.Join(config.StorageDir, "mds", "flags", colonyNum)
-	flagBaseName := time.Now().Format("20060102") + ".*"
-
-	// 获取mon任务状态
-	monStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "mon_collector_"+flagBaseName))
-	if err != nil {
-		return nil, errors.FromError(err)
-	}
-
-	// 获取sse任务状态
-	bseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "bse_collector_"+flagBaseName))
-	if err != nil {
-		return nil, errors.FromError(err)
-	}
-
-	// 获取sse任务状态
-	sseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "sse_collector_"+flagBaseName))
-	if err != nil {
-		return nil, errors.FromError(err)
-	}
-
-	// 获取szse任务状态
-	szseStatus, err := uc.getTaskInfo(ctx, filepath.Join(flagDir, "szse_collector_"+flagBaseName))
-	if err != nil {
-		return nil, errors.FromError(err)
-	}
-	return &pbColony.MdsTaskStatus{
-		Mon:  monStatus,
-		Bse:  bseStatus,
-		Sse:  sseStatus,
-		Szse: szseStatus,
-	}, nil
-}
-
-func (uc *MdsColonyUsecase) getTaskInfo(ctx context.Context, pattern string) (string, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return "", errors.FromError(err)
-	}
-
-	flagFiles, err := filepath.Glob(pattern)
-	if err != nil {
-		uc.log.Error(
-			"查询mds任务标识文件失败",
-			zap.Error(err),
-			zap.String("pattern", pattern),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
-		)
-		return "", errors.FromError(err)
-	}
-	if len(flagFiles) == 1 {
-		flagFile := flagFiles[0]
-		slice := strings.Split(flagFile, ".")
-		if len(slice) > 1 {
-			return slice[len(slice)-1], nil
-		}
-	} else if len(flagFiles) > 1 {
-		runningFlag := pattern[:len(pattern)-1] + "running"
-		if _, err := os.Stat(runningFlag); err == nil {
-			return "running", nil
-		} else if os.IsNotExist(err) {
-			return "failed", nil
-		} else {
-			uc.log.Error(
-				"检查mds的running标志文件时出错",
-				zap.Error(err),
-				zap.String("running_flag", runningFlag),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
-			)
-			return "", errors.FromError(err)
-		}
-	}
-	return "--", nil
 }
 
 func (uc *MdsColonyUsecase) GetMdsColonyBinDir(colonyNum string) string {

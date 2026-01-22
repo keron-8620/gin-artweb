@@ -11,7 +11,7 @@ type DownloadOrDeleteMdsConfRequest struct {
 	// 集群号
 	ColonyNum string `uri:"colony_num" binding:"required,max=2"`
 
-	// 文件夹名称
+	// 文件夹名称(all, host_01, host_02, host_03)
 	DirName string `uri:"dir_name" binding:"required,oneof=all host_01 host_02 host_03"`
 
 	// 配置文件名称
@@ -24,4 +24,9 @@ type GetMdsConfRequest struct {
 
 	// 文件夹名称
 	DirName string `uri:"dir_name" binding:"required,oneof=all host_01 host_02 host_03"`
+}
+
+type ListMdsConfRequest struct {
+	// 集群号
+	ColonyNum string `uri:"colony_num" binding:"required,max=2"`
 }

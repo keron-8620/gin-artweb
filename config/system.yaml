@@ -7,8 +7,8 @@ server: # 服务配置
     crt_path: "server.crt" # ssl证书文件
     password: "" # ssl密钥密码
   rate: # 访问频率控制
-    rps: 10 # 每秒请求数
-    burst: 20 # 缓存请求数
+    rps: 10 # 令牌生成速率
+    burst: 20 # 桶容量
   enable_swagger: true # 是否启用swagger
 
 database: # 数据库配置

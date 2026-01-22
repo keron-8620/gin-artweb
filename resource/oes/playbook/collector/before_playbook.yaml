@@ -33,7 +33,7 @@
   run_once: true
 
 - name: touch running flag
-  shell: "echo {{ ANSIBLE_RECORD_ID }} > {{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
+  shell: "echo {{ JOBS_RECORD_ID }} > {{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
   delegate_to: 127.0.0.1
   run_once: true
 

@@ -70,7 +70,7 @@ insert into customer_permission(id,url,method,label,descr) values('4012','/api/v
 insert into customer_permission(id,url,method,label,descr) values('4013','/api/v1/mds/node/:id','GET','mds','查询单个mds节点');
 insert into customer_permission(id,url,method,label,descr) values('4014','/api/v1/mds/node/:id','PUT','mds','修改单个mds节点');
 insert into customer_permission(id,url,method,label,descr) values('4015','/api/v1/mds/node/:id','DELETE','mds','删除单个mds节点');
-insert into customer_permission(id,url,method,label,descr) values('4021','/api/v1/mds/:colony_num/conf/:dir_name','GET','mds','获取mds配置文件列表');
+insert into customer_permission(id,url,method,label,descr) values('4021','/api/v1/mds/:colony_num/conf','GET','mds','获取mds配置文件列表');
 insert into customer_permission(id,url,method,label,descr) values('4022','/api/v1/mds/:colony_num/conf/:dir_name','POST','mds','上传mds配置文件');
 insert into customer_permission(id,url,method,label,descr) values('4025','/api/v1/mds/:colony_num/conf/:dir_name/:filename','DELETE','mds','删除mds配置文件');
 insert into customer_permission(id,url,method,label,descr) values('4026','/api/v1/mds/:colony_num/conf/:dir_name/:filename','GET','mds','下载mds配置文件');
@@ -87,7 +87,7 @@ insert into customer_permission(id,url,method,label,descr) values('5012','/api/v
 insert into customer_permission(id,url,method,label,descr) values('5013','/api/v1/oes/node/:id','GET','oes','查询单个oes节点');
 insert into customer_permission(id,url,method,label,descr) values('5014','/api/v1/oes/node/:id','PUT','oes','修改单个oes节点');
 insert into customer_permission(id,url,method,label,descr) values('5015','/api/v1/oes/node/:id','DELETE','oes','删除单个oes集群');
-insert into customer_permission(id,url,method,label,descr) values('5021','/api/v1/oes/:colony_num/conf/:dir_name','GET','oes','获取oes配置文件列表');
+insert into customer_permission(id,url,method,label,descr) values('5021','/api/v1/oes/:colony_num/conf','GET','oes','获取oes配置文件列表');
 insert into customer_permission(id,url,method,label,descr) values('5022','/api/v1/oes/:colony_num/conf/:dir_name','POST','oes','上传oes配置文件');
 insert into customer_permission(id,url,method,label,descr) values('5025','/api/v1/oes/:colony_num/conf/:dir_name/:filename','DELETE','oes','删除oes配置文件');
 insert into customer_permission(id,url,method,label,descr) values('5026','/api/v1/oes/:colony_num/conf/:dir_name/:filename','GET','oes','下载oes配置文件');

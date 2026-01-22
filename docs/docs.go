@@ -3468,7 +3468,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds集群列表的任务状态",
                         "schema": {
-                            "$ref": "#/definitions/colony.ListMdsTaskStatusReply"
+                            "$ref": "#/definitions/colony.ListMdsTasksInfoReply"
                         }
                     },
                     "400": {
@@ -3991,7 +3991,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/mds/{colony_num}/conf/{dir_name}": {
+        "/api/v1/mds/{colony_num}/conf": {
             "get": {
                 "security": [
                     {
@@ -4016,13 +4016,6 @@ const docTemplate = `{
                         "name": "colony_num",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "目录名称",
-                        "name": "dir_name",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -4045,7 +4038,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/v1/mds/{colony_num}/conf/{dir_name}": {
             "post": {
                 "security": [
                     {
@@ -4729,14 +4724,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/oes/colony/status/crd": {
+        "/api/v1/oes/colony/status": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于查询oes两融集群列表的任务状态",
+                "description": "本接口用于查询oes集群列表的任务状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -4746,197 +4741,100 @@ const docTemplate = `{
                 "tags": [
                     "oes集群管理"
                 ],
-                "summary": "查询oes两融集群列表的任务状态",
+                "summary": "查询oes集群列表的任务状态",
                 "parameters": [
                     {
-                        "minimum": 1,
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "集群号",
+                        "name": "colony_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "解压后名称",
+                        "name": "extracted_name",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "页码",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mon节点ID",
+                        "name": "mon_node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "程序包ID",
+                        "name": "package_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "maximum": 100,
-                        "minimum": 1,
+                        "minimum": 0,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "分页大小",
                         "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "oes集群名称",
-                        "name": "name",
+                        "description": "系统类型",
+                        "name": "system_type",
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
+                        "type": "integer",
+                        "description": "xcounter包ID",
+                        "name": "xcounter_id",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回oes两融集群列表的任务状态",
+                        "description": "成功返回oes集群列表的任务状态",
                         "schema": {
-                            "$ref": "#/definitions/colony.ListCrdTaskStatusReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/oes/colony/status/opt": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于查询oes期权集群列表的任务状态",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "oes集群管理"
-                ],
-                "summary": "查询oes期权集群列表的任务状态",
-                "parameters": [
-                    {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "oes集群名称",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功返回oes期权集群列表的任务状态",
-                        "schema": {
-                            "$ref": "#/definitions/colony.ListOptTaskStatusReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/oes/colony/status/stk": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于查询oes现货集群列表的任务状态",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "oes集群管理"
-                ],
-                "summary": "查询oes现货集群列表的任务状态",
-                "parameters": [
-                    {
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "oes集群名称",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "是否启用",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建用户名",
-                        "name": "username",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功返回oes现货集群列表的任务状态",
-                        "schema": {
-                            "$ref": "#/definitions/colony.ListStkTaskStatusReply"
+                            "$ref": "#/definitions/colony.ListOesTasksInfoReply"
                         }
                     },
                     "400": {
@@ -5459,7 +5357,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/oes/{colony_num}/conf/{dir_name}": {
+        "/api/v1/oes/{colony_num}/conf": {
             "get": {
                 "security": [
                     {
@@ -5484,13 +5382,6 @@ const docTemplate = `{
                         "name": "colony_num",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "目录名称",
-                        "name": "dir_name",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -5513,7 +5404,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/v1/oes/{colony_num}/conf/{dir_name}": {
             "post": {
                 "security": [
                     {
@@ -6695,17 +6588,45 @@ const docTemplate = `{
                 }
             }
         },
-        "colony.ListCrdTaskStatusReply": {
-            "type": "object"
+        "colony.ListMdsTasksInfoReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/colony.MdsColonyTaskInfo"
+                    }
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
         },
-        "colony.ListMdsTaskStatusReply": {
-            "type": "object"
-        },
-        "colony.ListOptTaskStatusReply": {
-            "type": "object"
-        },
-        "colony.ListStkTaskStatusReply": {
-            "type": "object"
+        "colony.ListOesTasksInfoReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/colony.OesColonyTaskInfo"
+                    }
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
         },
         "colony.MdsColonyBaseOut": {
             "type": "object",
@@ -6713,12 +6634,12 @@ const docTemplate = `{
                 "colony_num": {
                     "description": "集群号",
                     "type": "string",
-                    "example": "test"
+                    "example": "01"
                 },
                 "extracted_name": {
                     "description": "解压后名称",
                     "type": "string",
-                    "example": ""
+                    "example": "mds"
                 },
                 "id": {
                     "description": "ID",
@@ -6733,7 +6654,7 @@ const docTemplate = `{
                 "colony_num": {
                     "description": "集群号",
                     "type": "string",
-                    "example": "test"
+                    "example": "01"
                 },
                 "created_at": {
                     "description": "创建时间",
@@ -6743,7 +6664,7 @@ const docTemplate = `{
                 "extracted_name": {
                     "description": "解压后名称",
                     "type": "string",
-                    "example": ""
+                    "example": "mds"
                 },
                 "id": {
                     "description": "ID",
@@ -6794,18 +6715,35 @@ const docTemplate = `{
                 }
             }
         },
+        "colony.MdsColonyTaskInfo": {
+            "type": "object",
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "example": "01"
+                },
+                "tasks": {
+                    "description": "任务状态",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.TaskInfo"
+                    }
+                }
+            }
+        },
         "colony.OesColonyBaseOut": {
             "type": "object",
             "properties": {
                 "colony_num": {
                     "description": "集群号",
                     "type": "string",
-                    "example": "test"
+                    "example": "01"
                 },
                 "extracted_name": {
                     "description": "解压后名称",
                     "type": "string",
-                    "example": ""
+                    "example": "oes"
                 },
                 "id": {
                     "description": "ID",
@@ -6815,7 +6753,7 @@ const docTemplate = `{
                 "system_type": {
                     "description": "系统类型",
                     "type": "string",
-                    "example": "stk"
+                    "example": "STK"
                 }
             }
         },
@@ -6825,7 +6763,7 @@ const docTemplate = `{
                 "colony_num": {
                     "description": "集群号",
                     "type": "string",
-                    "example": "test"
+                    "example": "01"
                 },
                 "created_at": {
                     "description": "创建时间",
@@ -6835,7 +6773,7 @@ const docTemplate = `{
                 "extracted_name": {
                     "description": "解压后名称",
                     "type": "string",
-                    "example": ""
+                    "example": "oes"
                 },
                 "id": {
                     "description": "ID",
@@ -6861,7 +6799,7 @@ const docTemplate = `{
                 "system_type": {
                     "description": "系统类型",
                     "type": "string",
-                    "example": "stk"
+                    "example": "STK"
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -6896,6 +6834,23 @@ const docTemplate = `{
                 "msg": {
                     "description": "信息\nExample: \"success\"",
                     "type": "string"
+                }
+            }
+        },
+        "colony.OesColonyTaskInfo": {
+            "type": "object",
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "example": "01"
+                },
+                "tasks": {
+                    "description": "任务状态",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.TaskInfo"
+                    }
                 }
             }
         },
@@ -7468,6 +7423,25 @@ const docTemplate = `{
                     "description": "总记录数\nExample: 100",
                     "type": "integer",
                     "example": 100
+                }
+            }
+        },
+        "common.TaskInfo": {
+            "type": "object",
+            "properties": {
+                "record_id": {
+                    "description": "执行记录ID(0表示非正常执行的任务)",
+                    "type": "integer"
+                },
+                "task_name": {
+                    "description": "任务名称",
+                    "type": "string",
+                    "example": "mon"
+                },
+                "task_status": {
+                    "description": "执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)",
+                    "type": "string",
+                    "example": "--"
                 }
             }
         },
