@@ -43,4 +43,10 @@ var (
 		"mds集群的标识文件非法",
 		nil,
 	)
+	ErrMdsColonyTaskUnKnown = errors.New(
+		http.StatusNotFound,
+		"mds_colony_task_unknown",
+		"未知的mds集群任务",
+		nil,
+	)
 )

@@ -79,9 +79,7 @@ insert into customer_permission(id,url,method,label,descr) values('5002','/api/v
 insert into customer_permission(id,url,method,label,descr) values('5003','/api/v1/oes/colony/:id','GET','oes','查询单个oes集群');
 insert into customer_permission(id,url,method,label,descr) values('5004','/api/v1/oes/colony/:id','PUT','oes','修改单个oes集群');
 insert into customer_permission(id,url,method,label,descr) values('5005','/api/v1/oes/colony/:id','DELETE','oes','删除单个oes集群');
-insert into customer_permission(id,url,method,label,descr) values('5006','/api/v1/oes/colony/status/stk','GET','oes','查询oes现货的任务状态');
-insert into customer_permission(id,url,method,label,descr) values('5007','/api/v1/oes/colony/status/crd','GET','oes','查询oes两融的任务状态');
-insert into customer_permission(id,url,method,label,descr) values('5008','/api/v1/oes/colony/status/opt','GET','oes','查询oes期权的任务状态');
+insert into customer_permission(id,url,method,label,descr) values('5006','/api/v1/oes/colony/status','GET','oes','查询oes的任务状态');
 insert into customer_permission(id,url,method,label,descr) values('5011','/api/v1/oes/node','GET','oes','查询oes节点列表');
 insert into customer_permission(id,url,method,label,descr) values('5012','/api/v1/oes/node','POST','oes','新增oes节点');
 insert into customer_permission(id,url,method,label,descr) values('5013','/api/v1/oes/node/:id','GET','oes','查询单个oes节点');
@@ -94,6 +92,7 @@ insert into customer_permission(id,url,method,label,descr) values('5026','/api/v
 
 
 insert into customer_role(name,descr) values('admin','系统管理员');
+
 
 insert into customer_role_permission(role_id,permission_id) values('1','1');
 insert into customer_role_permission(role_id,permission_id) values('1','2');
@@ -177,8 +176,6 @@ insert into customer_role_permission(role_id,permission_id) values('1','5003');
 insert into customer_role_permission(role_id,permission_id) values('1','5004');
 insert into customer_role_permission(role_id,permission_id) values('1','5005');
 insert into customer_role_permission(role_id,permission_id) values('1','5006');
-insert into customer_role_permission(role_id,permission_id) values('1','5007');
-insert into customer_role_permission(role_id,permission_id) values('1','5008');
 insert into customer_role_permission(role_id,permission_id) values('1','5011');
 insert into customer_role_permission(role_id,permission_id) values('1','5012');
 insert into customer_role_permission(role_id,permission_id) values('1','5013');

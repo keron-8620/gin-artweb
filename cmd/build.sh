@@ -8,6 +8,9 @@ set -u  # 使用未定义变量时退出
 basepath=$(cd `dirname $0`/..; pwd)
 cd $basepath
 
+# 更新swag文档
+swag init
+
 # 自动化测试并检查结果
 go test -v ./...
 

@@ -33,10 +33,10 @@ type ListScriptRecordRequest struct {
 	TriggerType string `form:"trigger_type" binding:"omitempty"`
 
 	// 筛选脚本执行的任务状态
-	Status *int `form:"status" binding:"omitempty"`
+	Status int `form:"status" binding:"omitempty"`
 
 	// 按脚本退出码筛选
-	ExitCode *int `form:"exit_code" binding:"omitempty"`
+	ExitCode int `form:"exit_code" binding:"omitempty"`
 
 	// 按脚本ID筛选
 	ScriptID uint32 `form:"script_id" binding:"omitempty"`
@@ -50,11 +50,11 @@ func (req *ListScriptRecordRequest) Query() (int, int, map[string]any) {
 	if req.TriggerType != "" {
 		query["trigger_type = ?"] = req.TriggerType
 	}
-	if req.Status != nil {
-		query["status = ?"] = *req.Status
+	if req.Status != 0 {
+		query["status = ?"] = req.Status
 	}
-	if req.ExitCode != nil {
-		query["exit_code = ?"] = *req.ExitCode
+	if req.ExitCode != 0 {
+		query["exit_code = ?"] = req.ExitCode
 	}
 	if req.ScriptID > 0 {
 		query["script_id = ?"] = req.ScriptID
