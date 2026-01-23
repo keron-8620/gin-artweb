@@ -3,6 +3,7 @@ package service
 import (
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -320,7 +321,7 @@ func PackageModelToOutBase(
 		Filename:   m.OriginFilename,
 		Label:      m.Label,
 		Version:    m.Version,
-		UploadedAt: m.UploadedAt.String(),
+		UploadedAt: m.UploadedAt.Format(time.DateTime),
 	}
 }
 

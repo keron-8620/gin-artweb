@@ -2,6 +2,7 @@ package service
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -381,8 +382,8 @@ func HostModelToStandardOut(
 ) *pbHost.HostStandardOut {
 	return &pbHost.HostStandardOut{
 		HostBaseOut: *HostModelToBaseOut(m),
-		CreatedAt:   m.CreatedAt.String(),
-		UpdatedAt:   m.UpdatedAt.String(),
+		CreatedAt:   m.CreatedAt.Format(time.DateTime),
+		UpdatedAt:   m.UpdatedAt.Format(time.DateTime),
 	}
 }
 

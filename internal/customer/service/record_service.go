@@ -2,6 +2,7 @@ package service
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -187,7 +188,7 @@ func LoginRecordModelToStandardOut(
 	return &pbRecord.LoginRecordStandardOut{
 		ID:        m.ID,
 		Username:  m.Username,
-		LoginAt:   m.LoginAt.String(),
+		LoginAt:   m.LoginAt.Format(time.DateTime),
 		Status:    m.Status,
 		IPAddress: m.IPAddress,
 		UserAgent: m.UserAgent,

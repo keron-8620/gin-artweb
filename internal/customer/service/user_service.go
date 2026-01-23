@@ -626,8 +626,8 @@ func UserModelToStandardOut(
 ) *pbUser.UserStandardOut {
 	return &pbUser.UserStandardOut{
 		UserBaseOut: *UserModelToBaseOut(m),
-		CreatedAt:   m.CreatedAt.String(),
-		UpdatedAt:   m.UpdatedAt.String(),
+		CreatedAt:   m.CreatedAt.Format(time.DateTime),
+		UpdatedAt:   m.UpdatedAt.Format(time.DateTime),
 	}
 }
 
