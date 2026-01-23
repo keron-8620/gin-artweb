@@ -37,6 +37,12 @@ var (
 		"oes集群系统类型非法",
 		nil,
 	)
+	ErrOesColonyTaskUnKnown = errors.New(
+		http.StatusNotFound,
+		"oes_colony_task_unknown",
+		"未知的oes集群任务",
+		nil,
+	)
 	ErrOesColonyHasTooManyFlags = errors.New(
 		http.StatusBadRequest,
 		"oes_colony_has_too_many_flags",

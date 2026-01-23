@@ -2,6 +2,7 @@ package service
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -290,8 +291,8 @@ func ScriptRecordToStandardOut(
 ) *pbRecord.ScriptRecordStandardOut {
 	return &pbRecord.ScriptRecordStandardOut{
 		ID:           m.ID,
-		CreatedAt:    m.CreatedAt.String(),
-		UpdatedAt:    m.UpdatedAt.String(),
+		CreatedAt:    m.CreatedAt.Format(time.DateTime),
+		UpdatedAt:    m.UpdatedAt.Format(time.DateTime),
 		TriggerType:  m.TriggerType,
 		Status:       m.Status,
 		ExitCode:     m.ExitCode,

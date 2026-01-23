@@ -21,6 +21,7 @@ import (
 
 type OesTaskInfoUsecase struct {
 	log      *zap.Logger
+	flags    map[string]string
 	stkTasks []string
 	crdTasks []string
 	optTasks []string
@@ -30,10 +31,21 @@ func NewOesTaskInfoUsecase(
 	log *zap.Logger,
 ) *OesTaskInfoUsecase {
 	return &OesTaskInfoUsecase{
-		log:      log,
-		stkTasks: []string{"mon_collector", "counter_fetch", "counter_distribute", "bse_collector", "sse_collector", "szse_collector", "csdc_collector"},
-		crdTasks: []string{"mon_collector", "counter_fetch", "counter_distribute", "sse_collector", "szse_collector", "csdc_collector", "sse_late_collector", "szse_late_collector"},
-		optTasks: []string{"mon_collector", "counter_fetch", "counter_distribute", "sse_collector", "szse_collector", "csdc_collector"},
+		log: log,
+		flags: map[string]string{
+			"mon":                "mon_collector",
+			"counter_fetch":      "counter_fetch",
+			"counter_distribute": "counter_distribute",
+			"bse":                "bse_collector",
+			"sse":                "sse_collector",
+			"szse":               "szse_collector",
+			"csdc":               "csdc_collector",
+			"sse_late":           "sse_etf_collector",
+			"szse_late":          "szse_etf_collector",
+		},
+		stkTasks: []string{"mon", "counter_fetch", "counter_distribute", "bse", "sse", "szse", "csdc"},
+		crdTasks: []string{"mon", "counter_fetch", "counter_distribute", "sse", "szse", "csdc", "sse_late", "szse_late"},
+		optTasks: []string{"mon", "counter_fetch", "counter_distribute", "sse", "szse", "csdc"},
 	}
 }
 
@@ -81,8 +93,15 @@ func (uc *OesTaskInfoUsecase) GetTaskInfo(
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
-	flagBaseName := fmt.Sprintf("%s_%s.*", taskName, time.Now().Format("20060102"))
-	flagPath := filepath.Join(config.StorageDir, "oes", "flags", colonyNum, flagBaseName)
+	flagBaseName, exists := uc.flags[taskName]
+	if !exists {
+		return nil, ErrOesColonyTaskUnKnown.WithData(map[string]any{
+			"colony_num": colonyNum,
+			"task_name":  taskName,
+		})
+	}
+	flagName := fmt.Sprintf("%s_%s.*", flagBaseName, time.Now().Format("20060102"))
+	flagPath := filepath.Join(config.StorageDir, "oes", "flags", colonyNum, flagName)
 	flagFiles, err := filepath.Glob(flagPath)
 	if err != nil {
 		uc.log.Error(

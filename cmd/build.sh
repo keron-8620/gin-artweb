@@ -39,12 +39,3 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
   -o bin/artweb main.go
 
 echo "Build success!"
-
-# 构建镜像
-# podman build -t swr.cn-north-4.myhuaweicloud.com/danqingzhao/artweb:${VERSION} .
-
-# 推送镜像
-# podman push swr.cn-north-4.myhuaweicloud.com/danqingzhao/artweb:${VERSION}
-
-# 部署
-# scp -r bin config resource storage sql cmd ansible@192.168.122.130:/home/ansible/artweb/

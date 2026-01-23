@@ -21,6 +21,7 @@ import (
 
 type MdsTaskInfoUsecase struct {
 	log   *zap.Logger
+	flags map[string]string
 	tasks []string
 }
 
@@ -28,8 +29,14 @@ func NewMdsTaskInfoUsecase(
 	log *zap.Logger,
 ) *MdsTaskInfoUsecase {
 	return &MdsTaskInfoUsecase{
-		log:   log,
-		tasks: []string{"mon_collector", "bse_collector", "sse_collector", "szse_collector"},
+		log: log,
+		flags: map[string]string{
+			"mon":  "mon_collector",
+			"bse":  "bse_collector",
+			"sse":  "sse_collector",
+			"szse": "szse_collector",
+		},
+		tasks: []string{"mon", "bse", "sse", "szse"},
 	}
 }
 
@@ -62,8 +69,15 @@ func (uc *MdsTaskInfoUsecase) GetTaskInfo(
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
-	flagBaseName := fmt.Sprintf("%s_%s.*", taskName, time.Now().Format("20060102"))
-	flagPath := filepath.Join(config.StorageDir, "mds", "flags", colonyNum, flagBaseName)
+	flagBaseName, exists := uc.flags[taskName]
+	if !exists {
+		return nil, ErrMdsColonyTaskUnKnown.WithData(map[string]any{
+			"colony_num": colonyNum,
+			"task_name":  taskName,
+		})
+	}
+	flagName := fmt.Sprintf("%s_%s.*", flagBaseName, time.Now().Format("20060102"))
+	flagPath := filepath.Join(config.StorageDir, "mds", "flags", colonyNum, flagName)
 	flagFiles, err := filepath.Glob(flagPath)
 	if err != nil {
 		uc.log.Error(

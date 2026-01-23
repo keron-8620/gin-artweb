@@ -2,6 +2,7 @@ package service
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -356,8 +357,8 @@ func PermModelToStandardOut(
 ) *pbPerm.PermissionStandardOut {
 	return &pbPerm.PermissionStandardOut{
 		ID:        m.ID,
-		CreatedAt: m.CreatedAt.String(),
-		UpdatedAt: m.UpdatedAt.String(),
+		CreatedAt: m.CreatedAt.Format(time.DateTime),
+		UpdatedAt: m.UpdatedAt.Format(time.DateTime),
 		URL:       m.URL,
 		Method:    m.Method,
 		Label:     m.Label,
