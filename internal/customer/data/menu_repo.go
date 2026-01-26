@@ -51,7 +51,7 @@ func (r *menuRepo) CreateModel(
 	r.log.Debug(
 		"开始创建菜单模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	m.CreatedAt = now
@@ -61,6 +61,8 @@ func (r *menuRepo) CreateModel(
 	if perms != nil {
 		if len(*perms) > 0 {
 			upmap["Permissions"] = *perms
+		} else {
+			upmap["Permissions"] = []biz.PermissionModel{}
 		}
 	}
 
@@ -71,7 +73,7 @@ func (r *menuRepo) CreateModel(
 			"创建菜单模型失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -80,7 +82,7 @@ func (r *menuRepo) CreateModel(
 	r.log.Debug(
 		"创建菜单模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -97,7 +99,7 @@ func (r *menuRepo) UpdateModel(
 		zap.Any(database.UpdateDataKey, data),
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	now := time.Now()
@@ -105,6 +107,8 @@ func (r *menuRepo) UpdateModel(
 	if perms != nil {
 		if len(*perms) > 0 {
 			upmap["Permissions"] = *perms
+		} else {
+			upmap["Permissions"] = []biz.PermissionModel{}
 		}
 	}
 
@@ -117,7 +121,7 @@ func (r *menuRepo) UpdateModel(
 			zap.Any(database.UpdateDataKey, data),
 			zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -128,7 +132,7 @@ func (r *menuRepo) UpdateModel(
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -138,7 +142,7 @@ func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除菜单模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	now := time.Now()
@@ -149,7 +153,7 @@ func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除菜单模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -158,7 +162,7 @@ func (r *menuRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除菜单模型成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -173,7 +177,7 @@ func (r *menuRepo) FindModel(
 		"开始查询菜单模型",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	now := time.Now()
@@ -186,7 +190,7 @@ func (r *menuRepo) FindModel(
 			zap.Error(err),
 			zap.Strings(database.PreloadKey, preloads),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return nil, err
@@ -197,7 +201,7 @@ func (r *menuRepo) FindModel(
 		zap.Object(database.ModelKey, &m),
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return &m, nil
@@ -210,7 +214,7 @@ func (r *menuRepo) ListModel(
 	r.log.Debug(
 		"开始查询菜单模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	now := time.Now()
@@ -223,7 +227,7 @@ func (r *menuRepo) ListModel(
 			"查询菜单模型列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return 0, nil, err
@@ -232,7 +236,7 @@ func (r *menuRepo) ListModel(
 	r.log.Debug(
 		"查询菜单模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return count, &ms, nil
@@ -255,7 +259,7 @@ func (r *menuRepo) AddGroupPolicy(
 	r.log.Debug(
 		"AddGroupPolicy: 传入参数",
 		zap.Object(database.ModelKey, menu),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m := *menu
@@ -274,7 +278,7 @@ func (r *menuRepo) AddGroupPolicy(
 			zap.Object(database.ModelKey, menu),
 			zap.String(auth.GroupSubKey, sub),
 			zap.String(auth.GroupObjKey, obj),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		menuStartTime := time.Now()
 		if err := auth.AddGroupPolicy(ctx, r.enforcer, sub, obj); err != nil {
@@ -284,7 +288,7 @@ func (r *menuRepo) AddGroupPolicy(
 				zap.Object(database.ModelKey, menu),
 				zap.String(auth.GroupSubKey, sub),
 				zap.String(auth.GroupObjKey, obj),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(menuStartTime)),
 			)
 			return err
@@ -294,7 +298,7 @@ func (r *menuRepo) AddGroupPolicy(
 			zap.Object(database.ModelKey, menu),
 			zap.String(auth.GroupSubKey, sub),
 			zap.String(auth.GroupObjKey, obj),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(menuStartTime)),
 		)
 	}
@@ -303,7 +307,7 @@ func (r *menuRepo) AddGroupPolicy(
 		"开始添加菜单与权限的关联策略",
 		zap.Object(database.ModelKey, menu),
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(&m.Permissions)),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	permStartTime := time.Now()
 	// 批量处理权限
@@ -313,7 +317,7 @@ func (r *menuRepo) AddGroupPolicy(
 			r.log.Warn(
 				"跳过无效权限",
 				zap.Object(database.ModelKey, menu),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 			continue
 		}
@@ -326,7 +330,7 @@ func (r *menuRepo) AddGroupPolicy(
 				zap.Object(database.ModelKey, menu),
 				zap.String(auth.GroupSubKey, sub),
 				zap.String(auth.GroupObjKey, obj),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(permStartTime)),
 			)
 			return err
@@ -336,7 +340,7 @@ func (r *menuRepo) AddGroupPolicy(
 		"添加菜单与权限的关联策略成功",
 		zap.Object(database.ModelKey, menu),
 		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(&m.Permissions)),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(permStartTime)),
 	)
 	return nil
@@ -361,7 +365,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 		"RemoveGroupPolicy: 传入参数",
 		zap.Object(database.ModelKey, menu),
 		zap.Bool("removeInherited", removeInherited),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m := *menu
@@ -375,7 +379,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 		"开始删除该菜单作为子级的组策略",
 		zap.Object(database.ModelKey, &m),
 		zap.String(auth.GroupSubKey, sub),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	rmSubStartTime := time.Now()
 	if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 0, sub); err != nil {
@@ -384,7 +388,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 			zap.Error(err),
 			zap.Object(database.ModelKey, menu),
 			zap.String(auth.GroupSubKey, sub),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 		)
 		return err
@@ -393,7 +397,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 		"删除该菜单作为子级的组策略成功",
 		zap.Object(database.ModelKey, menu),
 		zap.String(auth.GroupSubKey, sub),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(rmSubStartTime)),
 	)
 
@@ -402,7 +406,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 			"开始删除该菜单作为父级的组策略",
 			zap.Object(database.ModelKey, menu),
 			zap.String(auth.GroupObjKey, sub),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rmObjStartTime := time.Now()
 		if err := auth.RemoveGroupPolicy(ctx, r.enforcer, 1, sub); err != nil {
@@ -411,7 +415,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 				zap.Error(err),
 				zap.Object(database.ModelKey, menu),
 				zap.String(auth.GroupObjKey, sub),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				zap.Duration(log.DurationKey, time.Since(rmObjStartTime)),
 			)
 			return err
@@ -420,7 +424,7 @@ func (r *menuRepo) RemoveGroupPolicy(
 			"删除该菜单作为父级的组策略成功",
 			zap.Object(database.ModelKey, menu),
 			zap.String(auth.GroupObjKey, sub),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(rmObjStartTime)),
 		)
 	}

@@ -22,7 +22,7 @@ func TracingMiddleware(logger *zap.Logger) gin.HandlerFunc {
 
 		// 记录请求开始
 		logger.Info("请求开始",
-			zap.String(string(ctxutil.TraceIDKey), traceID),
+			zap.String(ctxutil.TraceIDKey, traceID),
 			zap.String("method", c.Request.Method),
 			zap.String("path", c.Request.URL.Path),
 			zap.String("client_ip", c.ClientIP()),
@@ -33,7 +33,7 @@ func TracingMiddleware(logger *zap.Logger) gin.HandlerFunc {
 
 		// 记录请求结束
 		logger.Info("请求结束",
-			zap.String(string(ctxutil.TraceIDKey), traceID),
+			zap.String(ctxutil.TraceIDKey, traceID),
 			zap.String("method", c.Request.Method),
 			zap.String("path", c.Request.URL.Path),
 			zap.Int("status_code", c.Writer.Status()),

@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-const TraceIDKey ContextKey = "request_id"
+const TraceIDKey = "request_id"
 
 func GetTraceID(ctx context.Context) string {
 	if ctx == nil {
@@ -15,10 +15,14 @@ func GetTraceID(ctx context.Context) string {
 	if value == nil {
 		return ""
 	}
-
-	if requestID, ok := value.(ContextKey); ok {
-		return string(requestID)
+	
+	if requestID, ok := value.(string); ok {
+		return requestID
 	}
-
+	
 	return ""
+}
+
+func SetTraceID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, TraceIDKey, requestID)
 }

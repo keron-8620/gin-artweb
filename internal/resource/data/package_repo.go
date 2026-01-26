@@ -36,7 +36,7 @@ func (r *packageRepo) CreateModel(ctx context.Context, m *biz.PackageModel) erro
 	r.log.Debug(
 		"开始创建程序包模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	m.UploadedAt = now
@@ -47,7 +47,7 @@ func (r *packageRepo) CreateModel(ctx context.Context, m *biz.PackageModel) erro
 			"创建程序包模型失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -55,7 +55,7 @@ func (r *packageRepo) CreateModel(ctx context.Context, m *biz.PackageModel) erro
 	r.log.Debug(
 		"创建程序包模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -65,7 +65,7 @@ func (r *packageRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除程序包模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -75,7 +75,7 @@ func (r *packageRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除程序包模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -83,7 +83,7 @@ func (r *packageRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除程序包模型成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -97,7 +97,7 @@ func (r *packageRepo) FindModel(
 	r.log.Debug(
 		"开始查询程序包模型",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var m biz.PackageModel
@@ -108,7 +108,7 @@ func (r *packageRepo) FindModel(
 			"查询程序包模型失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -117,7 +117,7 @@ func (r *packageRepo) FindModel(
 		"查询程序包模型成功",
 		zap.Object(database.ModelKey, &m),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return &m, nil
@@ -130,7 +130,7 @@ func (r *packageRepo) ListModel(
 	r.log.Debug(
 		"开始查询程序包模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var ms []biz.PackageModel
@@ -142,7 +142,7 @@ func (r *packageRepo) ListModel(
 			"查询程序包模型列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return 0, nil, err
@@ -150,7 +150,7 @@ func (r *packageRepo) ListModel(
 	r.log.Debug(
 		"查询程序包模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil

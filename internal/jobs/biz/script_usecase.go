@@ -94,7 +94,7 @@ func (uc *ScriptUsecase) CreateScript(
 	uc.log.Info(
 		"开始创建脚本",
 		zap.Object(database.ModelKey, &m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.scriptRepo.CreateModel(ctx, &m); err != nil {
@@ -102,7 +102,7 @@ func (uc *ScriptUsecase) CreateScript(
 			"创建脚本失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
@@ -110,7 +110,7 @@ func (uc *ScriptUsecase) CreateScript(
 	uc.log.Info(
 		"创建脚本成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -132,7 +132,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 		uc.log.Error(
 			"内置脚本不能修改",
 			zap.Uint32(ScriptIDKey, scriptID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrScriptIsBuiltin.WithData(map[string]any{ScriptIDKey: scriptID})
 	}
@@ -141,7 +141,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 		"开始更新脚本",
 		zap.Uint32(ScriptIDKey, scriptID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.scriptRepo.UpdateModel(ctx, data, "id = ?", scriptID); err != nil {
@@ -150,7 +150,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 			zap.Error(err),
 			zap.Uint32(ScriptIDKey, scriptID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, data)
 	}
@@ -158,7 +158,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	uc.log.Info(
 		"更新脚本成功",
 		zap.Uint32(ScriptIDKey, scriptID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return uc.FindScriptByID(ctx, scriptID)
 }
@@ -179,7 +179,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 		uc.log.Error(
 			"内置脚本不能删除",
 			zap.Uint32(ScriptIDKey, scriptID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return ErrScriptIsBuiltin.WithData(map[string]any{ScriptIDKey: scriptID})
 	}
@@ -187,7 +187,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 	uc.log.Info(
 		"开始删除脚本",
 		zap.Uint32(ScriptIDKey, scriptID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.scriptRepo.DeleteModel(ctx, scriptID); err != nil {
@@ -195,7 +195,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 			"删除脚本失败",
 			zap.Error(err),
 			zap.Uint32(ScriptIDKey, scriptID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": scriptID})
 	}
@@ -207,7 +207,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 	uc.log.Info(
 		"删除脚本成功",
 		zap.Uint32(ScriptIDKey, scriptID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -223,7 +223,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 	uc.log.Info(
 		"开始查询脚本",
 		zap.Uint32(ScriptIDKey, scriptID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.scriptRepo.FindModel(ctx, scriptID)
@@ -232,7 +232,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 			"查询脚本失败",
 			zap.Error(err),
 			zap.Uint32(ScriptIDKey, scriptID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": scriptID})
 	}
@@ -240,7 +240,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 	uc.log.Info(
 		"查询脚本成功",
 		zap.Uint32(ScriptIDKey, scriptID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -256,7 +256,7 @@ func (uc *ScriptUsecase) ListScript(
 	uc.log.Info(
 		"开始查询脚本列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.scriptRepo.ListModel(ctx, qp)
@@ -265,7 +265,7 @@ func (uc *ScriptUsecase) ListScript(
 			"查询脚本列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, errors.NewGormError(err, nil)
 	}
@@ -273,7 +273,7 @@ func (uc *ScriptUsecase) ListScript(
 	uc.log.Info(
 		"查询脚本列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -289,7 +289,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 		"开始删除脚本文件",
 		zap.String("path", savePath),
 		zap.Uint32(ScriptIDKey, m.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	// 检查文件是否存在
@@ -299,7 +299,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 			"脚本文件不存在，无需删除",
 			zap.String("path", savePath),
 			zap.Uint32(ScriptIDKey, m.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil
 	} else if statErr != nil {
@@ -309,7 +309,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 			zap.Error(statErr),
 			zap.String("path", savePath),
 			zap.Uint32(ScriptIDKey, m.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(statErr)
 	}
@@ -321,7 +321,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 			zap.Error(rmErr),
 			zap.String("path", savePath),
 			zap.Uint32(ScriptIDKey, m.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(rmErr)
 	}
@@ -330,7 +330,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 		"删除脚本文件成功",
 		zap.String("path", savePath),
 		zap.Uint32(ScriptIDKey, m.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

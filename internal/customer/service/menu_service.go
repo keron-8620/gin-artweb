@@ -48,7 +48,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 			"绑定创建菜单请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -63,7 +63,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 		"开始创建菜单",
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucMenu.CreateMenu(ctx, req.PermissionIDs, biz.MenuModel{
@@ -88,7 +88,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -98,7 +98,7 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 		"创建菜单成功",
 		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := MenuModelToDetailOut(*m)
@@ -128,7 +128,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			"绑定菜单ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -141,7 +141,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			"绑定更新菜单请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -152,7 +152,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 		"开始更新菜单",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	data := map[string]any{
@@ -175,7 +175,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -184,7 +184,7 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 	s.log.Info(
 		"更新菜单成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := MenuModelToDetailOut(*m)
@@ -213,7 +213,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 			"绑定删除菜单ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -223,7 +223,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除菜单",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucMenu.DeleteMenuByID(ctx, uri.ID); err != nil {
@@ -231,7 +231,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 			"删除菜单失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -240,7 +240,7 @@ func (s *MenuService) DeleteMenu(ctx *gin.Context) {
 	s.log.Info(
 		"删除菜单成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -265,7 +265,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 			"绑定查询菜单ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -275,7 +275,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询菜单详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.ID)
@@ -284,7 +284,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 			"查询菜单详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -293,7 +293,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 	s.log.Info(
 		"查询菜单详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := MenuModelToDetailOut(*m)
@@ -321,7 +321,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 			"绑定查询菜单列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -331,7 +331,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询菜单列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -349,7 +349,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -358,7 +358,7 @@ func (s *MenuService) ListMenu(ctx *gin.Context) {
 	s.log.Info(
 		"查询菜单列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListMenuModelToStandardOut(ms)

@@ -32,10 +32,12 @@
   delegate_to: 127.0.0.1
   run_once: true
 
-- name: touch local failed flag
-  shell: "echo {{ JOBS_RECORD_ID }} > {{ local_path_mds_home_flag_colodir }}/{{ flag_running }}"
+- name: touch running flag
+  file:
+    path: "{{ local_path_mds_home_flag_colodir }}/{{ flag_running }}"
+    state: touch
   delegate_to: 127.0.0.1
-  run_once: true
+  run_once: yes
 
 - name: print curr_date
   debug:

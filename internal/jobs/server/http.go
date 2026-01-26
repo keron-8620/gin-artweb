@@ -13,11 +13,17 @@ import (
 	"gin-artweb/internal/shared/middleware"
 )
 
+type JobsUsecase struct {
+	Script   *biz.ScriptUsecase
+	Record   *biz.RecordUsecase
+	Schedule *biz.ScheduleUsecase
+}
+
 func NewServer(
 	router *gin.RouterGroup,
 	init *common.Initialize,
 	loggers *log.Loggers,
-) {
+) *JobsUsecase {
 	scriptRepo := data.NewScriptRepo(loggers.Data, init.DB, init.DBTimeout)
 	recordRepo := data.NewRecordRepo(loggers.Data, init.DB, init.DBTimeout)
 	scheduleRepo := data.NewScheduleRepo(loggers.Data, init.DB, init.DBTimeout)
@@ -40,4 +46,10 @@ func NewServer(
 	scriptService.LoadRouter(appRouter)
 	recordService.LoadRouter(appRouter)
 	scheduleService.LoadRouter(appRouter)
+
+	return &JobsUsecase{
+		Script:   scriptUsecase,
+		Record:   recordUsecase,
+		Schedule: scheduleUsecase,
+	}
 }

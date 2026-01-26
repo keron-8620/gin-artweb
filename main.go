@@ -403,11 +403,11 @@ func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 
 	// 初始化加载业务模块
 	customer.NewServer(apiRouter, init, loggers)
+	jobsUsecase := jobs.NewServer(apiRouter, init, loggers)
 	resource.NewServer(apiRouter, init, loggers)
-	jobs.NewServer(apiRouter, init, loggers)
 	mon.NewServer(apiRouter, init, loggers)
-	mds.NewServer(apiRouter, init, loggers)
-	oes.NewServer(apiRouter, init, loggers)
+	mds.NewServer(apiRouter, init, loggers, jobsUsecase)
+	oes.NewServer(apiRouter, init, loggers, jobsUsecase)
 	return r
 }
 

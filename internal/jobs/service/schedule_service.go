@@ -51,7 +51,7 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 			"绑定创建计划任务参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -67,6 +67,9 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 		CommandArgs:   req.CommandArgs,
 		WorkDir:       req.WorkDir,
 		Timeout:       req.Timeout,
+		IsRetry:       req.IsRetry,
+		RetryInterval: req.RetryInterval,
+		MaxRetries:    req.MaxRetries,
 		Username:      uc.Subject,
 		ScriptID:      req.ScriptID,
 	}
@@ -77,7 +80,7 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 			"创建计划任务失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
@@ -109,7 +112,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			"绑定更新计划任务ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -122,7 +125,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			"绑定更新计划任务参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -152,7 +155,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -183,7 +186,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 			"绑定删除计划任务ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -193,7 +196,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除计划任务",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucSchedule.DeleteScheduleByID(ctx, uri.ID); err != nil {
@@ -201,7 +204,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 			"删除计划任务失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -210,7 +213,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 	s.log.Info(
 		"删除计划任务成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -235,7 +238,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 			"绑定查询计划任务ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -245,7 +248,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询计划任务详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucSchedule.FindScheduleByID(ctx, []string{"Script"}, uri.ID)
@@ -254,7 +257,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 			"查询计划任务详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -263,7 +266,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 	s.log.Info(
 		"查询计划任务详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := ScheduleToDetailOut(*m)
@@ -291,7 +294,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 			"绑定查询计划任务列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -301,7 +304,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询计划任务列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -320,7 +323,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -329,7 +332,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 	s.log.Info(
 		"查询计划任务列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListScheduledToDetailOut(ms)

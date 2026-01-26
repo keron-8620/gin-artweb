@@ -57,7 +57,7 @@ func (s *MdsConfService) UploadMdsConf(ctx *gin.Context) {
 			"绑定上传的mds配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -71,7 +71,7 @@ func (s *MdsConfService) UploadMdsConf(ctx *gin.Context) {
 			"绑定上传的mds配置文件表单参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -110,7 +110,7 @@ func (s *MdsConfService) DownloadMdsConf(ctx *gin.Context) {
 			"绑定删除的mds配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -145,7 +145,7 @@ func (s *MdsConfService) DeleteMdsConf(ctx *gin.Context) {
 			"绑定删除的mds配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -159,7 +159,7 @@ func (s *MdsConfService) DeleteMdsConf(ctx *gin.Context) {
 			"删除mds配置文件失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.FromError(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -188,7 +188,7 @@ func (s *MdsConfService) ListMdsConf(ctx *gin.Context) {
 			"绑定mds配置文件路径参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -203,7 +203,7 @@ func (s *MdsConfService) ListMdsConf(ctx *gin.Context) {
 			zap.Error(err),
 			zap.String("dirname", dirName),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.FromError(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())

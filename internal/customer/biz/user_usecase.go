@@ -96,7 +96,7 @@ func (uc *UserUsecase) GetRole(
 	uc.log.Info(
 		"开始查询用户关联的角色",
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.roleRepo.FindModel(ctx, nil, roleID)
@@ -105,7 +105,7 @@ func (uc *UserUsecase) GetRole(
 			"查询用户关联的角色失败",
 			zap.Error(err),
 			zap.Uint32(RoleIDKey, roleID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"role_id": roleID})
 	}
@@ -113,7 +113,7 @@ func (uc *UserUsecase) GetRole(
 	uc.log.Info(
 		"查询用户关联的角色成功",
 		zap.Uint32(RoleIDKey, roleID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -129,7 +129,7 @@ func (uc *UserUsecase) CreateUser(
 	uc.log.Info(
 		"开始创建用户",
 		zap.Object(database.ModelKey, &m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	// 检查密码强度
@@ -157,7 +157,7 @@ func (uc *UserUsecase) CreateUser(
 			"创建用户失败",
 			zap.Error(err),
 			zap.String(UsernameKey, m.Username),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
@@ -166,7 +166,7 @@ func (uc *UserUsecase) CreateUser(
 		"创建用户成功",
 		zap.String(UsernameKey, m.Username),
 		zap.Uint32(UserIDKey, m.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -184,7 +184,7 @@ func (uc *UserUsecase) UpdateUserByID(
 		"开始更新用户",
 		zap.Uint32(UserIDKey, userID),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	// 处理密码更新
@@ -193,14 +193,14 @@ func (uc *UserUsecase) UpdateUserByID(
 			uc.log.Info(
 				"检测到密码更新，开始验证密码强度",
 				zap.Uint32(UserIDKey, userID),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 
 			if err := uc.CheckPasswordStrength(ctx, pwdStr); err != nil {
 				uc.log.Warn(
 					"密码强度不足",
 					zap.Uint32(UserIDKey, userID),
-					zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return err
 			}
@@ -211,7 +211,7 @@ func (uc *UserUsecase) UpdateUserByID(
 					"密码哈希失败",
 					zap.Error(err),
 					zap.Uint32(UserIDKey, userID),
-					zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return err
 			}
@@ -220,13 +220,13 @@ func (uc *UserUsecase) UpdateUserByID(
 			uc.log.Info(
 				"密码哈希处理完成",
 				zap.Uint32(UserIDKey, userID),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		} else {
 			uc.log.Error(
 				"密码格式错误",
 				zap.Uint32(UserIDKey, userID),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 			return ErrPasswordStrengthFailed
 		}
@@ -239,7 +239,7 @@ func (uc *UserUsecase) UpdateUserByID(
 			zap.Error(err),
 			zap.Uint32(UserIDKey, userID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, data)
 	}
@@ -247,7 +247,7 @@ func (uc *UserUsecase) UpdateUserByID(
 	uc.log.Info(
 		"更新用户成功",
 		zap.Uint32(UserIDKey, userID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -263,7 +263,7 @@ func (uc *UserUsecase) DeleteUserByID(
 	uc.log.Info(
 		"开始删除用户",
 		zap.Uint32(UserIDKey, userID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := uc.userRepo.DeleteModel(ctx, userID); err != nil {
@@ -271,7 +271,7 @@ func (uc *UserUsecase) DeleteUserByID(
 			"删除用户失败",
 			zap.Error(err),
 			zap.Uint32(UserIDKey, userID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": userID})
 	}
@@ -279,7 +279,7 @@ func (uc *UserUsecase) DeleteUserByID(
 	uc.log.Info(
 		"删除用户成功",
 		zap.Uint32(UserIDKey, userID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -297,7 +297,7 @@ func (uc *UserUsecase) FindUserByID(
 		"开始根据ID查询用户",
 		zap.Uint32(UserIDKey, userID),
 		zap.Strings(database.PreloadKey, preloads),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.userRepo.FindModel(ctx, preloads, userID)
@@ -306,7 +306,7 @@ func (uc *UserUsecase) FindUserByID(
 			"根据ID查询用户失败",
 			zap.Error(err),
 			zap.Uint32(UserIDKey, userID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": userID})
 	}
@@ -315,7 +315,7 @@ func (uc *UserUsecase) FindUserByID(
 		"根据ID查询用户成功",
 		zap.Uint32(UserIDKey, userID),
 		zap.String(UsernameKey, m.Username),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -333,7 +333,7 @@ func (uc *UserUsecase) FindUserByName(
 		"开始根据用户名查询用户",
 		zap.String(UsernameKey, username),
 		zap.Strings(database.PreloadKey, preloads),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.userRepo.FindModel(ctx, preloads, map[string]any{"username": username})
@@ -342,7 +342,7 @@ func (uc *UserUsecase) FindUserByName(
 			"根据用户名查询用户失败",
 			zap.Error(err),
 			zap.String(UsernameKey, username),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"username": username})
 	}
@@ -351,7 +351,7 @@ func (uc *UserUsecase) FindUserByName(
 		"根据用户名查询用户成功",
 		zap.String(UsernameKey, username),
 		zap.Uint32(UserIDKey, m.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -367,7 +367,7 @@ func (uc *UserUsecase) ListUser(
 	uc.log.Info(
 		"开始查询用户列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.userRepo.ListModel(ctx, qp)
@@ -376,7 +376,7 @@ func (uc *UserUsecase) ListUser(
 			"查询用户列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, errors.NewGormError(err, nil)
 	}
@@ -385,7 +385,7 @@ func (uc *UserUsecase) ListUser(
 		"查询用户列表成功",
 		zap.Int64("total_count", count),
 		zap.Int("result_count", len(*ms)),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -397,7 +397,7 @@ func (uc *UserUsecase) CheckPasswordStrength(ctx context.Context, pwd string) *e
 
 	uc.log.Info(
 		"开始检查密码强度",
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	strength := GetPasswordStrength(pwd)
@@ -405,7 +405,7 @@ func (uc *UserUsecase) CheckPasswordStrength(ctx context.Context, pwd string) *e
 		uc.log.Warn(
 			"密码强度不足",
 			zap.Int("password_strength", strength),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return ErrPasswordStrengthFailed
 	}
@@ -413,7 +413,7 @@ func (uc *UserUsecase) CheckPasswordStrength(ctx context.Context, pwd string) *e
 	uc.log.Info(
 		"密码强度检查通过",
 		zap.Int("password_strength", strength),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -425,7 +425,7 @@ func (uc *UserUsecase) HashPassword(ctx context.Context, pwd string) (string, *e
 
 	uc.log.Info(
 		"开始密码哈希处理",
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	verified, err := uc.hasher.Hash(pwd)
@@ -433,14 +433,14 @@ func (uc *UserUsecase) HashPassword(ctx context.Context, pwd string) (string, *e
 		uc.log.Error(
 			"密码哈希失败",
 			zap.Error(err),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", errors.FromError(err)
 	}
 
 	uc.log.Info(
 		"密码哈希处理完成",
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return verified, nil
 }
@@ -459,7 +459,7 @@ func (uc *UserUsecase) Login(
 		"用户登录请求",
 		zap.String(UsernameKey, username),
 		zap.String("ip_address", ipAddress),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	// 检查登录失败次数
@@ -470,7 +470,7 @@ func (uc *UserUsecase) Login(
 			zap.Error(err),
 			zap.String(UsernameKey, username),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", errors.FromError(err)
 	}
@@ -480,7 +480,7 @@ func (uc *UserUsecase) Login(
 			"登录失败次数超限，账户被锁定",
 			zap.String(UsernameKey, username),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", ErrAccessLock
 	}
@@ -492,7 +492,7 @@ func (uc *UserUsecase) Login(
 			"用户不存在",
 			zap.String(UsernameKey, username),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 
 		// 更新失败次数
@@ -503,7 +503,7 @@ func (uc *UserUsecase) Login(
 				zap.Error(err),
 				zap.String(UsernameKey, username),
 				zap.String("ip_address", ipAddress),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		} else {
 			uc.log.Info(
@@ -511,7 +511,7 @@ func (uc *UserUsecase) Login(
 				zap.String(UsernameKey, username),
 				zap.String("ip_address", ipAddress),
 				zap.Int("remaining_attempts", newNum),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		}
 
@@ -525,7 +525,7 @@ func (uc *UserUsecase) Login(
 			zap.String(UsernameKey, username),
 			zap.Uint32(UserIDKey, m.ID),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", ErrUserInActive
 	}
@@ -539,7 +539,7 @@ func (uc *UserUsecase) Login(
 			zap.String(UsernameKey, username),
 			zap.Uint32(UserIDKey, m.ID),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", rErr
 	}
@@ -550,7 +550,7 @@ func (uc *UserUsecase) Login(
 			zap.String(UsernameKey, username),
 			zap.Uint32(UserIDKey, m.ID),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 
 		// 更新失败次数
@@ -562,7 +562,7 @@ func (uc *UserUsecase) Login(
 				zap.String(UsernameKey, username),
 				zap.Uint32(UserIDKey, m.ID),
 				zap.String("ip_address", ipAddress),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		} else {
 			uc.log.Info(
@@ -571,7 +571,7 @@ func (uc *UserUsecase) Login(
 				zap.Uint32(UserIDKey, m.ID),
 				zap.String("ip_address", ipAddress),
 				zap.Int("remaining_attempts", newNum),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		}
 
@@ -586,7 +586,7 @@ func (uc *UserUsecase) Login(
 			zap.String(UsernameKey, username),
 			zap.Uint32(UserIDKey, m.ID),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 	} else {
 		uc.log.Info(
@@ -594,7 +594,7 @@ func (uc *UserUsecase) Login(
 			zap.String(UsernameKey, username),
 			zap.Uint32(UserIDKey, m.ID),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 	}
 
@@ -612,7 +612,7 @@ func (uc *UserUsecase) Login(
 			zap.String(UsernameKey, username),
 			zap.Uint32(UserIDKey, m.ID),
 			zap.String("ip_address", ipAddress),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", rErr
 	}
@@ -622,7 +622,7 @@ func (uc *UserUsecase) Login(
 		zap.String(UsernameKey, username),
 		zap.Uint32(UserIDKey, m.ID),
 		zap.String("ip_address", ipAddress),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return token, nil
 }
@@ -634,7 +634,7 @@ func (uc *UserUsecase) VerifyPassword(ctx context.Context, pwd, hash string) (bo
 
 	uc.log.Info(
 		"开始密码验证",
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	verified, err := uc.hasher.Verify(pwd, hash)
@@ -642,14 +642,14 @@ func (uc *UserUsecase) VerifyPassword(ctx context.Context, pwd, hash string) (bo
 		uc.log.Error(
 			"密码验证失败",
 			zap.Error(err),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return false, ErrPasswordMismatch
 	}
 
 	uc.log.Info(
 		"密码验证完成",
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return verified, nil
 }
@@ -667,7 +667,7 @@ func (uc *UserUsecase) NewUserClaims(
 		zap.String(UsernameKey, m.Username),
 		zap.Uint32(UserIDKey, m.ID),
 		zap.Uint32(RoleIDKey, m.RoleID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	claims := &auth.UserClaims{
@@ -685,7 +685,7 @@ func (uc *UserUsecase) NewUserClaims(
 		zap.String(UsernameKey, m.Username),
 		zap.Uint32(UserIDKey, m.ID),
 		zap.Uint32(RoleIDKey, m.RoleID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return claims, nil
 }
@@ -700,7 +700,7 @@ func (uc *UserUsecase) UserClaimsToToken(ctx context.Context, claims auth.UserCl
 		zap.String(UsernameKey, claims.Subject),
 		zap.Uint32(UserIDKey, claims.UserID),
 		zap.Uint32(RoleIDKey, claims.RoleID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	token, err := auth.NewJWT([]byte(uc.conf.Token.SecretKey), claims)
@@ -708,7 +708,7 @@ func (uc *UserUsecase) UserClaimsToToken(ctx context.Context, claims auth.UserCl
 		uc.log.Error(
 			"生成JWT失败",
 			zap.Error(err),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return "", errors.FromError(err)
 	}
@@ -718,7 +718,7 @@ func (uc *UserUsecase) UserClaimsToToken(ctx context.Context, claims auth.UserCl
 		zap.String(UsernameKey, claims.Subject),
 		zap.Uint32(UserIDKey, claims.UserID),
 		zap.Uint32(RoleIDKey, claims.RoleID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return token, nil
 }

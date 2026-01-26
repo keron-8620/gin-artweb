@@ -36,7 +36,7 @@ func (r *oesColonyRepo) CreateModel(ctx context.Context, m *biz.OesColonyModel) 
 	r.log.Debug(
 		"开始创建oes集群",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -46,7 +46,7 @@ func (r *oesColonyRepo) CreateModel(ctx context.Context, m *biz.OesColonyModel) 
 			"创建oes集群失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, m),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -54,7 +54,7 @@ func (r *oesColonyRepo) CreateModel(ctx context.Context, m *biz.OesColonyModel) 
 	r.log.Debug(
 		"创建oes集群成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -65,7 +65,7 @@ func (r *oesColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 		"开始更新oes集群",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -76,7 +76,7 @@ func (r *oesColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -85,7 +85,7 @@ func (r *oesColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 		"更新oes集群成功",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -95,7 +95,7 @@ func (r *oesColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除oes集群",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -105,7 +105,7 @@ func (r *oesColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 			"删除oes集群失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return err
@@ -113,7 +113,7 @@ func (r *oesColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"删除oes集群成功",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
@@ -127,7 +127,7 @@ func (r *oesColonyRepo) FindModel(
 	r.log.Debug(
 		"开始查询oes集群",
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var m biz.OesColonyModel
@@ -138,7 +138,7 @@ func (r *oesColonyRepo) FindModel(
 			"查询oes集群失败",
 			zap.Error(err),
 			zap.Any(database.ConditionKey, conds),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return nil, err
@@ -147,7 +147,7 @@ func (r *oesColonyRepo) FindModel(
 		"查询oes集群成功",
 		zap.Object(database.ModelKey, &m),
 		zap.Any(database.ConditionKey, conds),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return &m, nil
@@ -160,7 +160,7 @@ func (r *oesColonyRepo) ListModel(
 	r.log.Debug(
 		"开始查询oes集群列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var ms []biz.OesColonyModel
@@ -172,7 +172,7 @@ func (r *oesColonyRepo) ListModel(
 			"查询oes集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
 		return 0, nil, err
@@ -180,7 +180,7 @@ func (r *oesColonyRepo) ListModel(
 	r.log.Debug(
 		"查询oes集群列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil

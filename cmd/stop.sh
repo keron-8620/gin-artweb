@@ -5,7 +5,7 @@ project_path=$(cd "$basepath/.."; pwd)
 process_name="artweb"
 
 # 查找正在运行的进程
-pid=$(ps aux | grep "$project_path/$process_name" | grep -v grep | awk '{print $2}')
+pid=$(ps aux | grep "$project_path/bin/$process_name" | grep -v grep | awk '{print $2}')
 
 if [ -z "$pid" ]; then
     echo "No running $process_name process found"
@@ -25,7 +25,7 @@ else
             exit 0
         fi
         sleep 1
-        ((count++))
+        count=$((count + 1))
     done
     
     # 如果进程仍未停止，强制终止

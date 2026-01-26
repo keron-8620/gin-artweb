@@ -8,8 +8,8 @@ process_name="artweb"
 pid_file="$basepath/${process_name}.pid"
 
 # 检查程序是否存在
-if [ ! -f "$basepath/$process_name" ]; then
-    echo "Error: $process_name executable not found at $basepath/$process_name"
+if [ ! -f "$basepath/bin/$process_name" ]; then
+    echo "Error: $process_name executable not found at $basepath/bin/$process_name"
     exit 1
 fi
 
@@ -28,7 +28,7 @@ fi
 echo "Starting $process_name..."
 
 # 后台运行程序，丢弃输出或重定向到/dev/null
-nohup "$basepath/$process_name" >/dev/null 2>&1 &
+nohup "$basepath/bin/$process_name" >/dev/null 2>&1 &
 
 # 保存进程ID
 echo $! > "$pid_file"

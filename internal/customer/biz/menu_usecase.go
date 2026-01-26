@@ -131,7 +131,7 @@ func (uc *MenuUsecase) GetParentMenu(
 	uc.log.Info(
 		"开始查询父菜单",
 		zap.Uint32("parent_id", *parentID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.menuRepo.FindModel(ctx, nil, *parentID)
@@ -140,7 +140,7 @@ func (uc *MenuUsecase) GetParentMenu(
 			"查询父菜单失败",
 			zap.Error(err),
 			zap.Uint32("parent_id", *parentID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"parent_id": *parentID})
 	}
@@ -149,7 +149,7 @@ func (uc *MenuUsecase) GetParentMenu(
 		"查询父菜单成功",
 		zap.Uint32("parent_id", *parentID),
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -169,7 +169,7 @@ func (uc *MenuUsecase) GetPermissions(
 	uc.log.Info(
 		"开始查询菜单关联的权限列表",
 		zap.Uint32s(PermissionIDsKey, permIDs),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -181,7 +181,7 @@ func (uc *MenuUsecase) GetPermissions(
 			"查询菜单关联的权限列表失败",
 			zap.Error(err),
 			zap.Uint32s(PermissionIDsKey, permIDs),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
@@ -189,7 +189,7 @@ func (uc *MenuUsecase) GetPermissions(
 	uc.log.Info(
 		"查询菜单关联的权限列表成功",
 		zap.Uint32s(PermissionIDsKey, permIDs),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
 }
@@ -207,7 +207,7 @@ func (uc *MenuUsecase) CreateMenu(
 		"开始创建菜单",
 		zap.Uint32s(PermissionIDsKey, permIDs),
 		zap.Object(database.ModelKey, &m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	menu, err := uc.GetParentMenu(ctx, m.ParentID)
@@ -228,7 +228,7 @@ func (uc *MenuUsecase) CreateMenu(
 			"创建菜单失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
@@ -242,7 +242,7 @@ func (uc *MenuUsecase) CreateMenu(
 			"添加菜单组策略失败",
 			zap.Error(err),
 			zap.Object(database.ModelKey, &m),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
@@ -250,7 +250,7 @@ func (uc *MenuUsecase) CreateMenu(
 	uc.log.Info(
 		"创建菜单成功",
 		zap.Object(database.ModelKey, &m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
 }
@@ -270,7 +270,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 		zap.Uint32(MenuIDKey, menuID),
 		zap.Uint32s(PermissionIDsKey, permIDs),
 		zap.Any(database.UpdateDataKey, data),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	perms, err := uc.GetPermissions(ctx, permIDs)
@@ -285,7 +285,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			zap.Error(err),
 			zap.Uint32(MenuIDKey, menuID),
 			zap.Any(database.UpdateDataKey, data),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, data)
 	}
@@ -299,7 +299,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			"移除旧菜单组策略失败",
 			zap.Error(err),
 			zap.Uint32(MenuIDKey, menuID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrRemoveGroupPolicy.WithCause(err)
 	}
@@ -309,7 +309,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 			"添加新菜单组策略失败",
 			zap.Error(err),
 			zap.Uint32(MenuIDKey, menuID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, ErrAddGroupPolicy.WithCause(err)
 	}
@@ -317,7 +317,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 	uc.log.Info(
 		"更新菜单成功",
 		zap.Uint32(MenuIDKey, menuID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -333,7 +333,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 	uc.log.Info(
 		"开始删除菜单",
 		zap.Uint32(MenuIDKey, menuID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
@@ -346,7 +346,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 			"删除菜单失败",
 			zap.Error(err),
 			zap.Uint32(MenuIDKey, menuID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": menuID})
 	}
@@ -356,7 +356,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 			"移除菜单组策略失败",
 			zap.Error(err),
 			zap.Uint32(MenuIDKey, menuID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return ErrRemoveGroupPolicy.WithCause(err)
 	}
@@ -364,7 +364,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 	uc.log.Info(
 		"删除菜单成功",
 		zap.Uint32(MenuIDKey, menuID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }
@@ -382,7 +382,7 @@ func (uc *MenuUsecase) FindMenuByID(
 		"开始查询菜单",
 		zap.Strings(database.PreloadKey, preloads),
 		zap.Uint32(MenuIDKey, menuID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := uc.menuRepo.FindModel(ctx, preloads, menuID)
@@ -391,7 +391,7 @@ func (uc *MenuUsecase) FindMenuByID(
 			"查询菜单失败",
 			zap.Error(err),
 			zap.Uint32(MenuIDKey, menuID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": menuID})
 	}
@@ -399,7 +399,7 @@ func (uc *MenuUsecase) FindMenuByID(
 	uc.log.Info(
 		"查询菜单成功",
 		zap.Uint32(MenuIDKey, menuID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
 }
@@ -415,7 +415,7 @@ func (uc *MenuUsecase) ListMenu(
 	uc.log.Info(
 		"开始查询菜单列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	count, ms, err := uc.menuRepo.ListModel(ctx, qp)
@@ -424,7 +424,7 @@ func (uc *MenuUsecase) ListMenu(
 			"查询菜单列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return 0, nil, errors.NewGormError(err, nil)
 	}
@@ -432,7 +432,7 @@ func (uc *MenuUsecase) ListMenu(
 	uc.log.Info(
 		"查询菜单列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return count, ms, nil
 }
@@ -444,7 +444,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 
 	uc.log.Info(
 		"开始加载菜单策略",
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
@@ -456,7 +456,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 		uc.log.Error(
 			"加载菜单策略时查询菜单列表失败",
 			zap.Error(err),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return err
 	}
@@ -471,7 +471,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 					"加载菜单策略失败",
 					zap.Error(err),
 					zap.Uint32(MenuIDKey, ms[i].ID),
-					zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return ErrAddGroupPolicy.WithCause(err)
 			}
@@ -480,7 +480,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 	uc.log.Info(
 		"加载菜单策略成功",
 		zap.Int("policy_count", policyCount),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

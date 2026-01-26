@@ -52,7 +52,7 @@ func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordMod
 	r.log.Debug(
 		"开始创建登录记录模型",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	m.LoginAt = now
@@ -61,7 +61,7 @@ func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordMod
 			"新增登陆记录模型失败",
 			zap.Object(database.ModelKey, m),
 			zap.Error(err),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return err
@@ -69,7 +69,7 @@ func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordMod
 	r.log.Debug(
 		"创建登录记录模型成功",
 		zap.Object(database.ModelKey, m),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return nil
@@ -82,7 +82,7 @@ func (r *loginRecordRepo) ListModel(
 	r.log.Debug(
 		"开始查询登录记录模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	var ms []biz.LoginRecordModel
@@ -92,7 +92,7 @@ func (r *loginRecordRepo) ListModel(
 			"查询登陆记录列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
 		return 0, nil, err
@@ -100,7 +100,7 @@ func (r *loginRecordRepo) ListModel(
 	r.log.Debug(
 		"查询登录记录模型列表成功",
 		zap.Object(database.QueryParamsKey, &qp),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
 	return count, &ms, nil
@@ -120,7 +120,7 @@ func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 	r.log.Debug(
 		"开始获取登录失败次数",
 		zap.String("ip", ip),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	// 获取缓存的登陆失败次数，不存在返回允许失败次数的最大值
@@ -130,7 +130,7 @@ func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 			"未找到IP的登录失败记录, 返回最大允许失败次数",
 			zap.String("ip", ip),
 			zap.Int("max_fail_num", r.maxNum),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return r.maxNum, nil
 	}
@@ -140,7 +140,7 @@ func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 		"获取到IP的登录失败次数",
 		zap.String("ip", ip),
 		zap.Int("fail_num", n),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return n, nil
 }
@@ -161,7 +161,7 @@ func (r *loginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num in
 		zap.String("ip", ip),
 		zap.Int("fail_num", num),
 		zap.Duration("ttl", r.ttl),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	// 设置缓存的登陆失败次数
@@ -171,7 +171,7 @@ func (r *loginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num in
 		"设置登录失败次数成功",
 		zap.String("ip", ip),
 		zap.Int("fail_num", num),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
 }

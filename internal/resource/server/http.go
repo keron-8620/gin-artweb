@@ -15,11 +15,16 @@ import (
 	"gin-artweb/internal/shared/middleware"
 )
 
+type ResourceUsecase struct {
+	Host *biz.HostUsecase
+	Pkg  *biz.PackageUsecase
+}
+
 func NewServer(
 	router *gin.RouterGroup,
 	init *common.Initialize,
 	loggers *log.Loggers,
-) {
+) *ResourceUsecase {
 	pubKeys := make([]string, len(init.Signers))
 	for i, signer := range init.Signers {
 		pubKeyBytes := ssh.MarshalAuthorizedKey(signer.PublicKey())
@@ -42,4 +47,9 @@ func NewServer(
 
 	hostService.LoadRouter(appRouter)
 	pkgService.LoadRouter(appRouter)
+
+	return &ResourceUsecase{
+		Host: hostUsecase,
+		Pkg:  pkgUsecase,
+	}
 }

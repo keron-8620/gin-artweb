@@ -15,16 +15,20 @@
 
 ######################## 本地标志文件模块 ##################
 - name: touch local success flag
-  shell: "echo {{ JOBS_RECORD_ID }} > {{ local_path_oes_home_flag_colodir }}/{{ flag_success }}"
+  file:
+    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_success }}"
+    state: touch
   when: check_result is success
   delegate_to: 127.0.0.1
-  run_once: true
+  run_once: yes
 
 - name: touch local failed flag
-  shell: "echo {{ JOBS_RECORD_ID }} > {{ local_path_oes_home_flag_colodir }}/{{ flag_failed }}"
+  file:
+    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_failed }}"
+    state: touch
   when: check_result is failed
   delegate_to: 127.0.0.1
-  run_once: true
+  run_once: yes
 
 - name: clear running flag
   file:

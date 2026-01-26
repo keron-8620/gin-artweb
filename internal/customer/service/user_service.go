@@ -53,7 +53,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			"绑定创建用户请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -64,7 +64,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 		"开始创建用户",
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucUser.CreateUser(ctx, biz.UserModel{
@@ -80,7 +80,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -90,7 +90,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 		"创建用户成功",
 		zap.Uint32(pbComm.RequestIDKey, m.ID),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(http.StatusCreated, &pbUser.UserReply{
@@ -119,7 +119,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			"绑定用户ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -132,7 +132,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			"绑定更新用户请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -143,7 +143,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 		"开始更新用户",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucUser.UpdateUserByID(ctx, uri.ID, map[string]any{
@@ -157,7 +157,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -166,7 +166,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 	s.log.Info(
 		"更新用户成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.ID)
@@ -175,7 +175,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			"查询更新后的用户信息失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -205,7 +205,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			"绑定删除用户ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -215,7 +215,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除用户",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucUser.DeleteUserByID(ctx, uri.ID); err != nil {
@@ -223,7 +223,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			"删除用户失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -232,7 +232,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 	s.log.Info(
 		"删除用户成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -257,7 +257,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			"绑定查询用户ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -267,7 +267,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询用户详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucUser.FindUserByID(ctx, []string{"Role"}, uri.ID)
@@ -276,7 +276,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			"查询用户详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -285,7 +285,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 	s.log.Info(
 		"查询用户详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	ctx.JSON(http.StatusOK, &pbUser.UserReply{
@@ -312,7 +312,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			"绑定查询用户列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -322,7 +322,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询用户列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -341,7 +341,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -350,7 +350,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 	s.log.Info(
 		"查询用户列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListUserModelToDetailOut(ms)
@@ -380,7 +380,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			"绑定查询用户ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -392,7 +392,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			"绑定更新重置用户密码参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -402,7 +402,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 	s.log.Info(
 		"开始重置用户密码",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucUser.UpdateUserByID(ctx, uri.ID, map[string]any{
@@ -411,7 +411,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 		s.log.Error(
 			"重置用户密码失败",
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -419,7 +419,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 	s.log.Info(
 		"重置用户密码成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
@@ -443,7 +443,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			"绑定更新个人密码参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -455,7 +455,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
 		return
@@ -466,7 +466,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.Error(rErr),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
@@ -476,7 +476,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		s.log.Error(
 			"验证密码失败",
 			zap.Error(rErr),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
 		return
@@ -484,7 +484,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 	if !ok {
 		s.log.Error(
 			"旧密码错误",
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.ToMap())
 	}
@@ -494,7 +494,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 		s.log.Error(
 			"重置用户密码失败",
 			zap.Uint32(auth.UserIDKey, claims.UserID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -502,7 +502,7 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 	s.log.Info(
 		"修改用户密码成功",
 		zap.Uint32(auth.UserIDKey, claims.UserID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
@@ -525,7 +525,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 			"绑定用户登录参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -536,7 +536,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 		"开始用户登录验证",
 		zap.String("username", req.Username),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	lrm := biz.LoginRecordModel{
@@ -554,7 +554,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String("username", req.Username),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		if _, lrErr := s.ucRecord.CreateLoginRecord(ctx, lrm); lrErr != nil {
 			s.log.Error(
@@ -562,7 +562,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 				zap.Error(lrErr),
 				zap.Object("login_record", &lrm),
 				zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-				zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		}
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -576,7 +576,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 			zap.Error(lrErr),
 			zap.Object("login_record", &lrm),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 	}
 
@@ -584,7 +584,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 		"用户登录成功",
 		zap.String("username", req.Username),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	reply := pbUser.LoginReply{
@@ -596,7 +596,7 @@ func (s *UserService) Login(ctx *gin.Context) {
 		"登录响应已发送",
 		zap.String("username", req.Username),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	ctx.JSON(reply.Code, &reply)
 }

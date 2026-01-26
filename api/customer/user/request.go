@@ -68,7 +68,7 @@ type ListUserRequest struct {
 	common.StandardModelQuery
 
 	// 用户名
-	Username string `form:"name" binding:"omitempty,max=50"`
+	Username string `form:"username" binding:"omitempty,max=50"`
 
 	// 是否激活
 	IsActive *bool `form:"is_active" binding:"omitempty"`

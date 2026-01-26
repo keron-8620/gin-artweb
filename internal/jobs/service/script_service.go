@@ -59,7 +59,7 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 			"绑定上传脚本参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -89,7 +89,7 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 		s.log.Error(
 			"创建脚本失败",
 			zap.Error(rErr),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
 		return
@@ -127,7 +127,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			"绑定更新脚本ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.JSON(rErr.Code, rErr.ToMap())
@@ -140,7 +140,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			"绑定上传脚本参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -153,7 +153,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			"查询脚本失败",
 			zap.Error(rErr),
 			zap.Uint32(biz.ScriptIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
 		return
@@ -163,7 +163,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			"删除原脚本文件失败",
 			zap.Error(rErr),
 			zap.Uint32(biz.ScriptIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
 		return
@@ -201,7 +201,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			"更新脚本失败",
 			zap.Error(rErr),
 			zap.Uint32(biz.ScriptIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.JSON(rErr.Code, rErr.ToMap())
 		return
@@ -232,7 +232,7 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 			"绑定删除脚本ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -242,7 +242,7 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 	s.log.Info(
 		"开始删除脚本",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	if err := s.ucScript.DeleteScriptByID(ctx, uri.ID); err != nil {
@@ -250,7 +250,7 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 			"删除脚本失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -259,7 +259,7 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 	s.log.Info(
 		"删除脚本成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
@@ -283,7 +283,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 			"绑定查询脚本ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -293,7 +293,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询脚本详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	m, err := s.ucScript.FindScriptByID(ctx, uri.ID)
@@ -302,7 +302,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 			"查询脚本详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -311,7 +311,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 	s.log.Info(
 		"查询脚本详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mo := ScriptModelToStandardOut(*m)
@@ -339,7 +339,7 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 			"绑定查询脚本列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -349,7 +349,7 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 	s.log.Info(
 		"开始查询脚本列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	page, size, query := req.Query()
@@ -367,7 +367,7 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return
@@ -376,7 +376,7 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 	s.log.Info(
 		"查询脚本列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	mbs := ListScriptModelToOutBase(ms)
@@ -405,7 +405,7 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 			"绑定下载脚本ID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.ValidateError.WithCause(err)
 		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
@@ -418,7 +418,7 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 			"查询脚本详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
 		return

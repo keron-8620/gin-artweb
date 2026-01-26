@@ -16,7 +16,7 @@ import (
 
 const (
 	ScheduleTableName = "jobs_schedule"
-	ScheduleIDKey = "schedule_id"
+	ScheduleIDKey     = "schedule_id"
 )
 
 type ScheduleModel struct {
@@ -241,6 +241,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 
 	if m.IsEnabled {
 		if err := uc.addJob(ctx, &m); err != nil {
+			uc.removeJob(ctx, m.ID)
 			return nil, err
 		}
 	}
@@ -285,13 +286,23 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 		return nil, rErr
 	}
 
+	// 获取原始计划任务id
+	entryID, exists := uc.entryMap[scheduleID]
+
 	if err := uc.removeJob(ctx, scheduleID); err != nil {
 		return nil, err
 	}
+
+	// 添加新的计划任务
 	if m.IsEnabled {
 		if err := uc.addJob(ctx, m); err != nil {
 			return nil, err
 		}
+	}
+
+	// 删除原有计划任务
+	if exists {
+		uc.crontab.Remove(entryID)
 	}
 
 	uc.log.Info(

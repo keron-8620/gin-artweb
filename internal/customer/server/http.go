@@ -16,11 +16,20 @@ import (
 	"gin-artweb/pkg/crypto"
 )
 
+type CustomerUsecase struct {
+	Permission *biz.PermissionUsecase
+	Menu       *biz.MenuUsecase
+	Button     *biz.ButtonUsecase
+	Role       *biz.RoleUsecase
+	User       *biz.UserUsecase
+	Record     *biz.LoginRecordUsecase
+}
+
 func NewServer(
 	router *gin.RouterGroup,
 	init *common.Initialize,
 	loggers *log.Loggers,
-) {
+) *CustomerUsecase {
 	permissionRepo := data.NewPermissionRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	menuRepo := data.NewMenuRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	buttonRepo := data.NewButtonRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
@@ -92,4 +101,13 @@ func NewServer(
 	roleService.LoadRouter(appRouter)
 	userService.LoadRouter(appRouter)
 	recordService.LoadRouter(appRouter)
+
+	return &CustomerUsecase{
+		Permission: permissionUsecase,
+		Menu:       menuUsecase,
+		Button:     buttonUsecase,
+		Role:       roleUsecase,
+		User:       userUsecase,
+		Record:     recordUsecase,
+	}
 }
