@@ -1,4 +1,5 @@
-logs/*
-bin/*
-storage/*
+logs/
+bin/
+storage/
+html/
 artweb.pid
