@@ -363,6 +363,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 	}
 
 	page, size, query := req.Query()
+	query["system_type"] = "STK"
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
@@ -375,7 +376,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
 	if err != nil {
 		s.log.Error(
-			"查询oes集群列表失败",
+			"查询oes现货集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
@@ -387,7 +388,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 
 	if ms == nil {
 		s.log.Warn(
-			"查询oes集群列表为nil",
+			"查询oes现货集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -396,11 +397,10 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 		return
 	}
 
-	stkModels := *ms
-	tasks, rErr := s.ucStk.BuildTaskExecutionInfos(ctx, stkModels)
+	tasks, rErr := s.ucStk.BuildTaskExecutionInfos(ctx, *ms)
 	if rErr != nil {
 		s.log.Error(
-			"构建mds集群任务信息失败",
+			"构建oes现货集群任务信息失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -454,6 +454,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 	}
 
 	page, size, query := req.Query()
+	query["system_type"] = "CRD"
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
@@ -466,7 +467,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
 	if err != nil {
 		s.log.Error(
-			"查询oes集群列表失败",
+			"查询oes两融集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
@@ -478,7 +479,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 
 	if ms == nil {
 		s.log.Warn(
-			"查询oes集群列表为nil",
+			"查询oes两融集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -487,11 +488,10 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 		return
 	}
 
-	stkModels := *ms
-	tasks, rErr := s.ucCrd.BuildTaskExecutionInfos(ctx, stkModels)
+	tasks, rErr := s.ucCrd.BuildTaskExecutionInfos(ctx, *ms)
 	if rErr != nil {
 		s.log.Error(
-			"构建mds集群任务信息失败",
+			"构建oes两融集群任务信息失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -545,6 +545,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 	}
 
 	page, size, query := req.Query()
+	query["system_type"] = "OPT"
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
@@ -557,7 +558,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
 	if err != nil {
 		s.log.Error(
-			"查询oes集群列表失败",
+			"查询oes期权集群列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
@@ -569,7 +570,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 
 	if ms == nil {
 		s.log.Warn(
-			"查询oes集群列表为nil",
+			"查询oes期权集群列表为nil",
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -578,11 +579,10 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 		return
 	}
 
-	stkModels := *ms
-	tasks, rErr := s.ucOpt.BuildTaskExecutionInfos(ctx, stkModels)
+	tasks, rErr := s.ucOpt.BuildTaskExecutionInfos(ctx, *ms)
 	if rErr != nil {
 		s.log.Error(
-			"构建mds集群任务信息失败",
+			"构建oes期权集群任务信息失败",
 			zap.Error(rErr),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),

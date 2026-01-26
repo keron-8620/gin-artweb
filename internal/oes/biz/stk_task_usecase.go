@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	bizJobs "gin-artweb/internal/jobs/biz"
 	"gin-artweb/internal/shared/config"
@@ -29,6 +30,13 @@ func (mc StkTaskRecordCache) GetTaskList() []string {
 
 func (mc StkTaskRecordCache) GetRecordIDs() []uint32 {
 	return []uint32{mc.Mon, mc.CounterFetch, mc.CounterDistribute, mc.Bse, mc.Sse, mc.Szse, mc.Csde}
+}
+
+func (mc StkTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for i, task := range mc.GetTaskList() {
+		enc.AddUint32(task, mc.GetRecordIDs()[i])
+	}
+	return nil
 }
 
 type StkTaskExecutionInfo struct {
@@ -64,11 +72,18 @@ func (uc *StkTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
-	trs := make([]StkTaskRecordCache, len(ms))
-	for i, m := range ms {
-		if m.SystemType != "STK" {
-			continue
+
+	// 过滤出STK类型的模型
+	var stkModels []OesColonyModel
+	for _, m := range ms {
+		if m.SystemType == "STK" {
+			stkModels = append(stkModels, m)
 		}
+	}
+
+	// 获取集群的执行记录,统计执行记录id
+	trs := make([]StkTaskRecordCache, len(stkModels))
+	for i, m := range stkModels {
 		tr, err := uc.LoadStkTaskRecordCacheFromFiles(ctx, m.ColonyNum)
 		if err != nil {
 			return nil, errors.FromError(err)
@@ -81,6 +96,8 @@ func (uc *StkTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if rErr != nil {
 		return nil, rErr
 	}
+
+	// 执行数据库查询，获取集群对应的执行记录
 	cache, rErr := uc.ucRecord.FindRecordsByIDs(ctx, recoids)
 	if rErr != nil {
 		return nil, rErr
@@ -159,7 +176,7 @@ func (uc *StkTaskExecutionInfoUsecase) LoadStkTaskRecordCacheFromFiles(
 		return nil, errors.FromError(err)
 	}
 	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
-	mc := StkTaskRecordCache{
+	mc := &StkTaskRecordCache{
 		ColonyNum:         colonyNum,
 		Mon:               uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".mon")),
 		CounterFetch:      uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".counter_fetch")),
@@ -169,5 +186,9 @@ func (uc *StkTaskExecutionInfoUsecase) LoadStkTaskRecordCacheFromFiles(
 		Szse:              uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".szse")),
 		Csde:              uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".csde")),
 	}
-	return &mc, nil
+	uc.log.Debug(
+		"查询oes现货任务状态对应的执行记录id成功",
+		zap.Object("stk_task_record", mc),
+	)
+	return mc, nil
 }

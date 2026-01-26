@@ -312,10 +312,17 @@ func ScriptRecordToDetailOut(
 	if m.Script.ID != 0 {
 		script = ScriptModelToStandardOut(m.Script)
 	}
-	return &pbRecord.ScriptRecordDetailOut{
-		ScriptRecordStandardOut: *ScriptRecordToStandardOut(m),
-		Script:                  *script,
+	
+	standardOut := ScriptRecordToStandardOut(m)
+	result := &pbRecord.ScriptRecordDetailOut{
+		ScriptRecordStandardOut: *standardOut,
 	}
+	
+	if script != nil {
+		result.Script = *script
+	}
+	
+	return result
 }
 
 func ListScriptRecordToDetailOut(

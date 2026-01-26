@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	bizJobs "gin-artweb/internal/jobs/biz"
 	"gin-artweb/internal/shared/config"
@@ -30,6 +31,13 @@ func (mc CrdTaskRecordCache) GetTaskList() []string {
 
 func (mc CrdTaskRecordCache) GetRecordIDs() []uint32 {
 	return []uint32{mc.Mon, mc.CounterFetch, mc.CounterDistribute, mc.Sse, mc.Szse, mc.Csde, mc.SseLate, mc.SzseLate}
+}
+
+func (mc CrdTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for i, task := range mc.GetTaskList() {
+		enc.AddUint32(task, mc.GetRecordIDs()[i])
+	}
+	return nil
 }
 
 type CrdTaskExecutionInfo struct {
@@ -66,11 +74,18 @@ func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
-	trs := make([]CrdTaskRecordCache, len(ms))
-	for i, m := range ms {
-		if m.SystemType != "crd" {
-			continue
+
+	// 过滤出两融类型的oes集群
+	var crdModels []OesColonyModel
+	for _, m := range ms {
+		if m.SystemType == "CRD" {
+			crdModels = append(crdModels, m)
 		}
+	}
+
+	// 获取集群的执行记录,统计执行记录id
+	trs := make([]CrdTaskRecordCache, len(crdModels))
+	for i, m := range crdModels {
 		tr, err := uc.LoadCrdTaskRecordCacheFromFiles(ctx, m.ColonyNum)
 		if err != nil {
 			return nil, errors.FromError(err)
@@ -83,6 +98,8 @@ func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if rErr != nil {
 		return nil, rErr
 	}
+
+	// 执行数据库查询，获取集群对应的执行记录
 	cache, rErr := uc.ucRecord.FindRecordsByIDs(ctx, recoids)
 	if rErr != nil {
 		return nil, rErr
@@ -176,5 +193,9 @@ func (uc *CrdTaskExecutionInfoUsecase) LoadCrdTaskRecordCacheFromFiles(
 		SseLate:           uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".sse_late")),
 		SzseLate:          uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".szse_late")),
 	}
+	uc.log.Debug(
+		"查询oes两融任务状态对应的执行记录id成功",
+		zap.Object("crd_task_record", mc),
+	)
 	return &mc, nil
 }

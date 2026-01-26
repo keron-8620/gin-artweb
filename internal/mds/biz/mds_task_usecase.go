@@ -29,12 +29,10 @@ func (mc MdsTaskRecordCache) GetRecordIDs() []uint32 {
 	return []uint32{mc.Mon, mc.Bse, mc.Sse, mc.Szse}
 }
 
-func (m MdsTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("colony_num", m.ColonyNum)
-	enc.AddUint32("mon", m.Mon)
-	enc.AddUint32("bse", m.Bse)
-	enc.AddUint32("sse", m.Sse)
-	enc.AddUint32("szse", m.Szse)
+func (mc MdsTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for i, task := range mc.GetTaskList() {
+		enc.AddUint32(task, mc.GetRecordIDs()[i])
+	}
 	return nil
 }
 
@@ -175,8 +173,8 @@ func (uc *MdsTaskExecutionInfoUsecase) LoadMdsTaskRecordCacheFromFiles(
 		Sse:       uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".sse")),
 		Szse:      uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".szse")),
 	}
-	uc.log.Info(
-		"查询mds集群任务状态成功",
+	uc.log.Debug(
+		"查询mds任务状态对应的执行记录id成功",
 		zap.Object("mds_task_record_ids", &mc),
 	)
 	return &mc, nil

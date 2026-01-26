@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	bizJobs "gin-artweb/internal/jobs/biz"
 	"gin-artweb/internal/shared/config"
@@ -27,6 +28,13 @@ func (mc OptTaskRecordCache) GetTaskList() []string {
 
 func (mc OptTaskRecordCache) GetRecordIDs() []uint32 {
 	return []uint32{mc.Mon, mc.CounterFetch, mc.CounterDistribute, mc.Sse, mc.Szse}
+}
+
+func (mc OptTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for i, task := range mc.GetTaskList() {
+		enc.AddUint32(task, mc.GetRecordIDs()[i])
+	}
+	return nil
 }
 
 type OptTaskExecutionInfo struct {
@@ -60,11 +68,18 @@ func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if err := ctxutil.CheckContext(ctx); err != nil {
 		return nil, errors.FromError(err)
 	}
-	trs := make([]OptTaskRecordCache, len(ms))
-	for i, m := range ms {
-		if m.SystemType != "opt" {
-			continue
+
+	// 过滤出两融类型的oes集群
+	var optModels []OesColonyModel
+	for _, m := range ms {
+		if m.SystemType == "CRD" {
+			optModels = append(optModels, m)
 		}
+	}
+
+	// 获取集群的执行记录,统计执行记录id
+	trs := make([]OptTaskRecordCache, len(optModels))
+	for i, m := range optModels {
 		tr, err := uc.LoadOptTaskRecordCacheFromFiles(ctx, m.ColonyNum)
 		if err != nil {
 			return nil, errors.FromError(err)
@@ -77,6 +92,8 @@ func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if rErr != nil {
 		return nil, rErr
 	}
+
+	// 执行数据库查询，获取集群对应的执行记录
 	cache, rErr := uc.ucRecord.FindRecordsByIDs(ctx, recoids)
 	if rErr != nil {
 		return nil, rErr
@@ -155,5 +172,9 @@ func (uc *OptTaskExecutionInfoUsecase) LoadOptTaskRecordCacheFromFiles(
 		Sse:               uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".sse")),
 		Szse:              uc.ucRecord.ReadUint32FromFile(filepath.Join(flagDir, ".szse")),
 	}
+	uc.log.Debug(
+		"查询oes期权任务状态对应的执行记录id成功",
+		zap.Object("opt_task_record", mc),
+	)
 	return &mc, nil
 }
