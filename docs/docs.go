@@ -2369,6 +2369,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/jobs/record/{id}/log/stream": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于实时获取指定执行记录的日志内容",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "脚本执行记录"
+                ],
+                "summary": "实时获取脚本执行日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "执行记录编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "实时日志流",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "执行记录未找到或日志文件不存在",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/jobs/schedule": {
             "get": {
                 "security": [

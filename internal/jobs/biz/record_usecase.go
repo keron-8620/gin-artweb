@@ -41,7 +41,7 @@ type ScriptRecordModel struct {
 	ErrorMessage string      `gorm:"column:error_message;type:text;comment:错误信息" json:"error_message"`
 	Username     string      `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
 	ScriptID     uint32      `gorm:"column:script_id;not null;index;comment:脚本ID" json:"script_id"`
-	Script       ScriptModel `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
+	Script       ScriptModel `gorm:"foreignKey:ScriptID;references:ID;constraint:OnDelete:CASCADE" json:"script"`
 }
 
 func (m *ScriptRecordModel) TableName() string {
@@ -371,7 +371,7 @@ func (uc *RecordUsecase) Cancel(ctx context.Context, recordID uint32) {
 		)
 	} else {
 		uc.log.Info(
-			"取消脚本执行",
+			"开始取消脚本执行",
 			zap.Uint32(ScriptRecordIDKey, recordID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)

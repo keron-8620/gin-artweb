@@ -55,3 +55,8 @@ type ScriptRecordReply = common.APIReply[ScriptRecordDetailOut]
 
 // PagScriptRecordReply 程序包的分页响应结构
 type PagScriptRecordReply = common.APIReply[*common.Pag[ScriptRecordDetailOut]]
+
+// 实时日志流响应结构
+type RealTimeLogResponse struct {
+	Line string `json:"line"`
+}

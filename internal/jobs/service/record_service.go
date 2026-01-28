@@ -1,7 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -251,6 +254,194 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 	}
 }
 
+// @Summary 实时获取脚本执行日志
+// @Description 本接口用于实时获取指定执行记录的日志内容
+// @Tags 脚本执行记录
+// @Produce text/plain
+// @Param id path uint true "执行记录编号"
+// @Success 200 {string} string "实时日志流"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 404 {object} errors.Error "执行记录未找到或日志文件不存在"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/record/{id}/log/stream [get]
+// @Security ApiKeyAuth
+func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
+	var uri pbComm.IDUri
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		s.log.Error(
+			"绑定脚本执行记录ID参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.ValidateError.WithCause(err)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	m, rErr := s.ucRecord.FindScriptRecordByID(ctx, []string{}, uri.ID)
+	if rErr != nil {
+		s.log.Error(
+			"查询脚本执行记录详情失败",
+			zap.Error(rErr),
+			zap.Uint32(pbComm.RequestIDKey, uri.ID),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		return
+	}
+
+	logPath := m.LogPath()
+
+	// 检查日志文件是否存在
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		s.log.Error(
+			"日志文件不存在",
+			zap.String("log_path", logPath),
+			zap.Uint32(biz.ScriptRecordIDKey, uri.ID),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		err := biz.ErrNoScriptLogFile.WithData(map[string]any{
+			biz.ScriptRecordIDKey: uri.ID,
+		})
+		ctx.AbortWithStatusJSON(http.StatusNotFound, err.ToMap())
+		return
+	}
+
+	// 初始化文件信息
+	file, err := os.Open(logPath)
+	if err != nil {
+		s.log.Error(
+			"打开日志文件失败",
+			zap.Error(err),
+			zap.String("log_path", logPath),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		err := errors.FromError(err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err.ToMap())
+		return
+	}
+	defer file.Close()
+
+	// 设置SSE响应头
+	ctx.Header("Content-Type", "text/event-stream")
+	ctx.Header("Cache-Control", "no-cache")
+	ctx.Header("Connection", "keep-alive")
+	ctx.Header("Transfer-Encoding", "chunked")
+	ctx.Header("X-Accel-Buffering", "no")
+
+	clientGone := ctx.Writer.CloseNotify()
+
+	// 移动到文件末尾，准备读取新内容
+	fileInfo, _ := file.Stat()
+	lastModTime := fileInfo.ModTime()
+	currentSize := fileInfo.Size()
+
+	// 发送初始数据
+	initialBytes := make([]byte, currentSize)
+	n, _ := file.Read(initialBytes)
+	if n > 0 {
+		initialLines := strings.SplitSeq(string(initialBytes[:n]), "\n")
+		for line := range initialLines {
+			if line != "" {
+				fmt.Fprintf(ctx.Writer, "data: %s\n", line)
+			}
+		}
+		fmt.Fprintf(ctx.Writer, "\n")
+		// ctx.Writer.Flush()
+	}
+
+	// 检查任务是否仍在运行
+	// 如果GetCancel返回nil，表示任务已经完成（无论成功、失败、超时或被取消）
+	// 如果GetCancel返回非nil，表示任务仍在运行
+	if cancel := s.ucRecord.GetCancel(uri.ID); cancel == nil {
+		// 任务已完成，结束流
+		return
+	}
+
+	// 定期检查文件是否有新内容
+	ticker := time.NewTicker(1 * time.Second) // 每秒检查一次
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-clientGone: // 客户端已断开连接
+			return
+		case <-ctx.Done(): // ctx 取消
+			return
+		case <-ticker.C:
+			// 检查文件大小是否有变化
+			fileInfo, err := os.Stat(logPath)
+			if err != nil {
+				s.log.Error(
+					"获取日志文件状态失败",
+					zap.Error(err),
+					zap.String("log_path", logPath),
+					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+				)
+				return
+			}
+
+			newSize := fileInfo.Size()
+
+			// 如果文件大小增加了，说明有新内容
+			if newSize > currentSize {
+				// 移动到上次读取的位置
+				file.Seek(currentSize, 0)
+
+				// 读取新增的内容
+				buf := make([]byte, newSize-currentSize)
+				n, _ := file.Read(buf)
+
+				if n > 0 {
+					newLines := strings.SplitSeq(string(buf[:n]), "\n")
+					for line := range newLines {
+						if line != "" {
+							fmt.Fprintf(ctx.Writer, "data: %s\n", line)
+						}
+					}
+					fmt.Fprintf(ctx.Writer, "\n")
+					ctx.Writer.Flush()
+				}
+
+				currentSize = newSize
+			} else if fileInfo.ModTime().After(lastModTime) {
+				// 文件修改时间更新了，可能有追加内容
+				file.Seek(currentSize, 0)
+				buf := make([]byte, 1024) // 尝试读取1KB内容
+				for {
+					n, _ := file.Read(buf)
+					if n == 0 {
+						break
+					}
+
+					newLines := strings.Split(string(buf[:n]), "\n")
+					for i, line := range newLines {
+						// 最后一行可能是不完整的，跳过
+						if i == len(newLines)-1 && n == len(buf) {
+							continue
+						}
+						if line != "" {
+							fmt.Fprintf(ctx.Writer, "data: %s\n", line)
+						}
+					}
+					fmt.Fprintf(ctx.Writer, "\n")
+					ctx.Writer.Flush()
+					currentSize += int64(n)
+				}
+
+				lastModTime = fileInfo.ModTime()
+			}
+
+			// 检查任务是否已完成
+			if cancel := s.ucRecord.GetCancel(uri.ID); cancel == nil {
+				// 检测到取消信号，结束流
+				return
+			}
+		}
+	}
+}
+
 // @Summary 对正在执行的脚本发送终止信号
 // @Description 本接口用于通过执行记录的id号,对正在执行的脚本发送终止信号
 // @Tags 脚本执行记录
@@ -283,6 +474,7 @@ func (s *ScriptRecordService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/record/:id", s.GetScriptRecord)
 	r.GET("/record", s.ListScriptRecord)
 	r.GET("/record/:id/log", s.DownloadScriptRecordLog)
+	r.GET("/record/:id/log/stream", s.StreamScriptRecordLog)
 	r.DELETE("/record/:id", s.CancelScriptRecord)
 }
 
@@ -312,16 +504,16 @@ func ScriptRecordToDetailOut(
 	if m.Script.ID != 0 {
 		script = ScriptModelToStandardOut(m.Script)
 	}
-	
+
 	standardOut := ScriptRecordToStandardOut(m)
 	result := &pbRecord.ScriptRecordDetailOut{
 		ScriptRecordStandardOut: *standardOut,
 	}
-	
+
 	if script != nil {
 		result.Script = *script
 	}
-	
+
 	return result
 }
 

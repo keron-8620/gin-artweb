@@ -44,6 +44,12 @@ var (
 		"内置脚本不允许修改或删除",
 		nil,
 	)
+	ErrNoScriptLogFile = errors.New(
+		http.StatusNotFound,
+		"no_script_log_file",
+		"没有找到脚本日志文件",
+		nil,
+	)
 )
 
 
