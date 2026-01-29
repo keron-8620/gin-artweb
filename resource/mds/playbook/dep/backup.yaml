@@ -25,3 +25,8 @@
         dest: "{{ slave_path_user_home }}/{{ pkg_name }}_{{ version }}.tar.gz"
         remove: False
         format: gz
+
+    - name: save mds package archive to backup dir
+      copy:
+        src: "{{ slave_path_user_home }}/{{ pkg_name }}_{{ version }}.tar.gz"
+        dest: "{{ slave_backup_path }}/{{ pkg_name }}_{{ version }}.tar.gz"

@@ -12,6 +12,9 @@ type CreateOrUpdateMdsColonyRequest struct {
 	// 解压后名称
 	ExtractedName string `json:"extracted_name" form:"extracted_name" binding:"required,max=50"`
 
+	// 是否启用
+	IsEnable bool `json:"is_enable" form:"is_enable" binding:"required"`
+
 	// 程序包ID
 	PackageID uint32 `json:"package_id" form:"package_id" binding:"required"`
 
@@ -32,6 +35,9 @@ type ListMdsColonyRequest struct {
 	// 解压后名称
 	ExtractedName string `form:"extracted_name"`
 
+	// 是否启用
+	IsEnable *bool `form:"is_enable"`
+
 	// 程序包ID
 	PackageID uint32 `form:"package_id"`
 
@@ -46,6 +52,9 @@ func (req *ListMdsColonyRequest) Query() (int, int, map[string]any) {
 	}
 	if req.ExtractedName != "" {
 		query["extracted_name = ?"] = "%" + req.ExtractedName + "%"
+	}
+	if req.IsEnable != nil {
+		query["is_enable = ?"] = *req.IsEnable
 	}
 	if req.PackageID > 0 {
 		query["package_id = ?"] = req.PackageID

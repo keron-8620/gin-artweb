@@ -23,12 +23,12 @@ import (
 	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 
-	customer "gin-artweb/internal/customer/server"
-	jobs "gin-artweb/internal/jobs/server"
-	mds "gin-artweb/internal/mds/server"
-	mon "gin-artweb/internal/mon/server"
-	oes "gin-artweb/internal/oes/server"
-	resource "gin-artweb/internal/resource/server"
+	mds "gin-artweb/internal/business/mds/server"
+	mon "gin-artweb/internal/business/mon/server"
+	oes "gin-artweb/internal/business/oes/server"
+	customer "gin-artweb/internal/infra/customer/server"
+	jobs "gin-artweb/internal/infra/jobs/server"
+	resource "gin-artweb/internal/infra/resource/server"
 	"gin-artweb/pkg/shell"
 
 	"gin-artweb/docs"
