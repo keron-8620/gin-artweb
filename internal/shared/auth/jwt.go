@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 
+	"emperror.dev/errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -25,7 +26,7 @@ func NewJWT(secretKey []byte, u UserClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, u)
 	tokenString, err := token.SignedString(secretKey)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "创建jwt失败")
 	}
 	return tokenString, nil
 }
@@ -39,7 +40,7 @@ func GenerateTokenID() string {
 // GetUserClaims 获取用户Claims
 func GetUserClaims(ctx context.Context) *UserClaims {
 	if userClaims, ok := ctx.Value(UserClaimsKey).(*UserClaims); ok {
-        return userClaims
-    }
-    return nil
+		return userClaims
+	}
+	return nil
 }

@@ -1,9 +1,9 @@
 package crontab
 
 import (
-	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
@@ -49,7 +49,7 @@ func ValidateCronExpression(expr string, withSeconds bool) (bool, error) {
 	// 解析表达式，解析失败会返回错误
 	_, err := parser.Parse(expr)
 	if err != nil {
-		return false, fmt.Errorf("cron表达式不合法: %v", err)
+		return false, errors.Wrap(err, "cron表达式不合法")
 	}
 	return true, nil
 }

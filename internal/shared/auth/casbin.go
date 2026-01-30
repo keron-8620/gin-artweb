@@ -82,8 +82,8 @@ func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) 
 
 	// 参数校验
 	if sub == "" || obj == "" || act == "" {
-		return errors.WithDetails(
-			errors.New("添加Casbin策略失败: 参数不能为空"),
+		return errors.NewWithDetails(
+			"添加Casbin策略失败: 参数不能为空",
 			"sub", sub,
 			"obj", obj,
 			"act", act,
@@ -92,8 +92,8 @@ func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) 
 
 	// 添加策略
 	if _, err := enf.AddPolicy(sub, obj, act); err != nil {
-		return errors.WithDetails(
-			errors.Wrapf(err, "添加Casbin策略失败 [sub=%s, obj=%s, act=%s]", sub, obj, act),
+		return errors.WrapWithDetails(
+			err, "添加Casbin策略失败",
 			"sub", sub,
 			"obj", obj,
 			"act", act,
@@ -112,8 +112,8 @@ func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act strin
 
 	// 参数校验
 	if sub == "" || obj == "" || act == "" {
-		return errors.WithDetails(
-			errors.New("移除Casbin策略失败: 参数不能为空"),
+		return errors.NewWithDetails(
+			"移除Casbin策略失败: 参数不能为空",
 			"sub", sub,
 			"obj", obj,
 			"act", act,
@@ -122,8 +122,8 @@ func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act strin
 
 	// 移除策略
 	if _, err := enf.RemovePolicy(sub, obj, act); err != nil {
-		return errors.WithDetails(
-			errors.Wrapf(err, "移除Casbin策略失败 [sub=%s, obj=%s, act=%s]", sub, obj, act),
+		return errors.WrapWithDetails(
+			err, "移除Casbin策略失败",
 			"sub", sub,
 			"obj", obj,
 			"act", act,
@@ -142,8 +142,8 @@ func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) 
 
 	// 参数校验
 	if sub == "" || obj == "" {
-		return errors.WithDetails(
-			errors.New("添加Casbin组策略失败: 参数不能为空"),
+		return errors.NewWithDetails(
+			"添加Casbin组策略失败: 参数不能为空",
 			"sub", sub,
 			"obj", obj,
 		)
@@ -151,8 +151,8 @@ func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) 
 
 	// 添加组策略
 	if _, err := enf.AddGroupingPolicy(sub, obj); err != nil {
-		return errors.WithDetails(
-			errors.Wrapf(err, "添加Casbin组策略失败 [sub=%s, obj=%s]", sub, obj),
+		return errors.WrapWithDetails(
+			err, "添加Casbin组策略失败",
 			"sub", sub,
 			"obj", obj,
 		)
@@ -168,8 +168,8 @@ func RemoveGroupPolicy(ctx context.Context, enf *casbin.Enforcer, index int, val
 	}
 	// 参数校验
 	if value == "" || index < 0 || index > 1 {
-		return errors.WithDetails(
-			errors.New("移除Casbin组策略失败: 值不能为空且索引必须在0-1之间"),
+		return errors.NewWithDetails(
+			"移除Casbin组策略失败: 值不能为空且索引必须在0-1之间",
 			"index", index,
 			"value", value,
 		)
@@ -177,8 +177,8 @@ func RemoveGroupPolicy(ctx context.Context, enf *casbin.Enforcer, index int, val
 
 	// 移除组策略
 	if _, err := enf.RemoveFilteredGroupingPolicy(index, value); err != nil {
-		return errors.WithDetails(
-			errors.Wrapf(err, "添加Casbin组策略失败 [index=%d, value=%s]", index, value),
+		return errors.WrapIfWithDetails(
+			err, "添加Casbin组策略失败",
 			"index", index,
 			"value", value,
 		)

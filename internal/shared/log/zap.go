@@ -1,9 +1,9 @@
 package log
 
 import (
-	"fmt"
 	"io"
 
+	"emperror.dev/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -17,7 +17,7 @@ func NewZapLogger(level string, w io.Writer) (*zap.Logger, error) {
 	// 解析日志级别
 	atomicLevel := zap.NewAtomicLevel()
 	if err := atomicLevel.UnmarshalText([]byte(level)); err != nil {
-		return nil, fmt.Errorf("无法解析日志级别: %v", err)
+		return nil, errors.WrapWithDetails(err, "解析日志级别失败", "level", level)
 	}
 
 	// 编码器配置
@@ -55,7 +55,7 @@ func NewZapLogger(level string, w io.Writer) (*zap.Logger, error) {
 func NewZapLoggerMust(level string, w io.Writer) *zap.Logger {
 	logger, err := NewZapLogger(level, w)
 	if err != nil {
-		panic(fmt.Sprintf("初始化日志失败: %v", err))
+		panic(err)
 	}
 	return logger
 }
