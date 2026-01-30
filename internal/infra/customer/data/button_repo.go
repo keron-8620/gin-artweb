@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	goerrors "errors"
+	"errors"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -49,7 +49,7 @@ func (r *buttonRepo) CreateModel(
 ) error {
 	// 检查参数
 	if m == nil {
-		return goerrors.New("创建按钮模型失败: 按钮模型不能为空")
+		return errors.New("创建按钮模型失败: 按钮模型不能为空")
 	}
 
 	r.log.Debug(
@@ -246,7 +246,7 @@ func (r *buttonRepo) AddGroupPolicy(
 
 	// 检查参数
 	if button == nil {
-		return goerrors.New("AddGroupPolicy操作失败: 按钮模型不能为空")
+		return errors.New("AddGroupPolicy操作失败: 按钮模型不能为空")
 	}
 
 	r.log.Debug(
@@ -259,10 +259,10 @@ func (r *buttonRepo) AddGroupPolicy(
 
 	// 检查必要字段
 	if m.ID == 0 {
-		return goerrors.New("AddGroupPolicy操作失败: 按钮ID不能为0")
+		return errors.New("AddGroupPolicy操作失败: 按钮ID不能为0")
 	}
 	if m.MenuID == 0 {
-		return goerrors.New("AddGroupPolicy操作失败: 菜单ID不能为0")
+		return errors.New("AddGroupPolicy操作失败: 菜单ID不能为0")
 	}
 
 	sub := auth.ButtonToSubject(m.ID)
@@ -352,7 +352,7 @@ func (r *buttonRepo) RemoveGroupPolicy(
 
 	// 检查参数
 	if button == nil {
-		return goerrors.New("RemoveGroupPolicy操作失败: 按钮模型不能为空")
+		return errors.New("RemoveGroupPolicy操作失败: 按钮模型不能为空")
 	}
 
 	r.log.Debug(
@@ -366,7 +366,7 @@ func (r *buttonRepo) RemoveGroupPolicy(
 
 	// 检查必要字段
 	if m.ID == 0 {
-		return goerrors.New("RemoveGroupPolicy操作失败: 按钮ID不能为0")
+		return errors.New("RemoveGroupPolicy操作失败: 按钮ID不能为0")
 	}
 
 	sub := auth.ButtonToSubject(m.ID)

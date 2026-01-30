@@ -3491,6 +3491,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -4668,6 +4674,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -4845,6 +4857,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -4973,6 +4991,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -5098,6 +5122,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "\"唯一标识列表(多个用,隔开)\"",
                         "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
                         "in": "query"
                     },
                     {
@@ -6828,6 +6858,7 @@ const docTemplate = `{
             "required": [
                 "colony_num",
                 "extracted_name",
+                "is_enable",
                 "mon_node_id",
                 "package_id"
             ],
@@ -6841,6 +6872,10 @@ const docTemplate = `{
                     "description": "解压后名称",
                     "type": "string",
                     "maxLength": 50
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
                 },
                 "mon_node_id": {
                     "description": "mon节点ID",
@@ -6857,6 +6892,7 @@ const docTemplate = `{
             "required": [
                 "colony_num",
                 "extracted_name",
+                "is_enable",
                 "mon_node_id",
                 "package_id",
                 "system_type",
@@ -6872,6 +6908,10 @@ const docTemplate = `{
                     "description": "解压后名称",
                     "type": "string",
                     "maxLength": 50
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
                 },
                 "mon_node_id": {
                     "description": "mon节点ID",

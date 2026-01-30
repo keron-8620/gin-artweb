@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	goerrors "errors"
+	"errors"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -40,7 +40,7 @@ func NewPermissionRepo(
 
 func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel) error {
 	if m == nil {
-		err := goerrors.New("创建权限模型失败: 创建权限模型参数不能为空")
+		err := errors.New("创建权限模型失败: 创建权限模型参数不能为空")
 		r.log.Error(
 			"权限模型不能为空",
 			zap.Error(err),
@@ -82,7 +82,7 @@ func (r *permissionRepo) CreateModel(ctx context.Context, m *biz.PermissionModel
 
 func (r *permissionRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
 	if len(data) == 0 {
-		err := goerrors.New("更新权限模型失败: 更新数据为空")
+		err := errors.New("更新权限模型失败: 更新数据为空")
 		r.log.Error(
 			"更新权限模型失败: 更新数据为空",
 			zap.Error(err),
@@ -242,13 +242,13 @@ func (r *permissionRepo) AddPolicy(
 
 	// 检查权限模型的有效性
 	if m.ID == 0 {
-		return goerrors.New("添加权限策略失败: 权限ID不能为0")
+		return errors.New("添加权限策略失败: 权限ID不能为0")
 	}
 	if m.URL == "" {
-		return goerrors.New("添加权限策略失败: URL不能为空")
+		return errors.New("添加权限策略失败: URL不能为空")
 	}
 	if m.Method == "" {
-		return goerrors.New("添加权限策略失败: 请求方法不能为空")
+		return errors.New("添加权限策略失败: 请求方法不能为空")
 	}
 
 	r.log.Debug(
@@ -299,13 +299,13 @@ func (r *permissionRepo) RemovePolicy(
 
 	// 检查权限模型的有效性
 	if m.ID == 0 {
-		return goerrors.New("删除权限策略失败: 权限ID不能为0")
+		return errors.New("删除权限策略失败: 权限ID不能为0")
 	}
 	if m.URL == "" {
-		return goerrors.New("删除权限策略失败: URL不能为空")
+		return errors.New("删除权限策略失败: URL不能为空")
 	}
 	if m.Method == "" {
-		return goerrors.New("删除权限策略失败: 请求方法不能为空")
+		return errors.New("删除权限策略失败: 请求方法不能为空")
 	}
 
 	r.log.Debug(

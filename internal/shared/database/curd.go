@@ -5,38 +5,60 @@ package database
 import (
 	"context"
 	"fmt"
-	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 )
 
-// DBPanic 处理数据库操作中的panic异常，自动回滚事务并记录错误日志
-// ctx: 上下文
-// tx: GORM事务对象
-// 返回panic错误信息
-func DBPanic(ctx context.Context, db *gorm.DB) (err error) {
-	defer func() {
-		// 捕获panic异常
-		if r := recover(); r != nil {
-			// 发生panic时回滚事务
-			db.Rollback()
-
-			// 获取调用栈信息
-			buf := make([]byte, 64<<10)
-			n := runtime.Stack(buf, false)
-			buf = buf[:n]
-
-			// 记录错误日志
-			errMsg := "database operation panic occurred"
-			if db.Logger != nil {
-				db.Logger.Error(ctx, errMsg, "panic", r, "stack", string(buf))
+// DBPanic 通用 GORM 数据库操作 panic 捕获函数（必须配合 defer 使用）
+// 功能：1. 捕获 panic 并转为标准错误 2. 事务回滚（仅事务场景）3. 记录详细日志（含堆栈、SQL 上下文）
+// 参数：
+//   - ctx：上下文，用于日志记录和 GORM 操作
+//   - db：GORM 数据库实例（事务场景传入 tx 实例，非事务场景传入普通 db 实例）
+//
+// 返回值：
+//   - error：panic 时返回封装了「错误信息+堆栈」的标准错误，无 panic 时返回 nil
+func DBPanic(ctx context.Context, db *gorm.DB) error {
+	if r := recover(); r != nil {
+		// 回滚事务，捕获回滚错误
+		if db != nil {
+			if db.Statement != nil && db.Statement.ConnPool != nil {
+				// 回滚事务,并记录报错
+				if err := db.Rollback().Error; err != nil && db.Logger != nil {
+					db.Logger.Error(ctx, "数据库事务回滚失败", "回滚错误", err)
+				}
 			}
-			err = fmt.Errorf("%s: %v", errMsg, r)
 		}
-	}()
-	return
+
+		// 构建基础错误信息
+		baseErr := fmt.Errorf("数据库操作发生panic, 已捕获: %v", r)
+
+		// 获取完整堆栈信息
+		stackInfo := string(debug.Stack())
+
+		// 记录详细日志
+		if db != nil && db.Logger != nil {
+			logFields := []interface{}{
+				"panic", r,
+				"error", baseErr.Error(),
+				"stack", stackInfo,
+			}
+			// 补充SQL上下文
+			if db.Statement != nil {
+				logFields = append(logFields, "sql", db.Statement.SQL.String())
+				logFields = append(logFields, "sql参数", db.Statement.Vars)
+			}
+			db.Logger.Error(ctx, "数据库操作发生panic", logFields...)
+		}
+
+		// 封装错误并向上传递
+		return fmt.Errorf("%w%s", baseErr, stackInfo)
+	}
+
+	// 无 panic 时返回 nil
+	return nil
 }
 
 // DBCreate 创建数据库记录
@@ -86,26 +108,30 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 // DBUpdate 更新数据库记录，支持关联关系更新
 // ctx: 上下文
 // db: GORM数据库实例
-// im: 要更新的数据
-// om: 目标模型对象
-// upmap: 关联关系映射
+// m: 目标模型
+// data: 主表更新数据 (可为nil或空map)
+// upmap: 关联关系映射 (可为nil或空map)
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upmap map[string]any, conds ...any) error {
+	// 如果没有需要更新的内容，直接返回
+	if len(data) == 0 && len(upmap) == 0 {
+		return nil
+	}
+
 	// 检查是否提供了查询条件
 	if len(conds) == 0 {
 		return gorm.ErrMissingWhereClause
 	}
 
-	// 如果没有关联关系更新，直接执行更新操作
+	// 如果没有关联关系更新，直接执行更新操作（无需事务）
 	if len(upmap) == 0 {
 		return db.WithContext(ctx).Model(m).Where(conds[0], conds[1:]...).Updates(data).Error
 	}
 
-	// 开启事务处理
+	// 开启事务处理（有关联关系更新时必须使用事务）
 	tx := db.WithContext(ctx).Begin()
 	if tx.Error != nil {
-		// 事务开启失败时记录错误日志
 		return tx.Error
 	}
 
@@ -113,24 +139,28 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	defer DBPanic(ctx, tx)
 
 	// 更新主表数据
-	if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
-		tx.Rollback()
-		return err
+	if len(data) > 0 {
+		if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
 		if err := tx.Model(m).Association(k).Replace(v); err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("更新关联关系 %s 失败: %w", k, err)
 		}
 	}
 
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
+		// 提交失败时回滚并返回提交错误
 		tx.Rollback()
 		return err
 	}
+
 	return nil
 }
 

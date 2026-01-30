@@ -203,6 +203,9 @@ definitions:
         description: 解压后名称
         maxLength: 50
         type: string
+      is_enable:
+        description: 是否启用
+        type: boolean
       mon_node_id:
         description: mon节点ID
         type: integer
@@ -212,6 +215,7 @@ definitions:
     required:
     - colony_num
     - extracted_name
+    - is_enable
     - mon_node_id
     - package_id
     type: object
@@ -225,6 +229,9 @@ definitions:
         description: 解压后名称
         maxLength: 50
         type: string
+      is_enable:
+        description: 是否启用
+        type: boolean
       mon_node_id:
         description: mon节点ID
         type: integer
@@ -244,6 +251,7 @@ definitions:
     required:
     - colony_num
     - extracted_name
+    - is_enable
     - mon_node_id
     - package_id
     - system_type
@@ -5423,6 +5431,10 @@ paths:
         maxLength: 100
         name: ids
         type: string
+      - description: 是否启用
+        in: query
+        name: is_enable
+        type: boolean
       - description: mon节点ID
         in: query
         name: mon_node_id
@@ -6098,6 +6110,10 @@ paths:
         maxLength: 100
         name: ids
         type: string
+      - description: 是否启用
+        in: query
+        name: is_enable
+        type: boolean
       - description: mon节点ID
         in: query
         name: mon_node_id
@@ -6330,6 +6346,10 @@ paths:
         maxLength: 100
         name: ids
         type: string
+      - description: 是否启用
+        in: query
+        name: is_enable
+        type: boolean
       - description: mon节点ID
         in: query
         name: mon_node_id
@@ -6422,6 +6442,10 @@ paths:
         maxLength: 100
         name: ids
         type: string
+      - description: 是否启用
+        in: query
+        name: is_enable
+        type: boolean
       - description: mon节点ID
         in: query
         name: mon_node_id
@@ -6514,6 +6538,10 @@ paths:
         maxLength: 100
         name: ids
         type: string
+      - description: 是否启用
+        in: query
+        name: is_enable
+        type: boolean
       - description: mon节点ID
         in: query
         name: mon_node_id

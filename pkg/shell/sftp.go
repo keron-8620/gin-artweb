@@ -44,7 +44,7 @@ func UploadFile(
 	defer dstFile.Close()
 
 	// 使用带有上下文取消功能的复制
-	_, err = copyWithContext(ctx, dstFile, srcFile)
+	_, err = copyWithContext(ctx, srcFile, dstFile)
 	if err != nil {
 		return fmt.Errorf("复制文件内容失败: %w", err)
 	}
@@ -86,7 +86,7 @@ func DownloadFile(
 	defer dstFile.Close()
 
 	// 使用带有上下文取消功能的复制
-	_, err = copyWithContext(ctx, dstFile, srcFile)
+	_, err = copyWithContext(ctx, srcFile, dstFile)
 	if err != nil {
 		return fmt.Errorf("复制文件内容失败: %w", err)
 	}
@@ -95,7 +95,7 @@ func DownloadFile(
 }
 
 // copyWithContext 实现带上下文取消功能的io.Copy
-func copyWithContext(ctx context.Context, dst io.Writer, src io.Reader) (int64, error) {
+func copyWithContext(ctx context.Context, src io.Reader, dst io.Writer) (int64, error) {
 	buf := make([]byte, 32*1024) // 32KB buffer
 	var written int64
 

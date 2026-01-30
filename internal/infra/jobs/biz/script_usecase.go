@@ -57,7 +57,7 @@ func (m *ScriptModel) ScriptPath() string {
 	if m.IsBuiltin {
 		return filepath.Join(config.ResourceDir, m.Project, "script", m.Label, m.Name)
 	}
-	return filepath.Join(config.StorageDir, m.Project, "script", m.Label, m.Name)
+	return filepath.Join(config.StorageDir, "script", m.Project, m.Label, m.Name)
 }
 
 type ScriptRepo interface {
@@ -66,6 +66,8 @@ type ScriptRepo interface {
 	DeleteModel(context.Context, ...any) error
 	FindModel(context.Context, ...any) (*ScriptModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScriptModel, error)
+	ListProjects(context.Context) ([]string, error)
+	ListLabels(context.Context) ([]string, error)
 }
 
 type ScriptUsecase struct {

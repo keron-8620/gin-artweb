@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"time"
+	"errors"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -33,6 +34,11 @@ func NewScriptRepo(
 }
 
 func (r *scriptRepo) CreateModel(ctx context.Context, m *biz.ScriptModel) error {
+	// 检查参数
+	if m == nil {
+		return errors.New("创建按钮模型失败: 按钮模型不能为空")
+	}
+
 	r.log.Debug(
 		"开始创建脚本模型",
 		zap.Object(database.ModelKey, m),
@@ -185,4 +191,65 @@ func (r *scriptRepo) ListModel(
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return count, &ms, nil
+}
+
+func (r *scriptRepo) ListProjects(
+	ctx context.Context,
+) ([]string, error) {
+	r.log.Debug(
+		"开始查询脚本所有的项目名称",
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
+	defer cancel()
+
+	var projects []string
+	if err := r.gormDB.WithContext(dbCtx).Model(&biz.ScriptModel{}).Distinct("project").Pluck("project", &projects).Error; err != nil {
+		r.log.Error(
+			"查询项目名称失败",
+			zap.Error(err),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return nil, err
+	}
+
+	r.log.Debug(
+		"查询项目名称成功",
+		zap.Any("projects", projects),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	return projects, nil
+}
+
+func (r *scriptRepo) ListLabels(
+	ctx context.Context,
+) ([]string, error) {
+	r.log.Debug(
+		"开始查询所有标签名称",
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	var labels []string
+	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
+	defer cancel()
+
+	// 查询指定项目下所有唯一的标签名称
+	if err := r.gormDB.WithContext(dbCtx).Model(&biz.ScriptModel{}).Distinct("label").Pluck("label", &labels).Error; err != nil {
+		r.log.Error(
+			"查询标签名称失败",
+			zap.Error(err),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return nil, err
+	}
+
+	r.log.Debug(
+		"查询标签名称成功",
+		zap.Any("labels", labels),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	return labels, nil
 }

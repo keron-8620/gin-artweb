@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	goerrors "errors"
+	"errors"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -46,7 +46,7 @@ func NewLoginRecordRepo(
 func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) error {
 	// 检查参数
 	if m == nil {
-		return goerrors.New("创建登录记录模型失败: 登录记录模型不能为空")
+		return errors.New("创建登录记录模型失败: 登录记录模型不能为空")
 	}
 
 	r.log.Debug(
@@ -114,7 +114,7 @@ func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 
 	// 检查参数
 	if ip == "" {
-		return 0, goerrors.New("获取登录失败次数失败: IP地址不能为空")
+		return 0, errors.New("获取登录失败次数失败: IP地址不能为空")
 	}
 
 	r.log.Debug(
@@ -153,7 +153,7 @@ func (r *loginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num in
 
 	// 检查参数
 	if ip == "" {
-		return goerrors.New("设置登录失败次数失败: IP地址不能为空")
+		return errors.New("设置登录失败次数失败: IP地址不能为空")
 	}
 
 	r.log.Debug(

@@ -289,6 +289,7 @@ func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeMode
 		NodeRole: m.NodeRole,
 		Specdir:  specdir,
 		HostID:   m.HostID,
+		IsEnable: m.IsEnable,
 	}
 	oesColonyConf := filepath.Join(config.StorageDir, "oes", "config", m.OesColony.ColonyNum, specdir, "node.yaml")
 	if _, err := serializer.WriteYAML(oesColonyConf, oesVars); err != nil {
@@ -318,6 +319,7 @@ type OesNodeVars struct {
 	NodeRole string `json:"node_role" yaml:"node_role"`
 	Specdir  string `json:"specdir" yaml:"specdir"`
 	HostID   uint32 `json:"host_id" yaml:"host_id"`
+	IsEnable bool   `json:"is_enable" yaml:"is_enable"`
 }
 
 func (vs *OesNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -325,5 +327,6 @@ func (vs *OesNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("node_role", vs.NodeRole)
 	enc.AddString("specdir", vs.Specdir)
 	enc.AddUint32("host_id", vs.HostID)
+	enc.AddBool("is_enable", vs.IsEnable)
 	return nil
 }

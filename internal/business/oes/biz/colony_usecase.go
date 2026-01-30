@@ -434,6 +434,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 		PackageID: m.PackageID,
 		Version:   m.Package.Version,
 		MonNodeID: m.MonNodeID,
+		IsEnable:  m.IsEnable,
 	}
 	oesColonyConf := filepath.Join(colonyConfAll, "colony.yaml")
 	if _, err := serializer.WriteYAML(oesColonyConf, oesVars); err != nil {
@@ -464,6 +465,7 @@ type OesColonyVars struct {
 	PackageID  uint32 `json:"package_id" yaml:"package_id"`
 	Version    string `json:"version" yaml:"version"`
 	MonNodeID  uint32 `json:"mon_node_id" yaml:"mon_node_id"`
+	IsEnable   bool   `json:"is_enable" yaml:"is_enable"`
 }
 
 func (vs *OesColonyVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -473,5 +475,6 @@ func (vs *OesColonyVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("package_id", vs.PackageID)
 	enc.AddString("version", vs.Version)
 	enc.AddUint32("mon_node_id", vs.MonNodeID)
+	enc.AddBool("is_enable", vs.IsEnable)
 	return nil
 }

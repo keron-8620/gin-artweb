@@ -3480,6 +3480,12 @@
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -4657,6 +4663,12 @@
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -4834,6 +4846,12 @@
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -4962,6 +4980,12 @@
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "mon节点ID",
                         "name": "mon_node_id",
@@ -5087,6 +5111,12 @@
                         "type": "string",
                         "description": "\"唯一标识列表(多个用,隔开)\"",
                         "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "is_enable",
                         "in": "query"
                     },
                     {
@@ -6817,6 +6847,7 @@
             "required": [
                 "colony_num",
                 "extracted_name",
+                "is_enable",
                 "mon_node_id",
                 "package_id"
             ],
@@ -6830,6 +6861,10 @@
                     "description": "解压后名称",
                     "type": "string",
                     "maxLength": 50
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
                 },
                 "mon_node_id": {
                     "description": "mon节点ID",
@@ -6846,6 +6881,7 @@
             "required": [
                 "colony_num",
                 "extracted_name",
+                "is_enable",
                 "mon_node_id",
                 "package_id",
                 "system_type",
@@ -6861,6 +6897,10 @@
                     "description": "解压后名称",
                     "type": "string",
                     "maxLength": 50
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
                 },
                 "mon_node_id": {
                     "description": "mon节点ID",

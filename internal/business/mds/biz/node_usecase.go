@@ -289,6 +289,7 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 		NodeRole: m.NodeRole,
 		Specdir:  specdir,
 		HostID:   m.HostID,
+		IsEnable: m.IsEnable,
 	}
 	mdsColonyConf := filepath.Join(config.StorageDir, "mds", "config", m.MdsColony.ColonyNum, specdir, "node.yaml")
 	if _, err := serializer.WriteYAML(mdsColonyConf, mdsVars); err != nil {
@@ -318,6 +319,7 @@ type MdsNodeVars struct {
 	NodeRole string `json:"node_role" yaml:"node_role"`
 	Specdir  string `json:"specdir" yaml:"specdir"`
 	HostID   uint32 `json:"host_id" yaml:"host_id"`
+	IsEnable bool   `json:"is_enable" yaml:"is_enable"`
 }
 
 func (vs *MdsNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -325,5 +327,6 @@ func (vs *MdsNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("node_role", vs.NodeRole)
 	enc.AddString("specdir", vs.Specdir)
 	enc.AddUint32("host_id", vs.HostID)
+	enc.AddBool("is_enable", vs.IsEnable)
 	return nil
 }

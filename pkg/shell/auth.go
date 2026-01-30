@@ -30,7 +30,6 @@ func ExpandHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path[1:]), nil
 }
 
-
 // FindAllValidKeys 尝试查找所有存在的有效SSH私钥文件
 func FindAllValidKeys() []string {
 	var validKeys []string

@@ -301,10 +301,10 @@ func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Uint32(biz.ScriptRecordIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		err := biz.ErrNoScriptLogFile.WithData(map[string]any{
+		rErr := biz.ErrNoScriptLogFile.WithData(map[string]any{
 			biz.ScriptRecordIDKey: uri.ID,
 		})
-		ctx.AbortWithStatusJSON(http.StatusNotFound, err.ToMap())
+		ctx.AbortWithStatusJSON(http.StatusNotFound, rErr.ToMap())
 		return
 	}
 

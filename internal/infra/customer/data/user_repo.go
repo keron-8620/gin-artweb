@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	goerrors "errors"
+	"errors"
 	"time"
 
 	"go.uber.org/zap"
@@ -36,7 +36,7 @@ func NewUserRepo(
 func (r *userRepo) CreateModel(ctx context.Context, m *biz.UserModel) error {
 	// 检查参数
 	if m == nil {
-		return goerrors.New("创建用户模型失败: 用户模型不能为空")
+		return errors.New("创建用户模型失败: 用户模型不能为空")
 	}
 
 	r.log.Debug(

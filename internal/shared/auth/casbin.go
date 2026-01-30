@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"emperror.dev/errors"
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
@@ -76,16 +77,27 @@ func RoleToSubject(pk uint32) string {
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
 	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "添加Casbin策略: 上下文校验失败")
 	}
+
 	// 参数校验
 	if sub == "" || obj == "" || act == "" {
-		return fmt.Errorf("添加策略失败: 参数不能为空")
+		return errors.WithDetails(
+			errors.New("添加Casbin策略失败: 参数不能为空"),
+			"sub", sub,
+			"obj", obj,
+			"act", act,
+		)
 	}
 
 	// 添加策略
 	if _, err := enf.AddPolicy(sub, obj, act); err != nil {
-		return fmt.Errorf("添加策略失败: %w", err)
+		return errors.WithDetails(
+			errors.Wrapf(err, "添加Casbin策略失败 [sub=%s, obj=%s, act=%s]", sub, obj, act),
+			"sub", sub,
+			"obj", obj,
+			"act", act,
+		)
 	}
 	return nil
 }
@@ -95,17 +107,29 @@ func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) 
 // // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
 	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "移除Casbin策略: 上下文校验失败")
 	}
+
 	// 参数校验
 	if sub == "" || obj == "" || act == "" {
-		return fmt.Errorf("移除策略失败: 参数不能为空")
+		return errors.WithDetails(
+			errors.New("移除Casbin策略失败: 参数不能为空"),
+			"sub", sub,
+			"obj", obj,
+			"act", act,
+		)
 	}
 
 	// 移除策略
 	if _, err := enf.RemovePolicy(sub, obj, act); err != nil {
-		return fmt.Errorf("移除策略失败: %w", err)
+		return errors.WithDetails(
+			errors.Wrapf(err, "移除Casbin策略失败 [sub=%s, obj=%s, act=%s]", sub, obj, act),
+			"sub", sub,
+			"obj", obj,
+			"act", act,
+		)
 	}
+
 	return nil
 }
 
@@ -113,16 +137,25 @@ func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act strin
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) error {
 	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "添加Casbin组策略: 上下文校验失败")
 	}
+
 	// 参数校验
 	if sub == "" || obj == "" {
-		return fmt.Errorf("添加组策略失败: 参数不能为空")
+		return errors.WithDetails(
+			errors.New("添加Casbin组策略失败: 参数不能为空"),
+			"sub", sub,
+			"obj", obj,
+		)
 	}
 
 	// 添加组策略
 	if _, err := enf.AddGroupingPolicy(sub, obj); err != nil {
-		return fmt.Errorf("添加组策略失败: %w", err)
+		return errors.WithDetails(
+			errors.Wrapf(err, "添加Casbin组策略失败 [sub=%s, obj=%s]", sub, obj),
+			"sub", sub,
+			"obj", obj,
+		)
 	}
 	return nil
 }
@@ -131,19 +164,24 @@ func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) 
 // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func RemoveGroupPolicy(ctx context.Context, enf *casbin.Enforcer, index int, value string) error {
 	if err := ctxutil.CheckContext(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "移除Casbin组策略: 上下文校验失败")
 	}
 	// 参数校验
-	if value == "" {
-		return fmt.Errorf("移除组策略失败: 值不能为空")
-	}
-	if index < 0 || index > 1 {
-		return fmt.Errorf("移除组策略失败: 索引必须在0-1之间")
+	if value == "" || index < 0 || index > 1 {
+		return errors.WithDetails(
+			errors.New("移除Casbin组策略失败: 值不能为空且索引必须在0-1之间"),
+			"index", index,
+			"value", value,
+		)
 	}
 
 	// 移除组策略
 	if _, err := enf.RemoveFilteredGroupingPolicy(index, value); err != nil {
-		return fmt.Errorf("删除组策略失败: %w", err)
+		return errors.WithDetails(
+			errors.Wrapf(err, "添加Casbin组策略失败 [index=%d, value=%s]", index, value),
+			"index", index,
+			"value", value,
+		)
 	}
 	return nil
 }

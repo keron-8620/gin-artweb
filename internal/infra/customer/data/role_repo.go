@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	goerrors "errors"
+	"errors"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -47,7 +47,7 @@ func (r *roleRepo) CreateModel(
 ) error {
 	// 检查参数
 	if m == nil {
-		return goerrors.New("创建角色模型失败: 角色模型不能为空")
+		return errors.New("创建角色模型失败: 角色模型不能为空")
 	}
 
 	r.log.Debug(
@@ -262,7 +262,7 @@ func (r *roleRepo) AddGroupPolicy(
 ) error {
 	// 检查参数
 	if role == nil {
-		return goerrors.New("AddGroupPolicy操作失败: 角色模型不能为空")
+		return errors.New("AddGroupPolicy操作失败: 角色模型不能为空")
 	}
 
 	r.log.Debug(
@@ -275,7 +275,7 @@ func (r *roleRepo) AddGroupPolicy(
 
 	// 检查必要字段
 	if m.ID == 0 {
-		return goerrors.New("AddGroupPolicy操作失败: 角色ID不能为0")
+		return errors.New("AddGroupPolicy操作失败: 角色ID不能为0")
 	}
 
 	sub := auth.RoleToSubject(m.ID)
@@ -414,7 +414,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 ) error {
 	// 检查参数
 	if role == nil {
-		return goerrors.New("RemoveGroupPolicy操作失败: 角色模型不能为空")
+		return errors.New("RemoveGroupPolicy操作失败: 角色模型不能为空")
 	}
 
 	r.log.Debug(
@@ -426,7 +426,7 @@ func (r *roleRepo) RemoveGroupPolicy(
 	m := *role
 	// 检查必要字段
 	if m.ID == 0 {
-		return goerrors.New("RemoveGroupPolicy操作失败: 角色ID不能为0")
+		return errors.New("RemoveGroupPolicy操作失败: 角色ID不能为0")
 	}
 
 	sub := auth.RoleToSubject(m.ID)

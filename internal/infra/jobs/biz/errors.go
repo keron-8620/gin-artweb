@@ -6,7 +6,6 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
-
 var (
 	ErrScriptDisabled = errors.New(
 		http.StatusBadRequest,
@@ -51,7 +50,6 @@ var (
 		nil,
 	)
 )
-
 
 // 2. 获取环境变量
 // var env string
