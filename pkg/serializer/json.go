@@ -8,45 +8,48 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // ReadJSON 读取并解析 JSON 文件
-func ReadJSON(filename string, v any, opts ...SerializerOption) (*ReadResult, error) {
+func ReadJSON(filePath string, v any, opts ...SerializerOption) (*ReadResult, error) {
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
 
 	// 检查文件是否存在
-	fileInfo, err := os.Stat(filename)
+	fileInfo, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("JSON文件不存在: %s", filename)
+		return nil, errors.Errorf("JSON文件不存在, filepath=%s", filePath)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("获取文件信息 %s 失败: %w", filename, err)
+		return nil, errors.WithMessagef(err, "获取文件信息失败, filepath=%s", filePath)
 	}
 
 	// 检查文件大小限制
 	if options.MaxFileSize > 0 && fileInfo.Size() > options.MaxFileSize {
-		return nil, fmt.Errorf("JSON文件 %s 大小 %d 超过限制 %d", filename, fileInfo.Size(), options.MaxFileSize)
+		return nil, errors.WithMessagef(
+			err, "JSON文件大小超过限制, filepath=%s, max=%d, current=%s", filePath, options.MaxFileSize, fileInfo.Size())
 	}
 
 	// 读取文件内容
-	data, err := os.ReadFile(filename)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("读取JSON文件 %s 失败: %w", filename, err)
+		return nil, errors.WithMessagef(err, "读取JSON文件失败filepath=%s", filePath)
 	}
 
 	if len(data) == 0 {
-		return nil, fmt.Errorf("JSON文件 %s 为空", filename)
+		return nil, errors.Errorf("JSON文件为空, filepath=%s", filePath)
 	}
 
 	// 解析JSON
 	if err := json.Unmarshal(data, v); err != nil {
-		return nil, fmt.Errorf("解析JSON文件 %s 失败: %w", filename, err)
+		return nil, errors.WithMessagef(err, "解析JSON文件失败, filepath=%s", filePath)
 	}
 
 	result := &ReadResult{
-		FileName: filename,
+		FilePath: filePath,
 		Size:     int64(len(data)),
 		Duration: time.Since(startTime),
 	}
@@ -55,13 +58,13 @@ func ReadJSON(filename string, v any, opts ...SerializerOption) (*ReadResult, er
 }
 
 // WriteJSON 将数据序列化为JSON格式并写入文件
-func WriteJSON(filename string, data any, opts ...SerializerOption) (*WriteResult, error) {
+func WriteJSON(filePath string, data any, opts ...SerializerOption) (*WriteResult, error) {
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
 
 	if options.Atomic {
-		result, err := writeJSONAtomic(filename, data, options)
+		result, err := writeJSONAtomic(filePath, data, options)
 		if err != nil {
 			return nil, err
 		}
@@ -69,20 +72,20 @@ func WriteJSON(filename string, data any, opts ...SerializerOption) (*WriteResul
 		return result, nil
 	}
 
-	return writeJSON(filename, data, options, startTime)
+	return writeJSON(filePath, data, options, startTime)
 }
 
 // writeJSON 普通写入JSON
-func writeJSON(filename string, data any, options SerializerOptions, startTime time.Time) (*WriteResult, error) {
+func writeJSON(filePath string, data any, options SerializerOptions, startTime time.Time) (*WriteResult, error) {
 	// 确保目录存在
-	if err := os.MkdirAll(filepath.Dir(filename), options.DirMode); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), options.DirMode); err != nil {
 		return nil, fmt.Errorf("创建目录失败: %w", err)
 	}
 
 	// 创建或截断文件
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, options.FileMode)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, options.FileMode)
 	if err != nil {
-		return nil, fmt.Errorf("创建文件 %s 失败: %w", filename, err)
+		return nil, fmt.Errorf("创建文件 %s 失败: %w", filePath, err)
 	}
 	defer file.Close()
 
@@ -95,7 +98,7 @@ func writeJSON(filename string, data any, options SerializerOptions, startTime t
 	}
 
 	if err := encoder.Encode(data); err != nil {
-		return nil, fmt.Errorf("序列化数据到 %s 失败: %w", filename, err)
+		return nil, fmt.Errorf("序列化数据到 %s 失败: %w", filePath, err)
 	}
 
 	// 获取文件大小
@@ -105,7 +108,7 @@ func writeJSON(filename string, data any, options SerializerOptions, startTime t
 	}
 
 	result := &WriteResult{
-		FileName: filename,
+		FilePath: filePath,
 		Size:     fileInfo.Size(),
 		Duration: time.Since(startTime),
 	}
@@ -114,16 +117,16 @@ func writeJSON(filename string, data any, options SerializerOptions, startTime t
 }
 
 // writeJSONAtomic 原子写入JSON
-func writeJSONAtomic(filename string, data any, options SerializerOptions) (*WriteResult, error) {
+func writeJSONAtomic(filePath string, data any, options SerializerOptions) (*WriteResult, error) {
 	startTime := time.Now()
 
 	// 确保目录存在
-	if err := os.MkdirAll(filepath.Dir(filename), options.DirMode); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), options.DirMode); err != nil {
 		return nil, fmt.Errorf("创建目录失败: %w", err)
 	}
 
 	// 创建临时文件
-	tmpFile := filename + ".tmp"
+	tmpFile := filePath + ".tmp"
 
 	// 先写入临时文件
 	result, err := writeJSON(tmpFile, data, options, startTime)
@@ -134,27 +137,27 @@ func writeJSONAtomic(filename string, data any, options SerializerOptions) (*Wri
 	}
 
 	// 原子重命名
-	if err := os.Rename(tmpFile, filename); err != nil {
+	if err := os.Rename(tmpFile, filePath); err != nil {
 		// 清理临时文件
 		os.Remove(tmpFile)
-		return nil, fmt.Errorf("原子重命名 %s -> %s 失败: %w", tmpFile, filename, err)
+		return nil, fmt.Errorf("原子重命名 %s -> %s 失败: %w", tmpFile, filePath, err)
 	}
 
-	result.FileName = filename
+	result.FilePath = filePath
 	result.Duration = time.Since(startTime)
 	return result, nil
 }
 
 // ReadJSONWithTimeout 带超时的JSON读取
-func ReadJSONWithTimeout(filename string, v any, timeout time.Duration) (*ReadResult, error) {
+func ReadJSONWithTimeout(filePath string, v any, timeout time.Duration) (*ReadResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	return ReadJSON(filename, v, WithContext(ctx))
+	return ReadJSON(filePath, v, WithContext(ctx))
 }
 
 // WriteJSONWithTimeout 带超时的JSON写入
-func WriteJSONWithTimeout(filename string, data any, timeout time.Duration, indent uint8) (*WriteResult, error) {
+func WriteJSONWithTimeout(filePath string, data any, timeout time.Duration, indent uint8) (*WriteResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	return WriteJSON(filename, data, WithContext(ctx), WithIndent(indent))
+	return WriteJSON(filePath, data, WithContext(ctx), WithIndent(indent))
 }

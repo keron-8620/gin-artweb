@@ -1,84 +1,83 @@
 package fileutil
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
-// Mkdir 使用指定的权限位创建名为 path 的目录。
-// 如果目录已经存在，则不执行任何操作并返回 nil。
-func Mkdir(path string, perm os.FileMode) error {
-	// 验证输入路径
-	if path == "" {
-		return fmt.Errorf("路径不能为空")
+// Mkdir 创建单个目录（不创建父目录），权限由 perm 指定。
+// 目录已存在 → 返回 nil；路径存在但非目录 → 返回 ErrPathExist。
+// 示例:
+//
+//	Mkdir("/tmp/test", 0755) // 创建 /tmp/test（父目录必须存在）
+func Mkdir(dirPath string, perm os.FileMode) error {
+	if err := ValidatePath(dirPath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 检查目录是否已存在
-	if info, err := os.Stat(path); err == nil {
+	dirPath = CleanPath(dirPath)
+	info, err := GetFileInfo(dirPath)
+	if err == nil {
 		if info.IsDir() {
-			// 目录已存在
-			return nil
+			return nil // 目录已存在
 		}
-		// 路径存在但不是目录
-		return fmt.Errorf("路径存在但不是目录: %s", path)
-	} else if !os.IsNotExist(err) {
-		// 其他状态错误
-		return fmt.Errorf("检查路径失败: %w", err)
+		return errors.Errorf("路径已存在但不是目录, filepath=%s", dirPath)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return errors.WithMessage(err, "获取路径信息失败")
 	}
 
-	// 创建目录
-	if err := os.Mkdir(path, perm); err != nil {
-		return fmt.Errorf("创建目录失败: %w", err)
+	// 仅创建单个目录
+	if err := os.Mkdir(dirPath, perm); err != nil {
+		return errors.WithMessagef(err, "创建单个目录失败, dirpath=%s", dirPath)
 	}
 
 	return nil
 }
 
-// MkdirAll 创建名为 path 的目录以及任何必要的父目录，
-// 使用指定的权限位。
-// 如果目录已经存在，则不执行任何操作并返回 nil。
-func MkdirAll(path string, perm os.FileMode) error {
-	// 验证输入路径
-	if path == "" {
-		return fmt.Errorf("路径不能为空")
+// MkdirAll 创建目录及所有必要的父目录，权限由 perm 指定。
+// 目录已存在 → 返回 nil；路径存在但非目录 → 返回 ErrPathExist。
+// 示例:
+//
+//	MkdirAll("/tmp/a/b/c", 0755) // 递归创建 a/b/c
+func MkdirAll(dirPath string, perm os.FileMode) error {
+	if err := ValidatePath(dirPath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 清理路径
-	path = filepath.Clean(path)
-
-	// 检查目录是否已存在
-	if info, err := os.Stat(path); err == nil {
+	dirPath = CleanPath(dirPath)
+	info, err := GetFileInfo(dirPath)
+	if err == nil {
 		if info.IsDir() {
-			// 目录已存在
-			return nil
+			return nil // 目录已存在
 		}
-		// 路径存在但不是目录
-		return fmt.Errorf("路径存在但不是目录: %s", path)
-	} else if !os.IsNotExist(err) {
-		// 其他状态错误
-		return fmt.Errorf("检查路径失败: %w", err)
+		return errors.Errorf("路径已存在但不是目录, dirpath=%s", dirPath)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return errors.WithMessage(err, "获取路径信息失败")
 	}
 
-	// 创建目录及任何必要的父目录
-	if err := os.MkdirAll(path, perm); err != nil {
-		return fmt.Errorf("创建目录路径失败: %w", err)
+	// 递归创建目录
+	if err := os.MkdirAll(dirPath, perm); err != nil {
+		return errors.WithMessagef(err, "创建目录树失败, dirpath", dirPath)
 	}
 
 	return nil
 }
 
-// EnsureDir 确保包含给定文件路径的目录存在。
-// 当您想在创建文件之前确保其父目录存在时，这很有用。
-func EnsureDir(filePath string) error {
-	// 验证输入路径
-	if filePath == "" {
-		return fmt.Errorf("文件路径不能为空")
+// EnsureDir 确保文件路径的父目录存在（默认权限 0755）。
+// 常用于创建文件前预检查父目录。
+// 示例:
+//
+//	EnsureDir("/tmp/a/b/c.txt") // 确保 /tmp/a/b 存在
+func EnsureDir(dirPath string) error {
+	if err := ValidatePath(dirPath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 获取文件路径的目录部分
-	dir := filepath.Dir(filePath)
-
-	// 如果目录不存在，则使用默认权限创建目录
-	return MkdirAll(dir, 0755)
+	dir := CleanPath(filepath.Dir(dirPath))
+	if err := MkdirAll(dir, 0755); err != nil {
+		return errors.WithMessage(err, "确保父目录存在失败")
+	}
+	return nil
 }

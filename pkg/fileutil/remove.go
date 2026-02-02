@@ -1,158 +1,160 @@
 package fileutil
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
-// Remove 删除指定名称的文件或目录。
-// 如果路径是目录，则只有在目录为空时才会被删除。
-// 如果路径不存在，则 Remove 返回 nil（无错误）。
-func Remove(path string) error {
-	// 验证输入路径
-	if path == "" {
-		return fmt.Errorf("路径不能为空")
+// Remove 删除文件或空目录。
+// 路径不存在 → 返回 nil；目录非空 → 返回错误。
+// 示例:
+//
+//	Remove("/tmp/test.txt") // 删除文件
+//	Remove("/tmp/empty_dir") // 删除空目录
+func Remove(filePath string) error {
+	if err := ValidatePath(filePath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 检查路径是否存在
-	if _, err := os.Stat(path); err != nil {
+	filePath = CleanPath(filePath)
+	// 路径不存在 → 直接返回
+	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
-			// 路径不存在，无需删除
 			return nil
 		}
-		return fmt.Errorf("检查路径失败: %w", err)
+		return errors.WithMessagef(err, "检查路径状态失败, filepath=%s", filePath)
 	}
 
-	// 删除文件或空目录
-	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("删除 %s 失败: %w", path, err)
+	// 删除文件/空目录
+	if err := os.Remove(filePath); err != nil {
+		return errors.WithMessagef(err, "删除文件/空目录失败, filepath=%s", filePath)
 	}
 
 	return nil
 }
 
-// RemoveAll 删除路径及其包含的所有子项。
-// 它会删除所有能删除的内容，但返回遇到的第一个错误。
-// 如果路径不存在，则 RemoveAll 返回 nil（无错误）。
-func RemoveAll(path string) error {
-	// 验证输入路径
-	if path == "" {
-		return fmt.Errorf("路径不能为空")
+// RemoveAll 删除路径及其所有子项（递归删除）。
+// 路径不存在 → 返回 nil。
+// 示例:
+//
+//	RemoveAll("/tmp/test_dir") // 删除目录及所有内容
+func RemoveAll(filePath string) error {
+	if err := ValidatePath(filePath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 检查路径是否存在
-	if _, err := os.Stat(path); err != nil {
+	filePath = CleanPath(filePath)
+	// 路径不存在 → 直接返回
+	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
-			// 路径不存在，无需删除
 			return nil
 		}
-		return fmt.Errorf("检查路径失败: %w", err)
+		return errors.WithMessagef(err, "检查路径状态失败, filepath=%s", filePath)
 	}
 
-	// 删除路径及其所有内容
-	if err := os.RemoveAll(path); err != nil {
-		return fmt.Errorf("删除全部 %s 失败: %w", path, err)
+	// 递归删除
+	if err := os.RemoveAll(filePath); err != nil {
+		return errors.WithMessagef(err, "递归删除路径失败, filepath=%s", filePath)
 	}
 
 	return nil
 }
 
-// RemoveIfExists 如果文件或目录存在则删除它。
-// 这是 Remove 的别名，用于语义上的清晰性。
-func RemoveIfExists(path string) error {
-	return Remove(path)
-}
-
-// SafeRemoveAll 删除路径及其包含的所有子项，
-// 但包含安全检查以防止意外删除重要路径。
-func SafeRemoveAll(path string) error {
-	// 验证输入路径
-	if path == "" {
-		return fmt.Errorf("路径不能为空")
+// SafeRemoveAll 安全删除路径（防止误删系统/关键目录）。
+// 增强安全检查:
+//  1. 拒绝删除系统核心路径（/、/usr 等）
+//  2. 拒绝删除当前工作目录或其父目录
+//  3. 路径必须是绝对路径且非系统路径
+//
+// 示例:
+//
+//	SafeRemoveAll("/tmp/test_dir") // 正常删除
+//	SafeRemoveAll("/usr") // 拒绝删除
+func SafeRemoveAll(filePath string) error {
+	if err := ValidatePath(filePath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 解析绝对路径以进行安全检查
-	absPath, err := filepath.Abs(path)
+	// 解析绝对路径
+	absPath, err := filepath.Abs(CleanPath(filePath))
 	if err != nil {
-		return fmt.Errorf("解析绝对路径失败: %w", err)
+		return errors.WithMessagef(err, "解析绝对路径失败, filepath=%s", filePath)
 	}
 
-	// 安全检查以防止意外删除系统路径
-	unsafePaths := []string{
-		"/",
-		"/usr",
-		"/usr/local",
-		"/etc",
-		"/var",
-		"/lib",
-		"/lib64",
-		"/bin",
-		"/sbin",
-		"/boot",
-		"/dev",
-		"/proc",
-		"/sys",
+	// 安全路径检查（精确匹配，避免前缀误判）
+	unsafePaths := map[string]bool{
+		"/":          true,
+		"/usr":       true,
+		"/usr/local": true,
+		"/etc":       true,
+		"/var":       true,
+		"/lib":       true,
+		"/lib64":     true,
+		"/bin":       true,
+		"/sbin":      true,
+		"/boot":      true,
+		"/dev":       true,
+		"/proc":      true,
+		"/sys":       true,
 	}
 
-	for _, unsafePath := range unsafePaths {
-		if strings.HasPrefix(absPath, unsafePath) || absPath == unsafePath {
-			return fmt.Errorf("拒绝删除受保护的系统路径: %s", absPath)
+	// 1. 拒绝精确匹配系统路径
+	if unsafePaths[absPath] {
+		return errors.Errorf("安全检查失败, 禁止删除系统核心路径, abs_path=%s", absPath)
+	}
+
+	// 2. 拒绝子路径（精确分隔符，避免 /usr-local 误判）
+	for unsafePath := range unsafePaths {
+		if strings.HasPrefix(absPath, unsafePath+"/") {
+			return errors.Errorf("安全检查失败, 禁止删除系统路径子目录, abs_path=%s, unsafe_parent=%s", absPath, unsafePath)
 		}
 	}
 
-	// 还要防止删除当前工作目录或父路径
+	// 3. 拒绝删除当前工作目录/父目录
 	cwd, err := os.Getwd()
 	if err == nil {
-		if absPath == cwd || strings.HasPrefix(cwd, absPath+"/") {
-			return fmt.Errorf("拒绝删除当前工作目录或父路径: %s", absPath)
+		cwd = filepath.Clean(cwd)
+		if absPath == cwd {
+			return errors.Errorf("安全检查失败, 禁止删除当前工作目录, abs_path=%s, cwd=%s", absPath, cwd)
 		}
-	}
-
-	// 检查路径是否存在
-	if _, err := os.Stat(absPath); err != nil {
-		if os.IsNotExist(err) {
-			// 路径不存在，无需删除
-			return nil
+		if strings.HasPrefix(cwd, absPath+"/") {
+			return errors.Errorf("安全检查失败, 禁止删除当前工作目录的父目录, abs_path=%s, cmd=%s", absPath, cwd)
 		}
-		return fmt.Errorf("检查路径失败: %w", err)
+	} else {
+		return errors.WithMessage(err, "获取当前工作目录失败")
 	}
 
-	// 删除路径及其所有内容
-	if err := os.RemoveAll(absPath); err != nil {
-		return fmt.Errorf("安全删除全部 %s 失败: %w", absPath, err)
-	}
-
-	return nil
+	// 执行安全删除
+	return RemoveAll(absPath)
 }
 
-// RemoveEmptyDir 仅在目录为空时删除该目录。
-// 如果路径不是目录或包含文件，则返回错误。
-func RemoveEmptyDir(path string) error {
-	// 验证输入路径
-	if path == "" {
-		return fmt.Errorf("路径不能为空")
+// RemoveEmptyDir 仅删除空目录。
+// 路径非目录/目录非空 → 返回错误；路径不存在 → 返回 nil。
+// 示例:
+//
+//	RemoveEmptyDir("/tmp/empty_dir") // 成功删除
+//	RemoveEmptyDir("/tmp/non_empty_dir") // 返回错误
+func RemoveEmptyDir(filePath string) error {
+	if err := ValidatePath(filePath); err != nil {
+		return errors.WithMessage(err, "路径校验失败")
 	}
 
-	// 检查路径是否存在
-	info, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// 路径不存在，无需删除
-			return nil
-		}
-		return fmt.Errorf("检查路径失败: %w", err)
+	filePath = CleanPath(filePath)
+	info, infoErr := GetFileInfo(filePath)
+	if infoErr != nil {
+		return errors.WithMessage(infoErr, "获取路径信息失败")
 	}
 
-	// 检查路径是否为目录
 	if !info.IsDir() {
-		return fmt.Errorf("路径不是目录: %s", path)
+		return errors.Errorf("路径不是目录，无法删除空目录, filepath=%s", filePath)
 	}
 
-	// 尝试删除（如果目录不为空则会失败）
-	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("删除目录失败（可能不为空）: %w", err)
+	// 尝试删除（非空会失败）
+	if err := os.Remove(filePath); err != nil {
+		return errors.WithMessagef(err, "删除空目录失败（可能目录非空）, filepath=%s", filePath)
 	}
 
 	return nil

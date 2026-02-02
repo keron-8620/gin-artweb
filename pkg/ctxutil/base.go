@@ -2,14 +2,17 @@ package ctxutil
 
 import (
 	"context"
+
+	"github.com/pkg/errors"
 )
 
-type ContextKey string
-
 func CheckContext(ctx context.Context) error {
+	if ctx == nil {
+		return errors.New("ctx不能为nil")
+	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.WithMessage(ctx.Err(), "操作已取消/超时")
 	default:
 		return nil
 	}

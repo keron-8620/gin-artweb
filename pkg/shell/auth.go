@@ -1,10 +1,10 @@
 package shell
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -24,7 +24,7 @@ func ExpandHomeDir(path string) (string, error) {
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("获取用户主目录失败: %w", err)
+		return "", errors.WithMessage(err, "获取用户主目录失败")
 	}
 
 	return filepath.Join(homeDir, path[1:]), nil
@@ -54,19 +54,19 @@ func validateKeyFile(filePath string) error {
 	info, err := os.Stat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("SSH私钥文件不存在: %s", filePath)
+			return errors.WithMessagef(err, "SSH私钥文件不存在, filepath=%s", filePath)
 		}
-		return fmt.Errorf("检查SSH私钥文件失败: %w", err)
+		return errors.WithMessagef(err, "检查SSH私钥文件状态失败, filepath=%s", filePath)
 	}
 
 	// 检查是否为普通文件
 	if !info.Mode().IsRegular() {
-		return fmt.Errorf("SSH私钥路径不是一个普通文件: %s", filePath)
+		return errors.Errorf("SSH私钥路径不是一个普通文件, filepath=%s", filePath)
 	}
 
 	// 检查文件权限
 	if info.Mode().Perm()&0077 != 0 {
-		return fmt.Errorf("SSH私钥文件权限过于宽松 (%s)", filePath)
+		return errors.Errorf("SSH私钥文件权限过于宽松, filepath=%s", filePath)
 	}
 
 	return nil
@@ -82,13 +82,13 @@ func ParsePrivateKey(filePath string) (ssh.Signer, error) {
 	// 读取私钥文件
 	key, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("读取SSH私钥文件失败: %w", err)
+		return nil, errors.WithMessagef(err, "读取SSH私钥文件失败, filepath=%s", filePath)
 	}
 
 	// 解析私钥
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		return nil, fmt.Errorf("解析SSH私钥失败: %w", err)
+		return nil, errors.WithMessagef(err, "解析SSH私钥失败, filepath=%s", filePath)
 	}
 
 	return signer, nil
@@ -108,7 +108,7 @@ func GetSignersFromDefaultKeys() ([]ssh.Signer, error) {
 	}
 
 	if len(signers) == 0 {
-		return nil, fmt.Errorf("未能从任何默认密钥文件创建SSH Signer")
+		return nil, errors.New("未能从任何默认密钥文件创建SSH Signer")
 	}
 
 	return signers, nil

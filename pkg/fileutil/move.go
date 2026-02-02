@@ -1,60 +1,86 @@
 package fileutil
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
 // Move 将文件或目录从源路径移动到目标路径。
-// 如果目标路径是已存在的目录，则源文件/目录将被移动到该目录中。
-// 如果目标路径是文件或不存在的路径，则源文件/目录将被重命名为目标路径。
+// 特性:
+//  1. 目标是已存在目录 → 源移动到该目录下
+//  2. 目标是文件/不存在 → 源重命名为目标路径
+//  3. 跨文件系统时自动降级为「复制+删除」
+//
+// 示例:
+//
+//	Move("/tmp/src.txt", "/tmp/dst.txt") // 重命名
+//	Move("/tmp/src.txt", "/tmp/dir/")    // 移动到目录
+//	Move("/tmp/src", "/tmp/dst")         // 移动目录
 func Move(src, dst string) error {
-	// 验证输入路径
-	if src == "" {
-		return fmt.Errorf("源路径不能为空")
+	// 公共校验
+	if err := ValidatePath(src); err != nil {
+		return errors.WithMessage(err, "源路径校验失败")
 	}
-	if dst == "" {
-		return fmt.Errorf("目标路径不能为空")
+	if err := ValidatePath(dst); err != nil {
+		return errors.WithMessage(err, "目标路径校验失败")
 	}
 
-	// 检查源是否存在
-	srcInfo, err := os.Stat(src)
+	// 获取源信息
+	srcInfo, err := GetFileInfo(src)
 	if err != nil {
-		return fmt.Errorf("获取源信息失败: %w", err)
+		return errors.WithMessage(err, "获取源路径信息失败")
 	}
 
-	// 检查源和目标是否相同
-	if dstInfo, err := os.Stat(dst); err == nil {
-		if os.SameFile(srcInfo, dstInfo) {
-			// 源和目标相同，无需操作
-			return nil
+	// 处理目标路径
+	dst = CleanPath(dst)
+	dstInfo, err := GetFileInfo(dst)
+	if err == nil {
+		if IsSameFile(srcInfo, dstInfo) {
+			return errors.New("源和目标路径相同")
 		}
-		
-		// 如果目标是目录，则将源移动到该目录中
+		// 目标是目录 → 拼接文件名
 		if dstInfo.IsDir() {
 			dst = filepath.Join(dst, filepath.Base(src))
-			
-			// 路径调整后再次检查是否相同
-			if dstInfo, err := os.Stat(dst); err == nil {
-				if os.SameFile(srcInfo, dstInfo) {
-					return nil
-				}
+			// 再次检查拼接后的路径是否相同
+			if newDstInfo, err := GetFileInfo(dst); err == nil && IsSameFile(srcInfo, newDstInfo) {
+				return errors.New("拼接后源和目标路径相同")
 			}
 		}
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("检查目标路径失败: %w", err)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return errors.WithMessage(err, "检查目标路径失败")
 	}
 
-	// 确保目标的父目录存在
-	dstDir := filepath.Dir(dst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
-		return fmt.Errorf("创建目标父目录失败: %w", err)
+	// 确保父目录存在
+	if err := EnsureParentDir(dst); err != nil {
+		return errors.WithMessage(err, "确保目标路径父目录存在失败")
 	}
 
-	// 执行移动操作
-	if err := os.Rename(src, dst); err != nil {
-		return fmt.Errorf("将 %s 移动到 %s 失败: %w", src, dst, err)
+	// 尝试原子重命名（同文件系统）
+	if err := os.Rename(src, dst); err == nil {
+		return nil
+	}
+
+	// 跨文件系统 → 复制+删除
+	if srcInfo.IsDir() {
+		// 复制目录
+		if err := CopyDir(src, dst, false); err != nil {
+			return errors.WithMessage(err, "跨文件系统复制目录失败")
+		}
+		// 删除源目录
+		if err := RemoveAll(src); err != nil {
+			return errors.WithMessage(err, "跨文件系统删除源目录失败")
+		}
+	} else {
+		// 复制文件
+		if err := CopyFile(src, dst); err != nil {
+			return errors.WithMessage(err, "跨文件系统复制文件失败")
+		}
+		// 删除源文件
+		if err := Remove(src); err != nil {
+			return errors.WithMessage(err, "跨文件系统删除源文件失败")
+		}
 	}
 
 	return nil

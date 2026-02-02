@@ -44,21 +44,27 @@ type SerializerOption func(*SerializerOptions)
 // WithContext 设置上下文
 func WithContext(ctx context.Context) SerializerOption {
 	return func(opts *SerializerOptions) {
-		opts.Context = ctx
+		if ctx != nil {
+			opts.Context = ctx
+		}
 	}
 }
 
 // WithFileMode 设置文件权限
 func WithFileMode(mode os.FileMode) SerializerOption {
 	return func(opts *SerializerOptions) {
-		opts.FileMode = mode
+		if mode != 0 {
+			opts.FileMode = mode
+		}
 	}
 }
 
 // WithDirMode 设置目录权限
 func WithDirMode(mode os.FileMode) SerializerOption {
 	return func(opts *SerializerOptions) {
-		opts.DirMode = mode
+		if mode != 0 {
+			opts.DirMode = mode
+		}
 	}
 }
 
@@ -79,14 +85,18 @@ func WithAtomic(atomic bool) SerializerOption {
 // WithMaxFileSize 设置最大文件大小
 func WithMaxFileSize(size int64) SerializerOption {
 	return func(opts *SerializerOptions) {
-		opts.MaxFileSize = size
+		if size >= 0 {
+			opts.MaxFileSize = size
+		}
 	}
 }
 
 // WithTimeout 设置超时时间
 func WithTimeout(timeout time.Duration) SerializerOption {
 	return func(opts *SerializerOptions) {
-		opts.Timeout = timeout
+		if timeout > 0 {
+			opts.Timeout = timeout
+		}
 	}
 }
 
@@ -102,14 +112,14 @@ func applyOptions(opts ...SerializerOption) SerializerOptions {
 
 // ReadResult 读取结果
 type ReadResult struct {
-	FileName string
+	FilePath string
 	Size     int64
 	Duration time.Duration
 }
 
 // WriteResult 写入结果
 type WriteResult struct {
-	FileName string
+	FilePath string
 	Size     int64
 	Duration time.Duration
 }

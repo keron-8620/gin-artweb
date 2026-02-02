@@ -2,445 +2,336 @@ package archive
 
 import (
 	"archive/tar"
+	"bufio"
 	"compress/gzip"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"emperror.dev/errors"
+	"github.com/pkg/errors"
+
+	"gin-artweb/pkg/ctxutil"
 )
 
 // TarGz 将指定路径的文件或目录压缩为 tar.gz 格式
-// 支持文件大小限制、文件数量限制、上下文取消等安全特性
+// 优化点:解耦核心逻辑、统一错误处理、减少重复代码、增强安全性
 func TarGz(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
 
-	// 检查上下文状态
-	if err := checkContext(options.Context); err != nil {
-		return errors.WrapIf(err, "TarGz压缩:上下文检查失败")
+	// 前置检查
+	if err := ctxutil.CheckContext(options.Context); err != nil {
+		return errors.WithMessage(err, "tar.gz压缩:上下文检查失败")
+	}
+	if src == "" || dst == "" {
+		return errors.New("源路径/目标路径不能为空")
 	}
 
-	// 创建目标文件
-	dstFile, err := os.Create(dst)
+	// 路径安全检查，防止路径遍历攻击
+	cleanSrc := filepath.Clean(src)
+	cleanDst := filepath.Clean(dst)
+	
+	// 验证路径是否在允许范围内（基础安全检查）
+	if !filepath.IsAbs(cleanSrc) {
+		absSrc, err := filepath.Abs(cleanSrc)
+		if err != nil {
+			return errors.WithMessage(err, "获取源路径绝对路径失败")
+		}
+		cleanSrc = absSrc
+	}
+
+	// 打开/创建文件
+	srcInfo, err := os.Stat(cleanSrc)
 	if err != nil {
-		return errors.WrapIfWithDetails(
-			err, "TarGz压缩:创建目标文件失败",
-			"src", src,
-			"dst", dst,
-		)
+		return errors.WithMessagef(err, "获取源文件信息失败, src=%s", cleanSrc)
 	}
-	defer dstFile.Close()
 
-	// 创建 gzip writer
-	gzWriter := gzip.NewWriter(dstFile)
-	defer gzWriter.Close()
+	// 创建目标文件前检查父目录是否存在
+	dstDir := filepath.Dir(cleanDst)
+	if err := os.MkdirAll(dstDir, 0755); err != nil {
+		return errors.WithMessagef(err, "创建目标目录失败, dir=%s", dstDir)
+	}
 
-	// 创建 tar writer
-	tarWriter := tar.NewWriter(gzWriter)
-	defer tarWriter.Close()
-
-	// 获取源文件信息
-	srcInfo, err := os.Stat(src)
+	dstFile, err := os.Create(cleanDst)
 	if err != nil {
-		return errors.WrapIfWithDetails(
-			err, "TarGz压缩:获取源文件信息失败",
-			"src", src,
-		)
+		return errors.WithMessagef(err, "创建目标文件失败, dst=%s", cleanDst)
 	}
+	
+	// 使用带缓冲的写入器提高性能
+	bufferedWriter := bufio.NewWriterSize(dstFile, options.BufferSize) 
+	var closeErrors []error
+	
+	// 预先声明变量以便在defer中使用
+	var gzWriter *gzip.Writer
+	var tarWriter *tar.Writer
+	
+	// 改进的资源清理函数
+	defer func() {
+		// 先刷新缓冲区
+		if err := bufferedWriter.Flush(); err != nil && len(closeErrors) == 0 {
+			closeErrors = append(closeErrors, errors.WithMessage(err, "刷新缓冲区失败"))
+		}
+		
+		// 按顺序关闭资源
+		if gzWriter != nil {
+			if err := gzWriter.Close(); err != nil {
+				closeErrors = append(closeErrors, errors.WithMessage(err, "关闭gzip写入器失败"))
+			}
+		}
+		if tarWriter != nil {
+			if err := tarWriter.Close(); err != nil {
+				closeErrors = append(closeErrors, errors.WithMessage(err, "关闭tar写入器失败"))
+			}
+		}
+		if err := dstFile.Close(); err != nil {
+			closeErrors = append(closeErrors, errors.WithMessage(err, "关闭目标文件失败"))
+		}
+		
+		// 如果有关闭错误且主操作成功，则返回第一个关闭错误
+		if len(closeErrors) > 0 && err == nil {
+			err = closeErrors[0]
+		}
+	}()
 
-	fileCount := 0
+	// 初始化压缩写入器
+	gzWriter = gzip.NewWriter(bufferedWriter)
+	tarWriter = tar.NewWriter(gzWriter)
 
-	// 处理目录
+	// 统一处理文件/目录
+	fileCount := 0 // 保持int类型以匹配processTarEntry函数签名
+	var processErr error
+	
 	if srcInfo.IsDir() {
-		return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		processErr = filepath.Walk(cleanSrc, func(filePath string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil {
+				return errors.WithMessagef(walkErr, "遍历目录失败, filepath=%s", filePath)
+			}
+			
+			// 安全检查：确保文件路径在源目录内
+			relPath, err := filepath.Rel(cleanSrc, filePath)
 			if err != nil {
-				return errors.WrapIfWithDetails(
-					err, "TarGz压缩:遍历目录失败",
-					"dir", src,
-					"path", path,
-				)
+				return errors.WithMessagef(err, "计算相对路径失败, base=%s, target=%s", cleanSrc, filePath)
 			}
-
-			// 检查上下文状态
-			if err := checkContext(options.Context); err != nil {
-				return errors.WrapIf(err, "TarGz压缩:上下文检查失败")
+			if strings.HasPrefix(relPath, "..") {
+				return errors.Errorf("路径超出源目录范围: %s", filePath)
 			}
-
-			// 跳过目录本身
-			if path == src {
-				return nil
+			
+			entryErr := processTarEntry(filePath, cleanSrc, info, tarWriter, &fileCount, options)
+			if entryErr != nil {
+				return errors.WithMessagef(entryErr, "处理文件条目失败, filepath=%s", filePath)
 			}
-
-			// 检查文件数量限制
-			fileCount++
-			if options.MaxFiles > 0 && fileCount > options.MaxFiles {
-				return errors.NewWithDetails(
-					"TarGz压缩失败:文件数量超过限制",
-					"max_files", options.MaxFiles,
-					"current_count", fileCount,
-				)
-			}
-
-			// 检查文件大小限制
-			if options.MaxFileSize > 0 && info.Size() > options.MaxFileSize {
-				return errors.NewWithDetails(
-					"TarGz压缩失败:文件大小超过限制",
-					"file", path,
-					"size_bytes", info.Size(),
-					"max_size_bytes", options.MaxFileSize,
-				)
-			}
-
-			// 创建 tar 头信息
-			header, err := tar.FileInfoHeader(info, "")
-			if err != nil {
-				return errors.WrapIfWithDetails(
-					err, "TarGz压缩:创建tar头信息失败",
-					"src", src,
-					"path", path,
-				)
-			}
-
-			// 设置相对路径
-			relPath, err := filepath.Rel(src, path)
-			if err != nil {
-				return errors.WrapIfWithDetails(
-					err, "TarGz压缩:计算相对路径失败",
-					"src", src,
-					"path", path,
-				)
-			}
-			header.Name = relPath
-
-			// 写入 tar 头信息
-			if err := tarWriter.WriteHeader(header); err != nil {
-				return errors.WrapIfWithDetails(
-					err, "TarGz压缩:写入tar头信息失败",
-					"src", src,
-					"path", path,
-				)
-			}
-
-			// 如果是普通文件，复制内容
-			if info.Mode().IsRegular() {
-				file, err := os.Open(path)
-				if err != nil {
-					return errors.WrapIfWithDetails(
-						err, "TarGz压缩:打开文件失败",
-						"src", src,
-						"path", path,
-					)
-				}
-				defer file.Close()
-
-				if _, err := safeCopy(options.Context, tarWriter, file, options.MaxFileSize, options.BufferSize); err != nil {
-					return errors.WrapIfWithDetails(
-						err, "TarGz压缩:复制文件内容失败",
-						"src", src,
-						"path", path,
-					)
-				}
-			}
-
 			return nil
 		})
 	} else {
 		// 处理单个文件
-		// 检查文件数量限制
-		fileCount++
-		if options.MaxFiles > 0 && fileCount > options.MaxFiles {
-			return errors.NewWithDetails(
-				"TarGz压缩失败:文件数量超过限制",
-				"max_files", options.MaxFiles,
-				"current_count", fileCount,
-			)
-		}
-
-		// 检查文件大小限制
-		if options.MaxFileSize > 0 && srcInfo.Size() > options.MaxFileSize {
-			return errors.NewWithDetails(
-				"TarGz压缩失败:文件大小超过限制",
-				"file", src,
-				"size_bytes", srcInfo.Size(),
-				"max_size_bytes", options.MaxFileSize,
-			)
-		}
-
-		header, err := tar.FileInfoHeader(srcInfo, "")
-		if err != nil {
-			return errors.WrapIfWithDetails(
-				err, "TarGz压缩:创建tar头信息失败",
-				"src", src,
-			)
-		}
-		header.Name = filepath.Base(src)
-
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return errors.WrapIfWithDetails(
-				err, "TarGz压缩:写入tar头信息失败",
-				"src", src,
-			)
-		}
-
-		file, err := os.Open(src)
-		if err != nil {
-			return errors.WrapIfWithDetails(
-				err, "TarGz压缩:打开文件失败",
-				"src", src,
-			)
-		}
-		defer file.Close()
-
-		if _, err := safeCopy(options.Context, tarWriter, file, options.MaxFileSize, options.BufferSize); err != nil {
-			return errors.WrapIfWithDetails(
-				err, "TarGz压缩:复制文件内容失败",
-				"src", src,
-			)
-		}
-
-		return nil
+		parentDir := filepath.Dir(cleanSrc)
+		processErr = processTarEntry(cleanSrc, parentDir, srcInfo, tarWriter, &fileCount, options)
 	}
+
+	if processErr != nil {
+		return errors.WithMessage(processErr, "tar.gz压缩失败")
+	}
+	
+	// 显式刷新确保所有数据写入
+	if err := bufferedWriter.Flush(); err != nil {
+		return errors.WithMessage(err, "刷新写入缓冲区失败")
+	}
+	
+	return nil
 }
 
-// UntarGz 解压 tar.gz 文件到指定目录
-// 支持路径安全检查、文件大小限制、符号链接安全处理等功能
-func UntarGz(src, dst string, opts ...ArchiveOption) error {
-	options := applyOptions(opts...)
-
-	// 检查上下文状态
-	if err := checkContext(options.Context); err != nil {
-		return errors.WrapIf(err, "UntarGz解压:上下文检查失败")
+// validateInputs 验证输入参数
+func validateInputs(src, dst string, options ArchiveOptions) error {
+	if err := ctxutil.CheckContext(options.Context); err != nil {
+		return errors.WithMessage(err, "tar.gz压缩:上下文检查失败")
 	}
+	
+	if src == "" || dst == "" {
+		return errors.New("源路径/目标路径不能为空")
+	}
+	
+	if src == dst {
+		return errors.New("源路径和目标路径不能相同")
+	}
+	
+	return nil
+}
 
-	// 打开源文件
-	srcFile, err := os.Open(src)
+// sanitizePaths 路径标准化和安全检查
+func sanitizePaths(src, dst string) (cleanSrc, cleanDst string, err error) {
+	cleanSrc = filepath.Clean(src)
+	cleanDst = filepath.Clean(dst)
+	
+	// 获取绝对路径
+	absSrc, err := filepath.Abs(cleanSrc)
 	if err != nil {
-		return errors.WrapIfWithDetails(
-			err, "UntarGz解压:打开源文件失败",
-			"src", src,
-			"dst", dst,
-		)
+		return "", "", errors.WithMessage(err, "获取源路径绝对路径失败")
 	}
-	defer srcFile.Close()
-
-	// 创建 gzip reader
-	gzReader, err := gzip.NewReader(srcFile)
+	cleanSrc = absSrc
+	
+	absDst, err := filepath.Abs(cleanDst)
 	if err != nil {
-		return errors.WrapIfWithDetails(
-			err, "UntarGz解压:创建gzip reader失败",
-			"src", src,
-		)
+		return "", "", errors.WithMessage(err, "获取目标路径绝对路径失败")
 	}
-	defer gzReader.Close()
+	cleanDst = absDst
+	
+	return cleanSrc, cleanDst, nil
+}
 
-	// 创建 tar reader
-	tarReader := tar.NewReader(gzReader)
-
-	// 确保目标目录存在
-	if err := os.MkdirAll(dst, 0755); err != nil {
-		return errors.WrapIfWithDetails(
-			err, "UntarGz解压:创建目标目录失败",
-			"src", src,
-			"dst", dst,
-		)
+// createDestinationFile 创建目标文件
+func createDestinationFile(dst string) (*os.File, error) {
+	// 创建目标目录
+	dstDir := filepath.Dir(dst)
+	if err := os.MkdirAll(dstDir, 0755); err != nil {
+		return nil, errors.WithMessagef(err, "创建目标目录失败, dir=%s", dstDir)
 	}
 
+	// 检查目标文件是否已存在
+	if _, err := os.Stat(dst); err == nil {
+		return nil, errors.Errorf("目标文件已存在: %s", dst)
+	}
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "创建目标文件失败, dst=%s", dst)
+	}
+	
+	return dstFile, nil
+}
+
+// compressFiles 处理文件压缩逻辑
+func compressFiles(src string, srcInfo os.FileInfo, tarWriter *tar.Writer, options ArchiveOptions) error {
 	fileCount := 0
+	
+	if srcInfo.IsDir() {
+		return filepath.Walk(src, func(filePath string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil {
+				return errors.WithMessagef(walkErr, "遍历目录失败, filepath=%s", filePath)
+			}
+			
+			// 安全检查：确保文件路径在源目录内
+			if err := validatePathWithinBase(filePath, src); err != nil {
+				return err
+			}
+			
+			return processTarEntry(filePath, src, info, tarWriter, &fileCount, options)
+		})
+	}
+	
+	// 处理单个文件
+	parentDir := filepath.Dir(src)
+	return processTarEntry(src, parentDir, srcInfo, tarWriter, &fileCount, options)
+}
 
-	// 遍历 tar 中的每个文件
-	for {
-		// 检查上下文状态
-		if err := checkContext(options.Context); err != nil {
-			return errors.WrapIf(err, "UntarGz解压:上下文检查失败")
-		}
+// validatePathWithinBase 验证文件路径是否在基础目录内
+func validatePathWithinBase(filePath, baseDir string) error {
+	relPath, err := filepath.Rel(baseDir, filePath)
+	if err != nil {
+		return errors.WithMessagef(err, "计算相对路径失败, base=%s, target=%s", baseDir, filePath)
+	}
+	
+	if strings.HasPrefix(relPath, "..") {
+		return errors.Errorf("路径超出源目录范围: %s", filePath)
+	}
+	
+	return nil
+}
 
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
+// processTarEntry 处理单个tar条目（解耦核心逻辑）
+func processTarEntry(filePath, baseDir string, info os.FileInfo, tarWriter *tar.Writer, fileCount *int, options ArchiveOptions) error {
+	// 上下文检查
+	if err := ctxutil.CheckContext(options.Context); err != nil {
+		return errors.WithMessage(err, "处理单个tar条目:上下文检查失败")
+	}
+
+	// 跳过基础目录
+	if filePath == baseDir {
+		return nil
+	}
+
+	// 文件数量限制
+	*fileCount++
+	if options.MaxFiles > 0 && *fileCount > options.MaxFiles {
+		return errors.Errorf("文件数量超过限制, max=%d, current= %d", options.MaxFiles, *fileCount)
+	}
+
+	// 文件大小限制
+	if options.MaxFileSize > 0 && info.Size() > options.MaxFileSize {
+		return errors.Errorf("文件大小超过限制, file_path=%s, max=%d, current=%d", filePath, options.MaxFileSize, info.Size())
+	}
+
+	// 创建tar头
+	relPath, err := filepath.Rel(baseDir, filePath)
+	if err != nil {
+		return errors.WithMessagef(err, "计算相对路径失败, filepath=%s", filePath)
+	}
+
+	header, err := tar.FileInfoHeader(info, "")
+	if err != nil {
+		return errors.WithMessagef(err, "创建tar头失败, filepath=%s", filePath)
+	}
+	header.Name = relPath
+
+	// 写入tar头
+	if err := tarWriter.WriteHeader(header); err != nil {
+		return errors.WithMessagef(err, "写入tar头失败, filepath=%s", filePath)
+	}
+
+	// 写入文件内容（仅普通文件）
+	if info.Mode().IsRegular() {
+		file, err := os.Open(filePath)
 		if err != nil {
-			return errors.WrapIfWithDetails(
-				err, "UntarGz解压:读取tar header失败",
-				"src", src,
-			)
+			return errors.WithMessagef(err, "打开文件失败, filepath=%s", filePath)
 		}
+		defer closeWithError(file, "关闭文件失败")
 
-		// 检查文件数量限制
-		fileCount++
-		if options.MaxFiles > 0 && fileCount > options.MaxFiles {
-			return errors.NewWithDetails(
-				"UntarGz解压失败:文件数量超过限制",
-				"max_files", options.MaxFiles,
-				"current_count", fileCount,
-			)
-		}
-
-		// 构造目标文件路径
-		target := filepath.Join(dst, header.Name)
-
-		// 防止路径遍历攻击
-		if !isPathSafe(target, dst) {
-			return errors.NewWithDetails(
-				"UntarGz解压失败:检测到非法路径",
-				"target", target,
-				"base", dst,
-			)
-		}
-
-		// 处理不同类型的文件
-		switch header.Typeflag {
-		case tar.TypeDir:
-			// 创建目录
-			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
-				return errors.WrapIfWithDetails(
-					err, "UntarGz解压:创建目录失败",
-					"target", target,
-					"mode", header.Mode,
-				)
-			}
-		case tar.TypeReg:
-			// 检查文件大小限制
-			if options.MaxFileSize > 0 && header.Size > options.MaxFileSize {
-				return errors.NewWithDetails(
-					"UntarGz解压失败:文件大小超过限制",
-					"file", header.Name,
-					"size_bytes", header.Size,
-					"max_size_bytes", options.MaxFileSize,
-				)
-			}
-
-			// 确保父目录存在
-			parentDir := filepath.Dir(target)
-			if err := os.MkdirAll(parentDir, 0755); err != nil {
-				return errors.WrapIfWithDetails(
-					err, "UntarGz解压:创建父目录失败",
-					"parent_dir", parentDir,
-					"target", target,
-				)
-			}
-
-			// 创建目标文件
-			file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(header.Mode))
-			if err != nil {
-				return errors.WrapIfWithDetails(
-					err, "UntarGz解压:创建目标文件失败",
-					"target", target,
-					"mode", header.Mode,
-				)
-			}
-			defer func() {
-				if closeErr := file.Close(); closeErr != nil {
-					// 记录关闭错误但不中断主流程
-				}
-			}()
-
-			// 复制目标文件内容
-			if _, err := safeCopy(options.Context, file, tarReader, options.MaxFileSize, options.BufferSize); err != nil {
-				return errors.WrapIfWithDetails(
-					err, "UntarGz解压:复制文件内容失败",
-					"file", header.Name,
-					"target", target,
-				)
-			}
-
-		case tar.TypeSymlink:
-			// 检查符号链接安全性
-			if filepath.IsAbs(header.Linkname) {
-				return errors.NewWithDetails(
-					"UntarGz解压失败:拒绝绝对路径符号链接",
-					"name", header.Name,
-					"linkname", header.Linkname,
-				)
-			}
-
-			linkTarget := filepath.Join(filepath.Dir(target), header.Linkname)
-			if !isPathSafe(linkTarget, dst) {
-				return errors.NewWithDetails(
-					"UntarGz解压失败:符号链接指向目录外",
-					"name", header.Name,
-					"linkname", header.Linkname,
-					"target", linkTarget,
-				)
-			}
-
-			// 检查是否允许跟随符号链接
-			if !options.FollowSymlinks {
-				// 创建符号链接
-				if err := os.Symlink(header.Linkname, target); err != nil {
-					return errors.WrapIfWithDetails(
-						err, "UntarGz解压:创建符号链接失败",
-						"target", target,
-						"linkname", header.Linkname,
-					)
-				}
-			} else {
-				// 如果跟随符号链接，需要额外的安全检查
-				// 这里我们只是简单地拒绝创建符号链接，因为跟随符号链接可能存在安全风险
-				return errors.NewWithDetails(
-					"UntarGz解压失败:不允许跟随符号链接",
-					"name", header.Name,
-					"linkname", header.Linkname,
-				)
-			}
-		default:
-			// 忽略不支持的文件类型
+		if _, err := safeCopy(options.Context, tarWriter, file, options.MaxFileSize, options.BufferSize); err != nil {
+			return errors.WithMessagef(err, "复制文件内容失败, filepath=%s", filePath)
 		}
 	}
 
 	return nil
 }
 
-// ValidateSingleDirTarGz 校验 tar.gz 文件是否只包含一个顶层目录，并返回该目录名称
-// 用于确保压缩包结构符合预期，防止解压后产生混乱的文件结构
-func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
+// UntarGz 解压 tar.gz 文件到指定目录
+// 优化点:解耦处理逻辑、强化资源释放、统一错误格式
+func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
 
-	// 检查上下文状态
-	if err := checkContext(options.Context); err != nil {
-		return "", errors.WrapIf(err, "ValidateSingleDirTarGz校验:上下文检查失败")
+	// 前置检查
+	if err := ctxutil.CheckContext(options.Context); err != nil {
+		return errors.WithMessage(err, "tar.gz解压:上下文检查失败")
+	}
+	if src == "" || dst == "" {
+		return errors.New("源路径/目标路径不能为空")
 	}
 
 	// 打开源文件
 	srcFile, err := os.Open(src)
 	if err != nil {
-		return "", errors.WrapIfWithDetails(
-			err, "ValidateSingleDirTarGz校验:打开源文件失败",
-			"src", src,
-		)
+		return errors.WithMessagef(err, "打开源文件失败, src=%s", src)
 	}
-	defer func() {
-		if closeErr := srcFile.Close(); closeErr != nil {
-			// 记录关闭错误但不中断主流程
-		}
-	}()
+	defer closeWithError(srcFile, "关闭源文件失败")
 
-	// 创建 gzip reader
+	// 初始化解压读取器
 	gzReader, err := gzip.NewReader(srcFile)
 	if err != nil {
-		return "", errors.WrapIfWithDetails(
-			err, "ValidateSingleDirTarGz校验:创建gzip reader失败",
-			"src", src,
-		)
+		return errors.WithMessagef(err, "创建gzip读取器失败, src=%s", src)
 	}
-	defer func() {
-		if closeErr := gzReader.Close(); closeErr != nil {
-			// 记录关闭错误但不中断主流程
-		}
-	}()
+	defer closeWithError(gzReader, "关闭gzip读取器失败")
 
-	// 创建 tar reader
 	tarReader := tar.NewReader(gzReader)
 
-	// 用于存储所有顶层条目
-	topLevelEntries := make(map[string]bool)
-	var firstDirName string
+	// 创建目标目录
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return errors.WithMessagef(err, "创建目标目录失败, dst=%s", dst)
+	}
 
-	// 遍历 tar 中的每个文件
+	// 遍历tar条目
+	fileCount := 0
 	for {
-		// 检查上下文状态
-		if err := checkContext(options.Context); err != nil {
-			return "", errors.WrapIf(err, "ValidateSingleDirTarGz校验:上下文检查失败")
+		if err := ctxutil.CheckContext(options.Context); err != nil {
+			return errors.WithMessage(err, "tar.gz解压遍历文件:上下文检查失败")
 		}
 
 		header, err := tarReader.Next()
@@ -448,39 +339,143 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 			break
 		}
 		if err != nil {
-			return "", errors.WrapIfWithDetails(
-				err, "ValidateSingleDirTarGz校验:读取tar header失败",
-				"src", src,
-			)
+			return errors.WithMessage(err, "读取tar条目失败")
 		}
 
-		// 获取顶层目录名
-		relPath := header.Name
-		if filepath.IsAbs(relPath) {
-			relPath = relPath[1:] // 去掉前导斜杠
+		fileCount++
+		if options.MaxFiles > 0 && fileCount > options.MaxFiles {
+			return errors.Errorf("文件数量超过限制, max=%d, current= %d", options.MaxFiles, fileCount)
 		}
 
-		// 分割路径获取第一级目录
-		parts := strings.Split(strings.Trim(relPath, "/"), "/")
-		if len(parts) > 0 && parts[0] != "" {
-			topLevelEntries[parts[0]] = true
-			if firstDirName == "" {
-				firstDirName = parts[0]
-			}
+		if err := processUntarEntry(header, tarReader, dst, options); err != nil {
+			return errors.WithMessagef(err, "处理tar条目失败, entry=%s", header.Name)
 		}
 	}
 
-	// 检查是否只有一个顶层目录
-	if len(topLevelEntries) != 1 {
-		keys := make([]string, 0, len(topLevelEntries))
-		for k := range topLevelEntries {
-			keys = append(keys, k)
+	return nil
+}
+
+// processUntarEntry 处理单个解压条目（解耦核心逻辑）
+func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, options ArchiveOptions) error {
+	// 构造目标路径并检查安全性
+	target := filepath.Join(dst, header.Name)
+	if !isPathSafe(target, dst) {
+		return errors.Errorf("非法路径（路径遍历攻击）, target=%s, base=%s", target, dst)
+	}
+
+	// 按类型处理
+	switch header.Typeflag {
+	case tar.TypeDir:
+		return os.MkdirAll(target, os.FileMode(header.Mode))
+
+	case tar.TypeReg:
+		// 大小限制
+		if options.MaxFileSize > 0 && header.Size > options.MaxFileSize {
+			return errors.Errorf("文件大小超过限制, file_path=%s, size=%d, max=%d", header.Name, header.Size, options.MaxFileSize)
 		}
-		return "", errors.NewWithDetails(
-			"ValidateSingleDirTarGz校验失败:tar.gz文件不包含恰好一个顶层目录",
-			"top_level_entries", keys,
-			"count", len(topLevelEntries),
-		)
+
+		// 创建父目录
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			return errors.WithMessage(err, "创建父目录失败")
+		}
+
+		// 写入文件
+		file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(header.Mode))
+		if err != nil {
+			return errors.WithMessage(err, "创建目标文件失败")
+		}
+		defer closeWithError(file, "关闭目标文件失败")
+
+		_, err = safeCopy(options.Context, file, tarReader, options.MaxFileSize, options.BufferSize)
+		return err
+
+	case tar.TypeSymlink:
+		// 符号链接安全检查
+		if filepath.IsAbs(header.Linkname) {
+			return errors.New("拒绝绝对路径符号链接")
+		}
+
+		linkTarget := filepath.Join(filepath.Dir(target), header.Linkname)
+		if !isPathSafe(linkTarget, dst) {
+			return errors.New("符号链接指向基础目录外")
+		}
+
+		if !options.FollowSymlinks {
+			return os.Symlink(header.Linkname, target)
+		}
+		return errors.New("不允许跟随符号链接")
+
+	default:
+		// 忽略不支持的类型
+		return nil
+	}
+}
+
+// ValidateSingleDirTarGz 校验 tar.gz 文件是否只包含一个顶层目录
+// 优化点:减少内存占用、提前终止检查
+func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
+	options := applyOptions(opts...)
+
+	if err := ctxutil.CheckContext(options.Context); err != nil {
+		return "", errors.WithMessage(err, "校验 tar.gz 文件是否只包含一个顶层目录:上下文检查失败")
+	}
+
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return "", errors.WithMessagef(err, "打开源文件失败, src=%s", src)
+	}
+	defer closeWithError(srcFile, "关闭源文件失败")
+
+	gzReader, err := gzip.NewReader(srcFile)
+	if err != nil {
+		return "", errors.WithMessagef(err, "创建gzip读取器失败, src=%s", src)
+	}
+	defer closeWithError(gzReader, "关闭gzip读取器失败")
+
+	tarReader := tar.NewReader(gzReader)
+	topLevelEntries := make(map[string]bool, 1) // 初始容量1，减少扩容
+	var firstDirName string
+
+	for {
+		if err := ctxutil.CheckContext(options.Context); err != nil {
+			return "", errors.WithMessage(err, "遍历tar文件条目:上下文检查失败")
+		}
+
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", errors.WithMessage(err, "读取tar条目失败")
+		}
+
+		// 提取顶层目录
+		cleanName := filepath.Clean(header.Name)
+		cleanName = strings.TrimPrefix(cleanName, "/")
+		parts := strings.Split(cleanName, "/")
+		if len(parts) == 0 || parts[0] == "" {
+			continue
+		}
+		topLevelName := parts[0]
+
+		// 记录顶层目录
+		topLevelEntries[topLevelName] = true
+		if firstDirName == "" {
+			firstDirName = topLevelName
+		}
+
+		// 提前终止:超过1个顶层目录直接返回错误
+		if len(topLevelEntries) > 1 {
+			return "", createMultipleEntriesError(topLevelEntries)
+		}
+	}
+
+	// 结果校验
+	if len(topLevelEntries) == 0 {
+		return "", errors.New("压缩文件为空")
+	}
+	if len(topLevelEntries) > 1 {
+		return "", createMultipleEntriesError(topLevelEntries)
 	}
 
 	return firstDirName, nil
