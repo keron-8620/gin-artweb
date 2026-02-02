@@ -161,3 +161,60 @@ func WriteJSONWithTimeout(filePath string, data any, timeout time.Duration, inde
 	defer cancel()
 	return WriteJSON(filePath, data, WithContext(ctx), WithIndent(indent))
 }
+
+// MarshalJSON 将数据序列化为JSON字节数组
+// 支持缩进和上下文控制
+// 适用于内存序列化操作
+func MarshalJSON(data any, opts ...SerializerOption) ([]byte, *SerializeResult, error) {
+	startTime := time.Now()
+	options := applyOptions(opts...)
+
+	var result []byte
+	var err error
+
+	if options.Indent > 0 {
+		indentStr := strings.Repeat(" ", int(options.Indent))
+		result, err = json.MarshalIndent(data, "", indentStr)
+	} else {
+		result, err = json.Marshal(data)
+	}
+
+	serializeResult := &SerializeResult{
+		Size:     int64(len(result)),
+		Duration: time.Since(startTime),
+		Success:  err == nil,
+	}
+
+	if err != nil {
+		serializeResult.Error = err.Error()
+		return nil, serializeResult, errors.WithMessage(err, "序列化JSON数据失败")
+	}
+
+	return result, serializeResult, nil
+}
+
+// UnmarshalJSON 将JSON字节数组反序列化为数据
+// 支持上下文控制
+// 适用于内存反序列化操作
+func UnmarshalJSON(data []byte, v any, opts ...SerializerOption) (*SerializeResult, error) {
+	startTime := time.Now()
+	options := applyOptions(opts...)
+
+	if err := json.Unmarshal(data, v); err != nil {
+		serializeResult := &SerializeResult{
+			Size:     int64(len(data)),
+			Duration: time.Since(startTime),
+			Success:  false,
+			Error:    err.Error(),
+		}
+		return serializeResult, errors.WithMessage(err, "反序列化JSON数据失败")
+	}
+
+	serializeResult := &SerializeResult{
+		Size:     int64(len(data)),
+		Duration: time.Since(startTime),
+		Success:  true,
+	}
+
+	return serializeResult, nil
+}

@@ -110,16 +110,38 @@ func applyOptions(opts ...SerializerOption) SerializerOptions {
 	return options
 }
 
-// ReadResult 读取结果
+// ReadResult 读取结果.
+// ReadResult 读取操作结果
+// 包含文件路径、大小、耗时和错误信息
+// 适用于监控和日志记录
+// 示例: {"file_path":"/path/to/file.json","size":1024,"duration":"10ms","success":true}
 type ReadResult struct {
-	FilePath string
-	Size     int64
-	Duration time.Duration
+	FilePath string        `json:"file_path"`       // 文件路径
+	Size     int64         `json:"size"`            // 文件大小(字节)
+	Duration time.Duration `json:"duration"`        // 操作耗时
+	Success  bool          `json:"success"`         // 是否成功
+	Error    string        `json:"error,omitempty"` // 错误信息(如果有)
 }
 
-// WriteResult 写入结果
+// WriteResult 写入操作结果
+// 包含文件路径、大小、耗时和错误信息
+// 适用于监控和日志记录
+// 示例: {"file_path":"/path/to/file.json","size":2048,"duration":"20ms","success":true}
 type WriteResult struct {
-	FilePath string
-	Size     int64
-	Duration time.Duration
+	FilePath string        `json:"file_path"`       // 文件路径
+	Size     int64         `json:"size"`            // 文件大小(字节)
+	Duration time.Duration `json:"duration"`        // 操作耗时
+	Success  bool          `json:"success"`         // 是否成功
+	Error    string        `json:"error,omitempty"` // 错误信息(如果有)
+}
+
+// SerializeResult 序列化操作结果
+// 包含序列化数据大小和耗时信息
+// 适用于内存序列化操作
+// 示例: {"size":512,"duration":"5ms","success":true}
+type SerializeResult struct {
+	Size     int64         `json:"size"`            // 序列化数据大小(字节)
+	Duration time.Duration `json:"duration"`        // 操作耗时
+	Success  bool          `json:"success"`         // 是否成功
+	Error    string        `json:"error,omitempty"` // 错误信息(如果有)
 }
