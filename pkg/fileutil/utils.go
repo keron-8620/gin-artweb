@@ -8,12 +8,55 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ValidatePath 校验路径非空
+// ValidatePath 校验路径非空和基本安全
 func ValidatePath(filePath string) error {
 	if strings.TrimSpace(filePath) == "" {
 		return errors.New("路径不能为空")
 	}
+
+	// 基础安全检查
+	if strings.Contains(filePath, "..") && !isPathSafe(filePath) {
+		return errors.New("路径包含不安全的父目录引用")
+	}
+
 	return nil
+}
+
+// isPathSafe 检查路径是否安全（防止路径遍历攻击）
+func isPathSafe(filePath string) bool {
+	cleanPath := filepath.Clean(filePath)
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return false
+	}
+
+	// 获取当前工作目录
+	cwd, err := os.Getwd()
+	if err != nil {
+		return false
+	}
+
+	// 检查路径是否在当前工作目录内
+	rel, err := filepath.Rel(cwd, absPath)
+	if err != nil {
+		return false
+	}
+
+	return !strings.Contains(rel, "..") && !strings.HasPrefix(rel, "..")
+}
+
+// resolveSymlink 安全解析符号链接
+func resolveSymlink(filePath string, follow bool) (string, error) {
+	if !follow {
+		return filePath, nil
+	}
+
+	resolved, err := filepath.EvalSymlinks(filePath)
+	if err != nil {
+		return "", errors.WithMessage(err, "解析符号链接失败")
+	}
+
+	return resolved, nil
 }
 
 // GetFileInfo 获取文件信息，封装通用错误（使用 WrapIf 避免堆栈重复）

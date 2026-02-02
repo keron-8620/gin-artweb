@@ -62,23 +62,47 @@ func Move(src, dst string) error {
 		return nil
 	}
 
-	// 跨文件系统 → 复制+删除
+	// 跨文件系统 → 原子性复制+删除
 	if srcInfo.IsDir() {
-		// 复制目录
-		if err := CopyDir(src, dst, false); err != nil {
+		// 先复制到临时目录，再重命名
+		tempDst := dst + ".tmp"
+		if err := CopyDir(src, tempDst, false); err != nil {
+			// 清理临时文件
+			_ = RemoveAll(tempDst)
 			return errors.WithMessage(err, "跨文件系统复制目录失败")
 		}
+
+		// 重命名临时目录到目标
+		if err := os.Rename(tempDst, dst); err != nil {
+			// 清理临时文件
+			_ = RemoveAll(tempDst)
+			return errors.WithMessage(err, "重命名临时目录失败")
+		}
+
 		// 删除源目录
 		if err := RemoveAll(src); err != nil {
+			// 注意：此时目标已存在，源删除失败需要记录但不要回滚
 			return errors.WithMessage(err, "跨文件系统删除源目录失败")
 		}
 	} else {
-		// 复制文件
-		if err := CopyFile(src, dst); err != nil {
+		// 先复制到临时文件，再重命名
+		tempDst := dst + ".tmp"
+		if err := CopyFile(src, tempDst); err != nil {
+			// 清理临时文件
+			_ = Remove(tempDst)
 			return errors.WithMessage(err, "跨文件系统复制文件失败")
 		}
+
+		// 重命名临时文件到目标
+		if err := os.Rename(tempDst, dst); err != nil {
+			// 清理临时文件
+			_ = Remove(tempDst)
+			return errors.WithMessage(err, "重命名临时文件失败")
+		}
+
 		// 删除源文件
 		if err := Remove(src); err != nil {
+			// 注意：此时目标已存在，源删除失败需要记录但不要回滚
 			return errors.WithMessage(err, "跨文件系统删除源文件失败")
 		}
 	}
