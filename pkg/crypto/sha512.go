@@ -5,7 +5,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // SHA512Hasher SHA-512哈希实现

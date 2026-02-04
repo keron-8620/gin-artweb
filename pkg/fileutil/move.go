@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // Move 将文件或目录从源路径移动到目标路径。

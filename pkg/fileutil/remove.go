@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // Remove 删除文件或空目录。

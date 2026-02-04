@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // ReadJSON 读取并解析 JSON 文件

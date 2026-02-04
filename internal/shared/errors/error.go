@@ -5,20 +5,32 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"net/http"
 )
 
 type Error struct {
-	Code   int            `json:"code"`
-	Reason string         `json:"reason"`
+	Reason ErrorReason    `json:"reason"`
 	Msg    string         `json:"msg"`
 	Data   map[string]any `json:"data"`
 	cause  error
 }
 
-func New(code int, reason, message string, data map[string]any) *Error {
+func New(reason ErrorReason, message string, data map[string]any) *Error {
+	// 如果未提供消息，使用映射表中的默认消息
+	if message == "" {
+		if msg, ok := defaultErrorMessages[reason]; ok {
+			message = msg
+		} else {
+			// 提供回退消息，确保 Msg 不为空
+			message = "未知错误"
+		}
+	}
+
+	// 确保 data 不为 nil
+	if data == nil {
+		data = make(map[string]any)
+	}
+
 	return &Error{
-		Code:   code,
 		Reason: reason,
 		Msg:    message,
 		Data:   data,
@@ -29,29 +41,29 @@ func (e *Error) Error() string {
 	if e == nil {
 		return ""
 	}
-	return fmt.Sprintf("error: code=%d reason = %s msg = %s data = %v cause = %v", e.Code, e.Reason, e.Msg, e.Data, e.cause)
+	return fmt.Sprintf("error: reason = %s msg = %s data = %v cause = %v", e.Reason, e.Msg, e.Data, e.cause)
 }
 
-func (e *Error) Unwrap() error { 
+func (e *Error) Unwrap() error {
 	if e == nil {
 		return nil
 	}
-	return e.cause 
+	return e.cause
 }
 
 func (e *Error) Is(err error) bool {
 	if e == nil {
-		return  err == nil
+		return err == nil
 	}
 	if err == nil {
 		return false
 	}
 	if se, ok := err.(*Error); ok {
-		return se.Code == e.Code && se.Reason == e.Reason
+		return se.Reason == e.Reason
 	}
 	var se *Error
 	if errors.As(err, &se) {
-		return se.Code == e.Code && se.Reason == e.Reason
+		return se.Reason == e.Reason
 	}
 	return false
 }
@@ -71,7 +83,7 @@ func (e *Error) WithData(md map[string]any) *Error {
 	if e == nil {
 		return nil
 	}
-	
+
 	err := Clone(e)
 	if len(md) > 0 {
 		err.Data = md
@@ -82,7 +94,6 @@ func (e *Error) WithData(md map[string]any) *Error {
 func (e *Error) ToMap() map[string]any {
 	if e == nil {
 		return map[string]any{
-			"code":   http.StatusOK,
 			"reason": "ok",
 			"msg":    "",
 			"data":   map[string]any{},
@@ -98,7 +109,6 @@ func (e *Error) ToMap() map[string]any {
 		data = map[string]any{}
 	}
 	return map[string]any{
-		"code":   e.Code,
 		"reason": e.Reason,
 		"msg":    e.Msg,
 		"data":   data,
@@ -112,7 +122,6 @@ func Clone(err *Error) *Error {
 	metadata := make(map[string]any, len(err.Data))
 	maps.Copy(metadata, err.Data)
 	return &Error{
-		Code:   err.Code,
 		Reason: err.Reason,
 		Msg:    err.Msg,
 		Data:   metadata,
@@ -129,8 +138,7 @@ func FromError(err error) *Error {
 	}
 	if errors.Is(err, context.Canceled) {
 		return &Error{
-			Code:   http.StatusBadRequest,
-			Reason: "ctx_cancel",
+			Reason: ReasonCanceled,
 			Msg:    "请求取消",
 			Data:   nil,
 			cause:  err,
@@ -138,16 +146,14 @@ func FromError(err error) *Error {
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		return &Error{
-			Code:   http.StatusRequestTimeout,
-			Reason: "ctx_deadline",
+			Reason: ReasonDeadlineExceeded,
 			Msg:    "请求超时",
 			Data:   nil,
 			cause:  err,
 		}
 	}
 	return &Error{
-		Code:   http.StatusInternalServerError,
-		Reason: "unknown",
+		Reason: ReasonUnknown,
 		Msg:    "未知错误",
 		Data:   nil,
 		cause:  err,

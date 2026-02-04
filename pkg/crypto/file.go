@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // FileEncryptor 文件加密器接口

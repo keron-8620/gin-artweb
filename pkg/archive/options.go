@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // ArchiveOptions 压缩/解压选项配置

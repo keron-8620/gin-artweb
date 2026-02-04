@@ -3,7 +3,7 @@ package archive
 import (
 	"io"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // ArchiveFormat 压缩格式类型

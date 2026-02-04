@@ -6,7 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // SHA256Hasher SHA-256哈希实现

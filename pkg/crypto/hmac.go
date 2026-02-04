@@ -7,7 +7,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // HMACType HMAC算法类型
@@ -22,7 +22,7 @@ const (
 
 // HMACHasher HMAC哈希实现
 type HMACHasher struct {
-	key  []byte
+	key      []byte
 	hmacType HMACType
 }
 
@@ -33,7 +33,7 @@ func NewHMACHasher(key []byte, hmacType HMACType) *HMACHasher {
 	}
 
 	return &HMACHasher{
-		key:  key,
+		key:      key,
 		hmacType: hmacType,
 	}
 }

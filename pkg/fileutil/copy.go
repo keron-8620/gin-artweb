@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // CopyFile 从源路径复制单个文件到目标路径。

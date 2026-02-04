@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // Mkdir 创建单个目录（不创建父目录），权限由 perm 指定。

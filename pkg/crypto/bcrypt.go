@@ -3,7 +3,7 @@ package crypto
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 

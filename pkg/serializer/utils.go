@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // validatePath 校验文件路径

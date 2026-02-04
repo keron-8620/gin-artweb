@@ -3,6 +3,7 @@ package middleware
 import (
 	goerrors "errors"
 	"fmt"
+	"net/http"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
@@ -36,10 +37,11 @@ func JWTAuthMiddleware(jwtKey string, logger *zap.Logger) gin.HandlerFunc {
 	key := []byte(jwtKey)
 
 	return func(c *gin.Context) {
+		code := http.StatusUnauthorized
 		// 从请求头获取token
 		token := extractToken(c)
 		if token == "" {
-			c.AbortWithStatusJSON(errors.ErrNoAuthor.Code, errors.ErrNoAuthor.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrUnauthorized))
 			return
 		}
 
@@ -49,15 +51,15 @@ func JWTAuthMiddleware(jwtKey string, logger *zap.Logger) gin.HandlerFunc {
 		})
 		if err != nil {
 			if goerrors.Is(err, jwt.ErrTokenExpired) {
-				c.AbortWithStatusJSON(errors.ErrTokenExpired.Code, errors.ErrTokenExpired.ToMap())
+				c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenExpired))
 			} else {
-				c.AbortWithStatusJSON(errors.ErrInvalidToken.Code, errors.ErrInvalidToken.ToMap())
+				c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenInvalid))
 			}
 			return
 		}
 		// 验证token有效性
 		if !parsedToken.Valid {
-			c.AbortWithStatusJSON(errors.ErrInvalidToken.Code, errors.ErrInvalidToken.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenInvalid))
 			return
 		}
 
@@ -69,7 +71,7 @@ func JWTAuthMiddleware(jwtKey string, logger *zap.Logger) gin.HandlerFunc {
 				zap.Any(auth.UserClaimsKey, parsedToken.Claims),
 				zap.String("type", fmt.Sprintf("%T", parsedToken.Claims)),
 			)
-			c.AbortWithStatusJSON(errors.ErrInvalidToken.Code, errors.ErrInvalidToken.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenInvalid))
 			return
 		}
 
@@ -80,9 +82,10 @@ func JWTAuthMiddleware(jwtKey string, logger *zap.Logger) gin.HandlerFunc {
 
 func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		code := http.StatusUnauthorized
 		userClaims, exists := c.Get(auth.UserClaimsKey)
 		if !exists {
-			c.AbortWithStatusJSON(errors.ErrNoAuthor.Code, errors.ErrNoAuthor.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrMissingAuth))
 			return
 		}
 
@@ -93,9 +96,10 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.Any(auth.UserClaimsKey, userClaims),
 				zap.String("type", fmt.Sprintf("%T", userClaims)),
 			)
-			c.AbortWithStatusJSON(errors.ErrInvalidToken.Code, errors.ErrInvalidToken.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrMissingAuth))
 			return
 		}
+
 		role := auth.RoleToSubject(info.RoleID)
 		fullPath := c.FullPath()
 
@@ -110,7 +114,8 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String(auth.ActKey, c.Request.Method),
 			)
 			rErr := errors.FromError(err).WithCause(err)
-			c.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+			code = http.StatusInternalServerError
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, rErr))
 			return
 		}
 		if !hasPerm {
@@ -120,7 +125,8 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String(auth.ObjKey, fullPath),
 				zap.String(auth.ActKey, c.Request.Method),
 			)
-			c.AbortWithStatusJSON(errors.ErrForbidden.Code, errors.ErrForbidden.ToMap())
+			code = http.StatusForbidden
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrForbidden))
 			return
 		}
 		c.Next()

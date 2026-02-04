@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // GenerateRandomBytes 生成指定长度的随机字节

@@ -1,12 +1,11 @@
 package crypto
 
-
 import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"golang.org/x/crypto/scrypt"
 )
 

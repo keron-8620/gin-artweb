@@ -28,7 +28,7 @@ func UploadFile(
 			zap.Int64("max_size", maxSize),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrFileTooLarge.WithData(
+		return errors.ErrUploadFileTooLarge.WithData(
 			map[string]any{
 				"file_size": upFile.Size,
 				"max_size":  maxSize,
@@ -43,7 +43,11 @@ func UploadFile(
 			zap.String("save_path", savePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrUploadFile.WithCause(err)
+		return errors.ErrSaveUploadFileFailed.WithCause(err).WithData(
+			map[string]any{
+				"save_path": savePath,
+			},
+		)
 	}
 
 	if err := ctx.SaveUploadedFile(upFile, savePath); err != nil {
@@ -53,7 +57,11 @@ func UploadFile(
 			zap.String("save_path", savePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrUploadFile.WithCause(err)
+		return errors.ErrSaveUploadFileFailed.WithCause(err).WithData(
+			map[string]any{
+				"save_path": savePath,
+			},
+		)
 	}
 
 	if err := os.Chmod(savePath, filePerm); err != nil {
@@ -64,7 +72,7 @@ func UploadFile(
 			zap.String("file_perm", filePerm.String()),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrSetFilePermission.WithCause(err)
+		return errors.ErrSetUploadFilePermissionFailed.WithCause(err)
 	}
 	return nil
 }
@@ -77,7 +85,7 @@ func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, rename string)
 			zap.String("file_path", filePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrFileNotFound.WithData(map[string]any{"file_path": filePath})
+		return errors.ErrDownloadFileNotFound.WithData(map[string]any{"file_path": filePath})
 	} else if statErr != nil {
 		logger.Error(
 			"文件状态检查失败",
@@ -85,7 +93,7 @@ func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, rename string)
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Error(statErr),
 		)
-		return errors.ErrFileStatusCheckFailed.WithCause(statErr)
+		return errors.ErrDownloadFileFailed.WithCause(statErr)
 	}
 
 	// 获取文件名

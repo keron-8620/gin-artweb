@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"golang.org/x/crypto/scrypt"
 )
 

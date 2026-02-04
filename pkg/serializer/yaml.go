@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/goccy/go-yaml"
-	"github.com/pkg/errors"
 )
 
 // ReadYAML 读取并解析 YAML 文件

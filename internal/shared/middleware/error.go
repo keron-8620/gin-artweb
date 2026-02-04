@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	goerrors "errors"
 	"fmt"
+	"net/http"
 	"runtime/debug"
 
+	emperrors "emperror.dev/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -24,18 +25,26 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 				stack := debug.Stack()
 
 				// 构造错误响应
-				var errMsg string
+				var err error
 				switch v := r.(type) {
 				case error:
-					errMsg = v.Error()
+					err = emperrors.WithStack(v)
 				case string:
-					errMsg = v
+					err = emperrors.New(v)
 				default:
-					errMsg = fmt.Sprintf("%v", v)
+					err = emperrors.New(fmt.Sprintf("%v", v))
 				}
+				err = emperrors.WrapWithDetails(
+					err,
+					"panic recovered",
+					"method", c.Request.Method,
+					"url", c.Request.URL.String(),
+					"client_ip", c.ClientIP(),
+					"user_agent", c.Request.UserAgent(),
+				)
 
 				logger.Error("panic recovered",
-					zap.String("error", errMsg),
+					zap.Error(err),
 					zap.Any("panic", r),
 					zap.String("stack", string(stack)),
 					zap.String("method", c.Request.Method),
@@ -43,8 +52,11 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					zap.String("client_ip", c.ClientIP()),
 					zap.String("user_agent", c.Request.UserAgent()),
 				)
-				err := errors.FromError(goerrors.New(errMsg))
-				c.JSON(err.Code, err.ToMap())
+				rErr := errors.FromError(err)
+				c.JSON(
+					http.StatusInternalServerError,
+					errors.ErrorResponse(http.StatusInternalServerError, rErr),
+				)
 			}
 		}()
 

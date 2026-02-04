@@ -10,14 +10,6 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
-// ErrRateLimit 限流错误定义
-var ErrRateLimit = errors.New(
-	http.StatusTooManyRequests,
-	"rate_limit_exceeded",
-	"请求过于频繁，请稍后再试",
-	nil,
-)
-
 // IPRateLimiter IP限流器管理
 type IPRateLimiter struct {
 	limiters map[string]*rate.Limiter
@@ -61,7 +53,8 @@ func GlobalRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		if !limiter.Allow() {
-			c.AbortWithStatusJSON(ErrRateLimit.Code, ErrRateLimit.ToMap())
+			code := http.StatusTooManyRequests
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrRateLimitExceeded))
 			return
 		}
 		c.Next()
@@ -75,7 +68,8 @@ func IPBasedRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limiter := ipLimiter.GetLimiter(c.ClientIP())
 		if !limiter.Allow() {
-			c.AbortWithStatusJSON(ErrRateLimit.Code, ErrRateLimit.ToMap())
+			code := http.StatusTooManyRequests
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrRateLimitExceeded))
 			return
 		}
 		c.Next()

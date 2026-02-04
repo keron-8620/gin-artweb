@@ -6,7 +6,7 @@ import (
 	"crypto/des"
 	"crypto/rand"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 type desCipher struct {

@@ -13,39 +13,6 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
-var (
-	ErrNoNonce = errors.New(
-		http.StatusBadRequest,
-		"no_nonce",
-		"请求标头中缺少随机数",
-		nil,
-	)
-	ErrNoTimestamp = errors.New(
-		http.StatusBadRequest,
-		"no_timestamp",
-		"请求标头中缺少时间戳",
-		nil,
-	)
-	ErrInvalidTimestamp = errors.New(
-		http.StatusBadRequest,
-		"invalid_timestamp",
-		"无效的时间戳",
-		nil,
-	)
-	ErrTimestampExpired = errors.New(
-		http.StatusBadRequest,
-		"timestamp_expired",
-		"时间戳已过期, 请重新发起请求",
-		nil,
-	)
-	ErrReplayAttack = errors.New(
-		http.StatusBadRequest,
-		"replay_attack",
-		"检测到重放攻击，请求随机数已使用",
-		nil,
-	)
-)
-
 // TimestampMiddleware 创建防重放攻击中间件
 // logger: 日志记录器
 // tolerance: 时间容忍度（毫秒），默认300000（5分钟）
@@ -66,11 +33,13 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 			return
 		}
 
+		code := http.StatusBadRequest
+
 		// 从请求头获取 X-Timestamp
 		timestampStr := c.GetHeader("X-Timestamp")
 		if timestampStr == "" {
 			logger.Error("请求缺少 X-Timestamp 头")
-			c.AbortWithStatusJSON(ErrNoTimestamp.Code, ErrNoTimestamp.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTimestampNotFound))
 			return
 		}
 
@@ -78,7 +47,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 		nonce := c.GetHeader("X-Nonce")
 		if nonce == "" {
 			logger.Error("请求缺少 X-Nonce 头")
-			c.AbortWithStatusJSON(ErrNoNonce.Code, ErrNoNonce.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrNonceNotFound))
 			return
 		}
 
@@ -90,7 +59,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 				zap.String("timestamp", timestampStr),
 				zap.String("error", err.Error()),
 			)
-			c.AbortWithStatusJSON(ErrInvalidTimestamp.Code, ErrInvalidTimestamp.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTimestampInvalid))
 			return
 		}
 
@@ -106,7 +75,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 				zap.Int64("tolerance", tolerance),
 				zap.Int64("difference", abs(now-timestamp)),
 			)
-			c.AbortWithStatusJSON(ErrTimestampExpired.Code, ErrTimestampExpired.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTimestampExpired))
 			return
 		}
 
@@ -119,7 +88,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 				zap.String("path", c.Request.URL.Path),
 				zap.String("client_ip", c.ClientIP()),
 			)
-			c.AbortWithStatusJSON(ErrReplayAttack.Code, ErrReplayAttack.ToMap())
+			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrReplayAttack))
 			return
 		}
 

@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // Hasher 定义哈希接口（用于单向加密）

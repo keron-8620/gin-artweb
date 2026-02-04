@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )

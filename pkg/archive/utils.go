@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 // isPathSafe 检查目标路径是否在基础目录范围内，防止路径遍历攻击
