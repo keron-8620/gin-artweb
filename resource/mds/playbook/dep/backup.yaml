@@ -26,7 +26,13 @@
         remove: False
         format: gz
 
+    - name: get datetime
+      command: 'date +%Y%m%d-%H%M%S'
+      register: curr_time
+      delegate_to: 127.0.0.1
+      run_once: true
+
     - name: save mds package archive to backup dir
       copy:
         src: "{{ slave_path_user_home }}/{{ pkg_name }}_{{ version }}.tar.gz"
-        dest: "{{ slave_backup_path }}/{{ pkg_name }}_{{ version }}.tar.gz"
+        dest: "{{ slave_backup_path }}/{{ pkg_name }}_{{ version }}_{{ curr_time.stdout.strip() }}.tar.gz"

@@ -385,6 +385,24 @@ func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 	staticPath := filepath.Join(config.BaseDir, "html", "static")
 	r.Static("/static", staticPath)
 
+	// 健康检查接口
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"msg":  time.Now().Format(time.DateTime),
+			"data": nil,
+		})
+	})
+
+	// 版本信息接口
+	r.GET("/version", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"msg":  version,
+			"data": nil,
+		})
+	})
+
 	// 配置 Swagger 文档
 	if init.Conf.Server.EnableSwagger {
 		docs.SwaggerInfo.Title = "artweb"
