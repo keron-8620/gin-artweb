@@ -1,5 +1,5 @@
 server: # 服务配置
-  host: "192.168.10.12" # 服务地址
+  host: "172.18.60.131" # 服务地址
   port: 8621 # 服务端口
   ssl: # ssl配置
     enable: false # 是否启用ssl
@@ -16,7 +16,7 @@ database: # 数据库配置
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4" # MySql/OceanBase配置
   # dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
   # dsn: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
-  dns: "artweb.db" # sqlite3数据库配置
+  dns: "/mnt/e/project/gin-artweb/artweb.db" # sqlite3数据库配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   conn_max_lifetime: 3600 # 连接最大存活时间
@@ -44,6 +44,12 @@ cors: # 跨域服务
     - "*"
 
 security: # 安全配置
+  host_guard: # host请求头配置
+    enable: true # 是否启用host请求头防护
+    trusted_hosts: # 受信任的host列表
+      - "127.0.0.1:8621"
+      - "172.18.60.131:8621"
+      - "192.168.10.12:8621"
   timeout: # 超时相关配置
     request_timeout: 60 # 请求超时时间
     shutdown_timeout: 30 # 关闭超时时间

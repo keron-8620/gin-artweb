@@ -102,10 +102,8 @@ func (uc *OesNodeUsecase) CreateOesNode(
 	}
 
 	// 导出oes节点缓存数据
-	if nm.IsEnable {
-		if err := uc.OutPortOesNodeData(ctx, nm); err != nil {
-			return nil, err
-		}
+	if err := uc.OutPortOesNodeData(ctx, nm); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(
@@ -151,10 +149,8 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 	}
 
 	// 导出oes节点缓存数据
-	if m.IsEnable {
-		if err := uc.OutPortOesNodeData(ctx, m); err != nil {
-			return nil, err
-		}
+	if err := uc.OutPortOesNodeData(ctx, m); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(

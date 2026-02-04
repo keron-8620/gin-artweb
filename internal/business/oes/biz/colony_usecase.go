@@ -114,10 +114,8 @@ func (uc *OesColonyUsecase) CreateOesColony(
 	}
 
 	// 导出oes集群缓存数据
-	if m.IsEnable {
-		if err := uc.OutportOesColonyData(ctx, nm); err != nil {
-			return nil, err
-		}
+	if err := uc.OutportOesColonyData(ctx, nm); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(
@@ -163,10 +161,8 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 	}
 
 	// 导出数据库缓存数据
-	if m.IsEnable {
-		if err := uc.OutportOesColonyData(ctx, m); err != nil {
-			return nil, err
-		}
+	if err := uc.OutportOesColonyData(ctx, m); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(

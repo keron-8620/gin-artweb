@@ -102,10 +102,8 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 	}
 
 	// 导出mds节点缓存数据
-	if nm.IsEnable {
-		if err := uc.OutPortMdsNodeData(ctx, nm); err != nil {
-			return nil, err
-		}
+	if err := uc.OutPortMdsNodeData(ctx, nm); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(
@@ -151,10 +149,8 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 	}
 
 	// 导出mds节点缓存数据
-	if m.IsEnable {
-		if err := uc.OutPortMdsNodeData(ctx, m); err != nil {
-			return nil, err
-		}
+	if err := uc.OutPortMdsNodeData(ctx, m); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(

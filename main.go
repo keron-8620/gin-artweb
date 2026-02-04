@@ -328,7 +328,9 @@ func newRouter(loggers *log.Loggers, init *common.Initialize) *gin.Engine {
 	r := gin.New()
 
 	// host请求头防护中间件
-	r.Use(middleware.HostGuard(loggers.Service, init.Conf.Server.Host, fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)))
+	if init.Conf.Security.HostGuard.Enable {
+		r.Use(middleware.HostGuard(loggers.Service, init.Conf.Security.HostGuard.TrustedHosts...))
+	}
 
 	// IP限流中间件
 	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))

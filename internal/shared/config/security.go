@@ -1,5 +1,10 @@
 package config
 
+type HostGuardConfig struct {
+	Enable       bool     `yaml:"enable"`        // 是否启用host请求头防护
+	TrustedHosts []string `yaml:"trusted_hosts"` // 受信任的host列表
+}
+
 // TimeoutConfig 超时配置
 type TimeoutConfig struct {
 	RequestTimeout  int `yaml:"request_timeout"`  // 请求处理超时时间(秒)
@@ -40,10 +45,11 @@ type PasswordConfig struct {
 
 // SecurityConfig 安全配置
 type SecurityConfig struct {
-	Timeout   TimeoutConfig       `yaml:"timeout"`
-	Timestamp TimestampConfig     `yaml:"timestamp"`
-	Token     TokenConfig         `yaml:"token"`
-	Login     LoginSecurityConfig `yaml:"login"`
-	Upload    UploadConfig        `yaml:"upload"`
-	Password  PasswordConfig      `yaml:"password"`
+	HostGuard HostGuardConfig     `yaml:"host_guard"` // host请求头配置
+	Timeout   TimeoutConfig       `yaml:"timeout"`    // 超时相关配置
+	Timestamp TimestampConfig     `yaml:"timestamp"`  // 时间戳验证配置
+	Token     TokenConfig         `yaml:"token"`      // Token配置
+	Login     LoginSecurityConfig `yaml:"login"`      // 登录安全配置
+	Upload    UploadConfig        `yaml:"upload"`     // 上传配置
+	Password  PasswordConfig      `yaml:"password"`   // 密码配置
 }

@@ -108,10 +108,8 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 	}
 
 	// 导出mds集群缓存数据
-	if nm.IsEnable {
-		if err := uc.OutportMdsColonyData(ctx, nm); err != nil {
-			return nil, err
-		}
+	if err := uc.OutportMdsColonyData(ctx, nm); err != nil {
+		return nil, err
 	}
 	uc.log.Info(
 		"创建mds集群成功",
@@ -156,10 +154,8 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 	}
 
 	// 导出mds集群缓存数据
-	if m.IsEnable {
-		if err := uc.OutportMdsColonyData(ctx, m); err != nil {
-			return nil, err
-		}
+	if err := uc.OutportMdsColonyData(ctx, m); err != nil {
+		return nil, err
 	}
 
 	uc.log.Info(
