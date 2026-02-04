@@ -3,26 +3,28 @@ package crypto
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
-	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // Hasher 定义哈希接口（用于单向加密）
 type Hasher interface {
 	// Hash 对数据进行哈希处理
-	Hash(data string) (string, error)
+	Hash(ctx context.Context, data string) (string, error)
 
 	// Verify 验证数据与哈希值是否匹配
-	Verify(data, hash string) (bool, error)
+	Verify(ctx context.Context, data, hash string) (bool, error)
 }
 
 // Cipher 定义加密解密接口
 type Cipher interface {
 	// Encrypt 加密数据
-	Encrypt(plaintext string) (string, error)
+	Encrypt(ctx context.Context, plaintext string) (string, error)
 
 	// Decrypt 解密数据
-	Decrypt(ciphertext string) (string, error)
+	Decrypt(ctx context.Context, ciphertext string) (string, error)
 }
 
 // BaseCipher 提供基础的编解码功能
@@ -35,7 +37,11 @@ func (c *BaseCipher) EncodeToString(data []byte) string {
 
 // DecodeString 将字符串解码为字节数据
 func (c *BaseCipher) DecodeString(data string) ([]byte, error) {
-	return base64.StdEncoding.DecodeString(data)
+	dataBytes, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, errors.Wrap(err, "Base64解码错误")
+	}
+	return dataBytes, nil
 }
 
 // pkcs7Padding PKCS7填充
@@ -49,12 +55,12 @@ func pkcs7Padding(data []byte, blockSize int) []byte {
 func pkcs7Unpadding(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
-		return nil, fmt.Errorf("invalid padding size")
+		return nil, errors.New("无效的填充大小：数据为空")
 	}
 
 	unpadding := int(data[length-1])
 	if unpadding > length {
-		return nil, fmt.Errorf("invalid padding size")
+		return nil, errors.Errorf("无效的填充大小：%d 大于数据长度 %d", unpadding, length)
 	}
 
 	return data[:(length - unpadding)], nil

@@ -154,7 +154,7 @@ func (s *MdsConfService) DeleteMdsConf(ctx *gin.Context) {
 
 	dirName := s.ucColony.GetMdsColonyConfigDir(req.ColonyNum)
 	savePath := filepath.Join(dirName, req.DirName, req.Filename)
-	if err := fileutil.Remove(savePath); err != nil {
+	if err := fileutil.Remove(ctx, savePath); err != nil {
 		s.log.Error(
 			"删除mds配置文件失败",
 			zap.Error(err),
@@ -196,7 +196,7 @@ func (s *MdsConfService) ListMdsConf(ctx *gin.Context) {
 	}
 
 	dirName := s.ucColony.GetMdsColonyConfigDir(req.ColonyNum)
-	info, err := fileutil.ListFileInfo(dirName)
+	info, err := fileutil.ListFileInfo(ctx, dirName)
 	if err != nil {
 		s.log.Error(
 			"获取mds配置文件列表失败",

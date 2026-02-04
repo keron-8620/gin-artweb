@@ -3,3 +3,4 @@ bin/
 storage/
 html/
 artweb.pid
+*.db

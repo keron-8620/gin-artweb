@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"time"
@@ -20,10 +21,10 @@ type FileInfo struct {
 // ListFileInfo 递归获取路径的文件/目录信息
 // 示例:
 //
-//	info, _ := ListFileInfo("/tmp/test")
+//	info, _ := ListFileInfo(context.Background(), "/tmp/test")
 //	// 返回 /tmp/test 的所有层级信息
-func ListFileInfo(filePath string) (*FileInfo, error) {
-	if err := ValidatePath(filePath); err != nil {
+func ListFileInfo(ctx context.Context, filePath string) (*FileInfo, error) {
+	if err := ValidatePath(ctx, filePath); err != nil {
 		return nil, errors.WithMessage(err, "路径校验失败")
 	}
 
@@ -65,7 +66,7 @@ func ListFileInfo(filePath string) (*FileInfo, error) {
 
 			// 递归处理子目录
 			if childNode.IsDir {
-				grandChild, err := ListFileInfo(childPath)
+				grandChild, err := ListFileInfo(ctx, childPath)
 				if err != nil {
 					return nil, errors.WithMessagef(err, "递归处理子目录失败, child_path=%s", childPath)
 				}

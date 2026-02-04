@@ -18,40 +18,63 @@ func ReadJSON(filePath string, v any, opts ...SerializerOption) (*ReadResult, er
 
 	options := applyOptions(opts...)
 
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
+	}
+
+	// 验证参数
+	if err := validatePath(filePath); err != nil {
+		return nil, err
+	}
+	if v == nil {
+		return nil, errors.New("接收变量不能为空")
+	}
+
 	// 检查文件是否存在
 	fileInfo, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		return nil, errors.Errorf("JSON文件不存在, filepath=%s", filePath)
+		return nil, errors.Errorf("JSON文件不存在, 文件路径=%s", filePath)
 	}
 	if err != nil {
-		return nil, errors.WithMessagef(err, "获取文件信息失败, filepath=%s", filePath)
+		return nil, errors.WithMessagef(err, "获取文件信息失败, 文件路径=%s", filePath)
+	}
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 检查文件大小限制
 	if options.MaxFileSize > 0 && fileInfo.Size() > options.MaxFileSize {
-		return nil, errors.WithMessagef(
-			err, "JSON文件大小超过限制, filepath=%s, max=%d, current=%s", filePath, options.MaxFileSize, fileInfo.Size())
+		return nil, errors.Errorf("JSON文件大小超过限制, 文件路径=%s, 最大限制=%d, 当前大小=%d", filePath, options.MaxFileSize, fileInfo.Size())
 	}
 
 	// 读取文件内容
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "读取JSON文件失败filepath=%s", filePath)
+		return nil, errors.WithMessagef(err, "读取JSON文件失败, 文件路径=%s", filePath)
 	}
 
 	if len(data) == 0 {
-		return nil, errors.Errorf("JSON文件为空, filepath=%s", filePath)
+		return nil, errors.Errorf("JSON文件为空, 文件路径=%s", filePath)
+	}
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 解析JSON
 	if err := json.Unmarshal(data, v); err != nil {
-		return nil, errors.WithMessagef(err, "解析JSON文件失败, filepath=%s", filePath)
+		return nil, errors.WithMessagef(err, "解析JSON文件失败, 文件路径=%s", filePath)
 	}
 
 	result := &ReadResult{
 		FilePath: filePath,
 		Size:     int64(len(data)),
 		Duration: time.Since(startTime),
+		Success:  true,
 	}
 
 	return result, nil
@@ -62,6 +85,16 @@ func WriteJSON(filePath string, data any, opts ...SerializerOption) (*WriteResul
 	startTime := time.Now()
 
 	options := applyOptions(opts...)
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
+	}
+
+	// 验证参数
+	if err := validatePath(filePath); err != nil {
+		return nil, err
+	}
 
 	if options.Atomic {
 		result, err := writeJSONAtomic(filePath, data, options)
@@ -77,9 +110,19 @@ func WriteJSON(filePath string, data any, opts ...SerializerOption) (*WriteResul
 
 // writeJSON 普通写入JSON
 func writeJSON(filePath string, data any, options SerializerOptions, startTime time.Time) (*WriteResult, error) {
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
+	}
+
 	// 确保目录存在
 	if err := os.MkdirAll(filepath.Dir(filePath), options.DirMode); err != nil {
 		return nil, fmt.Errorf("创建目录失败: %w", err)
+	}
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 创建或截断文件
@@ -111,6 +154,7 @@ func writeJSON(filePath string, data any, options SerializerOptions, startTime t
 		FilePath: filePath,
 		Size:     fileInfo.Size(),
 		Duration: time.Since(startTime),
+		Success:  true,
 	}
 
 	return result, nil
@@ -120,9 +164,19 @@ func writeJSON(filePath string, data any, options SerializerOptions, startTime t
 func writeJSONAtomic(filePath string, data any, options SerializerOptions) (*WriteResult, error) {
 	startTime := time.Now()
 
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
+	}
+
 	// 确保目录存在
 	if err := os.MkdirAll(filepath.Dir(filePath), options.DirMode); err != nil {
 		return nil, fmt.Errorf("创建目录失败: %w", err)
+	}
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 创建临时文件
@@ -134,6 +188,13 @@ func writeJSONAtomic(filePath string, data any, options SerializerOptions) (*Wri
 		// 清理临时文件
 		os.Remove(tmpFile)
 		return nil, err
+	}
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		// 清理临时文件
+		os.Remove(tmpFile)
+		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 原子重命名
@@ -169,6 +230,17 @@ func MarshalJSON(data any, opts ...SerializerOption) ([]byte, *SerializeResult, 
 	startTime := time.Now()
 	options := applyOptions(opts...)
 
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		serializeResult := &SerializeResult{
+			Size:     0,
+			Duration: time.Since(startTime),
+			Success:  false,
+			Error:    ctxErr.Error(),
+		}
+		return nil, serializeResult, errors.WithMessage(ctxErr, "上下文已取消")
+	}
+
 	var result []byte
 	var err error
 
@@ -199,6 +271,37 @@ func MarshalJSON(data any, opts ...SerializerOption) ([]byte, *SerializeResult, 
 func UnmarshalJSON(data []byte, v any, opts ...SerializerOption) (*SerializeResult, error) {
 	startTime := time.Now()
 	options := applyOptions(opts...)
+
+	// 检查上下文是否已取消
+	if ctxErr := options.Context.Err(); ctxErr != nil {
+		serializeResult := &SerializeResult{
+			Size:     int64(len(data)),
+			Duration: time.Since(startTime),
+			Success:  false,
+			Error:    ctxErr.Error(),
+		}
+		return serializeResult, errors.WithMessage(ctxErr, "上下文已取消")
+	}
+
+	// 验证参数
+	if data == nil {
+		serializeResult := &SerializeResult{
+			Size:     0,
+			Duration: time.Since(startTime),
+			Success:  false,
+			Error:    "JSON数据不能为空",
+		}
+		return serializeResult, errors.New("JSON数据不能为空")
+	}
+	if v == nil {
+		serializeResult := &SerializeResult{
+			Size:     int64(len(data)),
+			Duration: time.Since(startTime),
+			Success:  false,
+			Error:    "接收变量不能为空",
+		}
+		return serializeResult, errors.New("接收变量不能为空")
+	}
 
 	if err := json.Unmarshal(data, v); err != nil {
 		serializeResult := &SerializeResult{

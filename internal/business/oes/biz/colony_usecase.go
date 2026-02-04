@@ -356,7 +356,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 	}
 
 	oesTmpDir := filepath.Join(tmpDir, oesUnTarDirName)
-	if err := fileutil.CopyDir(oesTmpDir, colonyBinDir, true); err != nil {
+	if err := fileutil.CopyDir(ctx, oesTmpDir, colonyBinDir, true); err != nil {
 		uc.log.Error(
 			"复制oes程序包解压目录失败",
 			zap.Error(err),
@@ -390,7 +390,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 	}
 	xcterTmpDir := filepath.Join(tmpDir, xcterUnTarDirName, "bin")
 	oesBinDir := filepath.Join(colonyBinDir, "bin")
-	if err := fileutil.CopyDir(xcterTmpDir, oesBinDir, true); err != nil {
+	if err := fileutil.CopyDir(ctx, xcterTmpDir, oesBinDir, true); err != nil {
 		uc.log.Error(
 			"复制xcounter程序包解压目录失败",
 			zap.Error(err),
@@ -404,7 +404,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
 	if _, err := os.Stat(colonyConfAll); os.IsNotExist(err) {
 		colonyBinConf := filepath.Join(colonyBinDir, "conf")
-		if err := fileutil.CopyDir(colonyBinConf, colonyConfAll, true); err != nil {
+		if err := fileutil.CopyDir(ctx, colonyBinConf, colonyConfAll, true); err != nil {
 			uc.log.Error(
 				"复制oes集群配置文件失败",
 				zap.Error(err),
@@ -416,7 +416,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 		}
 		srcPath := filepath.Join(config.ConfigDir, fmt.Sprintf("automatic_oes_%s.yaml", m.SystemType))
 		dstPath := filepath.Join(colonyConfAll, "automatic.yaml")
-		if err := fileutil.CopyFile(srcPath, dstPath); err != nil {
+		if err := fileutil.CopyFile(ctx, srcPath, dstPath); err != nil {
 			uc.log.Error(
 				"复制oes的automatic配置文件失败",
 				zap.Error(err),

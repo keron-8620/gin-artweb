@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
@@ -11,14 +12,14 @@ import (
 // 目录已存在 → 返回 nil；路径存在但非目录 → 返回 ErrPathExist。
 // 示例:
 //
-//	Mkdir("/tmp/test", 0755) // 创建 /tmp/test（父目录必须存在）
-func Mkdir(dirPath string, perm os.FileMode) error {
-	if err := ValidatePath(dirPath); err != nil {
+//	Mkdir(context.Background(), "/tmp/test", 0755) // 创建 /tmp/test（父目录必须存在）
+func Mkdir(ctx context.Context, dirPath string, perm os.FileMode) error {
+	if err := ValidatePath(ctx, dirPath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
 	dirPath = CleanPath(dirPath)
-	info, err := GetFileInfo(dirPath)
+	info, err := GetFileInfo(ctx, dirPath)
 	if err == nil {
 		if info.IsDir() {
 			return nil // 目录已存在
@@ -40,14 +41,14 @@ func Mkdir(dirPath string, perm os.FileMode) error {
 // 目录已存在 → 返回 nil；路径存在但非目录 → 返回 ErrPathExist。
 // 示例:
 //
-//	MkdirAll("/tmp/a/b/c", 0755) // 递归创建 a/b/c
-func MkdirAll(dirPath string, perm os.FileMode) error {
-	if err := ValidatePath(dirPath); err != nil {
+//	MkdirAll(context.Background(), "/tmp/a/b/c", 0755) // 递归创建 a/b/c
+func MkdirAll(ctx context.Context, dirPath string, perm os.FileMode) error {
+	if err := ValidatePath(ctx, dirPath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
 	dirPath = CleanPath(dirPath)
-	info, err := GetFileInfo(dirPath)
+	info, err := GetFileInfo(ctx, dirPath)
 	if err == nil {
 		if info.IsDir() {
 			return nil // 目录已存在
@@ -59,7 +60,7 @@ func MkdirAll(dirPath string, perm os.FileMode) error {
 
 	// 递归创建目录
 	if err := os.MkdirAll(dirPath, perm); err != nil {
-		return errors.WithMessagef(err, "创建目录树失败, dirpath", dirPath)
+		return errors.WithMessagef(err, "创建目录树失败, dirpath=%s", dirPath)
 	}
 
 	return nil
@@ -69,14 +70,14 @@ func MkdirAll(dirPath string, perm os.FileMode) error {
 // 常用于创建文件前预检查父目录。
 // 示例:
 //
-//	EnsureDir("/tmp/a/b/c.txt") // 确保 /tmp/a/b 存在
-func EnsureDir(dirPath string) error {
-	if err := ValidatePath(dirPath); err != nil {
+//	EnsureDir(context.Background(), "/tmp/a/b/c.txt") // 确保 /tmp/a/b 存在
+func EnsureDir(ctx context.Context, dirPath string) error {
+	if err := ValidatePath(ctx, dirPath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
 	dir := CleanPath(filepath.Dir(dirPath))
-	if err := MkdirAll(dir, 0755); err != nil {
+	if err := MkdirAll(ctx, dir, 0755); err != nil {
 		return errors.WithMessage(err, "确保父目录存在失败")
 	}
 	return nil

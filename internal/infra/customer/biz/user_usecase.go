@@ -428,7 +428,7 @@ func (uc *UserUsecase) HashPassword(ctx context.Context, pwd string) (string, *e
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	verified, err := uc.hasher.Hash(pwd)
+	verified, err := uc.hasher.Hash(ctx, pwd)
 	if err != nil {
 		uc.log.Error(
 			"密码哈希失败",
@@ -637,7 +637,7 @@ func (uc *UserUsecase) VerifyPassword(ctx context.Context, pwd, hash string) (bo
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	verified, err := uc.hasher.Verify(pwd, hash)
+	verified, err := uc.hasher.Verify(ctx, pwd, hash)
 	if err != nil {
 		uc.log.Error(
 			"密码验证失败",

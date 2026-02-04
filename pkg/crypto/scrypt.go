@@ -1,11 +1,12 @@
 package crypto
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/scrypt"
 )
 
@@ -41,17 +42,22 @@ func NewScryptHasherWithParams(saltLen, n, r, p, keyLen int, encodeFmt string) H
 	}
 }
 
-func (h *ScryptHasher) Hash(data string) (string, error) {
+func (h *ScryptHasher) Hash(ctx context.Context, data string) (string, error) {
+	// 检查context是否已取消
+	if ctx.Err() != nil {
+		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+	}
+
 	// 生成随机盐值
 	salt := make([]byte, h.saltLen)
 	if _, err := rand.Read(salt); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "生成盐值错误")
 	}
 
 	// 生成哈希
 	hash, err := scrypt.Key([]byte(data), salt, h.n, h.r, h.p, h.keyLen)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Scrypt密钥生成错误")
 	}
 
 	// 将盐值和哈希值组合
@@ -64,7 +70,12 @@ func (h *ScryptHasher) Hash(data string) (string, error) {
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-func (h *ScryptHasher) Verify(data, hash string) (bool, error) {
+func (h *ScryptHasher) Verify(ctx context.Context, data, hash string) (bool, error) {
+	// 检查context是否已取消
+	if ctx.Err() != nil {
+		return false, errors.Wrap(ctx.Err(), "上下文已取消")
+	}
+
 	// 解码哈希值
 	var hashBytes []byte
 	var err error
@@ -76,12 +87,12 @@ func (h *ScryptHasher) Verify(data, hash string) (bool, error) {
 	}
 
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "解码哈希错误")
 	}
 
 	// 提取盐值和哈希部分
 	if len(hashBytes) <= h.saltLen {
-		return false, fmt.Errorf("invalid hash format")
+		return false, errors.New("无效的哈希格式")
 	}
 
 	salt := hashBytes[:h.saltLen]
@@ -90,7 +101,7 @@ func (h *ScryptHasher) Verify(data, hash string) (bool, error) {
 	// 使用相同参数重新计算哈希
 	computedHash, err := scrypt.Key([]byte(data), salt, h.n, h.r, h.p, h.keyLen)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "Scrypt密钥生成错误")
 	}
 
 	// 比较哈希值

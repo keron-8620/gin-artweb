@@ -208,7 +208,7 @@ func (r *hostRepo) NewSSHClient(
 		zap.String("ssh_user", sshUser),
 	)
 	startTime := time.Now()
-	client, err := shell.NewSSHClient(sshIP, sshPort, sshUser, sshAuths, false, timeout)
+	client, err := shell.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, false, timeout)
 	if err != nil {
 		r.log.Error(
 			"创建ssh连接失败",

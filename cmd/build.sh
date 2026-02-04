@@ -25,7 +25,7 @@ COMMIT_ID=$(git rev-parse --short HEAD) # 获取Git短Commit ID
 BUILD_TIME=$(date +"%Y-%m-%d %H:%M:%S") # 获取当前时间
 
 # 编译程序
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
   -trimpath \
   -ldflags "\
     -s -w \

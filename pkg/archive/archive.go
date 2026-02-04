@@ -1,66 +1,77 @@
 package archive
 
 import (
-	"time"
+	"io"
+
+	"github.com/pkg/errors"
 )
 
-// ArchiveMetrics 压缩操作指标
-type ArchiveMetrics struct {
-	OperationType string        // 操作类型: zip/tar.gz
-	SourcePath    string        // 源路径
-	FileCount     int           // 文件数量
-	TotalSize     int64         // 总大小(字节)
-	Duration      time.Duration // 操作耗时
-	Success       bool          // 是否成功
-	Error         string        // 错误信息(如果有)
+// ArchiveFormat 压缩格式类型
+type ArchiveFormat string
+
+const (
+	// FormatZip ZIP格式
+	FormatZip ArchiveFormat = "zip"
+	// FormatTarGz TAR.GZ格式
+	FormatTarGz ArchiveFormat = "tar.gz"
+)
+
+// Archiver 压缩器接口
+type Archiver interface {
+	// Compress 压缩数据
+	Compress(src string, dst string, opts ...ArchiveOption) error
+	// Decompress 解压数据
+	Decompress(src string, dst string, opts ...ArchiveOption) error
+	// ValidateSingleDir 验证是否只包含一个顶层目录
+	ValidateSingleDir(src string, opts ...ArchiveOption) (string, error)
 }
 
-// MetricsCollector 指标收集器接口
-type MetricsCollector interface {
-	Record(metrics ArchiveMetrics)
-}
-
-// defaultCollector 默认指标收集器
-type defaultCollector struct{}
-
-func (d *defaultCollector) Record(metrics ArchiveMetrics) {
-	// 默认实现: 可以集成到日志系统或监控系统
-	// 生产环境建议集成到 Prometheus、OpenTelemetry 等
-}
-
-var collector MetricsCollector = &defaultCollector{}
-
-// SetMetricsCollector 设置自定义指标收集器
-func SetMetricsCollector(c MetricsCollector) {
-	if c != nil {
-		collector = c
+// NewArchiver 创建指定格式的压缩器
+func NewArchiver(format ArchiveFormat) (Archiver, error) {
+	switch format {
+	case FormatZip:
+		return &zipArchiver{}, nil
+	case FormatTarGz:
+		return &tarGzArchiver{}, nil
+	default:
+		return nil, errors.Errorf("不支持的压缩格式: %s", format)
 	}
 }
 
-// recordMetrics 记录操作指标
-func recordMetrics(opType, src string, fileCount int, totalSize int64, duration time.Duration, success bool, err error) {
-	metrics := ArchiveMetrics{
-		OperationType: opType,
-		SourcePath:    src,
-		FileCount:     fileCount,
-		TotalSize:     totalSize,
-		Duration:      duration,
-		Success:       success,
-	}
+// zipArchiver ZIP格式压缩器
+type zipArchiver struct{}
 
-	if err != nil {
-		metrics.Error = err.Error()
-	}
-
-	collector.Record(metrics)
+func (z *zipArchiver) Compress(src string, dst string, opts ...ArchiveOption) error {
+	return Zip(src, dst, opts...)
 }
 
-// withMetrics 包装操作函数以收集指标
-func withMetrics(opType, src string, op func() (int, int64, error)) error {
-	start := time.Now()
-	fileCount, totalSize, err := op()
-	duration := time.Since(start)
+func (z *zipArchiver) Decompress(src string, dst string, opts ...ArchiveOption) error {
+	return Unzip(src, dst, opts...)
+}
 
-	recordMetrics(opType, src, fileCount, totalSize, duration, err == nil, err)
-	return err
+func (z *zipArchiver) ValidateSingleDir(src string, opts ...ArchiveOption) (string, error) {
+	return ValidateSingleDirZip(src, opts...)
+}
+
+// tarGzArchiver TAR.GZ格式压缩器
+type tarGzArchiver struct{}
+
+func (t *tarGzArchiver) Compress(src string, dst string, opts ...ArchiveOption) error {
+	return TarGz(src, dst, opts...)
+}
+
+func (t *tarGzArchiver) Decompress(src string, dst string, opts ...ArchiveOption) error {
+	return UntarGz(src, dst, opts...)
+}
+
+func (t *tarGzArchiver) ValidateSingleDir(src string, opts ...ArchiveOption) (string, error) {
+	return ValidateSingleDirTarGz(src, opts...)
+}
+
+// StreamArchiver 流式压缩器接口
+type StreamArchiver interface {
+	// CompressStream 从流压缩到流
+	CompressStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error
+	// DecompressStream 从流解压到流
+	DecompressStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error
 }

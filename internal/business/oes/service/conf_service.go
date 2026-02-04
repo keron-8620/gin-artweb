@@ -153,7 +153,7 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 
 	dirName := s.ucColony.GetOesColonyConfigDir(req.ColonyNum)
 	savePath := filepath.Join(dirName, req.DirName, req.Filename)
-	if err := fileutil.Remove(savePath); err != nil {
+	if err := fileutil.Remove(ctx, savePath); err != nil {
 		s.log.Error(
 			"删除oes配置文件失败",
 			zap.Error(err),
@@ -195,7 +195,7 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 	}
 
 	dirName := s.ucColony.GetOesColonyConfigDir(req.ColonyNum)
-	info, err := fileutil.ListFileInfo(dirName)
+	info, err := fileutil.ListFileInfo(ctx, dirName)
 	if err != nil {
 		s.log.Error(
 			"获取oes配置文件列表失败",

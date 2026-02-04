@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,19 +13,19 @@ import (
 // 保留文件权限、修改时间（mtime），访问时间（atime）使用默认值。
 // 示例:
 //
-//	CopyFile("/tmp/src.txt", "/tmp/dst.txt") // 直接复制
-//	CopyFile("/tmp/src.txt", "/tmp/dir/")    // 复制到目录（自动拼接文件名）
-func CopyFile(src, dst string) error {
+//	CopyFile(context.Background(), "/tmp/src.txt", "/tmp/dst.txt") // 直接复制
+//	CopyFile(context.Background(), "/tmp/src.txt", "/tmp/dir/")    // 复制到目录（自动拼接文件名）
+func CopyFile(ctx context.Context, src, dst string) error {
 	// 公共校验
-	if err := ValidatePath(src); err != nil {
+	if err := ValidatePath(ctx, src); err != nil {
 		return errors.WithMessage(err, "源路径校验失败")
 	}
-	if err := ValidatePath(dst); err != nil {
+	if err := ValidatePath(ctx, dst); err != nil {
 		return errors.WithMessage(err, "目标路径校验失败")
 	}
 
 	// 获取源文件信息
-	srcInfo, err := GetFileInfo(src)
+	srcInfo, err := GetFileInfo(ctx, src)
 	if err != nil {
 		return errors.WithMessage(err, "获取源文件信息失败")
 	}
@@ -34,7 +35,7 @@ func CopyFile(src, dst string) error {
 
 	// 处理目标路径（如果是目录，自动拼接文件名）
 	dst = CleanPath(dst)
-	dstInfo, err := GetFileInfo(dst)
+	dstInfo, err := GetFileInfo(ctx, dst)
 	if err == nil {
 		if IsSameFile(srcInfo, dstInfo) {
 			return nil // 相同文件，无需操作
@@ -47,7 +48,7 @@ func CopyFile(src, dst string) error {
 	}
 
 	// 确保父目录存在（继承源文件权限）
-	if err := EnsureParentDir(dst, srcInfo.Mode().Perm()); err != nil {
+	if err := EnsureParentDir(ctx, dst, srcInfo.Mode().Perm()); err != nil {
 		return errors.WithMessage(err, "确保父目录存在失败")
 	}
 
@@ -89,19 +90,19 @@ func CopyFile(src, dst string) error {
 // copyContents 为 false: 复制 src 目录本身到 dst（类似 cp -r src dst）
 // 示例:
 //
-//	CopyDir("/tmp/src", "/tmp/dst", false) // 结果: /tmp/dst/src
-//	CopyDir("/tmp/src", "/tmp/dst", true)  // 结果: /tmp/dst/[src内的文件]
-func CopyDir(src, dst string, copyContents bool) error {
+//	CopyDir(context.Background(), "/tmp/src", "/tmp/dst", false) // 结果: /tmp/dst/src
+//	CopyDir(context.Background(), "/tmp/src", "/tmp/dst", true)  // 结果: /tmp/dst/[src内的文件]
+func CopyDir(ctx context.Context, src, dst string, copyContents bool) error {
 	// 公共校验
-	if err := ValidatePath(src); err != nil {
+	if err := ValidatePath(ctx, src); err != nil {
 		return errors.WithMessage(err, "源路径校验失败")
 	}
-	if err := ValidatePath(dst); err != nil {
+	if err := ValidatePath(ctx, dst); err != nil {
 		return errors.WithMessage(err, "目标路径校验失败")
 	}
 
 	// 获取源目录信息
-	srcInfo, err := GetFileInfo(src)
+	srcInfo, err := GetFileInfo(ctx, src)
 	if err != nil {
 		return errors.WithMessage(err, "获取源目录信息失败")
 	}
@@ -112,7 +113,7 @@ func CopyDir(src, dst string, copyContents bool) error {
 	// 确定目标路径
 	dest := dst
 	if !copyContents {
-		dstInfo, err := GetFileInfo(dst)
+		dstInfo, err := GetFileInfo(ctx, dst)
 		if err == nil {
 			if IsSameFile(srcInfo, dstInfo) {
 				return nil // 相同目录，无需操作
@@ -126,7 +127,7 @@ func CopyDir(src, dst string, copyContents bool) error {
 	}
 
 	// 创建目标目录（继承源权限）
-	if err := MkdirAll(dest, srcInfo.Mode().Perm()); err != nil {
+	if err := MkdirAll(ctx, dest, srcInfo.Mode().Perm()); err != nil {
 		return errors.WithMessagef(err, "创建目标目录失败, dest=%s", dest)
 	}
 
@@ -149,12 +150,12 @@ func CopyDir(src, dst string, copyContents bool) error {
 
 		if entryInfo.IsDir() {
 			// 递归复制子目录（子目录始终复制内容）
-			if err := CopyDir(srcPath, dstPath, true); err != nil {
+			if err := CopyDir(ctx, srcPath, dstPath, true); err != nil {
 				return errors.WithMessagef(err, "复制子目录失败, src_path=%s, dst_path=%s", srcPath, dstPath)
 			}
 		} else {
 			// 复制文件
-			if err := CopyFile(srcPath, dstPath); err != nil {
+			if err := CopyFile(ctx, srcPath, dstPath); err != nil {
 				return errors.WithMessagef(err, "复制文件失败, src_path=%s, dst_path=%s", srcPath, dstPath)
 			}
 		}

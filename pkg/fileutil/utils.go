@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,7 @@ import (
 )
 
 // ValidatePath 校验路径非空和基本安全
-func ValidatePath(filePath string) error {
+func ValidatePath(ctx context.Context, filePath string) error {
 	if strings.TrimSpace(filePath) == "" {
 		return errors.New("路径不能为空")
 	}
@@ -60,8 +61,8 @@ func resolveSymlink(filePath string, follow bool) (string, error) {
 }
 
 // GetFileInfo 获取文件信息，封装通用错误（使用 WrapIf 避免堆栈重复）
-func GetFileInfo(filePath string) (os.FileInfo, error) {
-	if err := ValidatePath(filePath); err != nil {
+func GetFileInfo(ctx context.Context, filePath string) (os.FileInfo, error) {
+	if err := ValidatePath(ctx, filePath); err != nil {
 		return nil, errors.WithMessagef(err, "路径校验失败, filepath=%s", filePath)
 	}
 
@@ -82,14 +83,14 @@ func IsSameFile(srcInfo, dstInfo os.FileInfo) bool {
 }
 
 // EnsureParentDir 确保目标路径的父目录存在，继承源路径权限（默认0755）
-func EnsureParentDir(dstPath string, perm ...os.FileMode) error {
+func EnsureParentDir(ctx context.Context, dstPath string, perm ...os.FileMode) error {
 	dir := filepath.Dir(dstPath)
 	p := os.FileMode(0755)
 	if len(perm) > 0 {
 		p = perm[0]
 	}
 
-	if err := Mkdir(dir, p); err != nil {
+	if err := Mkdir(ctx, dir, p); err != nil {
 		return errors.WithMessagef(err, "创建父目录失败, parent_dir=%s", dir)
 	}
 

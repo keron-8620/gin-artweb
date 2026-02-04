@@ -7881,6 +7881,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "mod_time": {
+                    "description": "标准化时间格式（RFC3339）",
                     "type": "string"
                 },
                 "name": {

@@ -348,7 +348,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	}
 
 	mdsTmpDir := filepath.Join(tmpDir, mdsUnTarDirName)
-	if err := fileutil.CopyDir(mdsTmpDir, colonyBinDir, true); err != nil {
+	if err := fileutil.CopyDir(ctx, mdsTmpDir, colonyBinDir, true); err != nil {
 		uc.log.Error(
 			"复制mds程序包解压目录失败",
 			zap.Error(err),
@@ -362,7 +362,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
 	if _, err := os.Stat(colonyConfAll); os.IsNotExist(err) {
 		colonyBinConf := filepath.Join(colonyBinDir, "conf")
-		if err := fileutil.CopyDir(colonyBinConf, colonyConfAll, true); err != nil {
+		if err := fileutil.CopyDir(ctx, colonyBinConf, colonyConfAll, true); err != nil {
 			uc.log.Error(
 				"复制mds集群配置文件失败",
 				zap.Error(err),
@@ -374,7 +374,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 		}
 		srcPath := filepath.Join(config.ConfigDir, "automatic_mds.yaml")
 		dstPath := filepath.Join(colonyConfAll, "automatic.yaml")
-		if err := fileutil.CopyFile(srcPath, dstPath); err != nil {
+		if err := fileutil.CopyFile(ctx, srcPath, dstPath); err != nil {
 			uc.log.Error(
 				"复制mds的automatic配置文件失败",
 				zap.Error(err),

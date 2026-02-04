@@ -1,19 +1,21 @@
 package shell
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
+// NewSSHClient 创建SSH客户端连接
 func NewSSHClient(
+	ctx context.Context,
 	sshIP string,
 	sshPort uint16,
 	sshUser string,
@@ -21,14 +23,21 @@ func NewSSHClient(
 	useKnowHosts bool,
 	timeout time.Duration,
 ) (*ssh.Client, error) {
+	// 检查上下文是否已取消
+	select {
+	case <-ctx.Done():
+		return nil, errors.WithMessage(ctx.Err(), "上下文已取消")
+	default:
+	}
+
 	if sshIP == "" {
-		return nil, fmt.Errorf("缺少远程主机的ip地址")
+		return nil, errors.New("缺少远程主机的IP地址")
 	}
 	if sshUser == "" {
-		return nil, fmt.Errorf("缺少远程主机的用户名")
+		return nil, errors.New("缺少远程主机的用户名")
 	}
 	if len(sshAuths) == 0 {
-		return nil, fmt.Errorf("缺少远程主机的认证信息")
+		return nil, errors.New("缺少远程主机的认证信息")
 	}
 	if sshPort == 0 {
 		sshPort = 22
@@ -36,8 +45,9 @@ func NewSSHClient(
 	if timeout <= 0 {
 		timeout = 10 * time.Second
 	}
+
 	// 设置主机密钥验证回调
-	hostKeyCallback, err := getHostKeyCallback(useKnowHosts)
+	hostKeyCallback, err := getHostKeyCallback(ctx, useKnowHosts)
 	if err != nil {
 		return nil, err
 	}
@@ -49,17 +59,40 @@ func NewSSHClient(
 		HostKeyCallback: hostKeyCallback,
 		Timeout:         timeout,
 	}
-	client, err := ssh.Dial("tcp", addr, &sshConfig)
+
+	// 创建带上下文的连接
+	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err != nil {
-		return nil, fmt.Errorf("SSH连接失败 (%s@%s:%d): %w",
-			sshUser, sshIP, sshPort, err)
+		return nil, errors.WithMessagef(err, "TCP连接失败 (%s@%s:%d)", sshUser, sshIP, sshPort)
 	}
 
-	return client, nil
+	// 检查上下文是否已取消
+	select {
+	case <-ctx.Done():
+		conn.Close()
+		return nil, errors.WithMessage(ctx.Err(), "上下文已取消")
+	default:
+	}
+
+	// 协商SSH连接
+	clientConn, chans, reqs, err := ssh.NewClientConn(conn, addr, &sshConfig)
+	if err != nil {
+		conn.Close()
+		return nil, errors.WithMessagef(err, "SSH协商失败 (%s@%s:%d)", sshUser, sshIP, sshPort)
+	}
+
+	return ssh.NewClient(clientConn, chans, reqs), nil
 }
 
 // getHostKeyCallback 获取主机密钥验证回调函数
-func getHostKeyCallback(useKnownHosts bool) (ssh.HostKeyCallback, error) {
+func getHostKeyCallback(ctx context.Context, useKnownHosts bool) (ssh.HostKeyCallback, error) {
+	// 检查上下文是否已取消
+	select {
+	case <-ctx.Done():
+		return nil, errors.WithMessage(ctx.Err(), "上下文已取消")
+	default:
+	}
+
 	if !useKnownHosts {
 		// 不使用known_hosts，返回不安全的回调（仅用于开发环境）
 		return ssh.InsecureIgnoreHostKey(), nil
@@ -69,19 +102,19 @@ func getHostKeyCallback(useKnownHosts bool) (ssh.HostKeyCallback, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		// 如果无法获取用户目录，回退到不安全的回调
-		return nil, errors.New("无法通过获取当前用户的家目录来找到默认的known_hosts文件")
+		return nil, errors.WithMessage(err, "获取用户主目录失败")
 	}
 
 	knownHostsPath := filepath.Join(homeDir, ".ssh", "known_hosts")
 
 	// 检查known_hosts文件是否存在
 	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
-		return nil, errors.New("缺少主机的known_hosts文件")
+		return nil, errors.WithMessagef(err, "known_hosts文件不存在，路径: %s", knownHostsPath)
 	}
 
 	callback, err := knownhosts.New(knownHostsPath)
 	if err != nil {
-		return nil, errors.New("创建known_hosts回调失败")
+		return nil, errors.WithMessagef(err, "创建known_hosts回调失败，路径: %s", knownHostsPath)
 	}
 
 	return callback, nil

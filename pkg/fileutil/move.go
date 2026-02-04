@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
@@ -15,27 +16,27 @@ import (
 //
 // 示例:
 //
-//	Move("/tmp/src.txt", "/tmp/dst.txt") // 重命名
-//	Move("/tmp/src.txt", "/tmp/dir/")    // 移动到目录
-//	Move("/tmp/src", "/tmp/dst")         // 移动目录
-func Move(src, dst string) error {
+//	Move(context.Background(), "/tmp/src.txt", "/tmp/dst.txt") // 重命名
+//	Move(context.Background(), "/tmp/src.txt", "/tmp/dir/")    // 移动到目录
+//	Move(context.Background(), "/tmp/src", "/tmp/dst")         // 移动目录
+func Move(ctx context.Context, src, dst string) error {
 	// 公共校验
-	if err := ValidatePath(src); err != nil {
+	if err := ValidatePath(ctx, src); err != nil {
 		return errors.WithMessage(err, "源路径校验失败")
 	}
-	if err := ValidatePath(dst); err != nil {
+	if err := ValidatePath(ctx, dst); err != nil {
 		return errors.WithMessage(err, "目标路径校验失败")
 	}
 
 	// 获取源信息
-	srcInfo, err := GetFileInfo(src)
+	srcInfo, err := GetFileInfo(ctx, src)
 	if err != nil {
 		return errors.WithMessage(err, "获取源路径信息失败")
 	}
 
 	// 处理目标路径
 	dst = CleanPath(dst)
-	dstInfo, err := GetFileInfo(dst)
+	dstInfo, err := GetFileInfo(ctx, dst)
 	if err == nil {
 		if IsSameFile(srcInfo, dstInfo) {
 			return errors.New("源和目标路径相同")
@@ -44,7 +45,7 @@ func Move(src, dst string) error {
 		if dstInfo.IsDir() {
 			dst = filepath.Join(dst, filepath.Base(src))
 			// 再次检查拼接后的路径是否相同
-			if newDstInfo, err := GetFileInfo(dst); err == nil && IsSameFile(srcInfo, newDstInfo) {
+			if newDstInfo, err := GetFileInfo(ctx, dst); err == nil && IsSameFile(srcInfo, newDstInfo) {
 				return errors.New("拼接后源和目标路径相同")
 			}
 		}
@@ -53,7 +54,7 @@ func Move(src, dst string) error {
 	}
 
 	// 确保父目录存在
-	if err := EnsureParentDir(dst); err != nil {
+	if err := EnsureParentDir(ctx, dst); err != nil {
 		return errors.WithMessage(err, "确保目标路径父目录存在失败")
 	}
 
@@ -66,42 +67,42 @@ func Move(src, dst string) error {
 	if srcInfo.IsDir() {
 		// 先复制到临时目录，再重命名
 		tempDst := dst + ".tmp"
-		if err := CopyDir(src, tempDst, false); err != nil {
+		if err := CopyDir(ctx, src, tempDst, false); err != nil {
 			// 清理临时文件
-			_ = RemoveAll(tempDst)
+			_ = RemoveAll(ctx, tempDst)
 			return errors.WithMessage(err, "跨文件系统复制目录失败")
 		}
 
 		// 重命名临时目录到目标
 		if err := os.Rename(tempDst, dst); err != nil {
 			// 清理临时文件
-			_ = RemoveAll(tempDst)
+			_ = RemoveAll(ctx, tempDst)
 			return errors.WithMessage(err, "重命名临时目录失败")
 		}
 
 		// 删除源目录
-		if err := RemoveAll(src); err != nil {
+		if err := RemoveAll(ctx, src); err != nil {
 			// 注意：此时目标已存在，源删除失败需要记录但不要回滚
 			return errors.WithMessage(err, "跨文件系统删除源目录失败")
 		}
 	} else {
 		// 先复制到临时文件，再重命名
 		tempDst := dst + ".tmp"
-		if err := CopyFile(src, tempDst); err != nil {
+		if err := CopyFile(ctx, src, tempDst); err != nil {
 			// 清理临时文件
-			_ = Remove(tempDst)
+			_ = Remove(ctx, tempDst)
 			return errors.WithMessage(err, "跨文件系统复制文件失败")
 		}
 
 		// 重命名临时文件到目标
 		if err := os.Rename(tempDst, dst); err != nil {
 			// 清理临时文件
-			_ = Remove(tempDst)
+			_ = Remove(ctx, tempDst)
 			return errors.WithMessage(err, "重命名临时文件失败")
 		}
 
 		// 删除源文件
-		if err := Remove(src); err != nil {
+		if err := Remove(ctx, src); err != nil {
 			// 注意：此时目标已存在，源删除失败需要记录但不要回滚
 			return errors.WithMessage(err, "跨文件系统删除源文件失败")
 		}

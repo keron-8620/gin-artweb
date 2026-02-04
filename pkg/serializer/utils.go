@@ -1,31 +1,16 @@
 package serializer
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 )
 
-// checkContext 检查上下文状态
-func checkContext(ctx context.Context) error {
-	if ctx == nil {
-		return nil
-	}
-
-	select {
-	case <-ctx.Done():
-		return errors.New(ErrContextCancelled)
-	default:
-		return nil
-	}
-}
-
 // validatePath 校验文件路径
 func validatePath(filePath string) error {
 	if filePath == "" {
-		return errors.New(ErrInvalidPath)
+		return errors.New("文件路径不能为空")
 	}
 	return nil
 }
@@ -33,7 +18,7 @@ func validatePath(filePath string) error {
 // checkFileSize 检查文件大小限制
 func checkFileSize(fileSize int64, maxSize int64) error {
 	if maxSize > 0 && fileSize > maxSize {
-		return errors.Errorf("%s: max=%d, current=%d", ErrFileTooLarge, maxSize, fileSize)
+		return errors.Errorf("文件大小超出限制: max=%d, current=%d", maxSize, fileSize)
 	}
 	return nil
 }

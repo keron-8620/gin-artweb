@@ -12,11 +12,11 @@ server: # 服务配置
   enable_swagger: true # 是否启用swagger
 
 database: # 数据库配置
-  type: "opengauss" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite3)
+  type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4" # MySql/OceanBase配置
-  dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
+  # dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
   # dsn: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
-  # dns: "artweb.db" # sqlite3数据库配置
+  dns: "artweb.db" # sqlite3数据库配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   conn_max_lifetime: 3600 # 连接最大存活时间

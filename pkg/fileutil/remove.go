@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,10 +13,10 @@ import (
 // 路径不存在 → 返回 nil；目录非空 → 返回错误。
 // 示例:
 //
-//	Remove("/tmp/test.txt") // 删除文件
-//	Remove("/tmp/empty_dir") // 删除空目录
-func Remove(filePath string) error {
-	if err := ValidatePath(filePath); err != nil {
+//	Remove(context.Background(), "/tmp/test.txt") // 删除文件
+//	Remove(context.Background(), "/tmp/empty_dir") // 删除空目录
+func Remove(ctx context.Context, filePath string) error {
+	if err := ValidatePath(ctx, filePath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
@@ -40,9 +41,9 @@ func Remove(filePath string) error {
 // 路径不存在 → 返回 nil。
 // 示例:
 //
-//	RemoveAll("/tmp/test_dir") // 删除目录及所有内容
-func RemoveAll(filePath string) error {
-	if err := ValidatePath(filePath); err != nil {
+//	RemoveAll(context.Background(), "/tmp/test_dir") // 删除目录及所有内容
+func RemoveAll(ctx context.Context, filePath string) error {
+	if err := ValidatePath(ctx, filePath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
@@ -71,10 +72,10 @@ func RemoveAll(filePath string) error {
 //
 // 示例:
 //
-//	SafeRemoveAll("/tmp/test_dir") // 正常删除
-//	SafeRemoveAll("/usr") // 拒绝删除
-func SafeRemoveAll(filePath string) error {
-	if err := ValidatePath(filePath); err != nil {
+//	SafeRemoveAll(context.Background(), "/tmp/test_dir") // 正常删除
+//	SafeRemoveAll(context.Background(), "/usr") // 拒绝删除
+func SafeRemoveAll(ctx context.Context, filePath string) error {
+	if err := ValidatePath(ctx, filePath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
@@ -128,22 +129,22 @@ func SafeRemoveAll(filePath string) error {
 	}
 
 	// 执行安全删除
-	return RemoveAll(absPath)
+	return RemoveAll(ctx, absPath)
 }
 
 // RemoveEmptyDir 仅删除空目录。
 // 路径非目录/目录非空 → 返回错误；路径不存在 → 返回 nil。
 // 示例:
 //
-//	RemoveEmptyDir("/tmp/empty_dir") // 成功删除
-//	RemoveEmptyDir("/tmp/non_empty_dir") // 返回错误
-func RemoveEmptyDir(filePath string) error {
-	if err := ValidatePath(filePath); err != nil {
+//	RemoveEmptyDir(context.Background(), "/tmp/empty_dir") // 成功删除
+//	RemoveEmptyDir(context.Background(), "/tmp/non_empty_dir") // 返回错误
+func RemoveEmptyDir(ctx context.Context, filePath string) error {
+	if err := ValidatePath(ctx, filePath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
 
 	filePath = CleanPath(filePath)
-	info, infoErr := GetFileInfo(filePath)
+	info, infoErr := GetFileInfo(ctx, filePath)
 	if infoErr != nil {
 		return errors.WithMessage(infoErr, "获取路径信息失败")
 	}

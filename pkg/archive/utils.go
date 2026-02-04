@@ -3,13 +3,36 @@ package archive
 import (
 	"context"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"gin-artweb/pkg/ctxutil"
 )
+
+// isPathSafe 检查目标路径是否在基础目录范围内，防止路径遍历攻击
+// 优化点:简化逻辑、增加路径规范化
+func isPathSafe(target, base string) bool {
+	// 提前规范化路径
+	baseAbs, err := filepath.Abs(filepath.Clean(base))
+	if err != nil {
+		return false
+	}
+
+	targetAbs, err := filepath.Abs(filepath.Clean(target))
+	if err != nil {
+		return false
+	}
+
+	// 检查目标路径是否以基础路径为前缀
+	rel, err := filepath.Rel(baseAbs, targetAbs)
+	if err != nil {
+		return false
+	}
+
+	// 防止路径遍历攻击
+	return !strings.Contains(rel, "..") && !strings.HasPrefix(rel, "..")
+}
 
 // safeCopy 安全复制数据，支持大小限制、上下文检查和进度监控
 // 优化点:减少重复计算、提前终止、缓冲区复用
@@ -23,8 +46,8 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 
 	for {
 		// 上下文检查（优先退出）
-		if err := ctxutil.CheckContext(ctx); err != nil {
-			return written, errors.Wrap(err, "遍历读取文件块:上下文检查失败")
+		if ctx.Err() != nil {
+			return written, errors.Wrap(ctx.Err(), "遍历读取文件块:上下文检查失败")
 		}
 
 		n, err := src.Read(buf)
@@ -59,44 +82,6 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 	return written, nil
 }
 
-// isPathSafe 检查目标路径是否在基础目录范围内，防止路径遍历攻击
-// 优化点:简化逻辑、增加路径规范化
-func isPathSafe(target, base string) bool {
-	// 提前规范化路径
-	baseAbs, err := filepath.Abs(filepath.Clean(base))
-	if err != nil {
-		return false
-	}
-
-	targetAbs, err := filepath.Abs(filepath.Clean(target))
-	if err != nil {
-		return false
-	}
-
-	// 检查目标路径是否以基础路径为前缀
-	rel, err := filepath.Rel(baseAbs, targetAbs)
-	if err != nil {
-		return false
-	}
-
-	// 防止路径遍历攻击
-	return !strings.Contains(rel, "..") && !strings.HasPrefix(rel, "..")
-}
-
-// resolveSymlink 安全解析符号链接
-func resolveSymlink(path string, follow bool) (string, error) {
-	if !follow {
-		return path, nil
-	}
-
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return "", errors.Wrap(err, "解析符号链接失败")
-	}
-
-	return resolved, nil
-}
-
 // closeWithError 安全关闭资源并记录错误（通用工具函数）
 func closeWithError(closer io.Closer, errMsg string) error {
 	if closer == nil {
@@ -115,4 +100,12 @@ func createMultipleEntriesError(entries map[string]bool) error {
 		keys = append(keys, k)
 	}
 	return errors.Errorf("压缩文件包含多个顶层条目, entries=%v", keys)
+}
+
+// validatePermissions 验证并规范化权限
+func validatePermissions(mode os.FileMode, mask int) os.FileMode {
+	// 应用权限掩码
+	perm := os.FileMode(mask) & 0755
+	// 保留文件类型位
+	return (mode & os.ModeType) | perm
 }
