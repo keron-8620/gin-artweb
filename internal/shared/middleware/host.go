@@ -28,7 +28,7 @@ func HostGuard(logger *zap.Logger, allowedHosts ...string) gin.HandlerFunc {
 				zap.Strings("allowed_hosts", allowedHosts),
 			)
 			code := http.StatusForbidden
-			rErr := errors.ErrHostHeaderInvalid.WithData(map[string]any{"host": host})
+			rErr := errors.ErrHostHeaderInvalid.WithField("host", host)
 			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, rErr))
 		}
 		c.Next()

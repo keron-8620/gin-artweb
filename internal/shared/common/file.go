@@ -28,7 +28,7 @@ func UploadFile(
 			zap.Int64("max_size", maxSize),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrUploadFileTooLarge.WithData(
+		return errors.ErrUploadFileTooLarge.WithFields(
 			map[string]any{
 				"file_size": upFile.Size,
 				"max_size":  maxSize,
@@ -43,11 +43,7 @@ func UploadFile(
 			zap.String("save_path", savePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrSaveUploadFileFailed.WithCause(err).WithData(
-			map[string]any{
-				"save_path": savePath,
-			},
-		)
+		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
 	}
 
 	if err := ctx.SaveUploadedFile(upFile, savePath); err != nil {
@@ -57,11 +53,7 @@ func UploadFile(
 			zap.String("save_path", savePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrSaveUploadFileFailed.WithCause(err).WithData(
-			map[string]any{
-				"save_path": savePath,
-			},
-		)
+		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
 	}
 
 	if err := os.Chmod(savePath, filePerm); err != nil {
@@ -85,7 +77,7 @@ func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, rename string)
 			zap.String("file_path", filePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrDownloadFileNotFound.WithData(map[string]any{"file_path": filePath})
+		return errors.ErrDownloadFileNotFound.WithField("file_path", filePath)
 	} else if statErr != nil {
 		logger.Error(
 			"文件状态检查失败",

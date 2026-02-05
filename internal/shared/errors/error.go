@@ -79,19 +79,34 @@ func (e *Error) WithCause(cause error) *Error {
 	return err
 }
 
-func (e *Error) WithData(md map[string]any) *Error {
+// WithField 添加单个字段到错误上下文
+func (e *Error) WithField(key string, value any) *Error {
+	if e == nil {
+		return nil
+	}
+	err := Clone(e)
+	if err.Data == nil {
+		err.Data = make(map[string]any)
+	}
+	err.Data[key] = value
+	return err
+}
+
+func (e *Error) WithFields(md map[string]any) *Error {
 	if e == nil {
 		return nil
 	}
 
-	err := Clone(e)
-	if len(md) > 0 {
-		err.Data = md
+	if len(md) == 0 {
+		return e
 	}
+
+	err := Clone(e)
+	maps.Copy(err.Data, md)
 	return err
 }
 
-func (e *Error) ToMap() map[string]any {
+func (e *Error) Fields() map[string]any {
 	if e == nil {
 		return map[string]any{
 			"reason": "ok",
@@ -136,25 +151,16 @@ func FromError(err error) *Error {
 	if se := new(Error); errors.As(err, &se) {
 		return se
 	}
+	var reason ErrorReason = ReasonUnknown
 	if errors.Is(err, context.Canceled) {
-		return &Error{
-			Reason: ReasonCanceled,
-			Msg:    "请求取消",
-			Data:   nil,
-			cause:  err,
-		}
+		reason = ReasonCanceled
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
-		return &Error{
-			Reason: ReasonDeadlineExceeded,
-			Msg:    "请求超时",
-			Data:   nil,
-			cause:  err,
-		}
+		reason = ReasonDeadlineExceeded
 	}
 	return &Error{
-		Reason: ReasonUnknown,
-		Msg:    "未知错误",
+		Reason: reason,
+		Msg:    defaultErrorMessages[reason],
 		Data:   nil,
 		cause:  err,
 	}
