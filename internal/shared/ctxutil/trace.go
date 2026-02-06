@@ -15,11 +15,11 @@ func GetTraceID(ctx context.Context) string {
 	if value == nil {
 		return ""
 	}
-	
+
 	if requestID, ok := value.(string); ok {
 		return requestID
 	}
-	
+
 	return ""
 }
 

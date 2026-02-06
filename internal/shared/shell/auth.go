@@ -58,19 +58,19 @@ func validateKeyFile(filePath string) error {
 	info, err := os.Stat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return errors.WithMessagef(err, "SSH私钥文件不存在，路径: %s", filePath)
+			return errors.WithMessagef(err, "SSH私钥文件不存在, 路径: %s", filePath)
 		}
-		return errors.WithMessagef(err, "检查SSH私钥文件状态失败，路径: %s", filePath)
+		return errors.WithMessagef(err, "检查SSH私钥文件状态失败, 路径: %s", filePath)
 	}
 
 	// 检查是否为普通文件
 	if !info.Mode().IsRegular() {
-		return errors.Errorf("SSH私钥路径不是一个普通文件，路径: %s", filePath)
+		return errors.Errorf("SSH私钥路径不是一个普通文件, 路径: %s", filePath)
 	}
 
 	// 检查文件权限
 	if info.Mode().Perm()&0077 != 0 {
-		return errors.Errorf("SSH私钥文件权限过于宽松，路径: %s", filePath)
+		return errors.Errorf("SSH私钥文件权限过于宽松, 路径: %s", filePath)
 	}
 
 	return nil
@@ -90,18 +90,18 @@ func ParsePrivateKey(filePath string) (ssh.Signer, error) {
 	// 读取私钥文件
 	key, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "读取SSH私钥文件失败，路径: %s", filePath)
+		return nil, errors.WithMessagef(err, "读取SSH私钥文件失败, 路径: %s", filePath)
 	}
 
 	// 检查文件内容是否为空
 	if len(key) == 0 {
-		return nil, errors.Errorf("SSH私钥文件内容为空，路径: %s", filePath)
+		return nil, errors.Errorf("SSH私钥文件内容为空, 路径: %s", filePath)
 	}
 
 	// 解析私钥
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "解析SSH私钥失败，路径: %s", filePath)
+		return nil, errors.WithMessagef(err, "解析SSH私钥失败, 路径: %s", filePath)
 	}
 
 	return signer, nil

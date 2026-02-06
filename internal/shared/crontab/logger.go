@@ -8,18 +8,18 @@ type cronLog struct {
 	logger *zap.Logger
 }
 
-func (l *cronLog) Info(msg string, keysAndValues ...interface{}) {
+func (l *cronLog) Info(msg string, keysAndValues ...any) {
 	fields := l.keyValuesToFields(keysAndValues...)
 	l.logger.Info(msg, fields...)
 }
 
-func (l *cronLog) Error(err error, msg string, keysAndValues ...interface{}) {
+func (l *cronLog) Error(err error, msg string, keysAndValues ...any) {
 	fields := l.keyValuesToFields(keysAndValues...)
 	fields = append(fields, zap.Error(err))
 	l.logger.Error(msg, fields...)
 }
 
-func (l *cronLog) keyValuesToFields(keysAndValues ...interface{}) []zap.Field {
+func (l *cronLog) keyValuesToFields(keysAndValues ...any) []zap.Field {
 	if len(keysAndValues) == 0 {
 		return nil
 	}

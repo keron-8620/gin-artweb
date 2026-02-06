@@ -5,6 +5,7 @@ type ErrorReason string
 // 通用错误
 const (
 	ReasonUnknown            ErrorReason = "ERROR_UNKNOWN"               // 未知错误
+	ReasonNoContext          ErrorReason = "ERROR_CTX_NO_CONTEXT"        // 上下文为空
 	ReasonCanceled           ErrorReason = "ERROR_CTX_CANCELED"          // ctx取消
 	ReasonDeadlineExceeded   ErrorReason = "ERROR_CTX_DEADLINE_EXCEEDED" // ctx超时
 	ReasonValidationFailed   ErrorReason = "ERROR_VALIDATION_FAILED"     // 参数验证错误
@@ -13,7 +14,7 @@ const (
 	ReasonServiceUnavailable ErrorReason = "ERROR_SERVICE_UNAVAILABLE"   // 服务不可用
 )
 
-// 请求安全相关错误
+// 安全认证
 const (
 	ReasonHostHeaderInvalid ErrorReason = "SEC_HOST_HEADER_INVALID" // Host头无效
 	ReasonRateLimitExceeded ErrorReason = "SEC_RATE_LIMIT_EXCEEDED" // 超出请求频率限制
@@ -26,12 +27,13 @@ const (
 
 // 身份权限认证
 const (
-	ReasonUnauthorized ErrorReason = "AUTH_UNAUTHORIZED"  // 未授权操作
-	ReasonTokenExpired ErrorReason = "AUTH_TOKEN_EXPIRED" // 登录已过期，请重新登录
-	ReasonTokenInvalid ErrorReason = "AUTH_TOKEN_INVALID" // 无效的登录凭证
-	ReasonMissingAuth  ErrorReason = "AUTH_MISSING_AUTH"  // 缺少认证信息
-	ReasonAuthFailed   ErrorReason = "AUTH_FAILED"        // 用户名或密码错误
-	ReasonForbidden    ErrorReason = "AUTH_FORBIDDEN"     // 禁止访问
+	ReasonUnauthorized      ErrorReason = "AUTH_UNAUTHORIZED"        // 未授权操作
+	ReasonTokenExpired      ErrorReason = "AUTH_TOKEN_EXPIRED"       // 登录已过期，请重新登录
+	ReasonTokenInvalid      ErrorReason = "AUTH_TOKEN_INVALID"       // 无效的登录凭证
+	ReasonMissingAuth       ErrorReason = "AUTH_MISSING_AUTH"        // 缺少认证信息
+	ReasonTokenTypeMismatch ErrorReason = "AUTH_TOKEN_TYPE_MISMATCH" // 令牌类型不匹配
+	ReasonAuthFailed        ErrorReason = "AUTH_FAILED"              // 用户名或密码错误
+	ReasonForbidden         ErrorReason = "AUTH_FORBIDDEN"           // 禁止访问
 )
 
 // 上传下载文件
@@ -45,7 +47,7 @@ const (
 	ReasonDownloadFileFailed            ErrorReason = "DOWNLOAD_FILE_FAILED"              // 下载文件失败
 )
 
-// 数据库相关错误码
+// 数据库操作
 const (
 	ReasonRecordNotFound                ErrorReason = "GORM_RECORD_NOT_FOUND"                 // 记录未找到
 	ReasonInvalidTransaction            ErrorReason = "GORM_INVALID_TRANSACTION"              // 事务处理错误

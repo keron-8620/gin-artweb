@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"gin-artweb/pkg/ctxutil"
+	"gin-artweb/internal/shared/ctxutil"
 )
 
 func TracingMiddleware(logger *zap.Logger) gin.HandlerFunc {

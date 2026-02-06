@@ -4,6 +4,7 @@ package errors
 var defaultErrorMessages = map[ErrorReason]string{
 	// 通用错误
 	ReasonUnknown:            "未知错误",
+	ReasonNoContext:          "上下文为空",
 	ReasonCanceled:           "请求取消",
 	ReasonDeadlineExceeded:   "请求超时",
 	ReasonValidationFailed:   "参数验证错误",
@@ -11,7 +12,7 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonNetworkError:       "网络错误",
 	ReasonServiceUnavailable: "服务不可用",
 
-	// 主机头无效
+	// 安全认证
 	ReasonHostHeaderInvalid: "Host头无效",
 	ReasonRateLimitExceeded: "请求过于频繁，超出请求频率限制",
 	ReasonNonceNotFound:     "请求头缺少随机数",
@@ -21,12 +22,13 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonTimestampExpired:  "时间戳已过期",
 
 	// 身份权限认证
-	ReasonUnauthorized: "未授权操作",
-	ReasonTokenExpired: "登录已过期，请重新登录",
-	ReasonTokenInvalid: "无效的登录凭证",
-	ReasonMissingAuth:  "缺少认证信息",
-	ReasonAuthFailed:   "用户名或密码错误",
-	ReasonForbidden:    "禁止访问",
+	ReasonUnauthorized:      "未授权操作",
+	ReasonTokenExpired:      "登录已过期，请重新登录",
+	ReasonTokenInvalid:      "无效的登录凭证",
+	ReasonMissingAuth:       "缺少认证信息",
+	ReasonTokenTypeMismatch: "令牌类型不匹配",
+	ReasonAuthFailed:        "用户名或密码错误",
+	ReasonForbidden:         "禁止访问",
 
 	// 上传下载文件
 	ReasonUploadFileNotFound:            "上传的文件未找到",

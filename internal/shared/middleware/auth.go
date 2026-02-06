@@ -1,16 +1,14 @@
 package middleware
 
 import (
-	goerrors "errors"
-	"fmt"
 	"net/http"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
 
@@ -33,89 +31,61 @@ func extractToken(c *gin.Context) string {
 	return c.GetHeader("Authorization")
 }
 
-func JWTAuthMiddleware(jwtKey string, logger *zap.Logger) gin.HandlerFunc {
-	key := []byte(jwtKey)
-
-	return func(c *gin.Context) {
+func JWTAuthMiddleware(c *auth.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
 		code := http.StatusUnauthorized
 		// 从请求头获取token
-		token := extractToken(c)
+		token := extractToken(ctx)
 		if token == "" {
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrUnauthorized))
+			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrUnauthorized))
 			return
 		}
 
 		// 身份认证
-		parsedToken, err := jwt.ParseWithClaims(token, &auth.UserClaims{}, func(token *jwt.Token) (any, error) {
-			return key, nil
-		})
-		if err != nil {
-			if goerrors.Is(err, jwt.ErrTokenExpired) {
-				c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenExpired))
-			} else {
-				c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenInvalid))
-			}
-			return
-		}
-		// 验证token有效性
-		if !parsedToken.Valid {
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenInvalid))
-			return
-		}
-
-		// 类型断言获取claims
-		info, ok := parsedToken.Claims.(*auth.UserClaims)
-		if !ok {
+		claims, pErr := auth.ParseAccessToken(ctx, c, token)
+		if pErr != nil {
 			logger.Error(
-				"用户声明类型断言失败",
-				zap.Any(auth.UserClaimsKey, parsedToken.Claims),
-				zap.String("type", fmt.Sprintf("%T", parsedToken.Claims)),
+				"身份认证失败",
+				zap.Error(pErr),
 			)
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTokenInvalid))
+			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, pErr))
 			return
 		}
 
-		c.Set(auth.UserClaimsKey, info)
-		c.Next()
+		ctx.Set(ctxutil.UserClaimsKey, claims)
+		ctx.Next()
 	}
 }
 
 func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		code := http.StatusUnauthorized
-		userClaims, exists := c.Get(auth.UserClaimsKey)
-		if !exists {
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrMissingAuth))
-			return
-		}
 
-		info, ok := userClaims.(*auth.UserClaims)
-		if !ok {
+		claims, ucErr := ctxutil.GetUserClaims(ctx)
+		if ucErr != nil {
 			logger.Error(
-				"用户声明类型断言失败",
-				zap.Any(auth.UserClaimsKey, userClaims),
-				zap.String("type", fmt.Sprintf("%T", userClaims)),
+				"获取用户声明失败",
+				zap.Error(ucErr),
 			)
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrMissingAuth))
+			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, ucErr))
 			return
 		}
 
-		role := auth.RoleToSubject(info.RoleID)
-		fullPath := c.FullPath()
+		role := auth.RoleToSubject(claims.RoleID)
+		fullPath := ctx.FullPath()
 
 		// 访问鉴权
-		hasPerm, err := enforcer.Enforce(role, fullPath, c.Request.Method)
+		hasPerm, err := enforcer.Enforce(role, fullPath, ctx.Request.Method)
 		if err != nil {
 			logger.Error(
 				"权限校验失败",
 				zap.Error(err),
 				zap.String(auth.SubKey, role),
 				zap.String(auth.ObjKey, fullPath),
-				zap.String(auth.ActKey, c.Request.Method),
+				zap.String(auth.ActKey, ctx.Request.Method),
 			)
-			rErr := errors.FromError(err).WithCause(err)
 			code = http.StatusInternalServerError
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, rErr))
+			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.FromError(err)))
 			return
 		}
 		if !hasPerm {
@@ -123,12 +93,12 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				"权限被拒绝",
 				zap.String(auth.SubKey, role),
 				zap.String(auth.ObjKey, fullPath),
-				zap.String(auth.ActKey, c.Request.Method),
+				zap.String(auth.ActKey, ctx.Request.Method),
 			)
 			code = http.StatusForbidden
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrForbidden))
+			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrForbidden))
 			return
 		}
-		c.Next()
+		ctx.Next()
 	}
 }

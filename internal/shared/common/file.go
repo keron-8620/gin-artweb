@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 func UploadFile(

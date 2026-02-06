@@ -8,33 +8,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
-
-	"gin-artweb/pkg/ctxutil"
 )
-
-func NewCasbinEnforcer() (*casbin.Enforcer, error) {
-	cm, err := model.NewModelFromString(`
-		[request_definition]
-		r = sub, obj, act
-
-		[policy_definition]
-		p = sub, obj, act
-
-		[role_definition]
-		g = _, _
-
-		[policy_effect]
-		e = some(where (p.eft == allow))
-
-		[matchers]
-		m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
-	`)
-	if err != nil {
-		return nil, err
-	}
-	adapter := stringadapter.NewAdapter("p, perm_0, /api/v1/login, POST")
-	return casbin.NewEnforcer(cm, adapter)
-}
 
 const (
 	SubKey = "sub"
@@ -72,12 +46,40 @@ func RoleToSubject(pk uint32) string {
 	return fmt.Sprintf(roleSubjectFormat, pk)
 }
 
+func NewCasbinEnforcer() (*casbin.Enforcer, error) {
+	cm, err := model.NewModelFromString(`
+		[request_definition]
+		r = sub, obj, act
+
+		[policy_definition]
+		p = sub, obj, act
+
+		[role_definition]
+		g = _, _
+
+		[policy_effect]
+		e = some(where (p.eft == allow))
+
+		[matchers]
+		m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+	`)
+	if err != nil {
+		return nil, errors.Wrap(err, "创建Casbin模型失败")
+	}
+	adapter := stringadapter.NewAdapter("p, perm_0, /api/v1/login, POST")
+	enforcer, eErr := casbin.NewEnforcer(cm, adapter)
+	if eErr != nil {
+		return nil, errors.Wrap(eErr, "创建Casbin enforce失败")
+	}
+	return enforcer, nil
+}
+
 // AddPolicies 批量添加授权策略规则
 // rules: 要添加的策略规则列表，每个规则是一个字符串切片
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.Wrap(err, "添加Casbin策略: 上下文校验失败")
+	if ctx.Err() != nil {
+		return errors.WrapIf(ctx.Err(), "添加Casbin策略: 上下文已取消")
 	}
 
 	// 参数校验
@@ -92,7 +94,7 @@ func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) 
 
 	// 添加策略
 	if _, err := enf.AddPolicy(sub, obj, act); err != nil {
-		return errors.WrapWithDetails(
+		return errors.WrapIfWithDetails(
 			err, "添加Casbin策略失败",
 			"sub", sub,
 			"obj", obj,
@@ -106,8 +108,8 @@ func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) 
 // // rules: 要移除的策略规则列表，每个规则是一个字符串切片
 // // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.Wrap(err, "移除Casbin策略: 上下文校验失败")
+	if ctx.Err() != nil {
+		return errors.WrapIf(ctx.Err(), "移除Casbin策略: 上下文已取消")
 	}
 
 	// 参数校验
@@ -122,7 +124,7 @@ func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act strin
 
 	// 移除策略
 	if _, err := enf.RemovePolicy(sub, obj, act); err != nil {
-		return errors.WrapWithDetails(
+		return errors.WrapIfWithDetails(
 			err, "移除Casbin策略失败",
 			"sub", sub,
 			"obj", obj,
@@ -136,8 +138,8 @@ func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act strin
 // AddGroupPolicies 批量添加用户组策略规则
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
 func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.Wrap(err, "添加Casbin组策略: 上下文校验失败")
+	if ctx.Err() != nil {
+		return errors.WrapIf(ctx.Err(), "添加Casbin组策略: 上下文已取消")
 	}
 
 	// 参数校验
@@ -163,8 +165,8 @@ func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) 
 // RemoveGroupPolicies 批量移除用户组策略规则
 // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
 func RemoveGroupPolicy(ctx context.Context, enf *casbin.Enforcer, index int, value string) error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.Wrap(err, "移除Casbin组策略: 上下文校验失败")
+	if ctx.Err() != nil {
+		return errors.WrapIf(ctx.Err(), "移除Casbin组策略: 上下文已取消")
 	}
 	// 参数校验
 	if value == "" || index < 0 || index > 1 {

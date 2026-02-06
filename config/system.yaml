@@ -1,5 +1,5 @@
 server: # 服务配置
-  host: "172.18.60.131" # 服务地址
+  host: "0.0.0.0" # 服务地址
   port: 8621 # 服务端口
   ssl: # ssl配置
     enable: false # 是否启用ssl
@@ -48,7 +48,6 @@ security: # 安全配置
     enable: true # 是否启用host请求头防护
     trusted_hosts: # 受信任的host列表
       - "127.0.0.1:8621"
-      - "172.18.60.131:8621"
       - "192.168.10.12:8621"
   timeout: # 超时相关配置
     request_timeout: 60 # 请求超时时间

@@ -29,7 +29,6 @@ import (
 	customer "gin-artweb/internal/infra/customer/server"
 	jobs "gin-artweb/internal/infra/jobs/server"
 	resource "gin-artweb/internal/infra/resource/server"
-	"gin-artweb/pkg/shell"
 
 	"gin-artweb/docs"
 	"gin-artweb/internal/shared/auth"
@@ -39,6 +38,7 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
+	"gin-artweb/internal/shared/shell"
 )
 
 var (

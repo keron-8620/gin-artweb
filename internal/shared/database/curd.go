@@ -4,10 +4,10 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"runtime/debug"
 	"strings"
 
+	"emperror.dev/errors"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 )
@@ -33,14 +33,14 @@ func DBPanic(ctx context.Context, db *gorm.DB) error {
 		}
 
 		// 构建基础错误信息
-		baseErr := fmt.Errorf("数据库操作发生panic, 已捕获: %v", r)
+		baseErr := errors.NewWithDetails("数据库操作发生panic, 已捕获: %v", r)
 
 		// 获取完整堆栈信息
 		stackInfo := string(debug.Stack())
 
 		// 记录详细日志
 		if db != nil && db.Logger != nil {
-			logFields := []interface{}{
+			logFields := []any{
 				"panic", r,
 				"error", baseErr.Error(),
 				"stack", stackInfo,
@@ -54,7 +54,7 @@ func DBPanic(ctx context.Context, db *gorm.DB) error {
 		}
 
 		// 封装错误并向上传递
-		return fmt.Errorf("%w%s", baseErr, stackInfo)
+		return errors.WithStack(baseErr)
 	}
 
 	// 无 panic 时返回 nil
@@ -70,14 +70,15 @@ func DBPanic(ctx context.Context, db *gorm.DB) error {
 func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[string]any) error {
 	// 使用GORM的Create方法创建记录
 	if len(upmap) == 0 {
-		return db.WithContext(ctx).Model(model).Create(value).Error
+		err := db.WithContext(ctx).Model(model).Create(value).Error
+		return errors.WrapIf(err, "创建数据库记录失败")
 	}
 
 	// 开启事务处理
 	tx := db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		// 事务开启失败时记录错误日志
-		return tx.Error
+		return errors.WrapIf(tx.Error, "数据库事务开启失败")
 	}
 
 	// 设置panic处理
@@ -86,21 +87,21 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 	// 创建主表数据
 	if err := tx.Model(model).Create(value).Error; err != nil {
 		tx.Rollback()
-		return err
+		return errors.WrapIf(err, "创建数据库记录失败")
 	}
 
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
 		if err := tx.Model(value).Association(k).Append(v); err != nil {
 			tx.Rollback()
-			return err
+			return errors.WrapIfWithDetails(err, "更新关联关系 %s 失败", k)
 		}
 	}
 
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return err
+		return errors.WrapIf(err, "数据库事务提交失败")
 	}
 	return nil
 }
@@ -121,18 +122,19 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 
 	// 检查是否提供了查询条件
 	if len(conds) == 0 {
-		return gorm.ErrMissingWhereClause
+		return errors.WithStack(gorm.ErrMissingWhereClause)
 	}
 
 	// 如果没有关联关系更新，直接执行更新操作（无需事务）
 	if len(upmap) == 0 {
-		return db.WithContext(ctx).Model(m).Where(conds[0], conds[1:]...).Updates(data).Error
+		err := db.WithContext(ctx).Model(m).Where(conds[0], conds[1:]...).Updates(data).Error
+		return errors.WrapIf(err, "更新数据库记录失败")
 	}
 
 	// 开启事务处理（有关联关系更新时必须使用事务）
 	tx := db.WithContext(ctx).Begin()
 	if tx.Error != nil {
-		return tx.Error
+		return errors.WrapIf(tx.Error, "数据库事务开启失败")
 	}
 
 	// 设置panic处理
@@ -142,7 +144,7 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	if len(data) > 0 {
 		if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
 			tx.Rollback()
-			return err
+			return errors.WrapIfWithDetails(err, "更新数据库记录失败, 条件: %v", conds)
 		}
 	}
 
@@ -150,7 +152,7 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	for k, v := range upmap {
 		if err := tx.Model(m).Association(k).Replace(v); err != nil {
 			tx.Rollback()
-			return fmt.Errorf("更新关联关系 %s 失败: %w", k, err)
+			return errors.WrapIfWithDetails(err, "更新关联关系失败, 关联关系: %s", k)
 		}
 	}
 
@@ -158,7 +160,7 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	if err := tx.Commit().Error; err != nil {
 		// 提交失败时回滚并返回提交错误
 		tx.Rollback()
-		return err
+		return errors.WrapIf(err, "数据库事务提交失败")
 	}
 
 	return nil
@@ -177,7 +179,8 @@ func DBDelete(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
 	}
 
 	// 执行删除操作
-	return db.WithContext(ctx).Delete(model, conds...).Error
+	err := db.WithContext(ctx).Delete(model, conds...).Error
+	return errors.WrapIf(err, "删除数据库记录失败")
 }
 
 // DBFind 查询单条数据库记录，支持预加载关联关系
@@ -196,7 +199,8 @@ func DBFind(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ..
 	}
 
 	// 查询第一条匹配的记录
-	return dbCtx.First(m, conds...).Error
+	err := dbCtx.First(m, conds...).Error
+	return errors.WrapIf(err, "查询数据库记录失败")
 }
 
 // DBList 查询数据库记录列表，支持分页、排序、条件查询等功能

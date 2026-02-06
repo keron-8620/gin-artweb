@@ -118,7 +118,7 @@ func (e *Error) Fields() map[string]any {
 	if e.cause != nil {
 		data = make(map[string]any, len(e.Data)+1)
 		maps.Copy(data, e.Data)
-		data["cause"] = e.cause.Error()
+		// data["cause"] = e.cause.Error()
 	}
 	if data == nil {
 		data = map[string]any{}

@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"emperror.dev/errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -13,8 +14,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"gin-artweb/internal/shared/database/driver/opengauss"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/database/driver/opengauss"
 )
 
 // NewGormConfig 创建 gorm 配置
@@ -59,16 +60,16 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 		db, openErr = gorm.Open(opengauss.Open(c.Dns), gc)
 	default:
 		// 不支持的数据库驱动类型
-		return nil, gorm.ErrUnsupportedDriver
+		return nil, errors.NewWithDetails("不支持的数据库驱动类型: %s", c.Type)
 	}
 
 	// 如果数据库连接打开失败，返回错误
 	if openErr != nil {
-		return nil, openErr
+		return nil, errors.Wrap(openErr, "数据库连接打开失败")
 	}
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "获取数据库连接失败")
 	}
 	// 设置连接池参数
 	sqlDB.SetMaxIdleConns(c.MaxIdleConns)                                    // 最大空闲连接数
@@ -84,15 +85,15 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 func CloseGormDB(db *gorm.DB) error {
 	// 检查数据库实例是否有效
 	if db == nil {
-		return gorm.ErrInvalidDB
+		return errors.New("数据库实例为空")
 	}
 
 	// 获取底层数据库连接
 	sqlDB, err := db.DB()
 	if err != nil {
-		return gorm.ErrInvalidDB
+		return errors.Wrap(err, "获取数据库连接失败")
 	}
 
 	// 关闭数据库连接
-	return sqlDB.Close()
+	return errors.Wrap(sqlDB.Close(), "数据库连接关闭失败")
 }

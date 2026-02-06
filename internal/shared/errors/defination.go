@@ -7,6 +7,7 @@ func FromReason(reason ErrorReason) *Error {
 // 通用错误
 var (
 	ErrUnknown            = FromReason(ReasonUnknown)            // 未知错误
+	ErrNoContext          = FromReason(ReasonNoContext)          // 上下文为空
 	ErrCanceled           = FromReason(ReasonCanceled)           // 操作已取消
 	ErrDeadlineExceeded   = FromReason(ReasonDeadlineExceeded)   // 操作超时
 	ErrValidationFailed   = FromReason(ReasonValidationFailed)   // 验证失败
@@ -15,7 +16,7 @@ var (
 	ErrServiceUnavailable = FromReason(ReasonServiceUnavailable) // 服务不可用
 )
 
-// 请求安全相关错误
+// 安全认证
 var (
 	ErrHostHeaderInvalid = FromReason(ReasonHostHeaderInvalid) // Host头无效
 	ErrRateLimitExceeded = FromReason(ReasonRateLimitExceeded) // 超出请求频率限制
@@ -28,12 +29,13 @@ var (
 
 // 身份权限认证
 var (
-	ErrUnauthorized = FromReason(ReasonUnauthorized) // 未授权
-	ErrTokenExpired = FromReason(ReasonTokenExpired) // 令牌过期
-	ErrTokenInvalid = FromReason(ReasonTokenInvalid) // 令牌无效
-	ErrMissingAuth  = FromReason(ReasonMissingAuth)  // 缺少认证信息
-	ErrAuthFailed   = FromReason(ReasonAuthFailed)   // 认证失败
-	ErrForbidden    = FromReason(ReasonForbidden)    // 禁止访问
+	ErrUnauthorized      = FromReason(ReasonUnauthorized)      // 未授权
+	ErrTokenExpired      = FromReason(ReasonTokenExpired)      // 令牌过期
+	ErrTokenInvalid      = FromReason(ReasonTokenInvalid)      // 令牌无效
+	ErrMissingAuth       = FromReason(ReasonMissingAuth)       // 缺少认证信息
+	ErrTokenTypeMismatch = FromReason(ReasonTokenTypeMismatch) // 令牌类型不匹配
+	ErrAuthFailed        = FromReason(ReasonAuthFailed)        // 认证失败
+	ErrForbidden         = FromReason(ReasonForbidden)         // 禁止访问
 )
 
 // 上传下载文件
