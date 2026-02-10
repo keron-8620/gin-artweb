@@ -4,3 +4,4 @@ storage/
 html/
 artweb.pid
 *.db
+.env
