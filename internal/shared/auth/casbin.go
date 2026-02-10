@@ -146,12 +146,26 @@ func AddGroupPolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]strin
 	}
 
 	// 添加组策略
-	if _, err := enf.AddGroupingPolicies(rules); err != nil {
-		return errors.WrapWithDetails(
-			err, "添加Casbin组策略失败",
-			"rules", rules,
-		)
+	for _, rule := range rules {
+		if len(rule) != 2 {
+			return errors.NewWithDetails(
+				"添加Casbin组策略失败: 每个组策略规则必须包含2个元素",
+				"rule", rule,
+			)
+		}
+		if _, err := enf.AddGroupingPolicy(rule); err != nil {
+			return errors.WrapWithDetails(
+				err, "添加Casbin组策略失败",
+				"rule", rule,
+			)
+		}
 	}
+	// if _, err := enf.AddGroupingPolicies(rules); err != nil {
+	// 	return errors.WrapIfWithDetails(
+	// 		err, "添加Casbin组策略失败",
+	// 		"rules", rules,
+	// 	)
+	// }
 	return nil
 }
 

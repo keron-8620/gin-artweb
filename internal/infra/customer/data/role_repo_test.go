@@ -155,6 +155,119 @@ func (suite *RoleTestSuite) TestListRoles() {
 	suite.GreaterOrEqual(pTotal, int64(2), "分页总数应该至少等于limit")
 }
 
+func (suite *RoleTestSuite) TestAddGroupPolicy() {
+	// 测试创建角色
+	role := CreateTestRoleModel(10)
+
+	// 创建权限模型
+	perms := []biz.PermissionModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 1,
+				},
+			},
+			URL:    "/test/permission/1",
+			Method: "GET",
+			Label:  "test_perm_1",
+			Descr:  "测试权限1",
+		},
+	}
+
+	// 创建菜单模型
+	menus := []biz.MenuModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 1,
+				},
+			},
+			Name:  "test_menu_1",
+			Descr: "测试菜单1",
+		},
+	}
+
+	// 创建按钮模型
+	buttons := []biz.ButtonModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 1,
+				},
+			},
+			MenuID: 1,
+			Name:   "test_button_1",
+			Descr:  "测试按钮1",
+		},
+	}
+
+	// 创建角色并关联权限、菜单和按钮
+	err := suite.roleRepo.CreateModel(context.Background(), role, &perms, &menus, &buttons)
+	suite.NoError(err, "创建角色并关联权限、菜单和按钮应该成功")
+
+	// 测试添加组策略
+	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
+	suite.NoError(err, "添加角色组策略应该成功")
+}
+
+func (suite *RoleTestSuite) TestRemoveGroupPolicy() {
+	// 测试创建角色
+	role := CreateTestRoleModel(11)
+
+	// 创建权限模型
+	perms := []biz.PermissionModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 2,
+				},
+			},
+			URL:    "/test/permission/2",
+			Method: "POST",
+			Label:  "test_perm_2",
+			Descr:  "测试权限2",
+		},
+	}
+
+	// 创建菜单模型
+	menus := []biz.MenuModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 2,
+				},
+			},
+			Name:  "test_menu_2",
+			Descr: "测试菜单2",
+		},
+	}
+
+	// 创建按钮模型
+	buttons := []biz.ButtonModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 2,
+				},
+			},
+			MenuID: 2,
+			Descr:  "测试按钮2",
+		},
+	}
+
+	// 创建角色并关联权限、菜单和按钮
+	err := suite.roleRepo.CreateModel(context.Background(), role, &perms, &menus, &buttons)
+	suite.NoError(err, "创建角色并关联权限、菜单和按钮应该成功")
+
+	// 测试添加组策略
+	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
+	suite.NoError(err, "添加角色组策略应该成功")
+
+	// 测试删除组策略
+	err = suite.roleRepo.RemoveGroupPolicy(context.Background(), role)
+	suite.NoError(err, "删除角色组策略应该成功")
+}
+
 // 每个测试文件都需要这个入口函数
 func TestRoleTestSuite(t *testing.T) {
 	pts := &RoleTestSuite{}

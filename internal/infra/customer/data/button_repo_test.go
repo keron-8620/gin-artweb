@@ -168,6 +168,77 @@ func (suite *ButtonTestSuite) TestCreateButtonWithInvalidData() {
 	suite.Error(err, "创建按钮时传入nil应该返回错误")
 }
 
+func (suite *ButtonTestSuite) TestAddGroupPolicy() {
+	// 测试创建按钮
+	button := CreateTestButtonModel(10, 1)
+	
+	// 创建权限模型
+	perms := []biz.PermissionModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 1,
+				},
+			},
+			URL:    "/test/permission/1",
+			Method: "GET",
+			Label:  "test_perm_1",
+			Descr:  "测试权限1",
+		},
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 2,
+				},
+			},
+			URL:    "/test/permission/2",
+			Method: "POST",
+			Label:  "test_perm_2",
+			Descr:  "测试权限2",
+		},
+	}
+	
+	// 创建按钮并关联权限
+	err := suite.buttonRepo.CreateModel(context.Background(), button, &perms)
+	suite.NoError(err, "创建按钮并关联权限应该成功")
+	
+	// 测试添加组策略
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
+}
+
+func (suite *ButtonTestSuite) TestRemoveGroupPolicy() {
+	// 测试创建按钮
+	button := CreateTestButtonModel(11, 1)
+	
+	// 创建权限模型
+	perms := []biz.PermissionModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 3,
+				},
+			},
+			URL:    "/test/permission/3",
+			Method: "GET",
+			Label:  "test_perm_3",
+			Descr:  "测试权限3",
+		},
+	}
+	
+	// 创建按钮并关联权限
+	err := suite.buttonRepo.CreateModel(context.Background(), button, &perms)
+	suite.NoError(err, "创建按钮并关联权限应该成功")
+	
+	// 测试添加组策略
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
+	
+	// 测试删除组策略
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, true)
+	suite.NoError(err, "删除按钮组策略应该成功")
+}
+
 // 每个测试文件都需要这个入口函数
 func TestButtonTestSuite(t *testing.T) {
 	pts := &ButtonTestSuite{}

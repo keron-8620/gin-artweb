@@ -179,6 +179,79 @@ func (suite *MenuTestSuite) TestListMenus() {
 	suite.GreaterOrEqual(pTotal, int64(2), "分页总数应该至少等于limit")
 }
 
+func (suite *MenuTestSuite) TestAddGroupPolicy() {
+	// 测试创建菜单
+	parentID := uint32(0)
+	menu := CreateTestMenuModel(10, &parentID)
+	
+	// 创建权限模型
+	perms := []biz.PermissionModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 1,
+				},
+			},
+			URL:    "/test/permission/1",
+			Method: "GET",
+			Label:  "test_perm_1",
+			Descr:  "测试权限1",
+		},
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 2,
+				},
+			},
+			URL:    "/test/permission/2",
+			Method: "POST",
+			Label:  "test_perm_2",
+			Descr:  "测试权限2",
+		},
+	}
+	
+	// 创建菜单并关联权限
+	err := suite.menuRepo.CreateModel(context.Background(), menu, &perms)
+	suite.NoError(err, "创建菜单并关联权限应该成功")
+	
+	// 测试添加组策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
+}
+
+func (suite *MenuTestSuite) TestRemoveGroupPolicy() {
+	// 测试创建菜单
+	parentID := uint32(0)
+	menu := CreateTestMenuModel(11, &parentID)
+	
+	// 创建权限模型
+	perms := []biz.PermissionModel{
+		{
+			StandardModel: database.StandardModel{
+				BaseModel: database.BaseModel{
+					ID: 3,
+				},
+			},
+			URL:    "/test/permission/3",
+			Method: "GET",
+			Label:  "test_perm_3",
+			Descr:  "测试权限3",
+		},
+	}
+	
+	// 创建菜单并关联权限
+	err := suite.menuRepo.CreateModel(context.Background(), menu, &perms)
+	suite.NoError(err, "创建菜单并关联权限应该成功")
+	
+	// 测试添加组策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
+	
+	// 测试删除组策略
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.NoError(err, "删除菜单组策略应该成功")
+}
+
 // 每个测试文件都需要这个入口函数
 func TestMenuTestSuite(t *testing.T) {
 	pts := &MenuTestSuite{}
