@@ -11,10 +11,10 @@ import (
 	bizMon "gin-artweb/internal/business/mon/biz"
 	bizReso "gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/archive"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/fileutil"
 	"gin-artweb/pkg/serializer"
 )
@@ -41,7 +41,7 @@ func (m *MdsColonyModel) TableName() string {
 
 func (m *MdsColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(MdsColonyTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -58,7 +58,7 @@ type MdsColonyRepo interface {
 	CreateModel(context.Context, *MdsColonyModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*MdsColonyModel, error)
+	GetModel(context.Context, []string, ...any) (*MdsColonyModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]MdsColonyModel, error)
 }
 
@@ -81,8 +81,8 @@ func (uc *MdsColonyUsecase) CreateMdsColony(
 	ctx context.Context,
 	m MdsColonyModel,
 ) (*MdsColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -124,8 +124,8 @@ func (uc *MdsColonyUsecase) UpdateMdsColonyByID(
 	mdsColonyID uint32,
 	data map[string]any,
 ) (*MdsColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -170,8 +170,8 @@ func (uc *MdsColonyUsecase) DeleteMdsColonyByID(
 	ctx context.Context,
 	mdsColonyID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -203,8 +203,8 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 	preloads []string,
 	mdsColonyID uint32,
 ) (*MdsColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -214,7 +214,7 @@ func (uc *MdsColonyUsecase) FindMdsColonyByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.colonyRepo.FindModel(ctx, preloads, mdsColonyID)
+	m, err := uc.colonyRepo.GetModel(ctx, preloads, mdsColonyID)
 	if err != nil {
 		uc.log.Error(
 			"查询mds集群失败",
@@ -237,8 +237,8 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]MdsColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -278,8 +278,8 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 	ctx context.Context,
 	m *MdsColonyModel,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -298,7 +298,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 				zap.Error(err),
 				zap.String("path", colonyBinDir),
 			)
-			return ErrExportMdsColonyFailed.WithCause(err)
+			return errors.ErrDeleteCacheFileFailed.WithCause(err)
 		}
 	}
 
@@ -309,7 +309,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.Error(mErr),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportMdsColonyFailed.WithCause(mErr)
+		return errors.FromError(mErr)
 	}
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
@@ -330,17 +330,19 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.String("path", mdsPkgPath),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportMdsColonyFailed.WithCause(valiErr)
+		return errors.ErrValidationFailed.WithCause(valiErr)
 	}
 	if err := archive.UntarGz(mdsPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
 		uc.log.Error(
 			"解压mds程序包失败",
 			zap.Error(err),
+			zap.Uint32(MdsColonyIDKey, m.ID),
+			zap.String("pkg_name", m.ExtractedName),
 			zap.String("path", m.Package.StorageFilename),
 			zap.String("dest", colonyBinDir),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrUntarGzMdsPackage.WithCause(err)
+		return errors.ErrUnZIPFailed.WithCause(err).WithField("pkg_name", m.ExtractedName)
 	}
 
 	mdsTmpDir := filepath.Join(tmpDir, mdsUnTarDirName)
@@ -352,7 +354,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.String("dst_path", colonyBinDir),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrUntarGzMdsPackage.WithCause(err)
+		return errors.FromError(err)
 	}
 
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
@@ -399,7 +401,7 @@ func (uc *MdsColonyUsecase) OutportMdsColonyData(
 			zap.Object("mds_colony_vars", &mdsVars),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportMdsColonyFailed.WithCause(err)
+		return errors.ErrExportCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(

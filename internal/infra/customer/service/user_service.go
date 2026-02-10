@@ -11,27 +11,23 @@ import (
 	pbRole "gin-artweb/api/customer/role"
 	pbUser "gin-artweb/api/customer/user"
 	"gin-artweb/internal/infra/customer/biz"
-	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type UserService struct {
-	log      *zap.Logger
-	ucUser   *biz.UserUsecase
-	ucRecord *biz.LoginRecordUsecase
+	log    *zap.Logger
+	ucUser *biz.UserUsecase
 }
 
 func NewUserService(
 	log *zap.Logger,
 	ucUser *biz.UserUsecase,
-	ucRecord *biz.LoginRecordUsecase,
 ) *UserService {
 	return &UserService{
-		log:      log,
-		ucUser:   ucUser,
-		ucRecord: ucRecord,
+		log:    log,
+		ucUser: ucUser,
 	}
 }
 
@@ -55,8 +51,8 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -82,7 +78,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -121,8 +117,8 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -134,8 +130,8 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -159,7 +155,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -177,9 +173,10 @@ func (s *UserService) UpdateUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, &pbUser.UserReply{
 		Code: http.StatusOK,
 		Data: UserModelToDetailOut(*m),
@@ -207,8 +204,8 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -225,7 +222,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -259,8 +256,8 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -278,7 +275,7 @@ func (s *UserService) GetUser(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -314,8 +311,8 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -343,7 +340,7 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -382,8 +379,8 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	var req pbUser.ResetPasswordRequest
@@ -394,8 +391,8 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -413,7 +410,7 @@ func (s *UserService) ResetPassword(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 	s.log.Info(
@@ -445,63 +442,35 @@ func (s *UserService) PatchPassword(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	claims := auth.GetUserClaims(ctx)
-	if claims == nil {
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
 		s.log.Error(
 			"获取个人登录信息失败",
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(errors.ErrGetUserClaims.Code, errors.ErrGetUserClaims.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	m, rErr := s.ucUser.FindUserByID(ctx, []string{"Role"}, claims.UserID)
-	if rErr != nil {
+	if rErr = s.ucUser.PatchPassword(ctx, claims.UserID, req.OldPassword, req.NewPassword); rErr != nil {
 		s.log.Error(
-			"获取个人登录信息失败",
-			zap.Error(rErr),
+			"修改用户密码失败",
+			zap.Uint32(ctxutil.UserIDKey, claims.UserID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	ok, rErr := s.ucUser.VerifyPassword(ctx, req.OldPassword, m.Password)
-	if rErr != nil {
-		s.log.Error(
-			"验证密码失败",
-			zap.Error(rErr),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
-		return
-	}
-	if !ok {
-		s.log.Error(
-			"旧密码错误",
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(biz.ErrPasswordMismatch.Code, biz.ErrPasswordMismatch.ToMap())
-	}
-	if err := s.ucUser.UpdateUserByID(ctx, claims.UserID, map[string]any{
-		"password": req.NewPassword,
-	}); err != nil {
-		s.log.Error(
-			"重置用户密码失败",
-			zap.Uint32(auth.UserIDKey, claims.UserID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
+
 	s.log.Info(
 		"修改用户密码成功",
-		zap.Uint32(auth.UserIDKey, claims.UserID),
+		zap.Uint32(ctxutil.UserIDKey, claims.UserID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
@@ -527,8 +496,8 @@ func (s *UserService) Login(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -539,45 +508,24 @@ func (s *UserService) Login(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	lrm := biz.LoginRecordModel{
-		Username:  req.Username,
-		LoginAt:   time.Now(),
-		IPAddress: ctx.ClientIP(),
-		UserAgent: ctx.Request.UserAgent(),
-		Status:    false,
-	}
-	token, rErr := s.ucUser.Login(ctx, req.Username, req.Password, lrm.IPAddress)
+	accessToken, refreshToken, rErr := s.ucUser.Login(
+		ctx,
+		req.Username,
+		req.Password,
+		ctx.ClientIP(),
+		ctx.Request.UserAgent(),
+	)
 
 	if rErr != nil {
-		s.log.Warn(
+		s.log.Error(
 			"用户登录验证失败",
 			zap.Error(rErr),
 			zap.String("username", req.Username),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		if _, lrErr := s.ucRecord.CreateLoginRecord(ctx, lrm); lrErr != nil {
-			s.log.Error(
-				"创建用户登录记录失败",
-				zap.Error(lrErr),
-				zap.Object("login_record", &lrm),
-				zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-			)
-		}
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
-	}
-
-	lrm.Status = true
-	if _, lrErr := s.ucRecord.CreateLoginRecord(ctx, lrm); lrErr != nil {
-		s.log.Error(
-			"创建用户登录记录失败",
-			zap.Error(lrErr),
-			zap.Object("login_record", &lrm),
-			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
 	}
 
 	s.log.Info(
@@ -587,18 +535,159 @@ func (s *UserService) Login(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	reply := pbUser.LoginReply{
+	ctx.JSON(http.StatusOK, &pbUser.LoginReply{
 		Code: http.StatusOK,
-		Data: pbUser.LoginOut{Token: token},
+		Data: pbUser.LoginOut{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+	})
+}
+
+// @Summary 查询用户的登录记录列表
+// @Description 本接口用于查询用户登录记录列表
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Param request query pbUser.ListLoginRecordRequest false "查询参数"
+// @Success 200 {object} pbUser.PagLoginRecordReply "成功返回用户登录记录列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/customer/user/record/login [get]
+// @Security ApiKeyAuth
+func (s *UserService) ListLoginRecord(ctx *gin.Context) {
+	var req pbUser.ListLoginRecordRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询用户登录记录列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
+		return
 	}
 
 	s.log.Info(
-		"登录响应已发送",
-		zap.String("username", req.Username),
+		"开始查询用户登录记录列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
-	ctx.JSON(reply.Code, &reply)
+
+	page, size, query := req.Query()
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id DESC"},
+		Query:   query,
+	}
+	total, ms, rErr := s.ucUser.ListLoginRecord(ctx, qp)
+	if rErr != nil {
+		s.log.Error(
+			"查询用户登录记录列表失败",
+			zap.Error(rErr),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
+	s.log.Info(
+		"查询用户登录记录列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	mbs := ListLoginRecordModelToStandardOut(ms)
+	ctx.JSON(http.StatusOK, &pbUser.PagLoginRecordReply{
+		Code: http.StatusOK,
+		Data: pbComm.NewPag(page, size, total, mbs),
+	})
+}
+
+// @Summary 查询当前用户的登录记录列表
+// @Description 本接口用于查询当前登录用户的登录记录列表
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Param request query pbUser.ListLoginRecordRequest false "查询参数"
+// @Success 200 {object} pbUser.PagLoginRecordReply "成功返回用户登录记录列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 401 {object} errors.Error "未授权访问"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/customer/me/record/login [get]
+// @Security ApiKeyAuth
+func (s *UserService) ListMeLoginRecord(ctx *gin.Context) {
+	var req pbUser.ListLoginRecordRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询个人登录记录列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+	req.Username = claims.Subject
+
+	s.log.Info(
+		"开始查询个人登录记录列表",
+		zap.Uint32(ctxutil.UserIDKey, claims.UserID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	page, size, query := req.Query()
+	qp := database.QueryParams{
+		IsCount: true,
+		Limit:   size,
+		Offset:  page,
+		OrderBy: []string{"id DESC"},
+		Query:   query,
+	}
+	total, ms, err := s.ucUser.ListLoginRecord(ctx, qp)
+	if err != nil {
+		s.log.Error(
+			"查询个人登录记录列表失败",
+			zap.Error(err),
+			zap.Uint32(ctxutil.UserIDKey, claims.UserID),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, err)
+		return
+	}
+
+	s.log.Info(
+		"查询个人登录记录列表成功",
+		zap.Uint32(ctxutil.UserIDKey, claims.UserID),
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	mbs := ListLoginRecordModelToStandardOut(ms)
+	ctx.JSON(http.StatusOK, &pbUser.PagLoginRecordReply{
+		Code: http.StatusOK,
+		Data: pbComm.NewPag(page, size, total, mbs),
+	})
 }
 
 func (s *UserService) LoadRouter(r *gin.RouterGroup) {
@@ -608,6 +697,8 @@ func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/user/:id", s.GetUser)
 	r.GET("/user", s.ListUser)
 	r.PATCH("/user/password/:id", s.ResetPassword)
+	r.GET("/user/record/login", s.ListLoginRecord)
+	r.GET("/me/record/login", s.ListMeLoginRecord)
 }
 
 func UserModelToBaseOut(
@@ -655,6 +746,36 @@ func ListUserModelToDetailOut(
 	if len(ms) > 0 {
 		for _, m := range ms {
 			mo := UserModelToDetailOut(m)
+			mso = append(mso, *mo)
+		}
+	}
+	return &mso
+}
+
+func LoginRecordModelToStandardOut(
+	m biz.LoginRecordModel,
+) *pbUser.LoginRecordStandardOut {
+	return &pbUser.LoginRecordStandardOut{
+		ID:        m.ID,
+		Username:  m.Username,
+		LoginAt:   m.LoginAt.Format(time.DateTime),
+		Status:    m.Status,
+		IPAddress: m.IPAddress,
+		UserAgent: m.UserAgent,
+	}
+}
+
+func ListLoginRecordModelToStandardOut(
+	lms *[]biz.LoginRecordModel,
+) *[]pbUser.LoginRecordStandardOut {
+	if lms == nil {
+		return &[]pbUser.LoginRecordStandardOut{}
+	}
+	ms := *lms
+	mso := make([]pbUser.LoginRecordStandardOut, 0, len(ms))
+	if len(ms) > 0 {
+		for _, m := range ms {
+			mo := LoginRecordModelToStandardOut(m)
 			mso = append(mso, *mo)
 		}
 	}

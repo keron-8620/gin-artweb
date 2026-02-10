@@ -10,7 +10,6 @@ import (
 	bizJobs "gin-artweb/internal/infra/jobs/biz"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type MdsTaskRecordCache struct {
@@ -80,8 +79,8 @@ func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	ctx context.Context,
 	ms []MdsColonyModel,
 ) (*[]MdsTaskExecutionInfo, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 	trs := make([]MdsTaskRecordCache, len(ms))
 	for i, m := range ms {
@@ -117,8 +116,8 @@ func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	tr MdsTaskRecordCache,
 	cache map[uint32]bizJobs.ScriptRecordModel,
 ) (MdsTaskExecutionInfo, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return MdsTaskExecutionInfo{}, errors.FromError(err)
+	if ctx.Err() != nil {
+		return MdsTaskExecutionInfo{}, errors.FromError(ctx.Err())
 	}
 	return MdsTaskExecutionInfo{
 		ColonyNum: tr.ColonyNum,
@@ -133,8 +132,8 @@ func (uc *MdsTaskExecutionInfoUsecase) ExtractValidRecordIDsFromCaches(
 	ctx context.Context,
 	trs []MdsTaskRecordCache,
 ) ([]uint32, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	var recordIDs []uint32
@@ -162,8 +161,8 @@ func (uc *MdsTaskExecutionInfoUsecase) LoadMdsTaskRecordCacheFromFiles(
 	ctx context.Context,
 	colonyNum string,
 ) (*MdsTaskRecordCache, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 	flagDir := filepath.Join(config.StorageDir, "mds", "flags", colonyNum)
 	mc := MdsTaskRecordCache{

@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -33,11 +31,10 @@ func extractToken(c *gin.Context) string {
 
 func JWTAuthMiddleware(c *auth.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		code := http.StatusUnauthorized
 		// 从请求头获取token
 		token := extractToken(ctx)
 		if token == "" {
-			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrUnauthorized))
+			errors.RespondWithError(ctx, errors.ErrUnauthorized)
 			return
 		}
 
@@ -48,7 +45,7 @@ func JWTAuthMiddleware(c *auth.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
 				"身份认证失败",
 				zap.Error(pErr),
 			)
-			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, pErr))
+			errors.RespondWithError(ctx, pErr)
 			return
 		}
 
@@ -59,15 +56,13 @@ func JWTAuthMiddleware(c *auth.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
 
 func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		code := http.StatusUnauthorized
-
 		claims, ucErr := ctxutil.GetUserClaims(ctx)
 		if ucErr != nil {
 			logger.Error(
 				"获取用户声明失败",
 				zap.Error(ucErr),
 			)
-			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, ucErr))
+			errors.RespondWithError(ctx, ucErr)
 			return
 		}
 
@@ -84,8 +79,7 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String(auth.ObjKey, fullPath),
 				zap.String(auth.ActKey, ctx.Request.Method),
 			)
-			code = http.StatusInternalServerError
-			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.FromError(err)))
+			errors.RespondWithError(ctx, errors.FromError(err))
 			return
 		}
 		if !hasPerm {
@@ -95,8 +89,7 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String(auth.ObjKey, fullPath),
 				zap.String(auth.ActKey, ctx.Request.Method),
 			)
-			code = http.StatusForbidden
-			ctx.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrForbidden))
+			errors.RespondWithError(ctx, errors.ErrForbidden)
 			return
 		}
 		ctx.Next()

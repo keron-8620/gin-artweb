@@ -13,9 +13,9 @@ import (
 	pbPkg "gin-artweb/api/resource/pkg"
 	"gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type PackageService struct {
@@ -58,15 +58,15 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
 	newFileNameWithExt := uuid.NewString() + filepath.Ext(req.File.Filename)
 	savePath := biz.PackageStoragePath(newFileNameWithExt)
 	if rErr := common.UploadFile(ctx, s.log, s.maxSize, savePath, req.File, 0o644); rErr != nil {
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -111,8 +111,8 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (s *PackageService) DeletePackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -160,8 +160,8 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -179,7 +179,7 @@ func (s *PackageService) GetPackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -215,8 +215,8 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -243,7 +243,7 @@ func (s *PackageService) ListPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -280,8 +280,8 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -294,14 +294,14 @@ func (s *PackageService) DownloadPackage(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	// 构建文件路径
 	filePath := biz.PackageStoragePath(pkg.StorageFilename)
 	if err := common.DownloadFile(ctx, s.log, filePath, pkg.OriginFilename); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 	}
 }
 

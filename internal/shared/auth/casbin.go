@@ -64,12 +64,12 @@ func NewCasbinEnforcer() (*casbin.Enforcer, error) {
 		m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 	`)
 	if err != nil {
-		return nil, errors.Wrap(err, "创建Casbin模型失败")
+		return nil, errors.WrapIf(err, "创建Casbin模型失败")
 	}
 	adapter := stringadapter.NewAdapter("p, perm_0, /api/v1/login, POST")
 	enforcer, eErr := casbin.NewEnforcer(cm, adapter)
 	if eErr != nil {
-		return nil, errors.Wrap(eErr, "创建Casbin enforce失败")
+		return nil, errors.WrapIf(eErr, "创建Casbin enforce失败")
 	}
 	return enforcer, nil
 }
@@ -77,94 +77,87 @@ func NewCasbinEnforcer() (*casbin.Enforcer, error) {
 // AddPolicies 批量添加授权策略规则
 // rules: 要添加的策略规则列表，每个规则是一个字符串切片
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
-func AddPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
+func AddPolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]string) error {
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "添加Casbin策略: 上下文已取消")
 	}
 
-	// 参数校验
-	if sub == "" || obj == "" || act == "" {
-		return errors.NewWithDetails(
-			"添加Casbin策略失败: 参数不能为空",
-			"sub", sub,
-			"obj", obj,
-			"act", act,
-		)
-	}
-
 	// 添加策略
-	if _, err := enf.AddPolicy(sub, obj, act); err != nil {
-		return errors.WrapIfWithDetails(
-			err, "添加Casbin策略失败",
-			"sub", sub,
-			"obj", obj,
-			"act", act,
-		)
+	for _, rule := range rules {
+		if len(rule) != 3 {
+			return errors.NewWithDetails(
+				"添加Casbin策略失败: 每个策略规则必须包含3个元素",
+				"rule", rule,
+			)
+		}
+		if _, err := enf.AddPolicy(rule); err != nil {
+			return errors.WrapIfWithDetails(
+				err, "添加Casbin策略失败",
+				"rule", rule,
+			)
+		}
 	}
+	// if _, err := enf.AddPolicies(rules); err != nil {
+	// 	return errors.WrapIfWithDetails(
+	// 		err, "添加Casbin策略失败",
+	// 		"rules", rules,
+	// 	)
+	// }
 	return nil
 }
 
-// // RemovePolicies 批量移除授权策略规则
-// // rules: 要移除的策略规则列表，每个规则是一个字符串切片
-// // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
-func RemovePolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj, act string) error {
+// RemovePolicies 批量移除授权策略规则
+// rules: 要移除的策略规则列表，每个规则是一个字符串切片
+// 返回值: 如果移除成功返回nil，否则返回相应的错误信息
+func RemovePolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]string) error {
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "移除Casbin策略: 上下文已取消")
 	}
 
-	// 参数校验
-	if sub == "" || obj == "" || act == "" {
-		return errors.NewWithDetails(
-			"移除Casbin策略失败: 参数不能为空",
-			"sub", sub,
-			"obj", obj,
-			"act", act,
-		)
-	}
-
 	// 移除策略
-	if _, err := enf.RemovePolicy(sub, obj, act); err != nil {
-		return errors.WrapIfWithDetails(
-			err, "移除Casbin策略失败",
-			"sub", sub,
-			"obj", obj,
-			"act", act,
-		)
+	for _, rule := range rules {
+		if len(rule) != 3 {
+			return errors.NewWithDetails(
+				"移除Casbin策略失败: 每个策略规则必须包含3个元素",
+				"rule", rule,
+			)
+		}
+		if _, err := enf.RemovePolicy(rule); err != nil {
+			return errors.WrapIfWithDetails(
+				err, "移除Casbin策略失败",
+				"rule", rule,
+			)
+		}
 	}
-
+	// if _, err := enf.RemovePolicies(rules); err != nil {
+	// 	return errors.WrapIfWithDetails(
+	// 		err, "移除Casbin策略失败",
+	// 		"rules", rules,
+	// 	)
+	// }
 	return nil
 }
 
 // AddGroupPolicies 批量添加用户组策略规则
 // 返回值: 如果添加成功返回nil，否则返回相应的错误信息
-func AddGroupPolicy(ctx context.Context, enf *casbin.Enforcer, sub, obj string) error {
+func AddGroupPolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]string) error {
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "添加Casbin组策略: 上下文已取消")
 	}
 
-	// 参数校验
-	if sub == "" || obj == "" {
-		return errors.NewWithDetails(
-			"添加Casbin组策略失败: 参数不能为空",
-			"sub", sub,
-			"obj", obj,
-		)
-	}
-
 	// 添加组策略
-	if _, err := enf.AddGroupingPolicy(sub, obj); err != nil {
+	if _, err := enf.AddGroupingPolicies(rules); err != nil {
 		return errors.WrapWithDetails(
 			err, "添加Casbin组策略失败",
-			"sub", sub,
-			"obj", obj,
+			"rules", rules,
 		)
 	}
 	return nil
 }
 
-// RemoveGroupPolicies 批量移除用户组策略规则
+// RemoveFilteredGroupingPolicy 批量移除用户组策略规则
 // 返回值: 如果移除成功返回nil，否则返回相应的错误信息
-func RemoveGroupPolicy(ctx context.Context, enf *casbin.Enforcer, index int, value string) error {
+func RemoveFilteredGroupingPolicy(ctx context.Context, enf *casbin.Enforcer, index int, value string) error {
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "移除Casbin组策略: 上下文已取消")
 	}

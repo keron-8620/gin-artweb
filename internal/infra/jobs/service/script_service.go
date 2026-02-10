@@ -10,11 +10,10 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbScript "gin-artweb/api/jobs/script"
 	"gin-artweb/internal/infra/jobs/biz"
-	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type ScriptService struct {
@@ -61,12 +60,22 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	uc := auth.GetUserClaims(ctx)
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
 	script := biz.ScriptModel{
 		Name:      req.File.Filename,
 		Descr:     req.Descr,
@@ -75,12 +84,12 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 		Language:  req.Language,
 		Status:    req.Status,
 		IsBuiltin: false,
-		Username:  uc.Subject,
+		Username:  claims.Subject,
 	}
 
 	savePath := script.ScriptPath()
 	if err := common.UploadFile(ctx, s.log, s.maxSize, savePath, req.File, 0o755); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -91,7 +100,7 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -129,8 +138,8 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.JSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -142,8 +151,8 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -155,7 +164,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			zap.Uint32(biz.ScriptIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	if rErr := s.ucScript.RemoveScript(ctx, *om); rErr != nil {
@@ -165,11 +174,21 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			zap.Uint32(biz.ScriptIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	uc := auth.GetUserClaims(ctx)
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
 	nm := biz.ScriptModel{
 		Name:      req.File.Filename,
 		Descr:     req.Descr,
@@ -178,11 +197,11 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		Language:  req.Language,
 		Status:    req.Status,
 		IsBuiltin: false,
-		Username:  uc.Subject,
+		Username:  claims.Subject,
 	}
 	nm.ID = uri.ID
 	if err := common.UploadFile(ctx, s.log, s.maxSize, nm.ScriptPath(), req.File, 0o755); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -194,7 +213,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		"language":   req.Language,
 		"status":     req.Status,
 		"is_builtin": false,
-		"username":   uc.Subject,
+		"username":   claims.Subject,
 	})
 	if rErr != nil {
 		s.log.Error(
@@ -203,7 +222,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 			zap.Uint32(biz.ScriptIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.JSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -234,8 +253,8 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -252,7 +271,7 @@ func (s *ScriptService) DeleteScript(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -285,8 +304,8 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -304,7 +323,7 @@ func (s *ScriptService) GetScript(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -341,8 +360,8 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -369,7 +388,7 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -407,8 +426,8 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -420,12 +439,12 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	if err := common.DownloadFile(ctx, s.log, m.ScriptPath(), m.Name); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 	}
 }
 

@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -35,7 +35,7 @@ func (m *PackageModel) TableName() string {
 
 func (m *PackageModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(PackageTableName)
+		return nil
 	}
 	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -51,7 +51,7 @@ func (m *PackageModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 type PackageRepo interface {
 	CreateModel(context.Context, *PackageModel) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*PackageModel, error)
+	GetModel(context.Context, []string, ...any) (*PackageModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]PackageModel, error)
 }
 
@@ -74,8 +74,8 @@ func (uc *PackageUsecase) CreatePackage(
 	ctx context.Context,
 	m PackageModel,
 ) (*PackageModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -106,8 +106,8 @@ func (uc *PackageUsecase) DeletePackageById(
 	ctx context.Context,
 	pkgId uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -149,8 +149,8 @@ func (uc *PackageUsecase) FindPackageById(
 	ctx context.Context,
 	pkgId uint32,
 ) (*PackageModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -159,7 +159,7 @@ func (uc *PackageUsecase) FindPackageById(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.pkgRepo.FindModel(ctx, nil, pkgId)
+	m, err := uc.pkgRepo.GetModel(ctx, nil, pkgId)
 	if err != nil {
 		uc.log.Error(
 			"查询程序包失败",
@@ -182,8 +182,8 @@ func (uc *PackageUsecase) ListPackage(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]PackageModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -212,8 +212,8 @@ func (uc *PackageUsecase) ListPackage(
 }
 
 func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	savePath := PackageStoragePath(m.StorageFilename)

@@ -10,9 +10,9 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbPerm "gin-artweb/api/customer/permission"
 	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type PermissionService struct {
@@ -49,8 +49,8 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -116,8 +116,8 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -129,8 +129,8 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -192,8 +192,8 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -210,7 +210,7 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -243,8 +243,8 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -262,7 +262,7 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -299,8 +299,8 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -327,7 +327,7 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 

@@ -8,10 +8,9 @@ import (
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/infra/jobs/biz"
-	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 
 	pbComm "gin-artweb/api/common"
 	pbSchedule "gin-artweb/api/jobs/schedule"
@@ -53,12 +52,22 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	uc := auth.GetUserClaims(ctx)
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
 	schedule := biz.ScheduleModel{
 		Name:          req.Name,
 		Specification: req.Specification,
@@ -70,7 +79,7 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 		IsRetry:       req.IsRetry,
 		RetryInterval: req.RetryInterval,
 		MaxRetries:    req.MaxRetries,
-		Username:      uc.Subject,
+		Username:      claims.Subject,
 		ScriptID:      req.ScriptID,
 	}
 
@@ -82,7 +91,7 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -114,8 +123,8 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -127,12 +136,22 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	uc := auth.GetUserClaims(ctx)
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
 	data := map[string]any{
 		"name":           req.Name,
 		"specification":  req.Specification,
@@ -144,7 +163,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 		"is_retry":       req.IsRetry,
 		"retry_interval": req.RetryInterval,
 		"max_retries":    req.MaxRetries,
-		"username":       uc.Subject,
+		"username":       claims.Subject,
 		"script_id":      req.ScriptID,
 	}
 
@@ -157,7 +176,7 @@ func (s *ScheduleService) UpdateSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -188,8 +207,8 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -206,7 +225,7 @@ func (s *ScheduleService) DeleteSchedule(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -240,8 +259,8 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -259,7 +278,7 @@ func (s *ScheduleService) GetSchedule(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -296,8 +315,8 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -325,7 +344,7 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 

@@ -6,8 +6,6 @@ import (
 	"gin-artweb/internal/shared/config"
 )
 
-const TestSecretKey = "test-secret-key-2025"
-
 // NewTestSecurityConfig 创建用于测试环境的安全配置
 // 该配置针对测试场景进行了优化，关闭了一些生产环境严格验证，
 // 同时设置了合理的超时时间和安全参数，以提高测试效率和准确性。
@@ -21,9 +19,10 @@ func NewTestSecurityConfig() *config.SecurityConfig {
 			CheckTimestamp: false, // 测试环境关闭时间戳验证，避免因时间差异导致测试失败
 		},
 		Token: config.TokenConfig{
-			ExpireMinutes: 10,            // Token 10分钟后过期，便于测试过期逻辑
-			ClearMinutes:  10,            // 10分钟后清理过期Token
-			SecretKey:     TestSecretKey, // 测试专用密钥
+			AccessMinutes:  10,      // Token 10分钟后过期，便于测试过期逻辑
+			RefreshMinutes: 10,      // 10分钟后清理过期Token
+			AccessMethod:   "HS256", // 使用HS256算法签名访问令牌
+			RefreshMethod:  "HS256", // 使用HS256算法签名刷新令牌
 		},
 		Login: config.LoginSecurityConfig{
 			MaxFailedAttempts: 5,  // 最多允许5次登录失败尝试

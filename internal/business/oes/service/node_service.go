@@ -11,9 +11,9 @@ import (
 	pbNode "gin-artweb/api/oes/node"
 	"gin-artweb/internal/business/oes/biz"
 	svReso "gin-artweb/internal/infra/resource/service"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type OesNodeService struct {
@@ -51,8 +51,8 @@ func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (s *OesNodeService) CreateOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -103,8 +103,8 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -116,8 +116,8 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -128,16 +128,16 @@ func (s *OesNodeService) UpdateOesNode(ctx *gin.Context) {
 		"oes_colony_id": req.OesColonyID,
 	}
 
-	m, err := s.ucNode.UpdateOesNodeByID(ctx, uri.ID, data)
-	if err != nil {
+	m, rErr := s.ucNode.UpdateOesNodeByID(ctx, uri.ID, data)
+	if rErr != nil {
 		s.log.Error(
 			"更新oes节点失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -168,8 +168,8 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -179,14 +179,15 @@ func (s *OesNodeService) DeleteOesNode(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	if err := s.ucNode.DeleteOesNodeByID(ctx, uri.ID); err != nil {
+	rErr := s.ucNode.DeleteOesNodeByID(ctx, uri.ID)
+	if rErr != nil {
 		s.log.Error(
 			"删除oes节点失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -220,8 +221,8 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -231,15 +232,15 @@ func (s *OesNodeService) GetOesNode(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucNode.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.ID)
-	if err != nil {
+	m, rErr := s.ucNode.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.ID)
+	if rErr != nil {
 		s.log.Error(
 			"查询oes节点详情失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -276,8 +277,8 @@ func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -296,16 +297,16 @@ func (s *OesNodeService) ListOesNode(ctx *gin.Context) {
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}
-	total, ms, err := s.ucNode.ListOesNode(ctx, qp)
-	if err != nil {
+	total, ms, rErr := s.ucNode.ListOesNode(ctx, qp)
+	if rErr != nil {
 		s.log.Error(
 			"查询oes节点列表失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 

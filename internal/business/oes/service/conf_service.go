@@ -11,8 +11,8 @@ import (
 	pbConf "gin-artweb/api/oes/conf"
 	"gin-artweb/internal/business/oes/biz"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/fileutil"
 )
 
@@ -58,8 +58,8 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -72,8 +72,8 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -81,7 +81,7 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 	dirName := s.ucColony.GetOesColonyConfigDir(pathReq.ColonyNum)
 	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
 	if err := common.UploadFile(ctx, s.log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -111,15 +111,15 @@ func (s *OesConfService) DownloadOesConf(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
 	dirName := s.ucColony.GetOesColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := common.DownloadFile(ctx, s.log, filePath, ""); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 	}
 }
 
@@ -146,8 +146,8 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.FromError(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -189,8 +189,8 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -204,7 +204,8 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		rErr := errors.FromError(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
+		return
 	}
 	ctx.JSON(http.StatusOK, pbConf.PagOesConfReply{
 		Code: http.StatusOK,

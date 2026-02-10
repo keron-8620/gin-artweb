@@ -45,8 +45,16 @@ type JWTConfig struct {
 
 func NewJWTConfig(
 	accessExpiration, refreshExpiration time.Duration,
-	accessMethod, refreshMethod jwt.SigningMethod,
+	accessMethodstr, refreshMethodstr string,
 ) *JWTConfig {
+	accessMethod := jwt.GetSigningMethod(accessMethodstr)
+	if accessMethod == nil {
+		panic("invalid access method")
+	}
+	refreshMethod := jwt.GetSigningMethod(refreshMethodstr)
+	if refreshMethod == nil {
+		panic("invalid refresh method")
+	}
 	accessSecret := []byte(os.Getenv("JWT_ACCESS_SECRET"))
 	refreshSecret := []byte(os.Getenv("JWT_REFRESH_SECRET"))
 	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
@@ -123,7 +131,7 @@ func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*U
 		return nil, errors.ErrTokenInvalid
 	}
 
-	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*UserClaims); ok && claims != nil && token.Valid {
 		if claims.Type != TokenTypeAccess {
 			return nil, errors.ErrTokenTypeMismatch
 		}
@@ -158,30 +166,4 @@ func ParseRefreshToken(ctx context.Context, c *JWTConfig, tokenString string) (*
 	}
 
 	return nil, errors.ErrTokenExpired
-}
-
-// RefreshTokens 使用刷新令牌生成新的访问令牌和刷新令牌
-func RefreshTokens(ctx context.Context, c *JWTConfig, refreshToken string) (string, string, error) {
-	if ctx.Err() != nil {
-		return "", "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
-	}
-	// 解析刷新令牌
-	claims, pErr := ParseRefreshToken(ctx, c, refreshToken)
-	if pErr != nil {
-		return "", "", emperror.Wrap(pErr, "刷新令牌无效")
-	}
-
-	// 生成新的访问令牌
-	newAccessToken, err := NewAccessJWT(ctx, c, claims.UserInfo)
-	if err != nil {
-		return "", "", emperror.Wrap(err, "生成新访问令牌失败")
-	}
-
-	// 生成新的刷新令牌
-	newRefreshToken, err := NewRefreshJWT(ctx, c, claims.UserInfo)
-	if err != nil {
-		return "", "", emperror.Wrap(err, "生成新刷新令牌失败")
-	}
-
-	return newAccessToken, newRefreshToken, nil
 }

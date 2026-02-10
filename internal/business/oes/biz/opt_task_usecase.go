@@ -10,7 +10,6 @@ import (
 	bizJobs "gin-artweb/internal/infra/jobs/biz"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type OptTaskRecordCache struct {
@@ -65,8 +64,8 @@ func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	ctx context.Context,
 	ms []OesColonyModel,
 ) (*[]OptTaskExecutionInfo, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	// 过滤出两融类型的oes集群
@@ -114,8 +113,8 @@ func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	tr OptTaskRecordCache,
 	cache map[uint32]bizJobs.ScriptRecordModel,
 ) (OptTaskExecutionInfo, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return OptTaskExecutionInfo{}, errors.FromError(err)
+	if ctx.Err() != nil {
+		return OptTaskExecutionInfo{}, errors.FromError(ctx.Err())
 	}
 	return OptTaskExecutionInfo{
 		ColonyNum:         tr.ColonyNum,
@@ -131,8 +130,8 @@ func (uc *OptTaskExecutionInfoUsecase) ExtractValidRecordIDsFromCaches(
 	ctx context.Context,
 	trs []OptTaskRecordCache,
 ) ([]uint32, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	var recordIDs []uint32
@@ -160,8 +159,8 @@ func (uc *OptTaskExecutionInfoUsecase) LoadOptTaskRecordCacheFromFiles(
 	ctx context.Context,
 	colonyNum string,
 ) (*OptTaskRecordCache, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
 	mc := OptTaskRecordCache{

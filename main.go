@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
@@ -79,6 +80,10 @@ func main() {
 		return
 	}
 
+	// 加载环境变量
+	if err := godotenv.Load(filepath.Join(config.BaseDir, ".env")); err != nil {
+		golog.Fatalf("加载环境变量失败: %v", err)
+	}
 	// 加载系统配置
 	sysConf := config.NewSystemConf(filepath.Join(config.ConfigDir, configPath))
 	// 初始化服务器日志记录器

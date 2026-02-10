@@ -840,38 +840,6 @@ definitions:
         example: 100
         type: integer
     type: object
-  common.Pag-record_LoginRecordStandardOut:
-    properties:
-      items:
-        description: 对象数组
-        items:
-          $ref: '#/definitions/record.LoginRecordStandardOut'
-        type: array
-      page:
-        description: |-
-          当前页码
-          Example: 1
-        example: 1
-        type: integer
-      pages:
-        description: |-
-          总页数
-          Example: 10
-        example: 10
-        type: integer
-      size:
-        description: |-
-          每页数量
-          Example: 10
-        example: 10
-        type: integer
-      total:
-        description: |-
-          总记录数
-          Example: 100
-        example: 100
-        type: integer
-    type: object
   common.Pag-record_ScriptRecordDetailOut:
     properties:
       items:
@@ -1000,6 +968,38 @@ definitions:
         example: 100
         type: integer
     type: object
+  common.Pag-user_LoginRecordStandardOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/user.LoginRecordStandardOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
   common.Pag-user_UserDetailOut:
     properties:
       items:
@@ -1098,16 +1098,276 @@ definitions:
     type: object
   errors.Error:
     properties:
-      code:
-        type: integer
       data:
         additionalProperties: {}
         type: object
       msg:
         type: string
       reason:
-        type: string
+        $ref: '#/definitions/errors.ErrorReason'
     type: object
+  errors.ErrorReason:
+    enum:
+    - ERROR_UNKNOWN
+    - ERROR_VALIDATION_FAILED
+    - ERROR_REQUEST_TIMEOUT
+    - ERROR_RATE_LIMIT_EXCEEDED
+    - ERROR_CTX_NO_CONTEXT
+    - ERROR_CTX_CANCELED
+    - ERROR_CTX_DEADLINE_EXCEEDED
+    - SEC_HOST_HEADER_INVALID
+    - SEC_NONCE_NOT_FOUND
+    - SEC_REPLAY_ATTACK
+    - SEC_TIMESTAMP_NOT_FOUND
+    - SEC_TIMESTAMP_INVALID
+    - SEC_TIMESTAMP_EXPIRED
+    - SEC_PASSWORD_STRENGTH_FAILED
+    - AUTH_UNAUTHORIZED
+    - AUTH_TOKEN_EXPIRED
+    - AUTH_TOKEN_INVALID
+    - AUTH_MISSING_AUTH
+    - AUTH_TOKEN_TYPE_MISMATCH
+    - AUTH_FAILED
+    - AUTH_ACCOUNT_LOCKED
+    - AUTH_FORBIDDEN
+    - GORM_RECORD_NOT_FOUND
+    - GORM_INVALID_TRANSACTION
+    - GORM_NOT_IMPLEMENTED
+    - GORM_MISSING_WHERE_CLAUSE
+    - GORM_UNSUPPORTED_RELATION
+    - GORM_PRIMARY_KEY_REQUIRED
+    - GORM_MODEL_VALUE_REQUIRED
+    - GORM_MODEL_ACCESSIBLE_FIELDS_REQUIRED
+    - GORM_SUB_QUERY_REQUIRED
+    - GORM_INVALID_DATA
+    - GORM_UNSUPPORTED_DRIVER
+    - GORM_REGISTERED
+    - GORM_INVALID_FIELD
+    - GORM_EMPTY_SLICE
+    - GORM_DRY_RUN_MODE_UNSUPPORTED
+    - GORM_INVALID_DB
+    - GORM_INVALID_VALUE
+    - GORM_INVALID_VALUE_OF_LENGTH
+    - GORM_PRELOAD_NOT_ALLOWED
+    - GORM_DUPLICATED_KEY
+    - GORM_FOREIGN_KEY_VIOLATED
+    - GORM_CHECK_CONSTRAINT_VIOLATED
+    - SSH_CONNECTION_FAILED
+    - SSH_KEY_DEPLOYMENT_FAILED
+    - UPLOAD_FILE_NOT_FOUND
+    - UPLOAD_FILE_TOO_LARGE
+    - UPLOAD_FILE_SAVE_FAILED
+    - UPLOAD_FILE_SET_PERMISSION_FAILED
+    - DOWNLOAD_FILE_NOT_FOUND
+    - DOWNLOAD_FILE_PERMISSION_DENIED
+    - DOWNLOAD_FILE_FAILED
+    - UNZIP_FAILED
+    - ZIP_FAILED
+    - ZIP_FILE_NOT_FOUND
+    - ZIP_FILE_IS_EMPTY
+    - ZIP_FILE_IS_NOT_VALID
+    - EXPORT_CACHE_FILE_FAILED
+    - DELETE_CACHE_FILE_FAILED
+    - SCRIPT_NOT_FOUND
+    - SCRIPT_IS_BUILTIN
+    - SCRIPT_IS_DISABLED
+    - SCRIPT_LOG_NOT_FOUND
+    type: string
+    x-enum-comments:
+      ReasonAccountLocked: 账号已被锁定
+      ReasonAuthFailed: 身份认证失败
+      ReasonCanceled: ctx取消
+      ReasonCheckConstraintViolated: 检查约束冲突
+      ReasonDeadlineExceeded: ctx超时
+      ReasonDeleteCacheFileFailed: 删除缓存文件失败
+      ReasonDownloadFileFailed: 下载文件失败
+      ReasonDownloadFileNotFound: 下载的文件未找到
+      ReasonDownloadFilePermissionDenied: 下载文件权限被拒绝
+      ReasonDryRunModeUnsupported: 不支持干运行模式
+      ReasonDuplicatedKey: 唯一性约束冲突
+      ReasonEmptySlice: 数组不能为空
+      ReasonExportCacheFileFailed: 导出缓存文件失败
+      ReasonForbidden: 禁止访问
+      ReasonForeignKeyViolated: 外键约束冲突
+      ReasonHostHeaderInvalid: Host头无效
+      ReasonInvalidDB: 无效的数据库连接
+      ReasonInvalidData: 无效的数据
+      ReasonInvalidField: 无效的字段
+      ReasonInvalidTransaction: 事务处理错误
+      ReasonInvalidValue: 无效的数据类型
+      ReasonInvalidValueOfLength: 关联值无效, 长度不匹配
+      ReasonMissingAuth: 缺少认证信息
+      ReasonMissingWhereClause: 缺少where条件
+      ReasonModelAccessibleFieldsRequired: 模型字段不可访问
+      ReasonModelValueRequired: 模型值未设置
+      ReasonNoContext: 上下文为空
+      ReasonNonceNotFound: 请求头缺少随机数
+      ReasonNotImplemented: 功能未实现
+      ReasonPasswordStrengthFailed: 密码强度不足
+      ReasonPreloadNotAllowed: 使用计数时不允许预加载
+      ReasonPrimaryKeyRequired: 主键未设置
+      ReasonRateLimitExceeded: 请求过于频繁
+      ReasonRecordNotFound: 记录未找到
+      ReasonRegistered: 模型已注册
+      ReasonReplayAttack: 检测为重放攻击
+      ReasonRequestTimeout: 请求超时
+      ReasonSSHConnectionFailed: ssh连接失败
+      ReasonSSHKeyDeployFailed: ssh密钥部署失败
+      ReasonSaveUploadFileFailed: 保存上传文件失败
+      ReasonScriptIsBuiltin: 脚本为内置脚本
+      ReasonScriptIsDisabled: 脚本已禁用
+      ReasonScriptLogNotFound: 脚本日志未找到
+      ReasonScriptNotFound: 脚本未找到
+      ReasonSetUploadFilePermissionFailed: 设置上传文件权限失败
+      ReasonSubQueryRequired: 子查询未设置
+      ReasonTimestampExpired: 时间戳已过期
+      ReasonTimestampInvalid: 无效的时间戳
+      ReasonTimestampNotFound: 请求头缺少时间戳
+      ReasonTokenExpired: 登录已过期，请重新登录
+      ReasonTokenInvalid: 无效的登录凭证
+      ReasonTokenTypeMismatch: 令牌类型不匹配
+      ReasonUnZIPFailed: 解压文件失败
+      ReasonUnauthorized: 未授权操作
+      ReasonUnknown: 未知错误
+      ReasonUnsupportedDriver: 不支持的数据库驱动
+      ReasonUnsupportedRelation: 关联关系不支持
+      ReasonUploadFileNotFound: 上传的文件未找到
+      ReasonUploadFileTooLarge: 上传的文件超出大小限制
+      ReasonValidationFailed: 参数验证错误
+      ReasonZIPFailed: 压缩文件失败
+      ReasonZIPFileIsEmpty: 压缩文件为空
+      ReasonZIPFileIsNotValid: 压缩文件无效
+      ReasonZIPFileNotFound: 压缩文件未找到
+    x-enum-descriptions:
+    - 未知错误
+    - 参数验证错误
+    - 请求超时
+    - 请求过于频繁
+    - 上下文为空
+    - ctx取消
+    - ctx超时
+    - Host头无效
+    - 请求头缺少随机数
+    - 检测为重放攻击
+    - 请求头缺少时间戳
+    - 无效的时间戳
+    - 时间戳已过期
+    - 密码强度不足
+    - 未授权操作
+    - 登录已过期，请重新登录
+    - 无效的登录凭证
+    - 缺少认证信息
+    - 令牌类型不匹配
+    - 身份认证失败
+    - 账号已被锁定
+    - 禁止访问
+    - 记录未找到
+    - 事务处理错误
+    - 功能未实现
+    - 缺少where条件
+    - 关联关系不支持
+    - 主键未设置
+    - 模型值未设置
+    - 模型字段不可访问
+    - 子查询未设置
+    - 无效的数据
+    - 不支持的数据库驱动
+    - 模型已注册
+    - 无效的字段
+    - 数组不能为空
+    - 不支持干运行模式
+    - 无效的数据库连接
+    - 无效的数据类型
+    - 关联值无效, 长度不匹配
+    - 使用计数时不允许预加载
+    - 唯一性约束冲突
+    - 外键约束冲突
+    - 检查约束冲突
+    - ssh连接失败
+    - ssh密钥部署失败
+    - 上传的文件未找到
+    - 上传的文件超出大小限制
+    - 保存上传文件失败
+    - 设置上传文件权限失败
+    - 下载的文件未找到
+    - 下载文件权限被拒绝
+    - 下载文件失败
+    - 解压文件失败
+    - 压缩文件失败
+    - 压缩文件未找到
+    - 压缩文件为空
+    - 压缩文件无效
+    - 导出缓存文件失败
+    - 删除缓存文件失败
+    - 脚本未找到
+    - 脚本为内置脚本
+    - 脚本已禁用
+    - 脚本日志未找到
+    x-enum-varnames:
+    - ReasonUnknown
+    - ReasonValidationFailed
+    - ReasonRequestTimeout
+    - ReasonRateLimitExceeded
+    - ReasonNoContext
+    - ReasonCanceled
+    - ReasonDeadlineExceeded
+    - ReasonHostHeaderInvalid
+    - ReasonNonceNotFound
+    - ReasonReplayAttack
+    - ReasonTimestampNotFound
+    - ReasonTimestampInvalid
+    - ReasonTimestampExpired
+    - ReasonPasswordStrengthFailed
+    - ReasonUnauthorized
+    - ReasonTokenExpired
+    - ReasonTokenInvalid
+    - ReasonMissingAuth
+    - ReasonTokenTypeMismatch
+    - ReasonAuthFailed
+    - ReasonAccountLocked
+    - ReasonForbidden
+    - ReasonRecordNotFound
+    - ReasonInvalidTransaction
+    - ReasonNotImplemented
+    - ReasonMissingWhereClause
+    - ReasonUnsupportedRelation
+    - ReasonPrimaryKeyRequired
+    - ReasonModelValueRequired
+    - ReasonModelAccessibleFieldsRequired
+    - ReasonSubQueryRequired
+    - ReasonInvalidData
+    - ReasonUnsupportedDriver
+    - ReasonRegistered
+    - ReasonInvalidField
+    - ReasonEmptySlice
+    - ReasonDryRunModeUnsupported
+    - ReasonInvalidDB
+    - ReasonInvalidValue
+    - ReasonInvalidValueOfLength
+    - ReasonPreloadNotAllowed
+    - ReasonDuplicatedKey
+    - ReasonForeignKeyViolated
+    - ReasonCheckConstraintViolated
+    - ReasonSSHConnectionFailed
+    - ReasonSSHKeyDeployFailed
+    - ReasonUploadFileNotFound
+    - ReasonUploadFileTooLarge
+    - ReasonSaveUploadFileFailed
+    - ReasonSetUploadFilePermissionFailed
+    - ReasonDownloadFileNotFound
+    - ReasonDownloadFilePermissionDenied
+    - ReasonDownloadFileFailed
+    - ReasonUnZIPFailed
+    - ReasonZIPFailed
+    - ReasonZIPFileNotFound
+    - ReasonZIPFileIsEmpty
+    - ReasonZIPFileIsNotValid
+    - ReasonExportCacheFileFailed
+    - ReasonDeleteCacheFileFailed
+    - ReasonScriptNotFound
+    - ReasonScriptIsBuiltin
+    - ReasonScriptIsDisabled
+    - ReasonScriptLogNotFound
   fileutil.FileInfo:
     properties:
       children:
@@ -2049,53 +2309,6 @@ definitions:
     - script_id
     - timeout
     type: object
-  record.LoginRecordStandardOut:
-    properties:
-      id:
-        description: 唯一标识
-        example: 1
-        type: integer
-      ip_address:
-        description: IP地址
-        example: 192.168.1.1
-        type: string
-      is_active:
-        description: 登录状态
-        example: true
-        type: boolean
-      login_at:
-        description: 登录时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      user_agent:
-        description: 用户浏览器信息
-        example: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
-          like Gecko) Chrome/96.0.4664.110 Safari/537.36
-        type: string
-      username:
-        description: 名称
-        example: judgement
-        type: string
-    type: object
-  record.PagLoginRecordReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/common.Pag-record_LoginRecordStandardOut'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
   record.PagScriptRecordReply:
     properties:
       code:
@@ -2687,8 +2900,39 @@ definitions:
     type: object
   user.LoginOut:
     properties:
-      token:
+      access_token:
         description: 登录令牌
+        type: string
+      refresh_token:
+        description: 刷新令牌
+        type: string
+    type: object
+  user.LoginRecordStandardOut:
+    properties:
+      id:
+        description: 唯一标识
+        example: 1
+        type: integer
+      ip_address:
+        description: IP地址
+        example: 192.168.1.1
+        type: string
+      is_active:
+        description: 登录状态
+        example: true
+        type: boolean
+      login_at:
+        description: 登录时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      user_agent:
+        description: 用户浏览器信息
+        example: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
+          like Gecko) Chrome/96.0.4664.110 Safari/537.36
+        type: string
+      username:
+        description: 名称
+        example: judgement
         type: string
     type: object
   user.LoginReply:
@@ -2723,6 +2967,25 @@ definitions:
     required:
     - password
     - username
+    type: object
+  user.PagLoginRecordReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-user_LoginRecordStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
   user.PagUserReply:
     properties:
@@ -3188,7 +3451,7 @@ paths:
         "200":
           description: 成功返回用户登录记录列表
           schema:
-            $ref: '#/definitions/record.PagLoginRecordReply'
+            $ref: '#/definitions/user.PagLoginRecordReply'
         "400":
           description: 请求参数错误
           schema:
@@ -4200,7 +4463,7 @@ paths:
         "200":
           description: 成功返回用户登录记录列表
           schema:
-            $ref: '#/definitions/record.PagLoginRecordReply'
+            $ref: '#/definitions/user.PagLoginRecordReply'
         "400":
           description: 请求参数错误
           schema:

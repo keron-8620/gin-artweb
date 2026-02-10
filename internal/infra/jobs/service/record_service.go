@@ -11,11 +11,10 @@ import (
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/infra/jobs/biz"
-	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 
 	pbComm "gin-artweb/api/common"
 	pbRecord "gin-artweb/api/jobs/record"
@@ -57,12 +56,22 @@ func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	uc := auth.GetUserClaims(ctx)
+	claims, rErr := ctxutil.GetUserClaims(ctx)
+	if rErr != nil {
+		s.log.Error(
+			"获取个人登录信息失败",
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
 	m, rErr := s.ucRecord.AsyncExecuteScript(ctx, biz.ExecuteRequest{
 		ScriptID:    req.ScriptID,
 		CommandArgs: req.CommandArgs,
@@ -70,7 +79,7 @@ func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
 		Timeout:     req.Timeout,
 		WorkDir:     req.WorkDir,
 		TriggerType: "api",
-		Username:    uc.Subject,
+		Username:    claims.Subject,
 	})
 	if rErr != nil {
 		s.log.Error(
@@ -79,7 +88,7 @@ func (s *ScriptRecordService) ExecScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	ctx.JSON(http.StatusOK, &pbRecord.ScriptRecordReply{
@@ -109,8 +118,8 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -128,7 +137,7 @@ func (s *ScriptRecordService) GetScriptRecord(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -165,8 +174,8 @@ func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -194,7 +203,7 @@ func (s *ScriptRecordService) ListScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -232,8 +241,8 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -245,12 +254,12 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	if err := common.DownloadFile(ctx, s.log, m.LogPath(), m.LogName); err != nil {
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 	}
 }
 
@@ -274,8 +283,8 @@ func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -287,7 +296,7 @@ func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -301,10 +310,8 @@ func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Uint32(biz.ScriptRecordIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := biz.ErrNoScriptLogFile.WithData(map[string]any{
-			biz.ScriptRecordIDKey: uri.ID,
-		})
-		ctx.AbortWithStatusJSON(http.StatusNotFound, rErr.ToMap())
+		rErr := errors.ErrScriptNotFound.WithField(biz.ScriptRecordIDKey, uri.ID)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -317,8 +324,8 @@ func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.String("log_path", logPath),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		err := errors.FromError(err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err.ToMap())
+		rErr := errors.FromError(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	defer file.Close()
@@ -460,8 +467,8 @@ func (s *ScriptRecordService) CancelScriptRecord(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 

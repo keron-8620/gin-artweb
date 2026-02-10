@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -33,13 +32,11 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 			return
 		}
 
-		code := http.StatusBadRequest
-
 		// 从请求头获取 X-Timestamp
 		timestampStr := c.GetHeader("X-Timestamp")
 		if timestampStr == "" {
 			logger.Error("请求缺少 X-Timestamp 头")
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTimestampNotFound))
+			errors.RespondWithError(c, errors.ErrTimestampNotFound)
 			return
 		}
 
@@ -47,7 +44,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 		nonce := c.GetHeader("X-Nonce")
 		if nonce == "" {
 			logger.Error("请求缺少 X-Nonce 头")
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrNonceNotFound))
+			errors.RespondWithError(c, errors.ErrNonceNotFound)
 			return
 		}
 
@@ -59,7 +56,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 				zap.String("timestamp", timestampStr),
 				zap.String("error", err.Error()),
 			)
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTimestampInvalid))
+			errors.RespondWithError(c, errors.ErrTimestampInvalid)
 			return
 		}
 
@@ -75,7 +72,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 				zap.Int64("tolerance", tolerance),
 				zap.Int64("difference", abs(now-timestamp)),
 			)
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrTimestampExpired))
+			errors.RespondWithError(c, errors.ErrTimestampExpired)
 			return
 		}
 
@@ -88,7 +85,7 @@ func TimestampMiddleware(nonceStore *cache.Cache, logger *zap.Logger, tolerance,
 				zap.String("path", c.Request.URL.Path),
 				zap.String("client_ip", c.ClientIP()),
 			)
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrReplayAttack))
+			errors.RespondWithError(c, errors.ErrReplayAttack)
 			return
 		}
 

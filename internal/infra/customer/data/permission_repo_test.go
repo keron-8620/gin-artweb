@@ -12,7 +12,6 @@ import (
 	"gin-artweb/internal/infra/customer/biz"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/database"
-	"gin-artweb/internal/shared/test"
 )
 
 func CreateTestPermModel(pk uint32) *biz.PermissionModel {
@@ -35,24 +34,7 @@ type PermissionTestSuite struct {
 }
 
 func (suite *PermissionTestSuite) SetupSuite() {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&biz.PermissionModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, err := auth.NewCasbinEnforcer()
-	if err != nil {
-		panic(err)
-	}
-	suite.permRepo = &permissionRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		enforcer: enforcer,
-	}
-}
-
-func (suite *PermissionTestSuite) TearDownSuite() {
-	test.CloseTestGormDB(suite.permRepo.gormDB)
+	suite.permRepo = NewTestPermissionRepo()
 }
 
 func (suite *PermissionTestSuite) TestCreatePermission() {
@@ -60,7 +42,7 @@ func (suite *PermissionTestSuite) TestCreatePermission() {
 	err := suite.permRepo.CreateModel(context.Background(), sm)
 	suite.NoError(err, "创建权限应该成功")
 
-	fm, err := suite.permRepo.FindModel(context.Background(), sm.ID)
+	fm, err := suite.permRepo.GetModel(context.Background(), sm.ID)
 	suite.NoError(err, "查询刚创建的权限应该成功")
 	suite.Equal(sm.ID, fm.ID)
 	suite.Equal(sm.URL, fm.URL)
@@ -87,7 +69,7 @@ func (suite *PermissionTestSuite) TestUpdatePermission() {
 	}, "id = ?", sm.ID)
 	suite.NoError(err, "更新权限应该成功")
 
-	fm, err := suite.permRepo.FindModel(context.Background(), "id = ?", sm.ID)
+	fm, err := suite.permRepo.GetModel(context.Background(), "id = ?", sm.ID)
 	suite.NoError(err, "查询更新后的权限应该成功")
 	suite.Equal(fm.ID, sm.ID)
 	suite.Equal(updatedURL, fm.URL)
@@ -102,14 +84,14 @@ func (suite *PermissionTestSuite) TestDeletePermission() {
 	err := suite.permRepo.CreateModel(context.Background(), sm)
 	suite.NoError(err, "创建权限应该成功")
 
-	fm, err := suite.permRepo.FindModel(context.Background(), "id = ?", sm.ID)
+	fm, err := suite.permRepo.GetModel(context.Background(), "id = ?", sm.ID)
 	suite.NoError(err, "查询刚创建的权限应该成功")
 	suite.Equal(sm.ID, fm.ID)
 
 	err = suite.permRepo.DeleteModel(context.Background(), "id = ?", sm.ID)
 	suite.NoError(err, "删除权限应该成功")
 
-	_, err = suite.permRepo.FindModel(context.Background(), "id = ?", sm.ID)
+	_, err = suite.permRepo.GetModel(context.Background(), "id = ?", sm.ID)
 	if err != nil {
 		suite.True(errors.Is(err, gorm.ErrRecordNotFound), "应该返回记录未找到错误")
 	} else {
@@ -121,10 +103,10 @@ func (suite *PermissionTestSuite) TestFindPermissionByID() {
 	// 创建一个权限用于测试
 	sm := CreateTestPermModel(4)
 	err := suite.permRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建权限应该失败")
+	suite.NoError(err, "创建权限应该成功")
 
-	m, err := suite.permRepo.FindModel(context.Background(), sm.ID)
-	suite.NoError(err, "查询权限应该失败")
+	m, err := suite.permRepo.GetModel(context.Background(), sm.ID)
+	suite.NoError(err, "查询权限应该成功")
 	suite.Equal(sm.URL, m.URL)
 	suite.Equal(sm.Method, m.Method)
 	suite.Equal(sm.Label, m.Label)
@@ -210,7 +192,7 @@ func (suite *PermissionTestSuite) TestCreatePermissionWithInvalidData() {
 
 func (suite *PermissionTestSuite) TestFindNonExistentPermission() {
 	// 测试查找不存在的权限
-	_, err := suite.permRepo.FindModel(context.Background(), 999999)
+	_, err := suite.permRepo.GetModel(context.Background(), 999999)
 	suite.True(errors.Is(err, gorm.ErrRecordNotFound), "查找不存在的权限应该返回记录未找到错误")
 }
 

@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap"
 
 	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type RecordUsecase struct {
@@ -88,8 +88,8 @@ func (uc *RecordUsecase) FindRecordsByIDs(
 	ctx context.Context,
 	recordIDs []uint32,
 ) (map[uint32]bizJobs.ScriptRecordModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	if len(recordIDs) == 0 {

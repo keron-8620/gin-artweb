@@ -94,7 +94,7 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 	for k, v := range upmap {
 		if err := tx.Model(value).Association(k).Append(v); err != nil {
 			tx.Rollback()
-			return errors.WrapIfWithDetails(err, "更新关联关系 %s 失败", k)
+			return errors.WrapIf(err, "更新关联关系失败")
 		}
 	}
 
@@ -144,7 +144,7 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	if len(data) > 0 {
 		if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
 			tx.Rollback()
-			return errors.WrapIfWithDetails(err, "更新数据库记录失败, 条件: %v", conds)
+			return errors.WrapIf(err, "更新数据库记录失败")
 		}
 	}
 
@@ -152,7 +152,7 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	for k, v := range upmap {
 		if err := tx.Model(m).Association(k).Replace(v); err != nil {
 			tx.Rollback()
-			return errors.WrapIfWithDetails(err, "更新关联关系失败, 关联关系: %s", k)
+			return errors.WrapIf(err, "更新关联关系失败")
 		}
 	}
 
@@ -183,14 +183,14 @@ func DBDelete(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
 	return errors.WrapIf(err, "删除数据库记录失败")
 }
 
-// DBFind 查询单条数据库记录，支持预加载关联关系
+// DBGet 查询单条数据库记录，支持预加载关联关系
 // ctx: 上下文
 // db: GORM数据库实例
 // preloads: 需要预加载的关联关系列表
 // m: 查询结果存储对象
 // conds: 查询条件
 // 返回操作可能产生的错误
-func DBFind(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...any) error {
+func DBGet(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...any) error {
 	dbCtx := db.WithContext(ctx)
 
 	// 预加载关联关系
@@ -223,7 +223,7 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	var count int64 = 0
 	if query.IsCount {
 		if err := mdb.Count(&count).Error; err != nil {
-			return 0, err
+			return 0, errors.WrapIf(err, "查询数据库记录总数失败")
 		}
 	}
 
@@ -243,11 +243,10 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	}
 
 	// 添加分页条件
-	limit := MaxLimit
-	if query.Limit > 0 && query.Limit <= MaxLimit {
-		limit = query.Limit
+	if query.Limit > 0 {
+		mdb = mdb.Limit(query.Limit)
 	}
-	mdb = mdb.Limit(limit)
+
 	if query.Offset > 0 {
 		mdb = mdb.Offset(query.Offset)
 	}
@@ -260,7 +259,7 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	// 执行查询
 	result := mdb.Find(value)
 	if result.Error != nil {
-		return 0, result.Error
+		return 0, errors.WrapIf(result.Error, "查询数据库记录失败")
 	}
 
 	// 如果没有查询总数，则使用影响行数作为总数
@@ -273,10 +272,8 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 
 // zap日志中数据库相关常用key
 const (
-	MaxLimit = 1000 // 查询结果最大限制数
-
 	UpdateDataKey  = "data"         // 更新数据字段
-	ConditionKey   = "conds"        // 查询条件参数
+	ConditionsKey  = "conds"        // 查询条件参数
 	PreloadKey     = "preloads"     // 预加载关联关系
 	ModelKey       = "model"        // 数据模型
 	QueryParamsKey = "query_params" // 查询参数

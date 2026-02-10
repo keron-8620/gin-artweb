@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -27,9 +25,9 @@ func HostGuard(logger *zap.Logger, allowedHosts ...string) gin.HandlerFunc {
 				zap.String("path", c.Request.URL.Path),
 				zap.Strings("allowed_hosts", allowedHosts),
 			)
-			code := http.StatusForbidden
 			rErr := errors.ErrHostHeaderInvalid.WithField("host", host)
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, rErr))
+			errors.RespondWithError(c, rErr)
+			return
 		}
 		c.Next()
 	}

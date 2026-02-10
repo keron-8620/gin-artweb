@@ -10,6 +10,7 @@ import (
 	"gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/infra/resource/data"
 	"gin-artweb/internal/infra/resource/service"
+	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
@@ -25,6 +26,12 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) *ResourceUsecase {
+	jwtConf := auth.NewJWTConfig(
+		time.Duration(init.Conf.Security.Token.AccessMinutes)*time.Minute,
+		time.Duration(init.Conf.Security.Token.RefreshMinutes)*time.Minute,
+		init.Conf.Security.Token.AccessMethod,
+		init.Conf.Security.Token.RefreshMethod,
+	)
 	pubKeys := make([]string, len(init.Signers))
 	for i, signer := range init.Signers {
 		pubKeyBytes := ssh.MarshalAuthorizedKey(signer.PublicKey())
@@ -42,7 +49,7 @@ func NewServer(
 	pkgService := service.NewPackageService(loggers.Service, pkgUsecase, int64(init.Conf.Security.Upload.MaxPkgSize)*1024*1024)
 
 	appRouter := router.Group("/v1/resource")
-	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(jwtConf, loggers.Service))
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
 
 	hostService.LoadRouter(appRouter)

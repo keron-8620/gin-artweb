@@ -9,9 +9,9 @@ import (
 
 	bizReso "gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/serializer"
 )
 
@@ -36,7 +36,7 @@ func (m *OesNodeModel) TableName() string {
 
 func (m *OesNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(OesNodeTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -52,7 +52,7 @@ type OesNodeRepo interface {
 	CreateModel(context.Context, *OesNodeModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*OesNodeModel, error)
+	GetModel(context.Context, []string, ...any) (*OesNodeModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]OesNodeModel, error)
 }
 
@@ -75,8 +75,8 @@ func (uc *OesNodeUsecase) CreateOesNode(
 	ctx context.Context,
 	m OesNodeModel,
 ) (*OesNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -119,8 +119,8 @@ func (uc *OesNodeUsecase) UpdateOesNodeByID(
 	oesNodeID uint32,
 	data map[string]any,
 ) (*OesNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -165,8 +165,8 @@ func (uc *OesNodeUsecase) DeleteOesNodeByID(
 	ctx context.Context,
 	oesNodeID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -198,8 +198,8 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 	preloads []string,
 	oesNodeID uint32,
 ) (*OesNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -209,7 +209,7 @@ func (uc *OesNodeUsecase) FindOesNodeByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.nodeRepo.FindModel(ctx, preloads, oesNodeID)
+	m, err := uc.nodeRepo.GetModel(ctx, preloads, oesNodeID)
 	if err != nil {
 		uc.log.Error(
 			"查询oes节点失败",
@@ -232,12 +232,12 @@ func (uc *OesNodeUsecase) ListOesNode(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]OesNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
-		"开始查询角色列表",
+		"开始查询oes节点列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -262,8 +262,8 @@ func (uc *OesNodeUsecase) ListOesNode(
 }
 
 func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -298,7 +298,7 @@ func (uc *OesNodeUsecase) OutPortOesNodeData(ctx context.Context, m *OesNodeMode
 			zap.Object("oes_node_vars", &oesVars),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportOesColonyFailed.WithCause(err)
+		return errors.ErrExportCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(

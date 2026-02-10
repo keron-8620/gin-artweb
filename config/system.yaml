@@ -1,5 +1,5 @@
 server: # 服务配置
-  host: "0.0.0.0" # 服务地址
+  host: "192.168.10.12" # 服务地址
   port: 8621 # 服务端口
   ssl: # ssl配置
     enable: false # 是否启用ssl
@@ -57,9 +57,10 @@ security: # 安全配置
     tolerance: 300000  # 时间容忍度(毫秒)，允许客户端时间与服务器时间的最大偏差
     future_tolerance: 60000 # 未来时间容忍度(毫秒)，允许客户端时间超前的最大范围
   token: # token相关配置
-    expire_minutes: 180 # token过期时间
-    clear_minutes: 60 # token清理时间
-    secret_key: "sPib_tF49Vpm3JK9Iio8b_uXlSo7mpRPPVrNCKkJ3F4=" # token密钥
+    access_minutes: 30 # token过期时间
+    refresh_minutes: 180 # token刷新时间
+    access_method: "HS256" # token访问方法
+    refresh_method: "HS512" # token刷新方法
   login: # 登录服务
     max_failed_attempts: 5 # 登录失败最大次数
     lock_minutes: 30 # 登录失败锁定时间

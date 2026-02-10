@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
 	"runtime/debug"
 
 	emperrors "emperror.dev/errors"
@@ -53,10 +52,7 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					zap.String("user_agent", c.Request.UserAgent()),
 				)
 				rErr := errors.FromError(err)
-				c.JSON(
-					http.StatusInternalServerError,
-					errors.ErrorResponse(http.StatusInternalServerError, rErr),
-				)
+				errors.RespondWithError(c, rErr)
 			}
 		}()
 

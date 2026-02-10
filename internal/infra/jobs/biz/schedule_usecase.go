@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -42,7 +42,7 @@ func (m *ScheduleModel) TableName() string {
 
 func (m *ScheduleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(ScheduleTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -75,7 +75,7 @@ type ScheduleRepo interface {
 	CreateModel(context.Context, *ScheduleModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*ScheduleModel, error)
+	GetModel(context.Context, []string, ...any) (*ScheduleModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScheduleModel, error)
 }
 
@@ -107,8 +107,8 @@ func NewScheduleUsecase(
 }
 
 func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.mutex.Lock()
@@ -163,7 +163,7 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 			zap.Object(database.ModelKey, m),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return ErrAddScheduleFailed.WithCause(err)
+		return errors.FromReason(errors.ReasonUnknown).WithCause(err)
 	}
 
 	uc.entryMap[m.ID] = entryID
@@ -171,8 +171,8 @@ func (uc *ScheduleUsecase) addJob(ctx context.Context, m *ScheduleModel) *errors
 }
 
 func (uc *ScheduleUsecase) removeJob(ctx context.Context, scheduleID uint32) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.mutex.Lock()
@@ -207,8 +207,8 @@ func (uc *ScheduleUsecase) CreateSchedule(
 	ctx context.Context,
 	m ScheduleModel,
 ) (*ScheduleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -217,7 +217,7 @@ func (uc *ScheduleUsecase) CreateSchedule(
 		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
-	script, err := uc.scriptRepo.FindModel(ctx, "id = ?", m.ScriptID)
+	script, err := uc.scriptRepo.GetModel(ctx, "id = ?", m.ScriptID)
 	if err != nil {
 		uc.log.Error(
 			"查询脚本失败",
@@ -259,8 +259,8 @@ func (uc *ScheduleUsecase) UpdateScheduleByID(
 	scheduleID uint32,
 	data map[string]any,
 ) (*ScheduleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -317,8 +317,8 @@ func (uc *ScheduleUsecase) DeleteScheduleByID(
 	ctx context.Context,
 	scheduleID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -354,8 +354,8 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 	preloads []string,
 	scheduleID uint32,
 ) (*ScheduleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -364,7 +364,7 @@ func (uc *ScheduleUsecase) FindScheduleByID(
 		zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.scheduleRepo.FindModel(ctx, preloads, scheduleID)
+	m, err := uc.scheduleRepo.GetModel(ctx, preloads, scheduleID)
 	if err != nil {
 		uc.log.Error(
 			"查询计划任务失败",
@@ -387,8 +387,8 @@ func (uc *ScheduleUsecase) ListSchedule(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]ScheduleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -417,8 +417,8 @@ func (uc *ScheduleUsecase) ListSchedule(
 }
 
 func (uc *ScheduleUsecase) ReloadScheduleJobs(ctx context.Context, query map[string]any) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 	qp := database.QueryParams{
 		Query:   query,
@@ -446,8 +446,8 @@ func (uc *ScheduleUsecase) ReloadScheduleJobs(ctx context.Context, query map[str
 func (uc *ScheduleUsecase) ListScheduleJob(
 	ctx context.Context,
 ) (*[]ScheduleJobInfo, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	// 获取 cron 调度器中的所有条目

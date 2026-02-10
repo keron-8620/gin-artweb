@@ -11,9 +11,9 @@ import (
 	pbNode "gin-artweb/api/mon/node"
 	"gin-artweb/internal/business/mon/biz"
 	svReso "gin-artweb/internal/infra/resource/service"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type NodeService struct {
@@ -51,8 +51,8 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -73,7 +73,7 @@ func (s *NodeService) CreateMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -105,8 +105,8 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -118,8 +118,8 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -132,16 +132,16 @@ func (s *NodeService) UpdateMonNode(ctx *gin.Context) {
 		"host_id":      req.HostID,
 	}
 
-	m, err := s.ucNode.UpdateMonNodeByID(ctx, uri.ID, data)
-	if err != nil {
+	m, rErr := s.ucNode.UpdateMonNodeByID(ctx, uri.ID, data)
+	if rErr != nil {
 		s.log.Error(
 			"更新mon节点失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -172,8 +172,8 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -183,14 +183,14 @@ func (s *NodeService) DeleteMonNode(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	if err := s.ucNode.DeleteMonNodeByID(ctx, uri.ID); err != nil {
+	if rErr := s.ucNode.DeleteMonNodeByID(ctx, uri.ID); rErr != nil {
 		s.log.Error(
 			"删除mon节点失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -224,8 +224,8 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -235,15 +235,15 @@ func (s *NodeService) GetMonNode(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucNode.FindMonNodeByID(ctx, []string{"Host"}, uri.ID)
-	if err != nil {
+	m, rErr := s.ucNode.FindMonNodeByID(ctx, []string{"Host"}, uri.ID)
+	if rErr != nil {
 		s.log.Error(
 			"查询mon节点详情失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -280,8 +280,8 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -300,16 +300,16 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}
-	total, ms, err := s.ucNode.ListMonNode(ctx, qp)
-	if err != nil {
+	total, ms, rErr := s.ucNode.ListMonNode(ctx, qp)
+	if rErr != nil {
 		s.log.Error(
 			"查询mon节点列表失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 

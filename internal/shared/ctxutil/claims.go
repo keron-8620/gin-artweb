@@ -7,7 +7,10 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
-const UserClaimsKey = "user_claims"
+const (
+	UserIDKey     = "user_id"
+	UserClaimsKey = "user_claims"
+)
 
 func GetUserClaims(ctx context.Context) (*auth.UserClaims, *errors.Error) {
 	if ctx == nil {
@@ -17,8 +20,8 @@ func GetUserClaims(ctx context.Context) (*auth.UserClaims, *errors.Error) {
 	if value == nil {
 		return nil, errors.ErrMissingAuth
 	}
-	if userClaims, ok := value.(auth.UserClaims); ok {
-		return &userClaims, nil
+	if userClaims, ok := value.(*auth.UserClaims); ok {
+		return userClaims, nil
 	}
 	return nil, errors.ErrMissingAuth
 }

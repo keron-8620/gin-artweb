@@ -11,9 +11,9 @@ import (
 
 	bizReso "gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/serializer"
 )
 
@@ -54,7 +54,7 @@ type MonNodeRepo interface {
 	CreateModel(context.Context, *MonNodeModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*MonNodeModel, error)
+	GetModel(context.Context, []string, ...any) (*MonNodeModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]MonNodeModel, error)
 }
 
@@ -77,8 +77,8 @@ func (uc *MonNodeUsecase) CreateMonNode(
 	ctx context.Context,
 	m MonNodeModel,
 ) (*MonNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -114,8 +114,8 @@ func (uc *MonNodeUsecase) UpdateMonNodeByID(
 	nodeID uint32,
 	data map[string]any,
 ) (*MonNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -157,8 +157,8 @@ func (uc *MonNodeUsecase) DeleteMonNodeByID(
 	ctx context.Context,
 	nodeID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -186,7 +186,7 @@ func (uc *MonNodeUsecase) DeleteMonNodeByID(
 			zap.Uint32("mon_node_id", nodeID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrDeleteMonNodeFileFailed.WithCause(err)
+		return errors.ErrDeleteCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(
@@ -202,8 +202,8 @@ func (uc *MonNodeUsecase) FindMonNodeByID(
 	preloads []string,
 	nodeID uint32,
 ) (*MonNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -212,7 +212,7 @@ func (uc *MonNodeUsecase) FindMonNodeByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.nodeRepo.FindModel(ctx, preloads, nodeID)
+	m, err := uc.nodeRepo.GetModel(ctx, preloads, nodeID)
 	if err != nil {
 		uc.log.Error(
 			"查询mon失败",
@@ -235,8 +235,8 @@ func (uc *MonNodeUsecase) ListMonNode(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]MonNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -265,8 +265,8 @@ func (uc *MonNodeUsecase) ListMonNode(
 }
 
 func (uc *MonNodeUsecase) ExportMonNode(ctx context.Context, m MonNodeModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -294,7 +294,7 @@ func (uc *MonNodeUsecase) ExportMonNode(ctx context.Context, m MonNodeModel) *er
 			zap.Object("mon_node", &monNode),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportMonNodeFailed.WithCause(err)
+		return errors.ErrExportCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(

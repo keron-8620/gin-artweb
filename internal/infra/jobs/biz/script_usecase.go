@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -37,7 +37,7 @@ func (m *ScriptModel) TableName() string {
 
 func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(ScriptTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -64,7 +64,7 @@ type ScriptRepo interface {
 	CreateModel(context.Context, *ScriptModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, ...any) (*ScriptModel, error)
+	GetModel(context.Context, ...any) (*ScriptModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScriptModel, error)
 	ListProjects(context.Context) ([]string, error)
 	ListLabels(context.Context) ([]string, error)
@@ -89,8 +89,8 @@ func (uc *ScriptUsecase) CreateScript(
 	ctx context.Context,
 	m ScriptModel,
 ) (*ScriptModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -122,8 +122,8 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	scriptID uint32,
 	data map[string]any,
 ) (*ScriptModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	om, rErr := uc.FindScriptByID(ctx, scriptID)
@@ -136,7 +136,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 			zap.Uint32(ScriptIDKey, scriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrScriptIsBuiltin.WithData(map[string]any{ScriptIDKey: scriptID})
+		return nil, errors.FromReason(errors.ReasonScriptIsBuiltin).WithField(ScriptIDKey, scriptID)
 	}
 
 	uc.log.Info(
@@ -169,8 +169,8 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 	ctx context.Context,
 	scriptID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	m, rErr := uc.FindScriptByID(ctx, scriptID)
@@ -183,7 +183,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 			zap.Uint32(ScriptIDKey, scriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrScriptIsBuiltin.WithData(map[string]any{ScriptIDKey: scriptID})
+		return errors.FromReason(errors.ReasonScriptIsBuiltin).WithField(ScriptIDKey, scriptID)
 	}
 
 	uc.log.Info(
@@ -218,8 +218,8 @@ func (uc *ScriptUsecase) FindScriptByID(
 	ctx context.Context,
 	scriptID uint32,
 ) (*ScriptModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -228,7 +228,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.scriptRepo.FindModel(ctx, scriptID)
+	m, err := uc.scriptRepo.GetModel(ctx, scriptID)
 	if err != nil {
 		uc.log.Error(
 			"查询脚本失败",
@@ -251,8 +251,8 @@ func (uc *ScriptUsecase) ListScript(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]ScriptModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -281,8 +281,8 @@ func (uc *ScriptUsecase) ListScript(
 }
 
 func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	savePath := m.ScriptPath()

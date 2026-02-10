@@ -12,7 +12,7 @@ func NewTestGormDBWithConfig(config *gorm.Config) *gorm.DB {
 			Logger: logger.Default.LogMode(logger.Silent),
 		}
 	}
-	
+
 	db, err := gorm.Open(sqlite.Open("file::memory:"), config)
 	if err != nil {
 		panic(err)

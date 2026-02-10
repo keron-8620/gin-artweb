@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -53,8 +52,7 @@ func GlobalRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		if !limiter.Allow() {
-			code := http.StatusTooManyRequests
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrRateLimitExceeded))
+			errors.RespondWithError(c, errors.ErrRateLimitExceeded)
 			return
 		}
 		c.Next()
@@ -68,8 +66,7 @@ func IPBasedRateLimiterMiddleware(r rate.Limit, b int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limiter := ipLimiter.GetLimiter(c.ClientIP())
 		if !limiter.Allow() {
-			code := http.StatusTooManyRequests
-			c.AbortWithStatusJSON(code, errors.ErrorResponse(code, errors.ErrRateLimitExceeded))
+			errors.RespondWithError(c, errors.ErrRateLimitExceeded)
 			return
 		}
 		c.Next()

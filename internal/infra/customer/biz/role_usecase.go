@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -32,7 +32,7 @@ func (m *RoleModel) TableName() string {
 
 func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(RoleTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -70,7 +70,7 @@ type RoleRepo interface {
 	CreateModel(context.Context, *RoleModel, *[]PermissionModel, *[]MenuModel, *[]ButtonModel) error
 	UpdateModel(context.Context, map[string]any, *[]PermissionModel, *[]MenuModel, *[]ButtonModel, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*RoleModel, error)
+	GetModel(context.Context, []string, ...any) (*RoleModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]RoleModel, error)
 	AddGroupPolicy(context.Context, *RoleModel) error
 	RemoveGroupPolicy(context.Context, *RoleModel) error
@@ -104,8 +104,8 @@ func (uc *RoleUsecase) GetPermissions(
 	ctx context.Context,
 	permIDs []uint32,
 ) (*[]PermissionModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	if len(permIDs) == 0 {
@@ -144,8 +144,8 @@ func (uc *RoleUsecase) GetMenus(
 	ctx context.Context,
 	menuIDs []uint32,
 ) (*[]MenuModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	if len(menuIDs) == 0 {
@@ -184,8 +184,8 @@ func (uc *RoleUsecase) GetButtons(
 	ctx context.Context,
 	buttonIDs []uint32,
 ) (*[]ButtonModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	if len(buttonIDs) == 0 {
@@ -227,8 +227,8 @@ func (uc *RoleUsecase) CreateRole(
 	buttonIDs []uint32,
 	m RoleModel,
 ) (*RoleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -286,7 +286,7 @@ func (uc *RoleUsecase) CreateRole(
 			zap.Object(database.ModelKey, &m),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrAddGroupPolicy.WithCause(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -305,8 +305,8 @@ func (uc *RoleUsecase) UpdateRoleByID(
 	buttonIDs []uint32,
 	data map[string]any,
 ) (*RoleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -358,7 +358,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrRemoveGroupPolicy.WithCause(err)
+		return nil, errors.FromError(err)
 	}
 
 	if err := uc.roleRepo.AddGroupPolicy(ctx, m); err != nil {
@@ -368,7 +368,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrAddGroupPolicy.WithCause(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -383,8 +383,8 @@ func (uc *RoleUsecase) DeleteRoleByID(
 	ctx context.Context,
 	roleID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -415,7 +415,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 			zap.Uint32(RoleIDKey, roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrRemoveGroupPolicy.WithCause(err)
+		return errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -431,8 +431,8 @@ func (uc *RoleUsecase) FindRoleByID(
 	preloads []string,
 	roleID uint32,
 ) (*RoleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -442,7 +442,7 @@ func (uc *RoleUsecase) FindRoleByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.roleRepo.FindModel(ctx, preloads, roleID)
+	m, err := uc.roleRepo.GetModel(ctx, preloads, roleID)
 	if err != nil {
 		uc.log.Error(
 			"查询角色失败",
@@ -465,8 +465,8 @@ func (uc *RoleUsecase) ListRole(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]RoleModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -494,8 +494,8 @@ func (uc *RoleUsecase) ListRole(
 }
 
 func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -530,7 +530,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 					zap.Uint32(MenuIDKey, ms[i].ID),
 					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
-				return ErrAddGroupPolicy.WithCause(err)
+				return errors.FromError(err)
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package database
 import (
 	"time"
 
+	"emperror.dev/errors"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 )
@@ -36,7 +37,7 @@ func (m *StandardModel) UpdateSetTime() {
 
 func (m *StandardModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
-		return err
+		return errors.WrapIf(err, "序列化模型日志参数时失败")
 	}
 	enc.AddTime("created_at", m.CreatedAt)
 	enc.AddTime("updated_at", m.UpdatedAt)

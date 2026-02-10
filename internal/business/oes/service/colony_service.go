@@ -13,9 +13,9 @@ import (
 	"gin-artweb/internal/business/oes/biz"
 	bizJobs "gin-artweb/internal/infra/jobs/biz"
 	svReso "gin-artweb/internal/infra/resource/service"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type OesColonyService struct {
@@ -62,8 +62,8 @@ func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -117,8 +117,8 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -130,8 +130,8 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -145,16 +145,16 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 		"mon_node_id":    req.MonNodeID,
 	}
 
-	m, err := s.ucColony.UpdateOesColonyByID(ctx, uri.ID, data)
-	if err != nil {
+	m, rErr := s.ucColony.UpdateOesColonyByID(ctx, uri.ID, data)
+	if rErr != nil {
 		s.log.Error(
 			"更新oes集群失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -185,8 +185,8 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -196,14 +196,15 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	if err := s.ucColony.DeleteOesColonyByID(ctx, uri.ID); err != nil {
+	rErr := s.ucColony.DeleteOesColonyByID(ctx, uri.ID)
+	if rErr != nil {
 		s.log.Error(
 			"删除oes集群失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -237,8 +238,8 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -248,15 +249,15 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucColony.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, uri.ID)
-	if err != nil {
+	m, rErr := s.ucColony.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, uri.ID)
+	if rErr != nil {
 		s.log.Error(
 			"查询oes集群详情失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -293,8 +294,8 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -322,7 +323,7 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -359,8 +360,8 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -385,18 +386,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	if ms == nil {
-		s.log.Warn(
-			"查询oes现货集群列表为nil",
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -408,7 +398,7 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	if tasks == nil || len(*tasks) == 0 {
@@ -451,8 +441,8 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -477,18 +467,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	if ms == nil {
-		s.log.Warn(
-			"查询oes两融集群列表为nil",
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -500,7 +479,7 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	if tasks == nil || len(*tasks) == 0 {
@@ -543,8 +522,8 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ValidateError.WithCause(err)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
@@ -569,18 +548,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(err.Code, err.ToMap())
-		return
-	}
-
-	if ms == nil {
-		s.log.Warn(
-			"查询oes期权集群列表为nil",
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		ctx.JSON(biz.ErrOesColonyListEmpty.Code, biz.ErrOesColonyListEmpty.ToMap())
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -592,7 +560,7 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		ctx.AbortWithStatusJSON(rErr.Code, rErr.ToMap())
+		errors.RespondWithError(ctx, rErr)
 		return
 	}
 	if tasks == nil || len(*tasks) == 0 {

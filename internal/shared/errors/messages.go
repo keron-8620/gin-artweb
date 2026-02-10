@@ -3,23 +3,24 @@ package errors
 // 默认错误消息映射
 var defaultErrorMessages = map[ErrorReason]string{
 	// 通用错误
-	ReasonUnknown:            "未知错误",
-	ReasonNoContext:          "上下文为空",
-	ReasonCanceled:           "请求取消",
-	ReasonDeadlineExceeded:   "请求超时",
-	ReasonValidationFailed:   "参数验证错误",
-	ReasonRequestTimeout:     "请求超时",
-	ReasonNetworkError:       "网络错误",
-	ReasonServiceUnavailable: "服务不可用",
+	ReasonUnknown:           "未知错误",
+	ReasonValidationFailed:  "参数验证错误",
+	ReasonRequestTimeout:    "请求超时",
+	ReasonRateLimitExceeded: "请求过于频繁，超出请求频率限制",
+
+	// 上下文相关
+	ReasonNoContext:        "上下文为空",
+	ReasonCanceled:         "请求取消",
+	ReasonDeadlineExceeded: "请求超时",
 
 	// 安全认证
-	ReasonHostHeaderInvalid: "Host头无效",
-	ReasonRateLimitExceeded: "请求过于频繁，超出请求频率限制",
-	ReasonNonceNotFound:     "请求头缺少随机数",
-	ReasonReplayAttack:      "检测为重放攻击",
-	ReasonTimestampNotFound: "请求头缺少时间戳",
-	ReasonTimestampInvalid:  "无效的时间戳",
-	ReasonTimestampExpired:  "时间戳已过期",
+	ReasonHostHeaderInvalid:      "Host头无效",
+	ReasonNonceNotFound:          "请求头缺少随机数",
+	ReasonReplayAttack:           "检测为重放攻击",
+	ReasonTimestampNotFound:      "请求头缺少时间戳",
+	ReasonTimestampInvalid:       "无效的时间戳",
+	ReasonTimestampExpired:       "时间戳已过期",
+	ReasonPasswordStrengthFailed: "密码强度不足",
 
 	// 身份权限认证
 	ReasonUnauthorized:      "未授权操作",
@@ -27,19 +28,11 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonTokenInvalid:      "无效的登录凭证",
 	ReasonMissingAuth:       "缺少认证信息",
 	ReasonTokenTypeMismatch: "令牌类型不匹配",
-	ReasonAuthFailed:        "用户名或密码错误",
+	ReasonAuthFailed:        "身份认证失败",
+	ReasonAccountLocked:     "账号已被锁定",
 	ReasonForbidden:         "禁止访问",
 
-	// 上传下载文件
-	ReasonUploadFileNotFound:            "上传的文件未找到",
-	ReasonUploadFileTooLarge:            "上传的文件超出大小限制",
-	ReasonSaveUploadFileFailed:          "保存上传文件失败",
-	ReasonSetUploadFilePermissionFailed: "设置上传文件权限失败",
-	ReasonDownloadFileNotFound:          "下载的文件未找到",
-	ReasonDownloadFilePermissionDenied:  "下载文件权限被拒绝",
-	ReasonDownloadFileFailed:            "下载文件失败",
-
-	// GORM 标准错误
+	// 数据库服务
 	ReasonRecordNotFound:                "记录未找到",
 	ReasonInvalidTransaction:            "事务处理错误",
 	ReasonNotImplemented:                "功能未实现",
@@ -62,5 +55,34 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonDuplicatedKey:                 "唯一性约束冲突",
 	ReasonForeignKeyViolated:            "外键约束冲突",
 	ReasonCheckConstraintViolated:       "检查约束冲突",
-	ReasonModelIsNil:                    "数据库模型不能为空",
+
+	// ssh服务
+	ReasonSSHConnectionFailed: "ssh连接失败",
+	ReasonSSHKeyDeployFailed:  "ssh密钥部署失败",
+
+	// 上传下载文件
+	ReasonUploadFileNotFound:            "上传的文件未找到",
+	ReasonUploadFileTooLarge:            "上传的文件超出大小限制",
+	ReasonSaveUploadFileFailed:          "保存上传文件失败",
+	ReasonSetUploadFilePermissionFailed: "设置上传文件权限失败",
+	ReasonDownloadFileNotFound:          "下载的文件未找到",
+	ReasonDownloadFilePermissionDenied:  "下载文件权限被拒绝",
+	ReasonDownloadFileFailed:            "下载文件失败",
+
+	// 压缩解压文件
+	ReasonUnZIPFailed:       "解压文件失败",
+	ReasonZIPFailed:         "压缩文件失败",
+	ReasonZIPFileNotFound:   "压缩文件未找到",
+	ReasonZIPFileIsEmpty:    "压缩文件为空",
+	ReasonZIPFileIsNotValid: "压缩文件无效",
+
+	// 缓存文件
+	ReasonExportCacheFileFailed: "缓存文件导出失败",
+	ReasonDeleteCacheFileFailed: "缓存文件删除失败",
+
+	// 脚本相关
+	ReasonScriptNotFound:    "脚本未找到",
+	ReasonScriptIsBuiltin:   "脚本为内置脚本",
+	ReasonScriptIsDisabled:  "脚本已禁用",
+	ReasonScriptLogNotFound: "脚本日志未找到",
 }

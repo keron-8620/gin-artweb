@@ -10,6 +10,7 @@ import (
 	"gin-artweb/internal/infra/customer/biz"
 	"gin-artweb/internal/infra/customer/data"
 	"gin-artweb/internal/infra/customer/service"
+	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
@@ -22,7 +23,6 @@ type CustomerUsecase struct {
 	Button     *biz.ButtonUsecase
 	Role       *biz.RoleUsecase
 	User       *biz.UserUsecase
-	Record     *biz.LoginRecordUsecase
 }
 
 func NewServer(
@@ -30,6 +30,18 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) *CustomerUsecase {
+	jwtConf := auth.NewJWTConfig(
+		time.Duration(init.Conf.Security.Token.AccessMinutes)*time.Minute,
+		time.Duration(init.Conf.Security.Token.RefreshMinutes)*time.Minute,
+		init.Conf.Security.Token.AccessMethod,
+		init.Conf.Security.Token.RefreshMethod,
+	)
+	secSettings := biz.SecuritySettings{
+		MaxFailedAttempts: init.Conf.Security.Login.MaxFailedAttempts,
+		LockMinutes:       init.Conf.Security.Login.LockMinutes,
+		PasswordStrength:  init.Conf.Security.Password.StrengthLevel,
+	}
+
 	permissionRepo := data.NewPermissionRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	menuRepo := data.NewMenuRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	buttonRepo := data.NewButtonRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
@@ -37,7 +49,7 @@ func NewServer(
 	userRepo := data.NewUserRepo(loggers.Data, init.DB, init.DBTimeout)
 	recordRepo := data.NewLoginRecordRepo(loggers.Data, init.DB, init.DBTimeout,
 		time.Duration(init.Conf.Security.Login.LockMinutes)*time.Minute,
-		time.Duration(init.Conf.Security.Token.ClearMinutes)*time.Minute,
+		time.Duration(init.Conf.Security.Token.AccessMinutes*2)*time.Minute,
 		init.Conf.Security.Login.MaxFailedAttempts,
 	)
 
@@ -45,8 +57,11 @@ func NewServer(
 	menuUsecase := biz.NewMenuUsecase(loggers.Biz, permissionRepo, menuRepo)
 	buttonUsecase := biz.NewButtonUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo)
 	roleUsecase := biz.NewRoleUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo, roleRepo)
-	userUsecase := biz.NewUserUsecase(loggers.Biz, roleRepo, userRepo, recordRepo, crypto.NewBcryptHasher(12), init.Conf.Security)
-	recordUsecase := biz.NewLoginRecordUsecase(loggers.Biz, recordRepo)
+	userUsecase := biz.NewUserUsecase(
+		loggers.Biz,
+		roleRepo, userRepo,
+		recordRepo,
+		crypto.NewBcryptHasher(12), jwtConf, secSettings)
 
 	ctx := context.Background()
 	if pErr := permissionUsecase.LoadPermissionPolicy(ctx); pErr != nil {
@@ -84,13 +99,12 @@ func NewServer(
 	menuService := service.NewMenuService(loggers.Service, menuUsecase)
 	buttonService := service.NewButtonService(loggers.Service, buttonUsecase)
 	roleService := service.NewRoleService(loggers.Service, roleUsecase)
-	userService := service.NewUserService(loggers.Service, userUsecase, recordUsecase)
-	recordService := service.NewRecordService(loggers.Service, recordUsecase)
+	userService := service.NewUserService(loggers.Service, userUsecase)
 
 	router.POST("/v1/login", userService.Login)
 	appRouter := router.Group("/v1/customer")
 
-	appRouter.Use(middleware.JWTAuthMiddleware(init.Conf.Security.Token.SecretKey, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(jwtConf, loggers.Service))
 	appRouter.GET("/me/menu/tree", roleService.GetRoleMenuTree)
 	appRouter.PATCH("/me/password", userService.PatchPassword)
 
@@ -100,7 +114,6 @@ func NewServer(
 	buttonService.LoadRouter(appRouter)
 	roleService.LoadRouter(appRouter)
 	userService.LoadRouter(appRouter)
-	recordService.LoadRouter(appRouter)
 
 	return &CustomerUsecase{
 		Permission: permissionUsecase,
@@ -108,6 +121,5 @@ func NewServer(
 		Button:     buttonUsecase,
 		Role:       roleUsecase,
 		User:       userUsecase,
-		Record:     recordUsecase,
 	}
 }

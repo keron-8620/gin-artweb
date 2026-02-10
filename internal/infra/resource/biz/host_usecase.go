@@ -12,9 +12,9 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/serializer"
 )
 
@@ -40,7 +40,7 @@ func (m *HostModel) TableName() string {
 
 func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(HostTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -59,7 +59,7 @@ type HostRepo interface {
 	CreateModel(context.Context, *HostModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*HostModel, error)
+	GetModel(context.Context, []string, ...any) (*HostModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]HostModel, error)
 	NewSSHClient(context.Context, string, uint16, string, []ssh.AuthMethod, time.Duration) (*ssh.Client, error)
 	ExecuteCommand(context.Context, *ssh.Session, string) error
@@ -94,8 +94,8 @@ func (uc *HostUsecase) CreateHost(
 	m HostModel,
 	password string,
 ) (*HostModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -135,8 +135,8 @@ func (uc *HostUsecase) UpdateHostById(
 	m HostModel,
 	password string,
 ) (*HostModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -186,8 +186,8 @@ func (uc *HostUsecase) DeleteHostById(
 	ctx context.Context,
 	hostId uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -215,7 +215,7 @@ func (uc *HostUsecase) DeleteHostById(
 			zap.Uint32("host_id", hostId),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrDeleteHostFileFailed.WithCause(err)
+		return errors.ErrDeleteCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(
@@ -230,8 +230,8 @@ func (uc *HostUsecase) FindHostById(
 	ctx context.Context,
 	hostId uint32,
 ) (*HostModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -240,7 +240,7 @@ func (uc *HostUsecase) FindHostById(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.hostRepo.FindModel(ctx, nil, hostId)
+	m, err := uc.hostRepo.GetModel(ctx, nil, hostId)
 	if err != nil {
 		uc.log.Error(
 			"查询主机失败",
@@ -263,8 +263,8 @@ func (uc *HostUsecase) ListHost(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]HostModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -298,8 +298,8 @@ func (uc *HostUsecase) TestSSHConnection(
 	sshPort uint16,
 	sshUser, sshPassword string,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -337,7 +337,7 @@ func (uc *HostUsecase) TestSSHConnection(
 			zap.String("ssh_user", sshUser),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrSSHConnect.WithCause(err)
+		return errors.ErrSSHConnectionFailed.WithCause(err)
 	}
 	defer client.Close()
 
@@ -351,7 +351,7 @@ func (uc *HostUsecase) TestSSHConnection(
 			zap.String("ssh_user", sshUser),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrSSHConnect.WithCause(err)
+		return errors.ErrSSHConnectionFailed.WithCause(err)
 	}
 	defer session.Close()
 
@@ -376,7 +376,7 @@ func (uc *HostUsecase) TestSSHConnection(
 				zap.String("ssh_user", sshUser),
 				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
-			return ErrSSHKeyDeployment.WithCause(err)
+			return errors.ErrSSHKeyDeployFailed.WithCause(err)
 		}
 	}
 
@@ -391,8 +391,8 @@ func (uc *HostUsecase) TestSSHConnection(
 }
 
 func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -418,7 +418,7 @@ func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Erro
 			zap.Object("ansible_host", &ansibleHost),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportHostFailed.WithCause(err)
+		return errors.ErrExportCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(

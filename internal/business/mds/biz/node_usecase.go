@@ -9,9 +9,9 @@ import (
 
 	bizReso "gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/serializer"
 )
 
@@ -36,7 +36,7 @@ func (m *MdsNodeModel) TableName() string {
 
 func (m *MdsNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(MdsNodeTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -52,7 +52,7 @@ type MdsNodeRepo interface {
 	CreateModel(context.Context, *MdsNodeModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*MdsNodeModel, error)
+	GetModel(context.Context, []string, ...any) (*MdsNodeModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]MdsNodeModel, error)
 }
 
@@ -75,8 +75,8 @@ func (uc *MdsNodeUsecase) CreateMdsNode(
 	ctx context.Context,
 	m MdsNodeModel,
 ) (*MdsNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -119,8 +119,8 @@ func (uc *MdsNodeUsecase) UpdateMdsNodeByID(
 	mdsNodeID uint32,
 	data map[string]any,
 ) (*MdsNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -165,8 +165,8 @@ func (uc *MdsNodeUsecase) DeleteMdsNodeByID(
 	ctx context.Context,
 	mdsNodeID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -198,8 +198,8 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 	preloads []string,
 	mdsNodeID uint32,
 ) (*MdsNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -209,7 +209,7 @@ func (uc *MdsNodeUsecase) FindMdsNodeByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.nodeRepo.FindModel(ctx, preloads, mdsNodeID)
+	m, err := uc.nodeRepo.GetModel(ctx, preloads, mdsNodeID)
 	if err != nil {
 		uc.log.Error(
 			"查询mds节点失败",
@@ -232,8 +232,8 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]MdsNodeModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -262,8 +262,8 @@ func (uc *MdsNodeUsecase) ListMdsNode(
 }
 
 func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeModel) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -298,7 +298,7 @@ func (uc *MdsNodeUsecase) OutPortMdsNodeData(ctx context.Context, m *MdsNodeMode
 			zap.Object("mds_node_vars", &mdsVars),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportMdsColonyFailed.WithCause(err)
+		return errors.ErrExportCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(

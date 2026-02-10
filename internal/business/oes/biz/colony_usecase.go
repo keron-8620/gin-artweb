@@ -12,10 +12,10 @@ import (
 	bizMon "gin-artweb/internal/business/mon/biz"
 	bizReso "gin-artweb/internal/infra/resource/biz"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 	"gin-artweb/pkg/archive"
-	"gin-artweb/pkg/ctxutil"
 	"gin-artweb/pkg/fileutil"
 	"gin-artweb/pkg/serializer"
 )
@@ -45,7 +45,7 @@ func (m *OesColonyModel) TableName() string {
 
 func (m *OesColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(OesColonyTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -64,7 +64,7 @@ type OesColonyRepo interface {
 	CreateModel(context.Context, *OesColonyModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*OesColonyModel, error)
+	GetModel(context.Context, []string, ...any) (*OesColonyModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]OesColonyModel, error)
 }
 
@@ -87,8 +87,8 @@ func (uc *OesColonyUsecase) CreateOesColony(
 	ctx context.Context,
 	m OesColonyModel,
 ) (*OesColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -131,8 +131,8 @@ func (uc *OesColonyUsecase) UpdateOesColonyByID(
 	oesColonyID uint32,
 	data map[string]any,
 ) (*OesColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -177,8 +177,8 @@ func (uc *OesColonyUsecase) DeleteOesColonyByID(
 	ctx context.Context,
 	oesColonyID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -210,8 +210,8 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 	preloads []string,
 	oesColonyID uint32,
 ) (*OesColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -221,7 +221,7 @@ func (uc *OesColonyUsecase) FindOesColonyByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.colonyRepo.FindModel(ctx, preloads, oesColonyID)
+	m, err := uc.colonyRepo.GetModel(ctx, preloads, oesColonyID)
 	if err != nil {
 		uc.log.Error(
 			"查询oes集群失败",
@@ -244,8 +244,8 @@ func (uc *OesColonyUsecase) ListOesColony(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]OesColonyModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -285,8 +285,8 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 	ctx context.Context,
 	m *OesColonyModel,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -305,7 +305,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 				zap.Error(err),
 				zap.String("path", colonyBinDir),
 			)
-			return ErrExportOesColonyFailed.WithCause(err)
+			return errors.FromError(err)
 		}
 	}
 
@@ -316,7 +316,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Error(mErr),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportOesColonyFailed.WithCause(mErr)
+		return errors.FromError(mErr)
 	}
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
@@ -337,7 +337,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.String("path", oesPkgPath),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportOesColonyFailed.WithCause(valiErr)
+		return errors.ErrZIPFileIsNotValid.WithCause(valiErr)
 	}
 
 	if err := archive.UntarGz(oesPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
@@ -348,7 +348,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.String("dst_path", colonyBinDir),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrUntarGzOesPackage.WithCause(err)
+		return errors.ErrUnZIPFailed.WithCause(err)
 	}
 
 	oesTmpDir := filepath.Join(tmpDir, oesUnTarDirName)
@@ -360,7 +360,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.String("dst_path", colonyBinDir),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrUntarGzOesPackage.WithCause(err)
+		return errors.FromError(err)
 	}
 
 	xcterPkgPath := bizReso.PackageStoragePath(m.XCounter.StorageFilename)
@@ -372,7 +372,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.String("path", xcterPkgPath),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportOesColonyFailed.WithCause(valiErr)
+		return errors.ErrZIPFileIsNotValid.WithCause(valiErr)
 	}
 	if err := archive.UntarGz(xcterPkgPath, tmpDir); err != nil {
 		uc.log.Error(
@@ -382,7 +382,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.String("dst_path", tmpDir),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrUntarGzXCounterPackage.WithCause(err)
+		return errors.ErrUnZIPFailed.WithCause(err)
 	}
 	xcterTmpDir := filepath.Join(tmpDir, xcterUnTarDirName, "bin")
 	oesBinDir := filepath.Join(colonyBinDir, "bin")
@@ -394,7 +394,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.String("dst_path", oesBinDir),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrUntarGzOesPackage.WithCause(err)
+		return errors.FromError(err)
 	}
 
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
@@ -441,7 +441,7 @@ func (uc *OesColonyUsecase) OutportOesColonyData(
 			zap.Object("oes_colony_vars", &oesVars),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrExportOesColonyFailed.WithCause(err)
+		return errors.ErrExportCacheFileFailed.WithCause(err)
 	}
 
 	uc.log.Info(

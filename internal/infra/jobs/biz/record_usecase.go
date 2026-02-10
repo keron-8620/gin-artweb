@@ -18,9 +18,9 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -50,7 +50,7 @@ func (m *ScriptRecordModel) TableName() string {
 
 func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(ScriptRecordTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -93,7 +93,7 @@ type ScriptRecordRepo interface {
 	CreateModel(context.Context, *ScriptRecordModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, []string, ...any) (*ScriptRecordModel, error)
+	GetModel(context.Context, []string, ...any) (*ScriptRecordModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]ScriptRecordModel, error)
 }
 
@@ -389,11 +389,11 @@ func (uc *RecordUsecase) CreateScriptRecord(
 	ctx context.Context,
 	req ExecuteRequest,
 ) (*ScriptRecordModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
-	script, err := uc.scriptRepo.FindModel(ctx, req.ScriptID)
+	script, err := uc.scriptRepo.GetModel(ctx, req.ScriptID)
 	if err != nil {
 		uc.log.Error(
 			"查询脚本失败",
@@ -410,7 +410,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 			zap.Uint32(ScriptIDKey, req.ScriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrScriptDisabled
+		return nil, errors.FromReason(errors.ReasonScriptIsDisabled).WithField(ScriptIDKey, req.ScriptID)
 	}
 
 	now := time.Now()
@@ -471,8 +471,8 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 	preloads []string,
 	recordID uint32,
 ) (*ScriptRecordModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -481,7 +481,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.recordRepo.FindModel(ctx, preloads, recordID)
+	m, err := uc.recordRepo.GetModel(ctx, preloads, recordID)
 	if err != nil {
 		uc.log.Error(
 			"查询脚本执行记录失败",
@@ -505,8 +505,8 @@ func (uc *RecordUsecase) ListcriptRecord(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]ScriptRecordModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(

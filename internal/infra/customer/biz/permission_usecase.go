@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
-	"gin-artweb/pkg/ctxutil"
 )
 
 const (
@@ -31,7 +31,7 @@ func (m *PermissionModel) TableName() string {
 
 func (m *PermissionModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
-		return errors.GormModelIsNil(PermissionTableName)
+		return nil
 	}
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
@@ -63,7 +63,7 @@ type PermissionRepo interface {
 	CreateModel(context.Context, *PermissionModel) error
 	UpdateModel(context.Context, map[string]any, ...any) error
 	DeleteModel(context.Context, ...any) error
-	FindModel(context.Context, ...any) (*PermissionModel, error)
+	GetModel(context.Context, ...any) (*PermissionModel, error)
 	ListModel(context.Context, database.QueryParams) (int64, *[]PermissionModel, error)
 	AddPolicy(context.Context, PermissionModel) error
 	RemovePolicy(context.Context, PermissionModel, bool) error
@@ -88,8 +88,8 @@ func (uc *PermissionUsecase) CreatePermission(
 	ctx context.Context,
 	m PermissionModel,
 ) (*PermissionModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -105,6 +105,7 @@ func (uc *PermissionUsecase) CreatePermission(
 			zap.Object(database.ModelKey, &m),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
+
 		return nil, errors.NewGormError(err, nil)
 	}
 
@@ -115,7 +116,7 @@ func (uc *PermissionUsecase) CreatePermission(
 			zap.Object(database.ModelKey, &m),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrAddPolicy.WithCause(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -131,8 +132,8 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 	permID uint32,
 	data map[string]any,
 ) (*PermissionModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -171,7 +172,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrRemovePolicy.WithCause(err)
+		return nil, errors.FromError(err)
 	}
 
 	if err := uc.permRepo.AddPolicy(ctx, *m); err != nil {
@@ -181,7 +182,7 @@ func (uc *PermissionUsecase) UpdatePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, ErrAddPolicy.WithCause(err)
+		return nil, errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -196,8 +197,8 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 	ctx context.Context,
 	permID uint32,
 ) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -234,7 +235,7 @@ func (uc *PermissionUsecase) DeletePermissionByID(
 			zap.Uint32(PermissionIDKey, permID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return ErrRemovePolicy.WithCause(err)
+		return errors.FromError(err)
 	}
 
 	uc.log.Info(
@@ -249,8 +250,8 @@ func (uc *PermissionUsecase) FindPermissionByID(
 	ctx context.Context,
 	permID uint32,
 ) (*PermissionModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -259,7 +260,7 @@ func (uc *PermissionUsecase) FindPermissionByID(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := uc.permRepo.FindModel(ctx, permID)
+	m, err := uc.permRepo.GetModel(ctx, permID)
 	if err != nil {
 		uc.log.Error(
 			"查询权限失败",
@@ -282,8 +283,8 @@ func (uc *PermissionUsecase) ListPermission(
 	ctx context.Context,
 	qp database.QueryParams,
 ) (int64, *[]PermissionModel, *errors.Error) {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return 0, nil, errors.FromError(err)
+	if ctx.Err() != nil {
+		return 0, nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -312,8 +313,8 @@ func (uc *PermissionUsecase) ListPermission(
 }
 
 func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.Error {
-	if err := ctxutil.CheckContext(ctx); err != nil {
-		return errors.FromError(err)
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
@@ -332,7 +333,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 			zap.Error(err),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return err
+		return errors.NewGormError(err, nil)
 	}
 
 	var policyCount int
@@ -347,7 +348,7 @@ func (uc *PermissionUsecase) LoadPermissionPolicy(ctx context.Context) *errors.E
 					zap.Uint32(PermissionIDKey, ms[i].ID),
 					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
-				return ErrAddPolicy.WithCause(err)
+				return errors.FromError(err)
 			}
 		}
 	}

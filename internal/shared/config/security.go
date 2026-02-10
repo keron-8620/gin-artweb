@@ -20,9 +20,10 @@ type TimestampConfig struct {
 
 // TokenConfig Token配置
 type TokenConfig struct {
-	ExpireMinutes int    `yaml:"expire_minutes"` // Token过期时间(分钟)
-	ClearMinutes  int    `yaml:"clear_minutes"`  // Token清理间隔(分钟)
-	SecretKey     string `yaml:"secret_key"`     // 加密密钥
+	AccessMinutes  int    `yaml:"access_minutes"`  // Token过期时间(分钟)
+	RefreshMinutes int    `yaml:"refresh_minutes"` // 刷新令牌过期时间(分钟)
+	AccessMethod   string `yaml:"access_method"`   // 访问令牌签名方法
+	RefreshMethod  string `yaml:"refresh_method"`  // 刷新令牌签名方法
 }
 
 // LoginSecurityConfig 登录安全配置

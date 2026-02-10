@@ -2,53 +2,38 @@ package errors
 
 type ErrorReason string
 
-// 通用错误
 const (
-	ReasonUnknown            ErrorReason = "ERROR_UNKNOWN"               // 未知错误
-	ReasonNoContext          ErrorReason = "ERROR_CTX_NO_CONTEXT"        // 上下文为空
-	ReasonCanceled           ErrorReason = "ERROR_CTX_CANCELED"          // ctx取消
-	ReasonDeadlineExceeded   ErrorReason = "ERROR_CTX_DEADLINE_EXCEEDED" // ctx超时
-	ReasonValidationFailed   ErrorReason = "ERROR_VALIDATION_FAILED"     // 参数验证错误
-	ReasonRequestTimeout     ErrorReason = "ERROR_REQUEST_TIMEOUT"       // 请求超时
-	ReasonNetworkError       ErrorReason = "ERROR_NETWORK"               // 网络错误
-	ReasonServiceUnavailable ErrorReason = "ERROR_SERVICE_UNAVAILABLE"   // 服务不可用
-)
+	// 通用错误
+	ReasonUnknown           ErrorReason = "ERROR_UNKNOWN"             // 未知错误
+	ReasonValidationFailed  ErrorReason = "ERROR_VALIDATION_FAILED"   // 参数验证错误
+	ReasonRequestTimeout    ErrorReason = "ERROR_REQUEST_TIMEOUT"     // 请求超时
+	ReasonRateLimitExceeded ErrorReason = "ERROR_RATE_LIMIT_EXCEEDED" // 请求过于频繁
 
-// 安全认证
-const (
-	ReasonHostHeaderInvalid ErrorReason = "SEC_HOST_HEADER_INVALID" // Host头无效
-	ReasonRateLimitExceeded ErrorReason = "SEC_RATE_LIMIT_EXCEEDED" // 超出请求频率限制
-	ReasonNonceNotFound     ErrorReason = "SEC_NONCE_NOT_FOUND"     // 请求头缺少随机数
-	ReasonReplayAttack      ErrorReason = "SEC_REPLAY_ATTACK"       // 检测为重放攻击
-	ReasonTimestampNotFound ErrorReason = "SEC_TIMESTAMP_NOT_FOUND" // 请求头缺少时间戳
-	ReasonTimestampInvalid  ErrorReason = "SEC_TIMESTAMP_INVALID"   // 无效的时间戳
-	ReasonTimestampExpired  ErrorReason = "SEC_TIMESTAMP_EXPIRED"   // 时间戳已过期
-)
+	// 上下文
+	ReasonNoContext        ErrorReason = "ERROR_CTX_NO_CONTEXT"        // 上下文为空
+	ReasonCanceled         ErrorReason = "ERROR_CTX_CANCELED"          // ctx取消
+	ReasonDeadlineExceeded ErrorReason = "ERROR_CTX_DEADLINE_EXCEEDED" // ctx超时
 
-// 身份权限认证
-const (
+	// 安全认证
+	ReasonHostHeaderInvalid      ErrorReason = "SEC_HOST_HEADER_INVALID"      // Host头无效
+	ReasonNonceNotFound          ErrorReason = "SEC_NONCE_NOT_FOUND"          // 请求头缺少随机数
+	ReasonReplayAttack           ErrorReason = "SEC_REPLAY_ATTACK"            // 检测为重放攻击
+	ReasonTimestampNotFound      ErrorReason = "SEC_TIMESTAMP_NOT_FOUND"      // 请求头缺少时间戳
+	ReasonTimestampInvalid       ErrorReason = "SEC_TIMESTAMP_INVALID"        // 无效的时间戳
+	ReasonTimestampExpired       ErrorReason = "SEC_TIMESTAMP_EXPIRED"        // 时间戳已过期
+	ReasonPasswordStrengthFailed ErrorReason = "SEC_PASSWORD_STRENGTH_FAILED" // 密码强度不足
+
+	// 身份权限认证
 	ReasonUnauthorized      ErrorReason = "AUTH_UNAUTHORIZED"        // 未授权操作
 	ReasonTokenExpired      ErrorReason = "AUTH_TOKEN_EXPIRED"       // 登录已过期，请重新登录
 	ReasonTokenInvalid      ErrorReason = "AUTH_TOKEN_INVALID"       // 无效的登录凭证
 	ReasonMissingAuth       ErrorReason = "AUTH_MISSING_AUTH"        // 缺少认证信息
 	ReasonTokenTypeMismatch ErrorReason = "AUTH_TOKEN_TYPE_MISMATCH" // 令牌类型不匹配
-	ReasonAuthFailed        ErrorReason = "AUTH_FAILED"              // 用户名或密码错误
+	ReasonAuthFailed        ErrorReason = "AUTH_FAILED"              // 身份认证失败
+	ReasonAccountLocked     ErrorReason = "AUTH_ACCOUNT_LOCKED"      // 账号已被锁定
 	ReasonForbidden         ErrorReason = "AUTH_FORBIDDEN"           // 禁止访问
-)
 
-// 上传下载文件
-const (
-	ReasonUploadFileNotFound            ErrorReason = "UPLOAD_FILE_NOT_FOUND"             // 上传的文件未找到
-	ReasonUploadFileTooLarge            ErrorReason = "UPLOAD_FILE_TOO_LARGE"             // 上传的文件超出大小限制
-	ReasonSaveUploadFileFailed          ErrorReason = "UPLOAD_FILE_SAVE_FAILED"           // 保存上传文件失败
-	ReasonSetUploadFilePermissionFailed ErrorReason = "UPLOAD_FILE_SET_PERMISSION_FAILED" // 设置上传文件权限失败
-	ReasonDownloadFileNotFound          ErrorReason = "DOWNLOAD_FILE_NOT_FOUND"           // 下载的文件未找到
-	ReasonDownloadFilePermissionDenied  ErrorReason = "DOWNLOAD_FILE_PERMISSION_DENIED"   // 下载文件权限被拒绝
-	ReasonDownloadFileFailed            ErrorReason = "DOWNLOAD_FILE_FAILED"              // 下载文件失败
-)
-
-// 数据库操作
-const (
+	// 数据库服务
 	ReasonRecordNotFound                ErrorReason = "GORM_RECORD_NOT_FOUND"                 // 记录未找到
 	ReasonInvalidTransaction            ErrorReason = "GORM_INVALID_TRANSACTION"              // 事务处理错误
 	ReasonNotImplemented                ErrorReason = "GORM_NOT_IMPLEMENTED"                  // 功能未实现
@@ -71,5 +56,34 @@ const (
 	ReasonDuplicatedKey                 ErrorReason = "GORM_DUPLICATED_KEY"                   // 唯一性约束冲突
 	ReasonForeignKeyViolated            ErrorReason = "GORM_FOREIGN_KEY_VIOLATED"             // 外键约束冲突
 	ReasonCheckConstraintViolated       ErrorReason = "GORM_CHECK_CONSTRAINT_VIOLATED"        // 检查约束冲突
-	ReasonModelIsNil                    ErrorReason = "GORM_MODEL_IS_NIL"                     // 数据库模型不能为空
+
+	// ssh服务
+	ReasonSSHConnectionFailed ErrorReason = "SSH_CONNECTION_FAILED"     // ssh连接失败
+	ReasonSSHKeyDeployFailed  ErrorReason = "SSH_KEY_DEPLOYMENT_FAILED" // ssh密钥部署失败
+
+	// 上传下载文件
+	ReasonUploadFileNotFound            ErrorReason = "UPLOAD_FILE_NOT_FOUND"             // 上传的文件未找到
+	ReasonUploadFileTooLarge            ErrorReason = "UPLOAD_FILE_TOO_LARGE"             // 上传的文件超出大小限制
+	ReasonSaveUploadFileFailed          ErrorReason = "UPLOAD_FILE_SAVE_FAILED"           // 保存上传文件失败
+	ReasonSetUploadFilePermissionFailed ErrorReason = "UPLOAD_FILE_SET_PERMISSION_FAILED" // 设置上传文件权限失败
+	ReasonDownloadFileNotFound          ErrorReason = "DOWNLOAD_FILE_NOT_FOUND"           // 下载的文件未找到
+	ReasonDownloadFilePermissionDenied  ErrorReason = "DOWNLOAD_FILE_PERMISSION_DENIED"   // 下载文件权限被拒绝
+	ReasonDownloadFileFailed            ErrorReason = "DOWNLOAD_FILE_FAILED"              // 下载文件失败
+
+	// 压缩解压文件
+	ReasonUnZIPFailed       ErrorReason = "UNZIP_FAILED"          // 解压文件失败
+	ReasonZIPFailed         ErrorReason = "ZIP_FAILED"            // 压缩文件失败
+	ReasonZIPFileNotFound   ErrorReason = "ZIP_FILE_NOT_FOUND"    // 压缩文件未找到
+	ReasonZIPFileIsEmpty    ErrorReason = "ZIP_FILE_IS_EMPTY"     // 压缩文件为空
+	ReasonZIPFileIsNotValid ErrorReason = "ZIP_FILE_IS_NOT_VALID" // 压缩文件无效
+
+	// 缓存文件相关
+	ReasonExportCacheFileFailed ErrorReason = "EXPORT_CACHE_FILE_FAILED" // 导出缓存文件失败
+	ReasonDeleteCacheFileFailed ErrorReason = "DELETE_CACHE_FILE_FAILED" // 删除缓存文件失败
+
+	// 脚本相关
+	ReasonScriptNotFound    ErrorReason = "SCRIPT_NOT_FOUND"     // 脚本未找到
+	ReasonScriptIsBuiltin   ErrorReason = "SCRIPT_IS_BUILTIN"    // 脚本为内置脚本
+	ReasonScriptIsDisabled  ErrorReason = "SCRIPT_IS_DISABLED"   // 脚本已禁用
+	ReasonScriptLogNotFound ErrorReason = "SCRIPT_LOG_NOT_FOUND" // 脚本日志未找到
 )

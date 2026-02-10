@@ -4,14 +4,15 @@ import (
 	"context"
 	"time"
 
+	"emperror.dev/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"gin-artweb/internal/business/oes/biz"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
-	"gin-artweb/pkg/ctxutil"
 )
 
 type oesColonyRepo struct {
@@ -33,6 +34,16 @@ func NewOesColonyRepo(
 }
 
 func (r *oesColonyRepo) CreateModel(ctx context.Context, m *biz.OesColonyModel) error {
+	// 检查参数
+	if m == nil {
+		err := errors.New("创建oes集群失败: 模型为空")
+		r.log.Error(
+			"创建oes集群失败: 模型为空",
+			zap.Error(err),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return err
+	}
 	r.log.Debug(
 		"开始创建oes集群",
 		zap.Object(database.ModelKey, m),
@@ -49,7 +60,7 @@ func (r *oesColonyRepo) CreateModel(ctx context.Context, m *biz.OesColonyModel) 
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
 		)
-		return err
+		return errors.WrapIf(err, "创建oes集群失败")
 	}
 	r.log.Debug(
 		"创建oes集群成功",
@@ -61,10 +72,23 @@ func (r *oesColonyRepo) CreateModel(ctx context.Context, m *biz.OesColonyModel) 
 }
 
 func (r *oesColonyRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+	// 检查参数
+	if len(data) == 0 {
+		err := errors.New("更新mds集群失败: 更新数据为空")
+		r.log.Error(
+			"更新mds集群失败: 更新数据为空",
+			zap.Error(err),
+			zap.Any(database.UpdateDataKey, data),
+			zap.Any(database.ConditionsKey, conds),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return err
+	}
+
 	r.log.Debug(
 		"开始更新oes集群",
 		zap.Any(database.UpdateDataKey, data),
-		zap.Any(database.ConditionKey, conds),
+		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
@@ -75,16 +99,16 @@ func (r *oesColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 			"更新oes集群失败",
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
-			zap.Any(database.ConditionKey, conds),
+			zap.Any(database.ConditionsKey, conds),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
-		return err
+		return errors.WrapIf(err, "更新oes集群失败")
 	}
 	r.log.Debug(
 		"更新oes集群成功",
 		zap.Any(database.UpdateDataKey, data),
-		zap.Any(database.ConditionKey, conds),
+		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
@@ -94,7 +118,7 @@ func (r *oesColonyRepo) UpdateModel(ctx context.Context, data map[string]any, co
 func (r *oesColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除oes集群",
-		zap.Any(database.ConditionKey, conds),
+		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
@@ -104,49 +128,49 @@ func (r *oesColonyRepo) DeleteModel(ctx context.Context, conds ...any) error {
 		r.log.Error(
 			"删除oes集群失败",
 			zap.Error(err),
-			zap.Any(database.ConditionKey, conds),
+			zap.Any(database.ConditionsKey, conds),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
-		return err
+		return errors.WrapIf(err, "删除oes集群失败")
 	}
 	r.log.Debug(
 		"删除oes集群成功",
-		zap.Any(database.ConditionKey, conds),
+		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
 	return nil
 }
 
-func (r *oesColonyRepo) FindModel(
+func (r *oesColonyRepo) GetModel(
 	ctx context.Context,
 	preloads []string,
 	conds ...any,
 ) (*biz.OesColonyModel, error) {
 	r.log.Debug(
 		"开始查询oes集群",
-		zap.Any(database.ConditionKey, conds),
+		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
 	var m biz.OesColonyModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBFind(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
+	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询oes集群失败",
 			zap.Error(err),
-			zap.Any(database.ConditionKey, conds),
+			zap.Any(database.ConditionsKey, conds),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
-		return nil, err
+		return nil, errors.WrapIf(err, "查询oes集群失败")
 	}
 	r.log.Debug(
 		"查询oes集群成功",
 		zap.Object(database.ModelKey, &m),
-		zap.Any(database.ConditionKey, conds),
+		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(startTime)),
 	)
@@ -175,7 +199,7 @@ func (r *oesColonyRepo) ListModel(
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(startTime)),
 		)
-		return 0, nil, err
+		return 0, nil, errors.WrapIf(err, "查询oes集群列表失败")
 	}
 	r.log.Debug(
 		"查询oes集群列表成功",
