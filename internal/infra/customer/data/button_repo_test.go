@@ -188,8 +188,8 @@ func (suite *ButtonTestSuite) TestListButton() {
 
 	// 测试查询按钮列表
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	count, ms, err := suite.buttonRepo.ListModel(context.Background(), qp)
@@ -199,8 +199,8 @@ func (suite *ButtonTestSuite) TestListButton() {
 
 	// 测试分页查询
 	qpPaginated := database.QueryParams{
-		Limit:   2,
-		Offset:  0,
+		Size:    2,
+		Page:    0,
 		IsCount: true,
 	}
 	pTotal, pMs, err := suite.buttonRepo.ListModel(context.Background(), qpPaginated)
@@ -450,8 +450,8 @@ func (suite *ButtonTestSuite) TestListButtonWithPaginationBoundaries() {
 
 	// 测试Limit=0的情况
 	qpZeroLimit := database.QueryParams{
-		Limit:   0,
-		Offset:  0,
+		Size:    0,
+		Page:    0,
 		IsCount: true,
 	}
 	_, msZero, err := suite.buttonRepo.ListModel(context.Background(), qpZeroLimit)
@@ -460,8 +460,8 @@ func (suite *ButtonTestSuite) TestListButtonWithPaginationBoundaries() {
 
 	// 测试较大的Offset值
 	qpLargeOffset := database.QueryParams{
-		Limit:   10,
-		Offset:  999999,
+		Size:    10,
+		Page:    999999,
 		IsCount: true,
 	}
 	_, msLarge, err := suite.buttonRepo.ListModel(context.Background(), qpLargeOffset)
@@ -473,8 +473,8 @@ func (suite *ButtonTestSuite) TestListButtonWithPaginationBoundaries() {
 func (suite *ButtonTestSuite) TestListButtonWithNoRecords() {
 	// 测试查询不存在的条件
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 		Query:   map[string]any{"id": uint32(999999)},
 	}
@@ -524,8 +524,8 @@ func (suite *ButtonTestSuite) TestContextTimeout() {
 
 	// 测试ListModel方法
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	_, _, err = suite.buttonRepo.ListModel(ctx, qp)
@@ -577,8 +577,8 @@ func (suite *ButtonTestSuite) TestContextCancel() {
 
 	// 测试ListModel方法
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	_, _, err = suite.buttonRepo.ListModel(ctx, qp)

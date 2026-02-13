@@ -116,8 +116,8 @@ func (suite *ApiTestSuite) TestListApi() {
 	}
 
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	total, ms, err := suite.apiRepo.ListModel(context.Background(), qp)
@@ -126,8 +126,8 @@ func (suite *ApiTestSuite) TestListApi() {
 	suite.GreaterOrEqual(total, int64(10), "API总数应该至少有10条")
 
 	qpPaginated := database.QueryParams{
-		Limit:   5,
-		Offset:  0,
+		Size:    5,
+		Page:    0,
 		IsCount: true,
 	}
 	pTotal, pMs, err := suite.apiRepo.ListModel(context.Background(), qpPaginated)
@@ -356,8 +356,8 @@ func (suite *ApiTestSuite) TestListApiWithEmptyParams() {
 func (suite *ApiTestSuite) TestListApiWithInvalidPagination() {
 	// 测试列表查询时传入无效分页参数
 	qp := database.QueryParams{
-		Limit:  -1,
-		Offset: -1,
+		Size: -1,
+		Page: -1,
 	}
 	_, ms, err := suite.apiRepo.ListModel(context.Background(), qp)
 	suite.NoError(err, "列表查询时传入无效分页参数应该成功")

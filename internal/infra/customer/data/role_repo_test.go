@@ -156,8 +156,8 @@ func (suite *RoleTestSuite) TestListRole() {
 
 	// 测试查询角色列表
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	count, ms, err := suite.roleRepo.ListModel(context.Background(), qp)
@@ -167,8 +167,8 @@ func (suite *RoleTestSuite) TestListRole() {
 
 	// 测试分页查询
 	qpPaginated := database.QueryParams{
-		Limit:   2,
-		Offset:  0,
+		Size:    2,
+		Page:    0,
 		IsCount: true,
 	}
 	pTotal, pMs, err := suite.roleRepo.ListModel(context.Background(), qpPaginated)
@@ -348,8 +348,8 @@ func (suite *RoleTestSuite) TestUpdateRoleWithNonExistentID() {
 func (suite *RoleTestSuite) TestListRoleWithPaginationBoundaries() {
 	// 测试Limit=0的情况
 	qpZeroLimit := database.QueryParams{
-		Limit:   0,
-		Offset:  0,
+		Size:    0,
+		Page:    0,
 		IsCount: true,
 	}
 	_, msZero, err := suite.roleRepo.ListModel(context.Background(), qpZeroLimit)
@@ -358,8 +358,8 @@ func (suite *RoleTestSuite) TestListRoleWithPaginationBoundaries() {
 
 	// 测试较大的Offset值
 	qpLargeOffset := database.QueryParams{
-		Limit:   10,
-		Offset:  999999,
+		Size:    10,
+		Page:    999999,
 		IsCount: true,
 	}
 	_, msLarge, err := suite.roleRepo.ListModel(context.Background(), qpLargeOffset)
@@ -371,8 +371,8 @@ func (suite *RoleTestSuite) TestListRoleWithPaginationBoundaries() {
 func (suite *RoleTestSuite) TestListRoleWithNoRecords() {
 	// 测试查询不存在的条件
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 		Query:   map[string]any{"id": uint32(999999)},
 	}
@@ -417,8 +417,8 @@ func (suite *RoleTestSuite) TestContextTimeout() {
 
 	// 测试ListModel方法
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	_, _, err = suite.roleRepo.ListModel(ctx, qp)
@@ -465,8 +465,8 @@ func (suite *RoleTestSuite) TestContextCancel() {
 
 	// 测试ListModel方法
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	_, _, err = suite.roleRepo.ListModel(ctx, qp)

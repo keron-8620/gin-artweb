@@ -55,14 +55,14 @@ var (
 func main() {
 	// 定义并解析命令行参数，指定配置文件路径，默认为 "../config/system.yaml"
 	var (
-		configPath   string
-		showVersion  bool
-		initDatabase bool
-		execSqlPath  string
+		configPath  string
+		showVersion bool
+		migrator    bool
+		execSqlPath string
 	)
 	flag.StringVar(&configPath, "config", "system.yaml", "系统配置文件的路径")
 	flag.BoolVar(&showVersion, "v", false, "展示版本信息")
-	flag.BoolVar(&initDatabase, "init-database", false, "初始化数据库")
+	flag.BoolVar(&migrator, "migrator", false, "迁移数据库")
 	flag.StringVar(&execSqlPath, "exec-sql", "", "执行SQL文件路径")
 	flag.Parse()
 
@@ -87,7 +87,7 @@ func main() {
 	// 初始化服务器日志记录器
 	loggers := NewLoggers(sysConf.Log)
 
-	if initDatabase {
+	if migrator {
 		db, err := initGromDB(sysConf)
 		if err != nil {
 			golog.Fatalf("数据库初始化失败: %v", err)
@@ -246,8 +246,8 @@ func main() {
 // 返回值3: 初始化过程中发生的错误
 func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initialize, func(), error) {
 	jwtConf := auth.NewJWTConfig(
-		time.Duration(conf.Security.Token.AccessMinutes)*time.Second,
-		time.Duration(conf.Security.Token.RefreshMinutes)*time.Second,
+		time.Duration(conf.Security.Token.AccessMinutes)*time.Minute,
+		time.Duration(conf.Security.Token.RefreshMinutes)*time.Minute,
 		conf.Security.Token.AccessMethod,
 		conf.Security.Token.RefreshMethod,
 		[]byte(os.Getenv("JWT_ACCESS_SECRET")),

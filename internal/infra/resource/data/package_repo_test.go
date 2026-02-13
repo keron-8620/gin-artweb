@@ -116,8 +116,8 @@ func TestPackageRepo_ListModel(t *testing.T) {
 		// 执行查询操作
 		queryParams := database.QueryParams{
 			OrderBy: []string{"id desc"},
-			Limit:   10,
-			Offset:  0,
+			Size:    10,
+			Page:    0,
 			IsCount: true,
 		}
 		count, result, err := repo.ListModel(ctx, queryParams)

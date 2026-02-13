@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 )
@@ -36,6 +37,10 @@ func NewSystemConf(configPath string) *SystemConf {
 	// 解析YAML配置
 	if err := yaml.Unmarshal(data, conf); err != nil {
 		log.Fatalf("FATAL: 配置文件解析失败: %v", err)
+	}
+
+	if conf.Database.Dns != "file::memory:" && !filepath.IsAbs(conf.Database.Dns) {
+		conf.Database.Dns = filepath.Join(BaseDir, conf.Database.Dns)
 	}
 
 	return conf

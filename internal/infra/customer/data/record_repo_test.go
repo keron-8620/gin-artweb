@@ -71,8 +71,8 @@ func (suite *RecordTestSuite) TestListModel() {
 
 	// 测试正常场景：查询登录记录列表
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	total, ms, err := suite.recordRepo.ListModel(context.Background(), qp)
@@ -82,8 +82,8 @@ func (suite *RecordTestSuite) TestListModel() {
 
 	// 测试分页查询
 	qpPaginated := database.QueryParams{
-		Limit:   5,
-		Offset:  0,
+		Size:    5,
+		Page:    0,
 		IsCount: true,
 	}
 	pTotal, pMs, err := suite.recordRepo.ListModel(context.Background(), qpPaginated)
@@ -94,8 +94,8 @@ func (suite *RecordTestSuite) TestListModel() {
 
 	// 测试排序查询
 	qpSorted := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		OrderBy: []string{"id DESC"},
 	}
 	_, sMs, err := suite.recordRepo.ListModel(context.Background(), qpSorted)

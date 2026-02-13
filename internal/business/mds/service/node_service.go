@@ -291,8 +291,8 @@ func (s *MdsNodeService) ListMdsNode(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: []string{"MdsColony", "Host"},
 		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}

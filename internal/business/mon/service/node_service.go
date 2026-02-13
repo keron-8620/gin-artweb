@@ -295,8 +295,8 @@ func (s *NodeService) ListMonNode(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: []string{"Host"},
 		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}

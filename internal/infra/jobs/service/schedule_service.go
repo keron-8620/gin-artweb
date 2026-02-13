@@ -331,8 +331,8 @@ func (s *ScheduleService) ListSchedule(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: []string{"Script"},
 		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}

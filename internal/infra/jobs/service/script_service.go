@@ -375,8 +375,8 @@ func (s *ScriptService) ListScript(ctx *gin.Context) {
 	page, size, query := req.Query()
 	qp := database.QueryParams{
 		IsCount: true,
-		Limit:   size,
-		Offset:  page,
+		Size:    size,
+		Page:    page,
 		OrderBy: []string{"id DESC"},
 		Query:   query,
 	}
@@ -532,17 +532,17 @@ func (s *ScriptService) ListLabel(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询项目列表",
+		"开始查询标签列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	_, _, query := req.Query()
 
-	projects, err := s.ucScript.ListProjects(ctx, query)
+	labels, err := s.ucScript.ListLabels(ctx, query)
 	if err != nil {
 		s.log.Error(
-			"查询项目列表失败",
+			"查询标签列表失败",
 			zap.Error(err),
 			zap.Any(database.QueryParamsKey, query),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -559,7 +559,7 @@ func (s *ScriptService) ListLabel(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, &pbScript.ListProjectReply{
 		Code: http.StatusOK,
-		Data: projects,
+		Data: labels,
 	})
 }
 

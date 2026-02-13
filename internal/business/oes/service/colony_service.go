@@ -309,8 +309,8 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: []string{"Package", "XCounter", "MonNode"},
 		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}
@@ -371,8 +371,8 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"colony_num ASC"},
 		Query:    query,
 	}
@@ -452,8 +452,8 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"colony_num ASC"},
 		Query:    query,
 	}
@@ -533,8 +533,8 @@ func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"colony_num ASC"},
 		Query:    query,
 	}

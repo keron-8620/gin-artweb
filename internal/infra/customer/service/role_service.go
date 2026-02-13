@@ -321,8 +321,8 @@ func (s *RoleService) ListRole(ctx *gin.Context) {
 	page, size, query := req.Query()
 	qp := database.QueryParams{
 		IsCount: true,
-		Limit:   size,
-		Offset:  page,
+		Size:    size,
+		Page:    page,
 		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}

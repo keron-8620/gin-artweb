@@ -198,8 +198,8 @@ func (suite *MenuTestSuite) TestListMenus() {
 
 	// 测试查询菜单列表
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	count, ms, err := suite.menuRepo.ListModel(context.Background(), qp)
@@ -209,8 +209,8 @@ func (suite *MenuTestSuite) TestListMenus() {
 
 	// 测试分页查询
 	qpPaginated := database.QueryParams{
-		Limit:   2,
-		Offset:  0,
+		Size:    2,
+		Page:    0,
 		IsCount: true,
 	}
 	pTotal, pMs, err := suite.menuRepo.ListModel(context.Background(), qpPaginated)
@@ -324,8 +324,8 @@ func (suite *MenuTestSuite) TestUpdateMenuWithApis() {
 func (suite *MenuTestSuite) TestListMenusWithPaginationBoundaries() {
 	// 测试 Limit=0 的情况
 	qpZeroLimit := database.QueryParams{
-		Limit:   0,
-		Offset:  0,
+		Size:    0,
+		Page:    0,
 		IsCount: true,
 	}
 	_, msZero, err := suite.menuRepo.ListModel(context.Background(), qpZeroLimit)
@@ -334,8 +334,8 @@ func (suite *MenuTestSuite) TestListMenusWithPaginationBoundaries() {
 
 	// 测试较大的 Offset 值
 	qpLargeOffset := database.QueryParams{
-		Limit:   10,
-		Offset:  999999,
+		Size:    10,
+		Page:    999999,
 		IsCount: true,
 	}
 	_, msLarge, err := suite.menuRepo.ListModel(context.Background(), qpLargeOffset)
@@ -475,8 +475,8 @@ func (suite *MenuTestSuite) TestContextTimeout() {
 
 	// 测试ListModel方法
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	_, _, err = suite.menuRepo.ListModel(ctx, qp)
@@ -519,8 +519,8 @@ func (suite *MenuTestSuite) TestContextCancel() {
 
 	// 测试ListModel方法
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 	}
 	_, _, err = suite.menuRepo.ListModel(ctx, qp)
@@ -590,8 +590,8 @@ func (suite *MenuTestSuite) TestListMenusWithSorting() {
 
 	// 测试按Sort字段升序排序
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 		OrderBy: []string{"sort asc"},
 	}
@@ -610,8 +610,8 @@ func (suite *MenuTestSuite) TestListMenusWithSorting() {
 func (suite *MenuTestSuite) TestListMenusWithNoRecords() {
 	// 测试查询不存在的条件
 	qp := database.QueryParams{
-		Limit:   10,
-		Offset:  0,
+		Size:    10,
+		Page:    0,
 		IsCount: true,
 		Query:   map[string]any{"id": uint32(999999)},
 	}

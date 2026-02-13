@@ -243,12 +243,12 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	}
 
 	// 添加分页条件
-	if query.Limit > 0 {
-		mdb = mdb.Limit(query.Limit)
-	}
-
-	if query.Offset > 0 {
-		mdb = mdb.Offset(query.Offset)
+	if query.Size > 0 {
+		mdb = mdb.Limit(query.Size)
+		if query.Page > 0 {
+			offset := (query.Page - 1) * query.Size
+			mdb = mdb.Offset(offset)
+		}
 	}
 
 	// 预加载关联关系
@@ -284,8 +284,8 @@ type QueryParams struct {
 	Preloads []string       // 需要预加载的关联关系列表
 	Query    map[string]any // 查询条件映射
 	OrderBy  []string       // 排序字段列表
-	Limit    int            // 限制返回记录数
-	Offset   int            // 偏移量
+	Size     int            // 分页大小
+	Page     int            // 分页页码
 	IsCount  bool           // 是否查询总数
 	Omit     []string       // 需要忽略的字段列表
 	Columns  []string       // 查询字段列表
@@ -310,8 +310,8 @@ func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 
 	// 记录分页参数
-	enc.AddInt("limit", q.Limit)
-	enc.AddInt("offset", q.Offset)
+	enc.AddInt("size", q.Size)
+	enc.AddInt("page", q.Page)
 
 	// 记录是否查询总数
 	enc.AddBool("is_count", q.IsCount)

@@ -16,7 +16,7 @@ type ModelQuerier interface {
 }
 
 var (
-	DefaultPage int = 0
+	DefaultPage int = 1
 	DefaultSize int = 10
 )
 
@@ -40,9 +40,9 @@ func (q *BaseModelQuery) QueryMap(l int) (int, int, map[string]any) {
 		size int = DefaultSize
 	)
 	if q.Page > 1 {
-		page = q.Page - 1
+		page = q.Page
 	}
-	if q.Size > 0 {
+	if q.Size > 1 {
 		size = q.Size
 	}
 	query := make(map[string]any, l)

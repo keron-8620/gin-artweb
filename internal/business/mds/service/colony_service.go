@@ -302,8 +302,8 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: []string{"Package", "MonNode"},
 		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"id DESC"},
 		Query:    query,
 	}
@@ -363,8 +363,8 @@ func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
 	qp := database.QueryParams{
 		Preloads: nil,
 		IsCount:  false,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"colony_num ASC"},
 		Query:    query,
 	}

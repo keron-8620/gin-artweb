@@ -326,8 +326,8 @@ func (s *UserService) ListUser(ctx *gin.Context) {
 	page, size, query := req.Query()
 	qp := database.QueryParams{
 		IsCount:  true,
-		Limit:    size,
-		Offset:   page,
+		Size:     size,
+		Page:     page,
 		OrderBy:  []string{"id ASC"},
 		Query:    query,
 		Preloads: []string{"Role"},
@@ -623,8 +623,8 @@ func (s *UserService) ListLoginRecord(ctx *gin.Context) {
 	page, size, query := req.Query()
 	qp := database.QueryParams{
 		IsCount: true,
-		Limit:   size,
-		Offset:  page,
+		Size:    size,
+		Page:    page,
 		OrderBy: []string{"id DESC"},
 		Query:   query,
 	}
@@ -702,8 +702,8 @@ func (s *UserService) ListMeLoginRecord(ctx *gin.Context) {
 	page, size, query := req.Query()
 	qp := database.QueryParams{
 		IsCount: true,
-		Limit:   size,
-		Offset:  page,
+		Size:    size,
+		Page:    page,
 		OrderBy: []string{"id DESC"},
 		Query:   query,
 	}

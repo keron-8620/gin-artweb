@@ -6212,6 +6212,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/refresh/token": {
+            "post": {
+                "description": "本接口用于刷新令牌",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "刷新令牌接口",
+                "parameters": [
+                    {
+                        "description": "刷新令牌请求参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "刷新令牌成功",
+                        "schema": {
+                            "$ref": "#/definitions/user.LoginReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "用户名或密码错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/resource/host": {
             "get": {
                 "security": [
@@ -10553,6 +10605,18 @@ const docTemplate = `{
                 },
                 "old_password": {
                     "description": "原密码",
+                    "type": "string"
+                }
+            }
+        },
+        "user.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "description": "刷新令牌",
                     "type": "string"
                 }
             }

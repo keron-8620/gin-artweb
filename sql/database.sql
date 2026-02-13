@@ -44,6 +44,8 @@ insert into customer_api(id,url,method,label,descr) values('2003','/api/v1/jobs/
 insert into customer_api(id,url,method,label,descr) values('2004','/api/v1/jobs/script/:id','PUT','jobs','修改单个脚本');
 insert into customer_api(id,url,method,label,descr) values('2005','/api/v1/jobs/script/:id','DELETE','jobs','删除单个脚本');
 insert into customer_api(id,url,method,label,descr) values('2006','/api/v1/jobs/script/:id/download','GET','jobs','下载单个脚本');
+insert into customer_api(id,url,method,label,descr) values('2007','/api/v1/jobs/script/project','GET','jobs','查询脚本所有的项目');
+insert into customer_api(id,url,method,label,descr) values('2008','/api/v1/jobs/script/label','GET','jobs','查询脚本所有的标签');
 insert into customer_api(id,url,method,label,descr) values('2011','/api/v1/jobs/record','GET','jobs','查询脚本执行记录列表');
 insert into customer_api(id,url,method,label,descr) values('2012','/api/v1/jobs/record','POST','jobs','执行脚本');
 insert into customer_api(id,url,method,label,descr) values('2013','/api/v1/jobs/record/:id','GET','jobs','查询单个脚本执行记录');
@@ -319,6 +321,8 @@ insert into customer_role_api(role_id,api_id) values('1','5021');
 insert into customer_role_api(role_id,api_id) values('1','5022');
 insert into customer_role_api(role_id,api_id) values('1','5025');
 insert into customer_role_api(role_id,api_id) values('1','5026');
+insert into customer_role_api(role_id,api_id) values('1','2007');
+insert into customer_role_api(role_id,api_id) values('1','2008');
 
 
 insert into customer_role_menu(role_id,menu_id) values('1','1');
