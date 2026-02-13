@@ -31,8 +31,8 @@ type RoleStandardOut struct {
 type RoleDetailOut struct {
 	RoleStandardOut
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids"`
+	// APIID列表
+	ApiIDs []uint32 `json:"api_ids"`
 
 	// 菜单ID列表
 	MenuIDs []uint32 `json:"menu_ids"`
@@ -58,5 +58,5 @@ type RoleMenuPerm struct {
 	Buttons []button.ButtonBaseOut `json:"buttons"`
 }
 
-// RolePermTreeReply 角色响应结构
+// RoleMenuTreeReply 角色响应结构
 type RoleMenuTreeReply = common.APIReply[*[]RoleMenuPerm]

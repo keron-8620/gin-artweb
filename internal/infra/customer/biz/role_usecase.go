@@ -4,137 +4,79 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/infra/customer/data"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-const (
-	RoleTableName = "customer_role"
-	RoleIDKey     = "role_id"
-	RoleBase      = "role_base"
-)
-
-type RoleModel struct {
-	database.StandardModel
-	Name        string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Descr       string            `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	Permissions []PermissionModel `gorm:"many2many:customer_role_permission;joinForeignKey:role_id;joinReferences:permission_id;constraint:OnDelete:CASCADE"`
-	Menus       []MenuModel       `gorm:"many2many:customer_role_menu;joinForeignKey:role_id;joinReferences:menu_id;constraint:OnDelete:CASCADE"`
-	Buttons     []ButtonModel     `gorm:"many2many:customer_role_button;joinForeignKey:role_id;joinReferences:button_id;constraint:OnDelete:CASCADE"`
-}
-
-func (m *RoleModel) TableName() string {
-	return RoleTableName
-}
-
-func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("name", m.Name)
-	enc.AddString("descr", m.Descr)
-	enc.AddArray(PermissionIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, perm := range m.Permissions {
-			ae.AppendUint32(perm.ID)
-		}
-		return nil
-	}))
-	enc.AddArray(MenuIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, menu := range m.Menus {
-			ae.AppendUint32(menu.ID)
-		}
-		return nil
-	}))
-	enc.AddArray(ButtonIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, button := range m.Buttons {
-			ae.AppendUint32(button.ID)
-		}
-		return nil
-	}))
-	return nil
-}
-
 type MenuTreeNode struct {
-	MenuModel MenuModel
-	Children  []*MenuTreeNode
-	Buttons   []ButtonModel
-}
-
-type RoleRepo interface {
-	CreateModel(context.Context, *RoleModel, *[]PermissionModel, *[]MenuModel, *[]ButtonModel) error
-	UpdateModel(context.Context, map[string]any, *[]PermissionModel, *[]MenuModel, *[]ButtonModel, ...any) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, []string, ...any) (*RoleModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]RoleModel, error)
-	AddGroupPolicy(context.Context, *RoleModel) error
-	RemoveGroupPolicy(context.Context, *RoleModel) error
+	Menu     model.MenuModel
+	Children []*MenuTreeNode
+	Buttons  []model.ButtonModel
 }
 
 type RoleUsecase struct {
 	log        *zap.Logger
-	permRepo   PermissionRepo
-	menuRepo   MenuRepo
-	buttonRepo ButtonRepo
-	roleRepo   RoleRepo
+	apiRepo    *data.ApiRepo
+	menuRepo   *data.MenuRepo
+	buttonRepo *data.ButtonRepo
+	roleRepo   *data.RoleRepo
 }
 
 func NewRoleUsecase(
 	log *zap.Logger,
-	permRepo PermissionRepo,
-	menuRepo MenuRepo,
-	buttonRepo ButtonRepo,
-	roleRepo RoleRepo,
+	apiRepo *data.ApiRepo,
+	menuRepo *data.MenuRepo,
+	buttonRepo *data.ButtonRepo,
+	roleRepo *data.RoleRepo,
 ) *RoleUsecase {
 	return &RoleUsecase{
 		log:        log,
-		permRepo:   permRepo,
+		apiRepo:    apiRepo,
 		menuRepo:   menuRepo,
 		buttonRepo: buttonRepo,
 		roleRepo:   roleRepo,
 	}
 }
 
-func (uc *RoleUsecase) GetPermissions(
+func (uc *RoleUsecase) GetApis(
 	ctx context.Context,
-	permIDs []uint32,
-) (*[]PermissionModel, *errors.Error) {
+	apiIDs []uint32,
+) (*[]model.ApiModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
-	if len(permIDs) == 0 {
-		return &[]PermissionModel{}, nil
+	if len(apiIDs) == 0 {
+		return &[]model.ApiModel{}, nil
 	}
 
 	uc.log.Info(
-		"开始查询角色关联的权限列表",
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		"开始查询角色关联的API列表",
+		zap.Uint32s("api_ids", apiIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
-		Query: map[string]any{"id in ?": permIDs},
+		Query: map[string]any{"id in ?": apiIDs},
 	}
-	_, ms, err := uc.permRepo.ListModel(ctx, qp)
+	_, ms, err := uc.apiRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
-			"查询角色关联的权限列表失败",
+			"查询角色关联的API列表失败",
 			zap.Error(err),
-			zap.Uint32s(PermissionIDsKey, permIDs),
+			zap.Uint32s("api_ids", apiIDs),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
 
 	uc.log.Info(
-		"查询角色关联的权限列表成功",
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		"查询角色关联的API列表成功",
+		zap.Uint32s("api_ids", apiIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
@@ -143,18 +85,18 @@ func (uc *RoleUsecase) GetPermissions(
 func (uc *RoleUsecase) GetMenus(
 	ctx context.Context,
 	menuIDs []uint32,
-) (*[]MenuModel, *errors.Error) {
+) (*[]model.MenuModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	if len(menuIDs) == 0 {
-		return &[]MenuModel{}, nil
+		return &[]model.MenuModel{}, nil
 	}
 
 	uc.log.Info(
 		"开始角色关联的菜单列表",
-		zap.Uint32s(MenuIDsKey, menuIDs),
+		zap.Uint32s("menu_ids", menuIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -166,7 +108,7 @@ func (uc *RoleUsecase) GetMenus(
 		uc.log.Error(
 			"查询角色关联的菜单列表失败",
 			zap.Error(err),
-			zap.Uint32s(MenuIDsKey, menuIDs),
+			zap.Uint32s("menu_ids", menuIDs),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
@@ -174,7 +116,7 @@ func (uc *RoleUsecase) GetMenus(
 
 	uc.log.Info(
 		"查询角色关联的菜单列表成功",
-		zap.Uint32s(MenuIDsKey, menuIDs),
+		zap.Uint32s("menu_ids", menuIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
@@ -183,18 +125,18 @@ func (uc *RoleUsecase) GetMenus(
 func (uc *RoleUsecase) GetButtons(
 	ctx context.Context,
 	buttonIDs []uint32,
-) (*[]ButtonModel, *errors.Error) {
+) (*[]model.ButtonModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	if len(buttonIDs) == 0 {
-		return &[]ButtonModel{}, nil
+		return &[]model.ButtonModel{}, nil
 	}
 
 	uc.log.Info(
 		"开始查询角色关联的按钮列表",
-		zap.Uint32s(ButtonIDsKey, buttonIDs),
+		zap.Uint32s("button_ids", buttonIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -206,7 +148,7 @@ func (uc *RoleUsecase) GetButtons(
 		uc.log.Error(
 			"查询角色关联的按钮列表失败",
 			zap.Error(err),
-			zap.Uint32s(ButtonIDsKey, buttonIDs),
+			zap.Uint32s("button_ids", buttonIDs),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
@@ -214,7 +156,7 @@ func (uc *RoleUsecase) GetButtons(
 
 	uc.log.Info(
 		"查询角色关联的按钮列表成功",
-		zap.Uint32s(ButtonIDsKey, buttonIDs),
+		zap.Uint32s("button_ids", buttonIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
@@ -222,38 +164,45 @@ func (uc *RoleUsecase) GetButtons(
 
 func (uc *RoleUsecase) CreateRole(
 	ctx context.Context,
-	permIDs []uint32,
+	apiIDs []uint32,
 	menuIDs []uint32,
 	buttonIDs []uint32,
-	m RoleModel,
-) (*RoleModel, *errors.Error) {
+	m model.RoleModel,
+) (*model.RoleModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始创建角色",
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Uint32s("api_ids", apiIDs),
 		zap.Object(database.ModelKey, &m),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	perms, err := uc.GetPermissions(ctx, permIDs)
-	if err != nil {
-		return nil, err
+	var (
+		apis    *[]model.ApiModel
+		menus   *[]model.MenuModel
+		buttons *[]model.ButtonModel
+		rErr    *errors.Error
+	)
+
+	apis, rErr = uc.GetApis(ctx, apiIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
-	menus, err := uc.GetMenus(ctx, menuIDs)
-	if err != nil {
-		return nil, err
+	menus, rErr = uc.GetMenus(ctx, menuIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
-	buttons, err := uc.GetButtons(ctx, buttonIDs)
-	if err != nil {
-		return nil, err
+	buttons, rErr = uc.GetButtons(ctx, buttonIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
-	if err := uc.roleRepo.CreateModel(ctx, &m, perms, menus, buttons); err != nil {
+	if err := uc.roleRepo.CreateModel(ctx, &m, apis, menus, buttons); err != nil {
 		uc.log.Error(
 			"创建角色失败",
 			zap.Error(err),
@@ -263,9 +212,9 @@ func (uc *RoleUsecase) CreateRole(
 		return nil, errors.NewGormError(err, nil)
 	}
 
-	if perms != nil {
-		if len(*perms) > 0 {
-			m.Permissions = *perms
+	if apis != nil {
+		if len(*apis) > 0 {
+			m.Apis = *apis
 		}
 	}
 	if menus != nil {
@@ -300,53 +249,61 @@ func (uc *RoleUsecase) CreateRole(
 func (uc *RoleUsecase) UpdateRoleByID(
 	ctx context.Context,
 	roleID uint32,
-	permIDs []uint32,
+	apiIDs []uint32,
 	menuIDs []uint32,
 	buttonIDs []uint32,
 	data map[string]any,
-) (*RoleModel, *errors.Error) {
+) (*model.RoleModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始更新角色",
-		zap.Uint32(RoleIDKey, roleID),
-		zap.Uint32s(PermissionIDsKey, permIDs),
-		zap.Uint32s(MenuIDsKey, menuIDs),
-		zap.Uint32s(ButtonIDsKey, buttonIDs),
+		zap.Uint32("role_id", roleID),
+		zap.Uint32s("api_ids", apiIDs),
+		zap.Uint32s("menu_ids", menuIDs),
+		zap.Uint32s("button_ids", buttonIDs),
 		zap.Any(database.UpdateDataKey, data),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	perms, err := uc.GetPermissions(ctx, permIDs)
-	if err != nil {
-		return nil, err
+	var (
+		apis    *[]model.ApiModel
+		menus   *[]model.MenuModel
+		buttons *[]model.ButtonModel
+		rErr    *errors.Error
+	)
+
+	apis, rErr = uc.GetApis(ctx, apiIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
-	menus, err := uc.GetMenus(ctx, menuIDs)
-	if err != nil {
-		return nil, err
+	menus, rErr = uc.GetMenus(ctx, menuIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
-	buttons, err := uc.GetButtons(ctx, buttonIDs)
-	if err != nil {
-		return nil, err
+	buttons, rErr = uc.GetButtons(ctx, buttonIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
 	data["id"] = roleID
-	if err := uc.roleRepo.UpdateModel(ctx, data, perms, menus, buttons, "id = ?", roleID); err != nil {
+	if err := uc.roleRepo.UpdateModel(ctx, data, apis, menus, buttons, "id = ?", roleID); err != nil {
 		uc.log.Error(
 			"更新角色失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, data)
 	}
 
-	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
+	var m *model.RoleModel
+	m, rErr = uc.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -355,7 +312,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 		uc.log.Error(
 			"移除旧角色组策略失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.FromError(err)
@@ -365,7 +322,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 		uc.log.Error(
 			"添加新角色组策略失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.FromError(err)
@@ -373,7 +330,7 @@ func (uc *RoleUsecase) UpdateRoleByID(
 
 	uc.log.Info(
 		"更新角色成功",
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -389,11 +346,11 @@ func (uc *RoleUsecase) DeleteRoleByID(
 
 	uc.log.Info(
 		"开始删除角色",
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
+	m, rErr := uc.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		return rErr
 	}
@@ -402,7 +359,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 		uc.log.Error(
 			"删除角色失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": roleID})
@@ -412,7 +369,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 		uc.log.Error(
 			"移除角色组策略失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(err)
@@ -420,7 +377,7 @@ func (uc *RoleUsecase) DeleteRoleByID(
 
 	uc.log.Info(
 		"删除角色成功",
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -430,7 +387,7 @@ func (uc *RoleUsecase) FindRoleByID(
 	ctx context.Context,
 	preloads []string,
 	roleID uint32,
-) (*RoleModel, *errors.Error) {
+) (*model.RoleModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -438,7 +395,7 @@ func (uc *RoleUsecase) FindRoleByID(
 	uc.log.Info(
 		"开始查询角色",
 		zap.Strings(database.PreloadKey, preloads),
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -447,7 +404,7 @@ func (uc *RoleUsecase) FindRoleByID(
 		uc.log.Error(
 			"查询角色失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": roleID})
@@ -455,7 +412,7 @@ func (uc *RoleUsecase) FindRoleByID(
 
 	uc.log.Info(
 		"查询角色成功",
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -464,7 +421,7 @@ func (uc *RoleUsecase) FindRoleByID(
 func (uc *RoleUsecase) ListRole(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]RoleModel, *errors.Error) {
+) (int64, *[]model.RoleModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -504,18 +461,18 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 	)
 
 	qp := database.QueryParams{
-		Preloads: []string{"Permissions", "Menus", "Buttons"},
+		Preloads: []string{"Apis", "Menus", "Buttons"},
 		Columns:  []string{"id"},
 	}
 
-	_, rms, err := uc.ListRole(ctx, qp)
-	if err != nil {
+	_, rms, rErr := uc.ListRole(ctx, qp)
+	if rErr != nil {
 		uc.log.Error(
 			"加载角色策略时查询角色列表失败",
-			zap.Error(err),
+			zap.Error(rErr),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return err
+		return rErr
 	}
 
 	var policyCount int
@@ -527,7 +484,7 @@ func (uc *RoleUsecase) LoadRolePolicy(ctx context.Context) *errors.Error {
 				uc.log.Error(
 					"加载角色策略失败",
 					zap.Error(err),
-					zap.Uint32(MenuIDKey, ms[i].ID),
+					zap.Uint32("role_id", ms[i].ID),
 					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return errors.FromError(err)
@@ -547,15 +504,15 @@ func (uc *RoleUsecase) GetRoleMenuTree(
 	ctx context.Context,
 	roleID uint32,
 ) ([]*MenuTreeNode, *errors.Error) {
-	m, rErr := uc.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, roleID)
+	m, rErr := uc.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		return nil, rErr
 	}
-	roleMenuMap := make(map[uint32]MenuModel)
+	roleMenuMap := make(map[uint32]model.MenuModel)
 	for _, menu := range m.Menus {
 		roleMenuMap[menu.ID] = menu
 	}
-	roleButtonMap := make(map[uint32]ButtonModel)
+	roleButtonMap := make(map[uint32]model.ButtonModel)
 	for _, button := range m.Buttons {
 		roleButtonMap[button.ID] = button
 	}
@@ -573,11 +530,11 @@ func (uc *RoleUsecase) GetRoleMenuTree(
 }
 
 func (uc *RoleUsecase) buildMenuTree(
-	m MenuModel,
-	mp map[uint32]MenuModel,
-	bp map[uint32]ButtonModel,
+	m model.MenuModel,
+	mp map[uint32]model.MenuModel,
+	bp map[uint32]model.ButtonModel,
 ) (*MenuTreeNode, *errors.Error) {
-	var children []MenuModel
+	var children []model.MenuModel
 	for _, menu := range mp {
 		if menu.ParentID != nil && *menu.ParentID == m.ID {
 			children = append(children, menu)
@@ -591,15 +548,15 @@ func (uc *RoleUsecase) buildMenuTree(
 		}
 		childTrees = append(childTrees, childTree)
 	}
-	var buttons []ButtonModel
+	var buttons []model.ButtonModel
 	for _, button := range bp {
 		if button.MenuID == m.ID {
 			buttons = append(buttons, button)
 		}
 	}
 	return &MenuTreeNode{
-		MenuModel: m,
-		Children:  childTrees,
-		Buttons:   buttons,
+		Menu:     m,
+		Children: childTrees,
+		Buttons:  buttons,
 	}, nil
 }

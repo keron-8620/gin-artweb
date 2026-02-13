@@ -3,12 +3,12 @@ package server
 import (
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/resource/biz"
+	"gin-artweb/internal/infra/resource/model"
 )
 
 func DBAutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&biz.HostModel{},
-		&biz.PackageModel{},
+		&model.HostModel{},
+		&model.PackageModel{},
 	)
 }

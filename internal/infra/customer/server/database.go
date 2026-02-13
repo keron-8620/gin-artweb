@@ -3,16 +3,16 @@ package server
 import (
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 )
 
 func DBAutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&biz.PermissionModel{},
-		&biz.MenuModel{},
-		&biz.ButtonModel{},
-		&biz.RoleModel{},
-		&biz.UserModel{},
-		&biz.LoginRecordModel{},
+		&model.ApiModel{},
+		&model.MenuModel{},
+		&model.ButtonModel{},
+		&model.RoleModel{},
+		&model.UserModel{},
+		&model.LoginRecordModel{},
 	)
 }

@@ -1,4 +1,4 @@
-package permission
+package api
 
 import (
 	"go.uber.org/zap/zapcore"
@@ -6,10 +6,10 @@ import (
 	"gin-artweb/api/common"
 )
 
-// CreatePermissionRequest 用于创建权限的请求结构体
+// CreateApiRequest 用于创建权限的请求结构体
 //
-// swagger:model CreatePermissionRequest
-type CreatePermissionRequest struct {
+// swagger:model CreateApiRequest
+type CreateApiRequest struct {
 	// 唯一标识
 	ID uint32 `json:"id" form:"id" binding:"required,gt=0"`
 
@@ -26,7 +26,7 @@ type CreatePermissionRequest struct {
 	Descr string `json:"descr" form:"descr" binding:"max=254"`
 }
 
-func (req *CreatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (req *CreateApiRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("id", req.ID)
 	enc.AddString("url", req.URL)
 	enc.AddString("method", req.Method)
@@ -35,11 +35,11 @@ func (req *CreatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) 
 	return nil
 }
 
-// UpdatePermissionRequest 用于更新权限的请求结构体
+// UpdateApiRequest 用于更新权限的请求结构体
 // 包含权限主键、HTTP URL、请求方法和描述信息
 //
-// swagger:model UpdatePermissionRequest
-type UpdatePermissionRequest struct {
+// swagger:model UpdateApiRequest
+type UpdateApiRequest struct {
 	// URL地址
 	URL string `json:"url" form:"url" binding:"required,max=150"`
 
@@ -53,7 +53,7 @@ type UpdatePermissionRequest struct {
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 }
 
-func (req *UpdatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (req *UpdateApiRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("url", req.URL)
 	enc.AddString("method", req.Method)
 	enc.AddString("label", req.Label)
@@ -61,11 +61,11 @@ func (req *UpdatePermissionRequest) MarshalLogObject(enc zapcore.ObjectEncoder) 
 	return nil
 }
 
-// ListPermissionRequest 用于获取权限列表的请求结构体
+// ListApiRequest 用于获取权限列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListPermissionRequest
-type ListPermissionRequest struct {
+// swagger:model ListApiRequest
+type ListApiRequest struct {
 	common.StandardModelQuery
 
 	// URL地址
@@ -81,7 +81,7 @@ type ListPermissionRequest struct {
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 }
 
-func (req *ListPermissionRequest) Query() (int, int, map[string]any) {
+func (req *ListApiRequest) Query() (int, int, map[string]any) {
 	page, size, query := req.StandardModelQuery.QueryMap(10)
 	if req.URL != "" {
 		query["url like ?"] = "%" + req.URL + "%"

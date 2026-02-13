@@ -11,6 +11,7 @@ import (
 	pbRole "gin-artweb/api/customer/role"
 	pbUser "gin-artweb/api/customer/user"
 	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -63,7 +64,7 @@ func (s *UserService) CreateUser(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucUser.CreateUser(ctx, biz.UserModel{
+	m, err := s.ucUser.CreateUser(ctx, model.UserModel{
 		Username: req.Username,
 		Password: req.Password,
 		IsActive: req.IsActive,
@@ -544,6 +545,50 @@ func (s *UserService) Login(ctx *gin.Context) {
 	})
 }
 
+// @Summary 刷新令牌接口
+// @Description 本接口用于刷新令牌
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Param request body pbUser.RefreshTokenRequest true "刷新令牌请求参数"
+// @Success 200 {object} pbUser.LoginReply "刷新令牌成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 401 {object} errors.Error "用户名或密码错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/refresh/token [post]
+func (s *UserService) RefreshToken(ctx *gin.Context) {
+	var req pbUser.RefreshTokenRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		s.log.Error(
+			"绑定刷新令牌参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+	accessToken, refreshToken, rErr := s.ucUser.RefreshTokens(ctx, req.RefreshToken)
+	if rErr != nil {
+		s.log.Error(
+			"刷新令牌失败",
+			zap.Error(rErr),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+	ctx.JSON(http.StatusOK, &pbUser.LoginReply{
+		Code: http.StatusOK,
+		Data: pbUser.LoginOut{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+	})
+}
+
 // @Summary 查询用户的登录记录列表
 // @Description 本接口用于查询用户登录记录列表
 // @Tags 用户管理
@@ -702,7 +747,7 @@ func (s *UserService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func UserModelToBaseOut(
-	m biz.UserModel,
+	m model.UserModel,
 ) *pbUser.UserBaseOut {
 	return &pbUser.UserBaseOut{
 		ID:       m.ID,
@@ -713,7 +758,7 @@ func UserModelToBaseOut(
 }
 
 func UserModelToStandardOut(
-	m biz.UserModel,
+	m model.UserModel,
 ) *pbUser.UserStandardOut {
 	return &pbUser.UserStandardOut{
 		UserBaseOut: *UserModelToBaseOut(m),
@@ -723,7 +768,7 @@ func UserModelToStandardOut(
 }
 
 func UserModelToDetailOut(
-	m biz.UserModel,
+	m model.UserModel,
 ) *pbUser.UserDetailOut {
 	var role *pbRole.RoleBaseOut
 	if m.Role.ID != 0 {
@@ -736,7 +781,7 @@ func UserModelToDetailOut(
 }
 
 func ListUserModelToDetailOut(
-	ums *[]biz.UserModel,
+	ums *[]model.UserModel,
 ) *[]pbUser.UserDetailOut {
 	if ums == nil {
 		return &[]pbUser.UserDetailOut{}
@@ -753,7 +798,7 @@ func ListUserModelToDetailOut(
 }
 
 func LoginRecordModelToStandardOut(
-	m biz.LoginRecordModel,
+	m model.LoginRecordModel,
 ) *pbUser.LoginRecordStandardOut {
 	return &pbUser.LoginRecordStandardOut{
 		ID:        m.ID,
@@ -766,7 +811,7 @@ func LoginRecordModelToStandardOut(
 }
 
 func ListLoginRecordModelToStandardOut(
-	lms *[]biz.LoginRecordModel,
+	lms *[]model.LoginRecordModel,
 ) *[]pbUser.LoginRecordStandardOut {
 	if lms == nil {
 		return &[]pbUser.LoginRecordStandardOut{}

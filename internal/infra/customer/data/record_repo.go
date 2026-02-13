@@ -9,18 +9,18 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 )
 
-// loginRecordRepo 登录记录仓库实现
+// LoginRecordRepo 登录记录仓库实现
 // 负责登录记录的CRUD操作和登录失败次数的缓存管理
 // 使用GORM进行数据库操作，使用cache进行登录失败次数的缓存
 
-type loginRecordRepo struct {
+type LoginRecordRepo struct {
 	log      *zap.Logger       // 日志记录器
 	gormDB   *gorm.DB          // GORM数据库连接
 	timeouts *config.DBTimeout // 数据库操作超时配置
@@ -42,7 +42,7 @@ type loginRecordRepo struct {
 //
 // 返回值：
 //
-//	biz.LoginRecordRepo: 登录记录仓库接口实现
+//	model.LoginRecordRepo: 登录记录仓库接口实现
 func NewLoginRecordRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
@@ -50,8 +50,8 @@ func NewLoginRecordRepo(
 	lockTime time.Duration,
 	clearTime time.Duration,
 	num int,
-) biz.LoginRecordRepo {
-	return &loginRecordRepo{
+) *LoginRecordRepo {
+	return &LoginRecordRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
@@ -77,7 +77,7 @@ func NewLoginRecordRepo(
 //  2. 设置登录时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordModel) error {
+func (r *LoginRecordRepo) CreateModel(ctx context.Context, m *model.LoginRecordModel) error {
 	// 检查参数
 	if m == nil {
 		err := errors.New("创建登录记录模型失败: 模型为空")
@@ -96,7 +96,7 @@ func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordMod
 	)
 	now := time.Now()
 	m.LoginAt = now
-	if err := database.DBCreate(ctx, r.gormDB, &biz.LoginRecordModel{}, m, nil); err != nil {
+	if err := database.DBCreate(ctx, r.gormDB, &model.LoginRecordModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建登录记录模型失败",
 			zap.Object(database.ModelKey, m),
@@ -125,7 +125,7 @@ func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordMod
 // 返回值：
 //
 //	int64: 总记录数
-//	*[]biz.LoginRecordModel: 登录记录模型列表指针，包含符合条件的登录记录
+//	*[]model.LoginRecordModel: 登录记录模型列表指针，包含符合条件的登录记录
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -133,18 +133,18 @@ func (r *loginRecordRepo) CreateModel(ctx context.Context, m *biz.LoginRecordMod
 //  2. 获取登录记录模型列表
 //  3. 返回总记录数和模型列表
 //  4. 记录操作日志
-func (r *loginRecordRepo) ListModel(
+func (r *LoginRecordRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]biz.LoginRecordModel, error) {
+) (int64, *[]model.LoginRecordModel, error) {
 	r.log.Debug(
 		"开始查询登录记录模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	var ms []biz.LoginRecordModel
-	count, err := database.DBList(ctx, r.gormDB, &biz.LoginRecordModel{}, &ms, qp)
+	var ms []model.LoginRecordModel
+	count, err := database.DBList(ctx, r.gormDB, &model.LoginRecordModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询登录记录列表失败",
@@ -182,7 +182,7 @@ func (r *loginRecordRepo) ListModel(
 //  3. 从缓存中获取登录失败次数
 //  4. 未找到记录时返回最大允许失败次数
 //  5. 记录操作日志
-func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
+func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
 	// 检查上下文
 	if ctx.Err() != nil {
 		return 0, errors.WrapIf(ctx.Err(), "GetLoginFailNum操作失败: 上下文错误")
@@ -238,7 +238,7 @@ func (r *loginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 //  2. 检查IP地址是否为空
 //  3. 将登录失败次数设置到缓存中
 //  4. 记录操作日志
-func (r *loginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
+func (r *LoginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
 	// 检查上下文
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "SetLoginFailNum操作失败: 上下文错误")

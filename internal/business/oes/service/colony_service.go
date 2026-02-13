@@ -11,7 +11,7 @@ import (
 	pbColony "gin-artweb/api/oes/colony"
 	svMon "gin-artweb/internal/business/mon/service"
 	"gin-artweb/internal/business/oes/biz"
-	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	jobsModel "gin-artweb/internal/infra/jobs/model"
 	svReso "gin-artweb/internal/infra/resource/service"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -602,6 +602,7 @@ func OesColonyToBaseOut(
 		SystemType:    m.SystemType,
 		ColonyNum:     m.ColonyNum,
 		ExtractedName: m.ExtractedName,
+		IsEnable:      m.IsEnable,
 	}
 }
 
@@ -685,7 +686,7 @@ func BuildOptColonyTaskInfo(t biz.OptTaskExecutionInfo) pbColony.OesColonyTaskIn
 	}
 }
 
-func BuildTaskInfoFromScriptRecord(taskName string, m *bizJobs.ScriptRecordModel) pbComm.TaskInfo {
+func BuildTaskInfoFromScriptRecord(taskName string, m *jobsModel.ScriptRecordModel) pbComm.TaskInfo {
 	result := pbComm.TaskInfo{
 		TaskName: taskName,
 	}

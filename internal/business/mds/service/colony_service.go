@@ -11,7 +11,7 @@ import (
 	pbColony "gin-artweb/api/mds/colony"
 	"gin-artweb/internal/business/mds/biz"
 	svMon "gin-artweb/internal/business/mon/service"
-	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	jobsModel "gin-artweb/internal/infra/jobs/model"
 	svReso "gin-artweb/internal/infra/resource/service"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -429,6 +429,7 @@ func MdsColonyToBaseOut(
 		ID:            m.ID,
 		ColonyNum:     m.ColonyNum,
 		ExtractedName: m.ExtractedName,
+		IsEnable:      m.IsEnable,
 	}
 }
 
@@ -481,7 +482,7 @@ func BuildMdsColonyTaskInfo(t biz.MdsTaskExecutionInfo) pbColony.MdsColonyTaskIn
 	}
 }
 
-func BuildTaskInfoFromScriptRecord(taskName string, m *bizJobs.ScriptRecordModel) pbComm.TaskInfo {
+func BuildTaskInfoFromScriptRecord(taskName string, m *jobsModel.ScriptRecordModel) pbComm.TaskInfo {
 	result := pbComm.TaskInfo{
 		TaskName: taskName,
 	}

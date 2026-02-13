@@ -16,8 +16,8 @@ type CreateOrUpdateRoleRequest struct {
 	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
+	// APIID列表
+	ApiIDs []uint32 `json:"api_ids" form:"api_ids" binding:"omitempty"`
 
 	// 菜单ID列表
 	MenuIDs []uint32 `json:"menu_ids" form:"menu_ids" binding:"omitempty"`
@@ -29,8 +29,8 @@ type CreateOrUpdateRoleRequest struct {
 func (req *CreateOrUpdateRoleRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", req.Name)
 	enc.AddString("descr", req.Descr)
-	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, id := range req.PermissionIDs {
+	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil

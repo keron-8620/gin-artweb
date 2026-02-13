@@ -12,8 +12,8 @@ type ButtonBaseOut struct {
 	// 名称
 	Name string `json:"name" example:"用户管理"`
 
-	// 排列顺序
-	ArrangeOrder uint32 `json:"arrange_order" example:"1000"`
+	// 排序字段
+	Sort uint32 `json:"sort" example:"1000"`
 
 	// 是否激活
 	IsActive bool `json:"is_active" example:"true"`
@@ -40,8 +40,8 @@ type ButtonDetailOut struct {
 	// 菜单
 	Menu *menu.MenuStandardOut `json:"menu"`
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids"`
+	// API ID列表
+	ApiIDs []uint32 `json:"api_ids"`
 }
 
 // ButtonBaseReply 按钮响应结构

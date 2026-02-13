@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	jobsModel "gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
 )
@@ -38,11 +38,11 @@ func (mc OptTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 type OptTaskExecutionInfo struct {
 	ColonyNum         string
-	Mon               *bizJobs.ScriptRecordModel
-	CounterFetch      *bizJobs.ScriptRecordModel
-	CounterDistribute *bizJobs.ScriptRecordModel
-	Sse               *bizJobs.ScriptRecordModel
-	Szse              *bizJobs.ScriptRecordModel
+	Mon               *jobsModel.ScriptRecordModel
+	CounterFetch      *jobsModel.ScriptRecordModel
+	CounterDistribute *jobsModel.ScriptRecordModel
+	Sse               *jobsModel.ScriptRecordModel
+	Szse              *jobsModel.ScriptRecordModel
 }
 
 type OptTaskExecutionInfoUsecase struct {
@@ -111,7 +111,7 @@ func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	ctx context.Context,
 	tr OptTaskRecordCache,
-	cache map[uint32]bizJobs.ScriptRecordModel,
+	cache map[uint32]jobsModel.ScriptRecordModel,
 ) (OptTaskExecutionInfo, *errors.Error) {
 	if ctx.Err() != nil {
 		return OptTaskExecutionInfo{}, errors.FromError(ctx.Err())

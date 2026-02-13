@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/infra/jobs/biz"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -258,7 +259,9 @@ func (s *ScriptRecordService) DownloadScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 
-	if err := common.DownloadFile(ctx, s.log, m.LogPath(), m.LogName); err != nil {
+	logPath := biz.GetScriptLogPath(*m)
+
+	if err := common.DownloadFile(ctx, s.log, logPath, m.LogName); err != nil {
 		errors.RespondWithError(ctx, err)
 	}
 }
@@ -300,17 +303,17 @@ func (s *ScriptRecordService) StreamScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 
-	logPath := m.LogPath()
+	logPath := biz.GetScriptLogPath(*m)
 
 	// 检查日志文件是否存在
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		s.log.Error(
 			"日志文件不存在",
 			zap.String("log_path", logPath),
-			zap.Uint32(biz.ScriptRecordIDKey, uri.ID),
+			zap.Uint32("script_record_id", uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		rErr := errors.ErrScriptNotFound.WithField(biz.ScriptRecordIDKey, uri.ID)
+		rErr := errors.ErrScriptNotFound.WithField("script_record_id", uri.ID)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
@@ -486,7 +489,7 @@ func (s *ScriptRecordService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func ScriptRecordToStandardOut(
-	m biz.ScriptRecordModel,
+	m model.ScriptRecordModel,
 ) *pbRecord.ScriptRecordStandardOut {
 	return &pbRecord.ScriptRecordStandardOut{
 		ID:           m.ID,
@@ -505,7 +508,7 @@ func ScriptRecordToStandardOut(
 }
 
 func ScriptRecordToDetailOut(
-	m biz.ScriptRecordModel,
+	m model.ScriptRecordModel,
 ) *pbRecord.ScriptRecordDetailOut {
 	var script *pbScript.ScriptStandardOut
 	if m.Script.ID != 0 {
@@ -525,7 +528,7 @@ func ScriptRecordToDetailOut(
 }
 
 func ListScriptRecordToDetailOut(
-	rms *[]biz.ScriptRecordModel,
+	rms *[]model.ScriptRecordModel,
 ) *[]pbRecord.ScriptRecordDetailOut {
 	if rms == nil {
 		return &[]pbRecord.ScriptRecordDetailOut{}

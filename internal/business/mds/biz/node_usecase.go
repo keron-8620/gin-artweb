@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizReso "gin-artweb/internal/infra/resource/biz"
+	resModel "gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -22,12 +22,12 @@ const (
 
 type MdsNodeModel struct {
 	database.StandardModel
-	NodeRole    string            `gorm:"column:node_role;type:varchar(50);comment:节点角色" json:"role"`
-	IsEnable    bool              `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
-	MdsColonyID uint32            `gorm:"column:mds_colony_id;not null;comment:mds集群ID" json:"mds_colony_id"`
-	MdsColony   MdsColonyModel    `gorm:"foreignKey:MdsColonyID;references:ID;constraint:OnDelete:CASCADE" json:"mds_colony"`
-	HostID      uint32            `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        bizReso.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	NodeRole    string             `gorm:"column:node_role;type:varchar(50);comment:节点角色" json:"role"`
+	IsEnable    bool               `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
+	MdsColonyID uint32             `gorm:"column:mds_colony_id;not null;comment:mds集群ID" json:"mds_colony_id"`
+	MdsColony   MdsColonyModel     `gorm:"foreignKey:MdsColonyID;references:ID;constraint:OnDelete:CASCADE" json:"mds_colony"`
+	HostID      uint32             `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
+	Host        resModel.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
 }
 
 func (m *MdsNodeModel) TableName() string {

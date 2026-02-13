@@ -10,6 +10,7 @@ import (
 
 	bizMon "gin-artweb/internal/business/mon/biz"
 	bizReso "gin-artweb/internal/infra/resource/biz"
+	resModel "gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -26,13 +27,13 @@ const (
 
 type MdsColonyModel struct {
 	database.StandardModel
-	ColonyNum     string               `gorm:"column:colony_num;type:varchar(2);uniqueIndex;comment:集群号" json:"colony_num"`
-	ExtractedName string               `gorm:"column:extracted_name;type:varchar(50);comment:解压后名称" json:"extracted_name"`
-	IsEnable      bool                 `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
-	PackageID     uint32               `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
-	Package       bizReso.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:CASCADE" json:"package"`
-	MonNodeID     uint32               `gorm:"column:mon_node_id;not null;comment:mon节点ID" json:"mon_node_id"`
-	MonNode       bizMon.MonNodeModel  `gorm:"foreignKey:MonNodeID;references:ID;constraint:OnDelete:CASCADE" json:"mon_node"`
+	ColonyNum     string                `gorm:"column:colony_num;type:varchar(2);uniqueIndex;comment:集群号" json:"colony_num"`
+	ExtractedName string                `gorm:"column:extracted_name;type:varchar(50);comment:解压后名称" json:"extracted_name"`
+	IsEnable      bool                  `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
+	PackageID     uint32                `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
+	Package       resModel.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:CASCADE" json:"package"`
+	MonNodeID     uint32                `gorm:"column:mon_node_id;not null;comment:mon节点ID" json:"mon_node_id"`
+	MonNode       bizMon.MonNodeModel   `gorm:"foreignKey:MonNodeID;references:ID;constraint:OnDelete:CASCADE" json:"mon_node"`
 }
 
 func (m *MdsColonyModel) TableName() string {
@@ -265,6 +266,23 @@ func (uc *MdsColonyUsecase) ListMdsColony(
 	)
 	return count, ms, nil
 }
+
+// func (uc *MdsColonyUsecase) InitCrontab(ctx context.Context, mdsColonyID uint32) *errors.Error {
+// 	if ctx.Err() != nil {
+// 		return errors.FromError(ctx.Err())
+// 	}
+
+// 	uc.log.Info(
+// 		"初始化mds集群crontab",
+// 		zap.Uint32(MdsColonyIDKey, mdsColonyID),
+// 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+// 	)
+// 	m, rErr := uc.FindMdsColonyByID(ctx, nil, mdsColonyID)
+// 	if rErr != nil {
+// 		return rErr
+// 	}
+// 	return nil
+// }
 
 func (uc *MdsColonyUsecase) GetMdsColonyBinDir(colonyNum string) string {
 	return filepath.Join(config.StorageDir, "mds", "bin", colonyNum)

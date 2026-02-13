@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	jobsModel "gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
 )
@@ -40,13 +40,13 @@ func (mc StkTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 type StkTaskExecutionInfo struct {
 	ColonyNum         string
-	Mon               *bizJobs.ScriptRecordModel
-	CounterFetch      *bizJobs.ScriptRecordModel
-	CounterDistribute *bizJobs.ScriptRecordModel
-	Bse               *bizJobs.ScriptRecordModel
-	Sse               *bizJobs.ScriptRecordModel
-	Szse              *bizJobs.ScriptRecordModel
-	Csdc              *bizJobs.ScriptRecordModel
+	Mon               *jobsModel.ScriptRecordModel
+	CounterFetch      *jobsModel.ScriptRecordModel
+	CounterDistribute *jobsModel.ScriptRecordModel
+	Bse               *jobsModel.ScriptRecordModel
+	Sse               *jobsModel.ScriptRecordModel
+	Szse              *jobsModel.ScriptRecordModel
+	Csdc              *jobsModel.ScriptRecordModel
 }
 
 type StkTaskExecutionInfoUsecase struct {
@@ -115,7 +115,7 @@ func (uc *StkTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 func (uc *StkTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	ctx context.Context,
 	tr StkTaskRecordCache,
-	cache map[uint32]bizJobs.ScriptRecordModel,
+	cache map[uint32]jobsModel.ScriptRecordModel,
 ) (StkTaskExecutionInfo, *errors.Error) {
 	if ctx.Err() != nil {
 		return StkTaskExecutionInfo{}, errors.FromError(ctx.Err())

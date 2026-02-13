@@ -1,14 +1,11 @@
 package server
 
 import (
-	"time"
-
 	"github.com/gin-gonic/gin"
 
 	"gin-artweb/internal/business/mon/biz"
 	"gin-artweb/internal/business/mon/data"
 	"gin-artweb/internal/business/mon/service"
-	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
@@ -19,13 +16,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) {
-	jwtConf := auth.NewJWTConfig(
-		time.Duration(init.Conf.Security.Token.AccessMinutes)*time.Minute,
-		time.Duration(init.Conf.Security.Token.RefreshMinutes)*time.Minute,
-		init.Conf.Security.Token.AccessMethod,
-		init.Conf.Security.Token.RefreshMethod,
-	)
-
 	nodeRepo := data.NewMonNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 
 	nodeUsecase := biz.NewMonNodeUsecase(loggers.Biz, nodeRepo)
@@ -33,7 +23,7 @@ func NewServer(
 	nodeService := service.NewNodeService(loggers.Service, nodeUsecase)
 
 	appRouter := router.Group("/v1/mon")
-	appRouter.Use(middleware.JWTAuthMiddleware(jwtConf, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
 
 	nodeService.LoadRouter(appRouter)

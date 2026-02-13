@@ -10,6 +10,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbScript "gin-artweb/api/jobs/script"
 	"gin-artweb/internal/infra/jobs/biz"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -76,7 +77,7 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 		return
 	}
 
-	script := biz.ScriptModel{
+	script := model.ScriptModel{
 		Name:      req.File.Filename,
 		Descr:     req.Descr,
 		Project:   req.Project,
@@ -87,7 +88,7 @@ func (s *ScriptService) CreateScript(ctx *gin.Context) {
 		Username:  claims.Subject,
 	}
 
-	savePath := script.ScriptPath()
+	savePath := biz.GetScriptPath(script)
 	if err := common.UploadFile(ctx, s.log, s.maxSize, savePath, req.File, 0o755); err != nil {
 		errors.RespondWithError(ctx, err)
 		return
@@ -161,7 +162,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		s.log.Error(
 			"查询脚本失败",
 			zap.Error(rErr),
-			zap.Uint32(biz.ScriptIDKey, uri.ID),
+			zap.Uint32("script_id", uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		errors.RespondWithError(ctx, rErr)
@@ -171,7 +172,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		s.log.Error(
 			"删除原脚本文件失败",
 			zap.Error(rErr),
-			zap.Uint32(biz.ScriptIDKey, uri.ID),
+			zap.Uint32("script_id", uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		errors.RespondWithError(ctx, rErr)
@@ -189,7 +190,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		return
 	}
 
-	nm := biz.ScriptModel{
+	nm := model.ScriptModel{
 		Name:      req.File.Filename,
 		Descr:     req.Descr,
 		Project:   req.Project,
@@ -200,7 +201,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		Username:  claims.Subject,
 	}
 	nm.ID = uri.ID
-	if err := common.UploadFile(ctx, s.log, s.maxSize, nm.ScriptPath(), req.File, 0o755); err != nil {
+	if err := common.UploadFile(ctx, s.log, s.maxSize, biz.GetScriptPath(nm), req.File, 0o755); err != nil {
 		errors.RespondWithError(ctx, err)
 		return
 	}
@@ -219,7 +220,7 @@ func (s *ScriptService) UpdateScript(ctx *gin.Context) {
 		s.log.Error(
 			"更新脚本失败",
 			zap.Error(rErr),
-			zap.Uint32(biz.ScriptIDKey, uri.ID),
+			zap.Uint32("script_id", uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		errors.RespondWithError(ctx, rErr)
@@ -443,9 +444,123 @@ func (s *ScriptService) DownloadScript(ctx *gin.Context) {
 		return
 	}
 
-	if err := common.DownloadFile(ctx, s.log, m.ScriptPath(), m.Name); err != nil {
+	if err := common.DownloadFile(ctx, s.log, biz.GetScriptPath(*m), m.Name); err != nil {
 		errors.RespondWithError(ctx, err)
 	}
+}
+
+// @Summary 查询项目列表
+// @Description 本接口用于查询项目列表
+// @Tags 脚本管理
+// @Accept json
+// @Produce json
+// @Param request query pbScript.ListScriptRequest false "查询参数"
+// @Success 200 {object} pbScript.ListProjectReply "成功返回项目列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/script/project [get]
+// @Security ApiKeyAuth
+func (s *ScriptService) ListProject(ctx *gin.Context) {
+	var req pbScript.ListScriptRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询脚本列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
+	s.log.Info(
+		"开始查询项目列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	_, _, query := req.Query()
+
+	projects, err := s.ucScript.ListProjects(ctx, query)
+	if err != nil {
+		s.log.Error(
+			"查询项目列表失败",
+			zap.Error(err),
+			zap.Any(database.QueryParamsKey, query),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, err)
+		return
+	}
+
+	s.log.Info(
+		"查询项目列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	ctx.JSON(http.StatusOK, &pbScript.ListProjectReply{
+		Code: http.StatusOK,
+		Data: projects,
+	})
+}
+
+// @Summary 查询标签列表
+// @Description 本接口用于查询标签列表
+// @Tags 脚本管理
+// @Accept json
+// @Produce json
+// @Param request query pbScript.ListScriptRequest false "查询参数"
+// @Success 200 {object} pbScript.ListLableReply "成功返回标签列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/jobs/script/label [get]
+// @Security ApiKeyAuth
+func (s *ScriptService) ListLabel(ctx *gin.Context) {
+	var req pbScript.ListScriptRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		s.log.Error(
+			"绑定查询脚本列表参数失败",
+			zap.Error(err),
+			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.ErrValidationFailed.WithCause(err)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
+
+	s.log.Info(
+		"开始查询项目列表",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	_, _, query := req.Query()
+
+	projects, err := s.ucScript.ListProjects(ctx, query)
+	if err != nil {
+		s.log.Error(
+			"查询项目列表失败",
+			zap.Error(err),
+			zap.Any(database.QueryParamsKey, query),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, err)
+		return
+	}
+
+	s.log.Info(
+		"查询项目列表成功",
+		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	ctx.JSON(http.StatusOK, &pbScript.ListProjectReply{
+		Code: http.StatusOK,
+		Data: projects,
+	})
 }
 
 func (s *ScriptService) LoadRouter(r *gin.RouterGroup) {
@@ -455,10 +570,12 @@ func (s *ScriptService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/script/:id", s.GetScript)
 	r.GET("/script", s.ListScript)
 	r.GET("/script/:id/download", s.DownloadScript)
+	r.GET("/script/project", s.ListProject)
+	r.GET("/script/label", s.ListLabel)
 }
 
 func ScriptModelToStandardOut(
-	m biz.ScriptModel,
+	m model.ScriptModel,
 ) *pbScript.ScriptStandardOut {
 	return &pbScript.ScriptStandardOut{
 		ID:        m.ID,
@@ -476,7 +593,7 @@ func ScriptModelToStandardOut(
 }
 
 func ListScriptModelToOutBase(
-	pms *[]biz.ScriptModel,
+	pms *[]model.ScriptModel,
 ) *[]pbScript.ScriptStandardOut {
 	if pms == nil {
 		return &[]pbScript.ScriptStandardOut{}

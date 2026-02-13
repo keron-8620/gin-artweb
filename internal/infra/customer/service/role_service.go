@@ -11,6 +11,7 @@ import (
 	pbButton "gin-artweb/api/customer/button"
 	pbRole "gin-artweb/api/customer/role"
 	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -65,10 +66,10 @@ func (s *RoleService) CreateRole(ctx *gin.Context) {
 
 	m, err := s.ucRole.CreateRole(
 		ctx,
-		req.PermissionIDs,
+		req.ApiIDs,
 		req.MenuIDs,
 		req.ButtonIDs,
-		biz.RoleModel{
+		model.RoleModel{
 			Name:  req.Name,
 			Descr: req.Descr,
 		},
@@ -146,7 +147,7 @@ func (s *RoleService) UpdateRole(ctx *gin.Context) {
 
 	m, err := s.ucRole.UpdateRoleByID(
 		ctx, uri.ID,
-		req.PermissionIDs,
+		req.ApiIDs,
 		req.MenuIDs,
 		req.ButtonIDs,
 		map[string]any{
@@ -262,7 +263,7 @@ func (s *RoleService) GetRole(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucRole.FindRoleByID(ctx, []string{"Permissions", "Menus", "Buttons"}, uri.ID)
+	m, err := s.ucRole.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询角色详情失败",
@@ -416,7 +417,7 @@ func (s *RoleService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func RoleModelToBaseOut(
-	m biz.RoleModel,
+	m model.RoleModel,
 ) *pbRole.RoleBaseOut {
 	return &pbRole.RoleBaseOut{
 		ID:    m.ID,
@@ -426,7 +427,7 @@ func RoleModelToBaseOut(
 }
 
 func RoleModelToStandardOut(
-	m biz.RoleModel,
+	m model.RoleModel,
 ) *pbRole.RoleStandardOut {
 	return &pbRole.RoleStandardOut{
 		RoleBaseOut: *RoleModelToBaseOut(m),
@@ -436,13 +437,13 @@ func RoleModelToStandardOut(
 }
 
 func RoleModelToDetailOut(
-	m biz.RoleModel,
+	m model.RoleModel,
 ) *pbRole.RoleDetailOut {
-	var permissionIDs = []uint32{}
-	if len(m.Permissions) > 0 {
-		permissionIDs = make([]uint32, len(m.Permissions))
-		for i, p := range m.Permissions {
-			permissionIDs[i] = p.ID
+	var apiIDs = []uint32{}
+	if len(m.Apis) > 0 {
+		apiIDs = make([]uint32, len(m.Apis))
+		for i, p := range m.Apis {
+			apiIDs[i] = p.ID
 		}
 	}
 
@@ -463,14 +464,14 @@ func RoleModelToDetailOut(
 	}
 	return &pbRole.RoleDetailOut{
 		RoleStandardOut: *RoleModelToStandardOut(m),
-		PermissionIDs:   permissionIDs,
+		ApiIDs:          apiIDs,
 		MenuIDs:         menuIDs,
 		ButtonIDs:       buttonIDs,
 	}
 }
 
 func ListRoleModelToStandardOut(
-	rms *[]biz.RoleModel,
+	rms *[]model.RoleModel,
 ) *[]pbRole.RoleStandardOut {
 	if rms == nil {
 		return &[]pbRole.RoleStandardOut{}
@@ -510,7 +511,7 @@ func RoleMenuTreeToOut(
 	}
 
 	// 转换菜单基本信息
-	menuBase := MenuModelToBaseOut(mt.MenuModel)
+	menuBase := MenuModelToBaseOut(mt.Menu)
 	if menuBase == nil {
 		return nil
 	}

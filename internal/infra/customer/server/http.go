@@ -10,7 +10,6 @@ import (
 	"gin-artweb/internal/infra/customer/biz"
 	"gin-artweb/internal/infra/customer/data"
 	"gin-artweb/internal/infra/customer/service"
-	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
@@ -18,11 +17,11 @@ import (
 )
 
 type CustomerUsecase struct {
-	Permission *biz.PermissionUsecase
-	Menu       *biz.MenuUsecase
-	Button     *biz.ButtonUsecase
-	Role       *biz.RoleUsecase
-	User       *biz.UserUsecase
+	Api    *biz.ApiUsecase
+	Menu   *biz.MenuUsecase
+	Button *biz.ButtonUsecase
+	Role   *biz.RoleUsecase
+	User   *biz.UserUsecase
 }
 
 func NewServer(
@@ -30,19 +29,13 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) *CustomerUsecase {
-	jwtConf := auth.NewJWTConfig(
-		time.Duration(init.Conf.Security.Token.AccessMinutes)*time.Minute,
-		time.Duration(init.Conf.Security.Token.RefreshMinutes)*time.Minute,
-		init.Conf.Security.Token.AccessMethod,
-		init.Conf.Security.Token.RefreshMethod,
-	)
 	secSettings := biz.SecuritySettings{
 		MaxFailedAttempts: init.Conf.Security.Login.MaxFailedAttempts,
-		LockMinutes:       init.Conf.Security.Login.LockMinutes,
+		LockDuration:      time.Duration(init.Conf.Security.Login.LockMinutes) * time.Minute,
 		PasswordStrength:  init.Conf.Security.Password.StrengthLevel,
 	}
 
-	permissionRepo := data.NewPermissionRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
+	apiRepo := data.NewApiRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	menuRepo := data.NewMenuRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	buttonRepo := data.NewButtonRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
 	roleRepo := data.NewRoleRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
@@ -53,19 +46,19 @@ func NewServer(
 		init.Conf.Security.Login.MaxFailedAttempts,
 	)
 
-	permissionUsecase := biz.NewPermissionUsecase(loggers.Biz, permissionRepo)
-	menuUsecase := biz.NewMenuUsecase(loggers.Biz, permissionRepo, menuRepo)
-	buttonUsecase := biz.NewButtonUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo)
-	roleUsecase := biz.NewRoleUsecase(loggers.Biz, permissionRepo, menuRepo, buttonRepo, roleRepo)
+	apiUsecase := biz.NewApiUsecase(loggers.Biz, apiRepo)
+	menuUsecase := biz.NewMenuUsecase(loggers.Biz, apiRepo, menuRepo)
+	buttonUsecase := biz.NewButtonUsecase(loggers.Biz, apiRepo, menuRepo, buttonRepo)
+	roleUsecase := biz.NewRoleUsecase(loggers.Biz, apiRepo, menuRepo, buttonRepo, roleRepo)
 	userUsecase := biz.NewUserUsecase(
 		loggers.Biz,
 		roleRepo, userRepo,
 		recordRepo,
-		crypto.NewBcryptHasher(12), jwtConf, secSettings)
+		crypto.NewBcryptHasher(12), init.JwtConf, secSettings)
 
 	ctx := context.Background()
-	if pErr := permissionUsecase.LoadPermissionPolicy(ctx); pErr != nil {
-		loggers.Server.Error("系统初始化加载权限策略时失败", zap.Error(pErr))
+	if pErr := apiUsecase.LoadApiPolicy(ctx); pErr != nil {
+		loggers.Server.Error("系统初始化加载API策略时失败", zap.Error(pErr))
 		panic(pErr)
 	}
 	if pErr := menuUsecase.LoadMenuPolicy(ctx); pErr != nil {
@@ -95,31 +88,32 @@ func NewServer(
 	}
 	loggers.Data.Debug("已加载所有g策略", zap.Any("gPolicies", gPolicies))
 
-	permissionService := service.NewPermissionService(loggers.Service, permissionUsecase)
+	apiService := service.NewApiService(loggers.Service, apiUsecase)
 	menuService := service.NewMenuService(loggers.Service, menuUsecase)
 	buttonService := service.NewButtonService(loggers.Service, buttonUsecase)
 	roleService := service.NewRoleService(loggers.Service, roleUsecase)
 	userService := service.NewUserService(loggers.Service, userUsecase)
 
 	router.POST("/v1/login", userService.Login)
+	router.POST("/v1/refresh/token", userService.RefreshToken)
 	appRouter := router.Group("/v1/customer")
 
-	appRouter.Use(middleware.JWTAuthMiddleware(jwtConf, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))
 	appRouter.GET("/me/menu/tree", roleService.GetRoleMenuTree)
 	appRouter.PATCH("/me/password", userService.PatchPassword)
 
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
-	permissionService.LoadRouter(appRouter)
+	apiService.LoadRouter(appRouter)
 	menuService.LoadRouter(appRouter)
 	buttonService.LoadRouter(appRouter)
 	roleService.LoadRouter(appRouter)
 	userService.LoadRouter(appRouter)
 
 	return &CustomerUsecase{
-		Permission: permissionUsecase,
-		Menu:       menuUsecase,
-		Button:     buttonUsecase,
-		Role:       roleUsecase,
-		User:       userUsecase,
+		Api:    apiUsecase,
+		Menu:   menuUsecase,
+		Button: buttonUsecase,
+		Role:   roleUsecase,
+		User:   userUsecase,
 	}
 }

@@ -2,14 +2,12 @@ package server
 
 import (
 	"context"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"gin-artweb/internal/infra/jobs/biz"
 	"gin-artweb/internal/infra/jobs/data"
 	"gin-artweb/internal/infra/jobs/service"
-	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
@@ -26,13 +24,6 @@ func NewServer(
 	init *common.Initialize,
 	loggers *log.Loggers,
 ) *JobsUsecase {
-	jwtConf := auth.NewJWTConfig(
-		time.Duration(init.Conf.Security.Token.AccessMinutes)*time.Minute,
-		time.Duration(init.Conf.Security.Token.RefreshMinutes)*time.Minute,
-		init.Conf.Security.Token.AccessMethod,
-		init.Conf.Security.Token.RefreshMethod,
-	)
-
 	scriptRepo := data.NewScriptRepo(loggers.Data, init.DB, init.DBTimeout)
 	recordRepo := data.NewRecordRepo(loggers.Data, init.DB, init.DBTimeout)
 	scheduleRepo := data.NewScheduleRepo(loggers.Data, init.DB, init.DBTimeout)
@@ -49,7 +40,7 @@ func NewServer(
 	scheduleService := service.NewScheduleService(loggers.Service, scheduleUsecase)
 
 	appRouter := router.Group("/v1/jobs")
-	appRouter.Use(middleware.JWTAuthMiddleware(jwtConf, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
 
 	scriptService.LoadRouter(appRouter)

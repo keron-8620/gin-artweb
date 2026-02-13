@@ -11,6 +11,7 @@ import (
 
 	bizMon "gin-artweb/internal/business/mon/biz"
 	bizReso "gin-artweb/internal/infra/resource/biz"
+	resoModel "gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -27,16 +28,16 @@ const (
 
 type OesColonyModel struct {
 	database.StandardModel
-	SystemType    string               `gorm:"column:system_type;type:varchar(20);comment:系统类型" json:"system_type"`
-	ColonyNum     string               `gorm:"column:colony_num;type:varchar(2);uniqueIndex;comment:集群号" json:"colony_num"`
-	ExtractedName string               `gorm:"column:extracted_name;type:varchar(50);comment:解压后名称" json:"extracted_name"`
-	IsEnable      bool                 `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
-	PackageID     uint32               `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
-	Package       bizReso.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:CASCADE" json:"package"`
-	XCounterID    uint32               `gorm:"column:xcounter_id;comment:xcounter包ID" json:"xcounter_id"`
-	XCounter      bizReso.PackageModel `gorm:"foreignKey:XCounterID;references:ID;constraint:OnDelete:CASCADE" json:"xcounter"`
-	MonNodeID     uint32               `gorm:"column:mon_node_id;not null;comment:mon节点ID" json:"mon_node_id"`
-	MonNode       bizMon.MonNodeModel  `gorm:"foreignKey:MonNodeID;references:ID;constraint:OnDelete:CASCADE" json:"mon_node"`
+	SystemType    string                 `gorm:"column:system_type;type:varchar(20);comment:系统类型" json:"system_type"`
+	ColonyNum     string                 `gorm:"column:colony_num;type:varchar(2);uniqueIndex;comment:集群号" json:"colony_num"`
+	ExtractedName string                 `gorm:"column:extracted_name;type:varchar(50);comment:解压后名称" json:"extracted_name"`
+	IsEnable      bool                   `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
+	PackageID     uint32                 `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
+	Package       resoModel.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:CASCADE" json:"package"`
+	XCounterID    uint32                 `gorm:"column:xcounter_id;comment:xcounter包ID" json:"xcounter_id"`
+	XCounter      resoModel.PackageModel `gorm:"foreignKey:XCounterID;references:ID;constraint:OnDelete:CASCADE" json:"xcounter"`
+	MonNodeID     uint32                 `gorm:"column:mon_node_id;not null;comment:mon节点ID" json:"mon_node_id"`
+	MonNode       bizMon.MonNodeModel    `gorm:"foreignKey:MonNodeID;references:ID;constraint:OnDelete:CASCADE" json:"mon_node"`
 }
 
 func (m *OesColonyModel) TableName() string {

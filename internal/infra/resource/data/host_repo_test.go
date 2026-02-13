@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"gin-artweb/internal/infra/resource/biz"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/database"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ func TestHostRepo_CreateModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestHostRepo()
 		ctx := context.Background()
-		hostModel := &biz.HostModel{
+		hostModel := &model.HostModel{
 			Name:    "test-host",
 			Label:   "test",
 			SSHIP:   "192.168.1.1",
@@ -54,7 +54,7 @@ func TestHostRepo_UpdateModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestHostRepo()
 		ctx := context.Background()
-		hostModel := &biz.HostModel{
+		hostModel := &model.HostModel{
 			Name:    "test-host",
 			Label:   "test",
 			SSHIP:   "192.168.1.1",
@@ -105,7 +105,7 @@ func TestHostRepo_DeleteModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestHostRepo()
 		ctx := context.Background()
-		hostModel := &biz.HostModel{
+		hostModel := &model.HostModel{
 			Name:    "test-host",
 			Label:   "test",
 			SSHIP:   "192.168.1.1",
@@ -132,7 +132,7 @@ func TestHostRepo_GetModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestHostRepo()
 		ctx := context.Background()
-		hostModel := &biz.HostModel{
+		hostModel := &model.HostModel{
 			Name:    "test-host",
 			Label:   "test",
 			SSHIP:   "192.168.1.1",
@@ -166,7 +166,7 @@ func TestHostRepo_ListModel(t *testing.T) {
 
 		// 创建多个测试模型
 		for i := 1; i <= 3; i++ {
-			hostModel := &biz.HostModel{
+			hostModel := &model.HostModel{
 				Name:    "test-host-" + string(rune('0'+i)),
 				Label:   "test",
 				SSHIP:   "192.168.1." + string(rune('0'+i)),

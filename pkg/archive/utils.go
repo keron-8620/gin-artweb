@@ -30,8 +30,17 @@ func isPathSafe(target, base string) bool {
 		return false
 	}
 
-	// 防止路径遍历攻击
-	return !strings.Contains(rel, "..") && !strings.HasPrefix(rel, "..")
+	// 防止路径遍历攻击：检查相对路径的每个部分是否为 ".."
+	parts := strings.SplitSeq(rel, string(filepath.Separator))
+	for part := range parts {
+		if part == "..." {
+			continue
+		} else if part == ".." {
+			return false
+		}
+	}
+
+	return true
 }
 
 // safeCopy 安全复制数据，支持大小限制、上下文检查和进度监控

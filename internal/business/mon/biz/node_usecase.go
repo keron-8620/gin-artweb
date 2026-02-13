@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizReso "gin-artweb/internal/infra/resource/biz"
+	resoModel "gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -24,13 +24,13 @@ const (
 
 type MonNodeModel struct {
 	database.StandardModel
-	Name        string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	DeployPath  string            `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
-	OutportPath string            `gorm:"column:outport_path;type:varchar(255);comment:导出路径" json:"outport_path"`
-	JavaHome    string            `gorm:"column:java_home;type:varchar(255);comment:JAVA_HOME" json:"java_home"`
-	URL         string            `gorm:"column:url;type:varchar(150);not null;uniqueIndex;comment:URL地址" json:"url"`
-	HostID      uint32            `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        bizReso.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	Name        string              `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	DeployPath  string              `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
+	OutportPath string              `gorm:"column:outport_path;type:varchar(255);comment:导出路径" json:"outport_path"`
+	JavaHome    string              `gorm:"column:java_home;type:varchar(255);comment:JAVA_HOME" json:"java_home"`
+	URL         string              `gorm:"column:url;type:varchar(150);not null;uniqueIndex;comment:URL地址" json:"url"`
+	HostID      uint32              `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
+	Host        resoModel.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
 }
 
 func (m *MonNodeModel) TableName() string {

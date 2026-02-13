@@ -1,10 +1,137 @@
 definitions:
+  api.ApiReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/api.ApiStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  api.ApiStandardOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      descr:
+        description: 描述
+        example: 用户管理权限
+        type: string
+      id:
+        description: 唯一标识
+        example: 1
+        type: integer
+      label:
+        description: 标签
+        example: customer
+        type: string
+      method:
+        description: 请求方法
+        example: GET
+        type: string
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      url:
+        description: HTTP路径
+        example: /api/v1/users
+        type: string
+    type: object
+  api.CreateApiRequest:
+    properties:
+      descr:
+        description: 描述信息
+        maxLength: 254
+        type: string
+      id:
+        description: 唯一标识
+        type: integer
+      label:
+        description: 标签
+        maxLength: 50
+        type: string
+      method:
+        description: 请求方法
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - WS
+        type: string
+      url:
+        description: URL地址
+        maxLength: 150
+        type: string
+    required:
+    - id
+    - label
+    - method
+    - url
+    type: object
+  api.PagApiReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-api_ApiStandardOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  api.UpdateApiRequest:
+    properties:
+      descr:
+        description: 描述信息
+        maxLength: 254
+        type: string
+      label:
+        description: 标签
+        maxLength: 50
+        type: string
+      method:
+        description: 请求方法
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - WS
+        type: string
+      url:
+        description: URL地址
+        maxLength: 150
+        type: string
+    required:
+    - label
+    - method
+    - url
+    type: object
   button.ButtonBaseOut:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
       descr:
         description: 描述
         example: 用户管理
@@ -21,13 +148,18 @@ definitions:
         description: 名称
         example: 用户管理
         type: string
+      sort:
+        description: 排序字段
+        example: 1000
+        type: integer
     type: object
   button.ButtonDetailOut:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
+      api_ids:
+        description: API ID列表
+        items:
+          type: integer
+        type: array
       created_at:
         description: 创建时间
         example: "2023-01-01 12:00:00"
@@ -52,11 +184,10 @@ definitions:
         description: 名称
         example: 用户管理
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
+      sort:
+        description: 排序字段
+        example: 1000
+        type: integer
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -83,10 +214,6 @@ definitions:
     type: object
   button.ButtonStandardOut:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
       created_at:
         description: 创建时间
         example: "2023-01-01 12:00:00"
@@ -107,6 +234,10 @@ definitions:
         description: 名称
         example: 用户管理
         type: string
+      sort:
+        description: 排序字段
+        example: 1000
+        type: integer
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -114,9 +245,11 @@ definitions:
     type: object
   button.CreateButtonRequest:
     properties:
-      arrange_order:
-        description: 排序字段
-        type: integer
+      api_ids:
+        description: API ID列表
+        items:
+          type: integer
+        type: array
       descr:
         description: 描述信息
         maxLength: 254
@@ -134,17 +267,15 @@ definitions:
         description: 名称
         maxLength: 50
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
+      sort:
+        description: 排序字段
+        type: integer
     required:
-    - arrange_order
     - id
     - is_active
     - menu_id
     - name
+    - sort
     type: object
   button.PagButtonReply:
     properties:
@@ -167,9 +298,11 @@ definitions:
     type: object
   button.UpdateButtonRequest:
     properties:
-      arrange_order:
-        description: 排序字段
-        type: integer
+      api_ids:
+        description: API ID列表
+        items:
+          type: integer
+        type: array
       descr:
         description: 描述信息
         maxLength: 254
@@ -184,11 +317,9 @@ definitions:
         description: 名称
         maxLength: 50
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
+      sort:
+        description: 排序字段
+        type: integer
     required:
     - menu_id
     - name
@@ -311,6 +442,10 @@ definitions:
         description: ID
         example: 1
         type: integer
+      is_enable:
+        description: 是否启用
+        example: true
+        type: boolean
     type: object
   colony.MdsColonyDetailOut:
     properties:
@@ -330,6 +465,10 @@ definitions:
         description: ID
         example: 1
         type: integer
+      is_enable:
+        description: 是否启用
+        example: true
+        type: boolean
       mon_node:
         allOf:
         - $ref: '#/definitions/node.MonNodeBaseOut'
@@ -388,6 +527,10 @@ definitions:
         description: ID
         example: 1
         type: integer
+      is_enable:
+        description: 是否启用
+        example: true
+        type: boolean
       system_type:
         description: 系统类型
         example: STK
@@ -411,6 +554,10 @@ definitions:
         description: ID
         example: 1
         type: integer
+      is_enable:
+        description: 是否启用
+        example: true
+        type: boolean
       mon_node:
         allOf:
         - $ref: '#/definitions/node.MonNodeBaseOut'
@@ -519,6 +666,38 @@ definitions:
           信息
           Example: "success"
         type: string
+    type: object
+  common.Pag-api_ApiStandardOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/api.ApiStandardOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
     type: object
   common.Pag-button_ButtonStandardOut:
     properties:
@@ -750,38 +929,6 @@ definitions:
         description: 对象数组
         items:
           $ref: '#/definitions/node.OesNodeDetailOut'
-        type: array
-      page:
-        description: |-
-          当前页码
-          Example: 1
-        example: 1
-        type: integer
-      pages:
-        description: |-
-          总页数
-          Example: 10
-        example: 10
-        type: integer
-      size:
-        description: |-
-          每页数量
-          Example: 10
-        example: 10
-        type: integer
-      total:
-        description: |-
-          总记录数
-          Example: 100
-        example: 100
-        type: integer
-    type: object
-  common.Pag-permission_PermissionStandardOut:
-    properties:
-      items:
-        description: 对象数组
-        items:
-          $ref: '#/definitions/permission.PermissionStandardOut'
         type: array
       page:
         description: |-
@@ -1543,9 +1690,11 @@ definitions:
     type: object
   menu.CreateMenuRequest:
     properties:
-      arrange_order:
-        description: 排序字段
-        type: integer
+      api_ids:
+        description: 权限ID列表
+        items:
+          type: integer
+        type: array
       component:
         description: 组件路径
         maxLength: 200
@@ -1575,25 +1724,24 @@ definitions:
         description: 前端路由路径
         maxLength: 100
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
+      sort:
+        description: 排序字段
+        type: integer
     required:
-    - arrange_order
     - component
     - id
     - meta
     - name
     - path
+    - sort
     type: object
   menu.MenuDetailOut:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
+      api_ids:
+        description: API ID列表
+        items:
+          type: integer
+        type: array
       component:
         description: 组件路径
         example: GET
@@ -1630,11 +1778,10 @@ definitions:
         description: 前端路由
         example: /api/v1/users
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
+      sort:
+        description: 排序字段
+        example: 1000
+        type: integer
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -1661,10 +1808,6 @@ definitions:
     type: object
   menu.MenuStandardOut:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
       component:
         description: 组件路径
         example: GET
@@ -1697,6 +1840,10 @@ definitions:
         description: 前端路由
         example: /api/v1/users
         type: string
+      sort:
+        description: 排序字段
+        example: 1000
+        type: integer
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -1734,9 +1881,11 @@ definitions:
     type: object
   menu.UpdateMenuRequest:
     properties:
-      arrange_order:
-        description: 排序字段
-        type: integer
+      api_ids:
+        description: API ID列表
+        items:
+          type: integer
+        type: array
       component:
         description: 组件路径
         maxLength: 200
@@ -1763,17 +1912,15 @@ definitions:
         description: 前端路由路径
         maxLength: 100
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
+      sort:
+        description: 排序字段
+        type: integer
     required:
-    - arrange_order
     - component
     - meta
     - name
     - path
+    - sort
     type: object
   node.CreateOrUpdateMdsNodeRequest:
     properties:
@@ -2096,137 +2243,6 @@ definitions:
           Example: "success"
         type: string
     type: object
-  permission.CreatePermissionRequest:
-    properties:
-      descr:
-        description: 描述信息
-        maxLength: 254
-        type: string
-      id:
-        description: 唯一标识
-        type: integer
-      label:
-        description: 标签
-        maxLength: 50
-        type: string
-      method:
-        description: 请求方法
-        enum:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - PATCH
-        - WS
-        type: string
-      url:
-        description: URL地址
-        maxLength: 150
-        type: string
-    required:
-    - id
-    - label
-    - method
-    - url
-    type: object
-  permission.PagPermissionReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/common.Pag-permission_PermissionStandardOut'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
-  permission.PermissionReply:
-    properties:
-      code:
-        description: |-
-          状态码
-          Example: 200
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/permission.PermissionStandardOut'
-        description: |-
-          数据
-          可以是任意类型的数据
-      msg:
-        description: |-
-          信息
-          Example: "success"
-        type: string
-    type: object
-  permission.PermissionStandardOut:
-    properties:
-      created_at:
-        description: 创建时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      descr:
-        description: 描述
-        example: 用户管理权限
-        type: string
-      id:
-        description: 唯一标识
-        example: 1
-        type: integer
-      label:
-        description: 标签
-        example: customer
-        type: string
-      method:
-        description: 请求方法
-        example: GET
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-01-01 12:00:00"
-        type: string
-      url:
-        description: HTTP路径
-        example: /api/v1/users
-        type: string
-    type: object
-  permission.UpdatePermissionRequest:
-    properties:
-      descr:
-        description: 描述信息
-        maxLength: 254
-        type: string
-      label:
-        description: 标签
-        maxLength: 50
-        type: string
-      method:
-        description: 请求方法
-        enum:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - PATCH
-        - WS
-        type: string
-      url:
-        description: URL地址
-        maxLength: 150
-        type: string
-    required:
-    - label
-    - method
-    - url
-    type: object
   pkg.PackageReply:
     properties:
       code:
@@ -2404,6 +2420,11 @@ definitions:
     type: object
   role.CreateOrUpdateRoleRequest:
     properties:
+      api_ids:
+        description: APIID列表
+        items:
+          type: integer
+        type: array
       button_ids:
         description: 按钮ID列表
         items:
@@ -2422,11 +2443,6 @@ definitions:
         description: 名称
         maxLength: 50
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
     required:
     - name
     type: object
@@ -2466,6 +2482,11 @@ definitions:
     type: object
   role.RoleDetailOut:
     properties:
+      api_ids:
+        description: APIID列表
+        items:
+          type: integer
+        type: array
       button_ids:
         description: 按钮ID列表
         items:
@@ -2492,11 +2513,6 @@ definitions:
         description: 名称
         example: 用户管理
         type: string
-      permission_ids:
-        description: 权限ID列表
-        items:
-          type: integer
-        type: array
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -2504,10 +2520,6 @@ definitions:
     type: object
   role.RoleMenuPerm:
     properties:
-      arrange_order:
-        description: 排列顺序
-        example: 1000
-        type: integer
       buttons:
         description: 按钮
         items:
@@ -2546,6 +2558,10 @@ definitions:
         description: 前端路由
         example: /api/v1/users
         type: string
+      sort:
+        description: 排序字段
+        example: 1000
+        type: integer
     type: object
   role.RoleMenuTreeReply:
     properties:
@@ -2788,6 +2804,46 @@ definitions:
     - name
     - script_id
     - specification
+    type: object
+  script.ListLableReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        description: |-
+          数据
+          可以是任意类型的数据
+        items:
+          type: string
+        type: array
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  script.ListProjectReply:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        description: |-
+          数据
+          可以是任意类型的数据
+        items:
+          type: string
+        type: array
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
   script.PagScriptReply:
     properties:
@@ -3108,6 +3164,224 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/customer/api:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询API列表
+      parameters:
+      - description: |-
+          创建时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_created_at
+        type: string
+      - description: |-
+          更新时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_updated_at
+        type: string
+      - description: |-
+          创建时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_created_at
+        type: string
+      - description: |-
+          更新时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_updated_at
+        type: string
+      - description: 描述信息
+        in: query
+        maxLength: 254
+        name: descr
+        type: string
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 标签
+        in: query
+        maxLength: 50
+        name: label
+        type: string
+      - description: 请求方法
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - WS
+        in: query
+        name: method
+        type: string
+      - description: 分页页码
+        in: query
+        name: page
+        type: integer
+      - description: 分页大小
+        in: query
+        minimum: 0
+        name: size
+        type: integer
+      - description: URL地址
+        in: query
+        maxLength: 150
+        name: url
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回API列表
+          schema:
+            $ref: '#/definitions/api.PagApiReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询API列表
+      tags:
+      - API管理
+    post:
+      consumes:
+      - application/json
+      description: 本接口用于新增API
+      parameters:
+      - description: 创建API请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateApiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建API成功
+          schema:
+            $ref: '#/definitions/api.ApiReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 新增API
+      tags:
+      - API管理
+  /api/v1/customer/api/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 本接口用于删除指定ID的API
+      parameters:
+      - description: API编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: API未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除API
+      tags:
+      - API管理
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的API
+      parameters:
+      - description: API编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取API详情成功
+          schema:
+            $ref: '#/definitions/api.ApiReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: API未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询API
+      tags:
+      - API管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的API
+      parameters:
+      - description: API编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新API请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateApiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新API成功
+          schema:
+            $ref: '#/definitions/api.ApiReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: API未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新API
+      tags:
+      - API管理
   /api/v1/customer/button:
     get:
       consumes:
@@ -3705,224 +3979,6 @@ paths:
       summary: 更新菜单
       tags:
       - 菜单管理
-  /api/v1/customer/permission:
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询权限列表
-      parameters:
-      - description: |-
-          创建时间之后的记录 (RFC3339格式)
-          example: 2023-01-01T00:00:00Z
-        in: query
-        name: after_created_at
-        type: string
-      - description: |-
-          更新时间之后的记录 (RFC3339格式)
-          example: 2023-01-01T00:00:00Z
-        in: query
-        name: after_updated_at
-        type: string
-      - description: |-
-          创建时间之前的记录 (RFC3339格式)
-          example: 2023-01-01T00:00:00Z
-        in: query
-        name: before_created_at
-        type: string
-      - description: |-
-          更新时间之前的记录 (RFC3339格式)
-          example: 2023-01-01T00:00:00Z
-        in: query
-        name: before_updated_at
-        type: string
-      - description: 描述信息
-        in: query
-        maxLength: 254
-        name: descr
-        type: string
-      - description: 唯一标识
-        in: query
-        name: id
-        type: integer
-      - description: '"唯一标识列表(多个用,隔开)"'
-        in: query
-        maxLength: 100
-        name: ids
-        type: string
-      - description: 标签
-        in: query
-        maxLength: 50
-        name: label
-        type: string
-      - description: 请求方法
-        enum:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - PATCH
-        - WS
-        in: query
-        name: method
-        type: string
-      - description: 分页页码
-        in: query
-        name: page
-        type: integer
-      - description: 分页大小
-        in: query
-        minimum: 0
-        name: size
-        type: integer
-      - description: URL地址
-        in: query
-        maxLength: 150
-        name: url
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回权限列表
-          schema:
-            $ref: '#/definitions/permission.PagPermissionReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 内部服务错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 查询权限列表
-      tags:
-      - 权限管理
-    post:
-      consumes:
-      - application/json
-      description: 本接口用于新增权限
-      parameters:
-      - description: 创建权限请求
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/permission.CreatePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 创建权限成功
-          schema:
-            $ref: '#/definitions/permission.PermissionReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 新增权限
-      tags:
-      - 权限管理
-  /api/v1/customer/permission/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: 本接口用于删除指定ID的权限
-      parameters:
-      - description: 权限编号
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 删除成功
-          schema:
-            $ref: '#/definitions/common.MapAPIReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "404":
-          description: 权限未找到
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 删除权限
-      tags:
-      - 权限管理
-    get:
-      consumes:
-      - application/json
-      description: 本接口用于查询指定ID的权限
-      parameters:
-      - description: 权限编号
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取权限详情成功
-          schema:
-            $ref: '#/definitions/permission.PermissionReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "404":
-          description: 权限未找到
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 查询权限
-      tags:
-      - 权限管理
-    put:
-      consumes:
-      - application/json
-      description: 本接口用于更新指定ID的权限
-      parameters:
-      - description: 权限编号
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: 更新权限请求
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/permission.UpdatePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 更新权限成功
-          schema:
-            $ref: '#/definitions/permission.PermissionReply'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "404":
-          description: 权限未找到
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 更新权限
-      tags:
-      - 权限管理
   /api/v1/customer/role:
     get:
       consumes:
@@ -5272,6 +5328,210 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 下载脚本
+      tags:
+      - 脚本管理
+  /api/v1/jobs/script/label:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询标签列表
+      parameters:
+      - description: |-
+          创建时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_created_at
+        type: string
+      - description: |-
+          更新时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_updated_at
+        type: string
+      - description: |-
+          创建时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_created_at
+        type: string
+      - description: |-
+          更新时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_updated_at
+        type: string
+      - description: 描述信息
+        in: query
+        maxLength: 254
+        name: descr
+        type: string
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 是否是内置脚本
+        in: query
+        name: is_builtin
+        type: boolean
+      - description: 标签
+        in: query
+        name: label
+        type: string
+      - description: 脚本语言
+        in: query
+        name: language
+        type: string
+      - description: 名称
+        in: query
+        maxLength: 50
+        name: name
+        type: string
+      - description: 分页页码
+        in: query
+        name: page
+        type: integer
+      - description: 项目
+        in: query
+        name: project
+        type: string
+      - description: 分页大小
+        in: query
+        minimum: 0
+        name: size
+        type: integer
+      - description: 状态
+        in: query
+        name: status
+        type: boolean
+      - description: 最后修改的用户
+        in: query
+        name: user_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回标签列表
+          schema:
+            $ref: '#/definitions/script.ListLableReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询标签列表
+      tags:
+      - 脚本管理
+  /api/v1/jobs/script/project:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询项目列表
+      parameters:
+      - description: |-
+          创建时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_created_at
+        type: string
+      - description: |-
+          更新时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_updated_at
+        type: string
+      - description: |-
+          创建时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_created_at
+        type: string
+      - description: |-
+          更新时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_updated_at
+        type: string
+      - description: 描述信息
+        in: query
+        maxLength: 254
+        name: descr
+        type: string
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 是否是内置脚本
+        in: query
+        name: is_builtin
+        type: boolean
+      - description: 标签
+        in: query
+        name: label
+        type: string
+      - description: 脚本语言
+        in: query
+        name: language
+        type: string
+      - description: 名称
+        in: query
+        maxLength: 50
+        name: name
+        type: string
+      - description: 分页页码
+        in: query
+        name: page
+        type: integer
+      - description: 项目
+        in: query
+        name: project
+        type: string
+      - description: 分页大小
+        in: query
+        minimum: 0
+        name: size
+        type: integer
+      - description: 状态
+        in: query
+        name: status
+        type: boolean
+      - description: 最后修改的用户
+        in: query
+        name: user_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回项目列表
+          schema:
+            $ref: '#/definitions/script.ListProjectReply'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询项目列表
       tags:
       - 脚本管理
   /api/v1/login:

@@ -8,17 +8,17 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/jobs/biz"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 )
 
-// scheduleRepo 计划任务仓库实现
+// ScheduleRepo 计划任务仓库实现
 // 负责计划任务模型的CRUD操作
 // 使用GORM进行数据库操作
-type scheduleRepo struct {
+type ScheduleRepo struct {
 	log      *zap.Logger       // 日志记录器
 	gormDB   *gorm.DB          // GORM数据库连接
 	timeouts *config.DBTimeout // 数据库操作超时配置
@@ -34,13 +34,13 @@ type scheduleRepo struct {
 //
 // 返回值：
 //
-//	biz.ScheduleRepo: 计划任务仓库接口实现
+//	model.ScheduleRepo: 计划任务仓库接口实现
 func NewScheduleRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
-) biz.ScheduleRepo {
-	return &scheduleRepo{
+) *ScheduleRepo {
+	return &ScheduleRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
@@ -62,7 +62,7 @@ func NewScheduleRepo(
 //  1. 检查计划任务模型是否为空
 //  2. 执行数据库创建操作
 //  3. 记录操作日志
-func (r *scheduleRepo) CreateModel(ctx context.Context, m *biz.ScheduleModel) error {
+func (r *ScheduleRepo) CreateModel(ctx context.Context, m *model.ScheduleModel) error {
 	// 检查参数
 	if m == nil {
 		err := errors.New("创建计划任务模型失败: 模型为空")
@@ -81,7 +81,7 @@ func (r *scheduleRepo) CreateModel(ctx context.Context, m *biz.ScheduleModel) er
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.ScheduleModel{}, m, nil); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &model.ScheduleModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建计划任务模型失败",
 			zap.Error(err),
@@ -116,7 +116,7 @@ func (r *scheduleRepo) CreateModel(ctx context.Context, m *biz.ScheduleModel) er
 //  1. 检查更新数据是否为空
 //  2. 执行数据库更新操作
 //  3. 记录操作日志
-func (r *scheduleRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *ScheduleRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
 	// 检查参数
 	if len(data) == 0 {
 		err := errors.New("更新计划任务模型失败: 更新数据为空")
@@ -138,7 +138,7 @@ func (r *scheduleRepo) UpdateModel(ctx context.Context, data map[string]any, con
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &biz.ScheduleModel{}, data, nil, conds...); err != nil {
+	if err := database.DBUpdate(dbCtx, r.gormDB, &model.ScheduleModel{}, data, nil, conds...); err != nil {
 		r.log.Error(
 			"更新计划任务模型失败",
 			zap.Error(err),
@@ -173,7 +173,7 @@ func (r *scheduleRepo) UpdateModel(ctx context.Context, data map[string]any, con
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *scheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *ScheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除计划任务模型",
 		zap.Any(database.ConditionsKey, conds),
@@ -182,7 +182,7 @@ func (r *scheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &biz.ScheduleModel{}, conds...); err != nil {
+	if err := database.DBDelete(dbCtx, r.gormDB, &model.ScheduleModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除计划任务模型失败",
 			zap.Error(err),
@@ -211,7 +211,7 @@ func (r *scheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //
 // 返回值：
 //
-//	*biz.ScheduleModel: 计划任务模型指针，包含计划任务的详细信息
+//	*model.ScheduleModel: 计划任务模型指针，包含计划任务的详细信息
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -219,18 +219,18 @@ func (r *scheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //  2. 预加载关联字段
 //  3. 获取单个计划任务模型
 //  4. 记录操作日志
-func (r *scheduleRepo) GetModel(
+func (r *ScheduleRepo) GetModel(
 	ctx context.Context,
 	preloads []string,
 	conds ...any,
-) (*biz.ScheduleModel, error) {
+) (*model.ScheduleModel, error) {
 	r.log.Debug(
 		"开始查询计划任务模型",
 		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
-	var m biz.ScheduleModel
+	var m model.ScheduleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
 	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
@@ -263,7 +263,7 @@ func (r *scheduleRepo) GetModel(
 // 返回值：
 //
 //	int64: 查询结果总数
-//	*[]biz.ScheduleModel: 计划任务模型列表指针，包含查询到的计划任务详情
+//	*[]model.ScheduleModel: 计划任务模型列表指针，包含查询到的计划任务详情
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -271,20 +271,20 @@ func (r *scheduleRepo) GetModel(
 //  2. 应用分页、排序、过滤等条件
 //  3. 获取计划任务模型列表
 //  4. 记录操作日志
-func (r *scheduleRepo) ListModel(
+func (r *ScheduleRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]biz.ScheduleModel, error) {
+) (int64, *[]model.ScheduleModel, error) {
 	r.log.Debug(
 		"开始查询计划任务模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
-	var ms []biz.ScheduleModel
+	var ms []model.ScheduleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	count, err := database.DBList(dbCtx, r.gormDB, &biz.ScheduleModel{}, &ms, qp)
+	count, err := database.DBList(dbCtx, r.gormDB, &model.ScheduleModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询计划任务模型列表失败",

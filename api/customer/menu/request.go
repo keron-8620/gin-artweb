@@ -26,7 +26,7 @@ type CreateMenuRequest struct {
 	Meta MetaSchemas `json:"meta" form:"meta" binding:"required"`
 
 	// 排序字段
-	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"required"`
+	Sort uint32 `json:"sort" form:"sort" binding:"required"`
 
 	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active"`
@@ -38,7 +38,7 @@ type CreateMenuRequest struct {
 	ParentID *uint32 `json:"parent_id" form:"parent_id" binding:"omitempty"`
 
 	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
+	ApiIDs []uint32 `json:"api_ids" form:"api_ids" binding:"omitempty"`
 }
 
 func (req *CreateMenuRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -47,14 +47,14 @@ func (req *CreateMenuRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	enc.AddString("component", req.Component)
 	enc.AddObject("meta", &req.Meta)
 	enc.AddString("name", req.Name)
-	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddUint32("sort", req.Sort)
 	enc.AddBool("is_active", req.IsActive)
 	enc.AddString("descr", req.Descr)
 	if req.ParentID != nil {
 		enc.AddUint32("parent_id", *req.ParentID)
 	}
-	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, id := range req.PermissionIDs {
+	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
@@ -79,7 +79,7 @@ type UpdateMenuRequest struct {
 	Meta MetaSchemas `json:"meta" form:"meta" binding:"required"`
 
 	// 排序字段
-	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"required"`
+	Sort uint32 `json:"sort" form:"sort" binding:"required"`
 
 	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active"`
@@ -90,8 +90,8 @@ type UpdateMenuRequest struct {
 	// 父级菜单ID
 	ParentID *uint32 `json:"parent_id" form:"parent_id" binding:"omitempty"`
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
+	// API ID列表
+	ApiIDs []uint32 `json:"api_ids" form:"api_ids" binding:"omitempty"`
 }
 
 func (req *UpdateMenuRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -99,14 +99,14 @@ func (req *UpdateMenuRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	enc.AddString("component", req.Component)
 	enc.AddObject("meta", &req.Meta)
 	enc.AddString("name", req.Name)
-	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddUint32("sort", req.Sort)
 	enc.AddBool("is_active", req.IsActive)
 	enc.AddString("descr", req.Descr)
 	if req.ParentID != nil {
 		enc.AddUint32("parent_id", *req.ParentID)
 	}
-	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, id := range req.PermissionIDs {
+	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil

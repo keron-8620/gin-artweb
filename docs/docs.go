@@ -15,6 +15,328 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/customer/api": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询API列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "查询API列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "描述信息",
+                        "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "DELETE",
+                            "PATCH",
+                            "WS"
+                        ],
+                        "type": "string",
+                        "description": "请求方法",
+                        "name": "method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "分页大小",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 150,
+                        "type": "string",
+                        "description": "URL地址",
+                        "name": "url",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回API列表",
+                        "schema": {
+                            "$ref": "#/definitions/api.PagApiReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "内部服务错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于新增API",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "新增API",
+                "parameters": [
+                    {
+                        "description": "创建API请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateApiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建API成功",
+                        "schema": {
+                            "$ref": "#/definitions/api.ApiReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/api/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的API",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "查询API",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "API编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取API详情成功",
+                        "schema": {
+                            "$ref": "#/definitions/api.ApiReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "API未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于更新指定ID的API",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "更新API",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "API编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新API请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateApiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新API成功",
+                        "schema": {
+                            "$ref": "#/definitions/api.ApiReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "API未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于删除指定ID的API",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API管理"
+                ],
+                "summary": "删除API",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "API编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "API未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/customer/button": {
             "get": {
                 "security": [
@@ -899,328 +1221,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/customer/permission": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于查询权限列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "权限管理"
-                ],
-                "summary": "查询权限列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
-                        "name": "after_created_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
-                        "name": "after_updated_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
-                        "name": "before_created_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
-                        "name": "before_updated_at",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 254,
-                        "type": "string",
-                        "description": "描述信息",
-                        "name": "descr",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "唯一标识",
-                        "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 100,
-                        "type": "string",
-                        "description": "\"唯一标识列表(多个用,隔开)\"",
-                        "name": "ids",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 50,
-                        "type": "string",
-                        "description": "标签",
-                        "name": "label",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "GET",
-                            "POST",
-                            "PUT",
-                            "DELETE",
-                            "PATCH",
-                            "WS"
-                        ],
-                        "type": "string",
-                        "description": "请求方法",
-                        "name": "method",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "分页页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "description": "分页大小",
-                        "name": "size",
-                        "in": "query"
-                    },
-                    {
-                        "maxLength": 150,
-                        "type": "string",
-                        "description": "URL地址",
-                        "name": "url",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功返回权限列表",
-                        "schema": {
-                            "$ref": "#/definitions/permission.PagPermissionReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "内部服务错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于新增权限",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "权限管理"
-                ],
-                "summary": "新增权限",
-                "parameters": [
-                    {
-                        "description": "创建权限请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/permission.CreatePermissionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "创建权限成功",
-                        "schema": {
-                            "$ref": "#/definitions/permission.PermissionReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/customer/permission/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于查询指定ID的权限",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "权限管理"
-                ],
-                "summary": "查询权限",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "权限编号",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "获取权限详情成功",
-                        "schema": {
-                            "$ref": "#/definitions/permission.PermissionReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "404": {
-                        "description": "权限未找到",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于更新指定ID的权限",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "权限管理"
-                ],
-                "summary": "更新权限",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "权限编号",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新权限请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/permission.UpdatePermissionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新权限成功",
-                        "schema": {
-                            "$ref": "#/definitions/permission.PermissionReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "404": {
-                        "description": "权限未找到",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "本接口用于删除指定ID的权限",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "权限管理"
-                ],
-                "summary": "删除权限",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "权限编号",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "删除成功",
-                        "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "404": {
-                        "description": "权限未找到",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -2971,6 +2971,290 @@ const docTemplate = `{
                     },
                     "413": {
                         "description": "文件过大",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/script/label": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询标签列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "查询标签列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "描述信息",
+                        "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否是内置脚本",
+                        "name": "is_builtin",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "标签",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本语言",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "项目",
+                        "name": "project",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "分页大小",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最后修改的用户",
+                        "name": "user_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回标签列表",
+                        "schema": {
+                            "$ref": "#/definitions/script.ListLableReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/script/project": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询项目列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "脚本管理"
+                ],
+                "summary": "查询项目列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "创建时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "更新时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
+                        "name": "before_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 254,
+                        "type": "string",
+                        "description": "描述信息",
+                        "name": "descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "唯一标识",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 100,
+                        "type": "string",
+                        "description": "\"唯一标识列表(多个用,隔开)\"",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否是内置脚本",
+                        "name": "is_builtin",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "标签",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "脚本语言",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分页页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "项目",
+                        "name": "project",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "分页大小",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最后修改的用户",
+                        "name": "user_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回项目列表",
+                        "schema": {
+                            "$ref": "#/definitions/script.ListProjectReply"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -6603,14 +6887,170 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.ApiReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.ApiStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "api.ApiStandardOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理权限"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "customer"
+                },
+                "method": {
+                    "description": "请求方法",
+                    "type": "string",
+                    "example": "GET"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "url": {
+                    "description": "HTTP路径",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                }
+            }
+        },
+        "api.CreateApiRequest": {
+            "type": "object",
+            "required": [
+                "id",
+                "label",
+                "method",
+                "url"
+            ],
+            "properties": {
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer"
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "method": {
+                    "description": "请求方法",
+                    "type": "string",
+                    "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "WS"
+                    ]
+                },
+                "url": {
+                    "description": "URL地址",
+                    "type": "string",
+                    "maxLength": 150
+                }
+            }
+        },
+        "api.PagApiReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-api_ApiStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "api.UpdateApiRequest": {
+            "type": "object",
+            "required": [
+                "label",
+                "method",
+                "url"
+            ],
+            "properties": {
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "method": {
+                    "description": "请求方法",
+                    "type": "string",
+                    "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "WS"
+                    ]
+                },
+                "url": {
+                    "description": "URL地址",
+                    "type": "string",
+                    "maxLength": 150
+                }
+            }
+        },
         "button.ButtonBaseOut": {
             "type": "object",
             "properties": {
-                "arrange_order": {
-                    "description": "排列顺序",
-                    "type": "integer",
-                    "example": 1000
-                },
                 "descr": {
                     "description": "描述",
                     "type": "string",
@@ -6630,16 +7070,23 @@ const docTemplate = `{
                     "description": "名称",
                     "type": "string",
                     "example": "用户管理"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
                 }
             }
         },
         "button.ButtonDetailOut": {
             "type": "object",
             "properties": {
-                "arrange_order": {
-                    "description": "排列顺序",
-                    "type": "integer",
-                    "example": 1000
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "created_at": {
                     "description": "创建时间",
@@ -6674,12 +7121,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "用户管理"
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -6712,11 +7157,6 @@ const docTemplate = `{
         "button.ButtonStandardOut": {
             "type": "object",
             "properties": {
-                "arrange_order": {
-                    "description": "排列顺序",
-                    "type": "integer",
-                    "example": 1000
-                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string",
@@ -6742,6 +7182,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "用户管理"
                 },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                },
                 "updated_at": {
                     "description": "更新时间",
                     "type": "string",
@@ -6752,16 +7197,19 @@ const docTemplate = `{
         "button.CreateButtonRequest": {
             "type": "object",
             "required": [
-                "arrange_order",
                 "id",
                 "is_active",
                 "menu_id",
-                "name"
+                "name",
+                "sort"
             ],
             "properties": {
-                "arrange_order": {
-                    "description": "排序字段",
-                    "type": "integer"
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "descr": {
                     "description": "描述信息",
@@ -6785,12 +7233,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 50
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
                 }
             }
         },
@@ -6822,9 +7267,12 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
-                "arrange_order": {
-                    "description": "排序字段",
-                    "type": "integer"
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "descr": {
                     "description": "描述信息",
@@ -6844,12 +7292,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 50
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
                 }
             }
         },
@@ -6993,6 +7438,11 @@ const docTemplate = `{
                     "description": "ID",
                     "type": "integer",
                     "example": 1
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -7018,6 +7468,11 @@ const docTemplate = `{
                     "description": "ID",
                     "type": "integer",
                     "example": 1
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
                 },
                 "mon_node": {
                     "description": "mon节点",
@@ -7098,6 +7553,11 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
+                },
                 "system_type": {
                     "description": "系统类型",
                     "type": "string",
@@ -7127,6 +7587,11 @@ const docTemplate = `{
                     "description": "ID",
                     "type": "integer",
                     "example": 1
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
                 },
                 "mon_node": {
                     "description": "mon节点",
@@ -7259,6 +7724,38 @@ const docTemplate = `{
                 "msg": {
                     "description": "信息\nExample: \"success\"",
                     "type": "string"
+                }
+            }
+        },
+        "common.Pag-api_ApiStandardOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ApiStandardOut"
+                    }
+                },
+                "page": {
+                    "description": "当前页码\nExample: 1",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
@@ -7494,38 +7991,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/node.OesNodeDetailOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-permission_PermissionStandardOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/permission.PermissionStandardOut"
                     }
                 },
                 "page": {
@@ -8353,17 +8818,20 @@ const docTemplate = `{
         "menu.CreateMenuRequest": {
             "type": "object",
             "required": [
-                "arrange_order",
                 "component",
                 "id",
                 "meta",
                 "name",
-                "path"
+                "path",
+                "sort"
             ],
             "properties": {
-                "arrange_order": {
-                    "description": "排序字段",
-                    "type": "integer"
+                "api_ids": {
+                    "description": "权限ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "component": {
                     "description": "组件路径",
@@ -8405,22 +8873,21 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
                 }
             }
         },
         "menu.MenuDetailOut": {
             "type": "object",
             "properties": {
-                "arrange_order": {
-                    "description": "排列顺序",
-                    "type": "integer",
-                    "example": 1000
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "component": {
                     "description": "组件路径",
@@ -8473,12 +8940,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "/api/v1/users"
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -8511,11 +8976,6 @@ const docTemplate = `{
         "menu.MenuStandardOut": {
             "type": "object",
             "properties": {
-                "arrange_order": {
-                    "description": "排列顺序",
-                    "type": "integer",
-                    "example": 1000
-                },
                 "component": {
                     "description": "组件路径",
                     "type": "string",
@@ -8558,6 +9018,11 @@ const docTemplate = `{
                     "description": "前端路由",
                     "type": "string",
                     "example": "/api/v1/users"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -8605,16 +9070,19 @@ const docTemplate = `{
         "menu.UpdateMenuRequest": {
             "type": "object",
             "required": [
-                "arrange_order",
                 "component",
                 "meta",
                 "name",
-                "path"
+                "path",
+                "sort"
             ],
             "properties": {
-                "arrange_order": {
-                    "description": "排序字段",
-                    "type": "integer"
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "component": {
                     "description": "组件路径",
@@ -8652,12 +9120,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
                 }
             }
         },
@@ -9053,167 +9518,6 @@ const docTemplate = `{
                 }
             }
         },
-        "permission.CreatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "id",
-                "label",
-                "method",
-                "url"
-            ],
-            "properties": {
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer"
-                },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "method": {
-                    "description": "请求方法",
-                    "type": "string",
-                    "enum": [
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "PATCH",
-                        "WS"
-                    ]
-                },
-                "url": {
-                    "description": "URL地址",
-                    "type": "string",
-                    "maxLength": 150
-                }
-            }
-        },
-        "permission.PagPermissionReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-permission_PermissionStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "permission.PermissionReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/permission.PermissionStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "permission.PermissionStandardOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理权限"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer",
-                    "example": 1
-                },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "example": "customer"
-                },
-                "method": {
-                    "description": "请求方法",
-                    "type": "string",
-                    "example": "GET"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "url": {
-                    "description": "HTTP路径",
-                    "type": "string",
-                    "example": "/api/v1/users"
-                }
-            }
-        },
-        "permission.UpdatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "label",
-                "method",
-                "url"
-            ],
-            "properties": {
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "method": {
-                    "description": "请求方法",
-                    "type": "string",
-                    "enum": [
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "PATCH",
-                        "WS"
-                    ]
-                },
-                "url": {
-                    "description": "URL地址",
-                    "type": "string",
-                    "maxLength": 150
-                }
-            }
-        },
         "pkg.PackageReply": {
             "type": "object",
             "properties": {
@@ -9436,6 +9740,13 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "api_ids": {
+                    "description": "APIID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "button_ids": {
                     "description": "按钮ID列表",
                     "type": "array",
@@ -9459,13 +9770,6 @@ const docTemplate = `{
                     "description": "名称",
                     "type": "string",
                     "maxLength": 50
-                },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
                 }
             }
         },
@@ -9513,6 +9817,13 @@ const docTemplate = `{
         "role.RoleDetailOut": {
             "type": "object",
             "properties": {
+                "api_ids": {
+                    "description": "APIID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "button_ids": {
                     "description": "按钮ID列表",
                     "type": "array",
@@ -9547,13 +9858,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "用户管理"
                 },
-                "permission_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
                 "updated_at": {
                     "description": "更新时间",
                     "type": "string",
@@ -9564,11 +9868,6 @@ const docTemplate = `{
         "role.RoleMenuPerm": {
             "type": "object",
             "properties": {
-                "arrange_order": {
-                    "description": "排列顺序",
-                    "type": "integer",
-                    "example": 1000
-                },
                 "buttons": {
                     "description": "按钮",
                     "type": "array",
@@ -9620,6 +9919,11 @@ const docTemplate = `{
                     "description": "前端路由",
                     "type": "string",
                     "example": "/api/v1/users"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
                 }
             }
         },
@@ -9922,6 +10226,46 @@ const docTemplate = `{
                 },
                 "work_dir": {
                     "description": "工作目录",
+                    "type": "string"
+                }
+            }
+        },
+        "script.ListLableReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "script.ListProjectReply": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
                     "type": "string"
                 }
             }

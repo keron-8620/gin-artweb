@@ -40,8 +40,14 @@ type ScriptStandardOut struct {
 	Username string `json:"username" example:"admin"`
 }
 
-// ScriptReply 程序包响应结构
+// ScriptReply 脚本响应结构
 type ScriptReply = common.APIReply[ScriptStandardOut]
 
-// PagScriptReply程序包的分页响应结构
+// PagScriptReply 脚本分页响应结构
 type PagScriptReply = common.APIReply[*common.Pag[ScriptStandardOut]]
+
+// ListProjectReply 项目列表响应结构
+type ListProjectReply = common.APIReply[[]string]
+
+// ListLableReply 标签列表响应结构
+type ListLableReply = common.APIReply[[]string]

@@ -11,6 +11,7 @@ import (
 	pbButton "gin-artweb/api/customer/button"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -63,15 +64,15 @@ func (s *ButtonService) CreateButton(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucButton.CreateButton(ctx, req.PermissionIDs, biz.ButtonModel{
+	m, err := s.ucButton.CreateButton(ctx, req.ApiIDs, model.ButtonModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: req.ID},
 		},
-		Name:         req.Name,
-		ArrangeOrder: req.ArrangeOrder,
-		IsActive:     req.IsActive,
-		Descr:        req.Descr,
-		MenuID:       req.MenuID,
+		Name:     req.Name,
+		Sort:     req.Sort,
+		IsActive: req.IsActive,
+		Descr:    req.Descr,
+		MenuID:   req.MenuID,
 	})
 	if err != nil {
 		s.log.Error(
@@ -145,12 +146,12 @@ func (s *ButtonService) UpdateButton(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucButton.UpdateButtonByID(ctx, uri.ID, req.PermissionIDs, map[string]any{
-		"name":          req.Name,
-		"arrange_order": req.ArrangeOrder,
-		"is_active":     req.IsActive,
-		"descr":         req.Descr,
-		"menu_id":       req.MenuID,
+	m, err := s.ucButton.UpdateButtonByID(ctx, uri.ID, req.ApiIDs, map[string]any{
+		"name":      req.Name,
+		"sort":      req.Sort,
+		"is_active": req.IsActive,
+		"descr":     req.Descr,
+		"menu_id":   req.MenuID,
 	})
 	if err != nil {
 		s.log.Error(
@@ -260,7 +261,7 @@ func (s *ButtonService) GetButton(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucButton.FindButtonByID(ctx, []string{"Permissions", "Menu"}, uri.ID)
+	m, err := s.ucButton.FindButtonByID(ctx, []string{"Apis", "Menu"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询按钮详情失败",
@@ -358,19 +359,19 @@ func (s *ButtonService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func ButtonModelToBaseOut(
-	m biz.ButtonModel,
+	m model.ButtonModel,
 ) *pbButton.ButtonBaseOut {
 	return &pbButton.ButtonBaseOut{
-		ID:           m.ID,
-		Name:         m.Name,
-		ArrangeOrder: m.ArrangeOrder,
-		IsActive:     m.IsActive,
-		Descr:        m.Descr,
+		ID:       m.ID,
+		Name:     m.Name,
+		Sort:     m.Sort,
+		IsActive: m.IsActive,
+		Descr:    m.Descr,
 	}
 }
 
 func ButtonModelToStandardOut(
-	m biz.ButtonModel,
+	m model.ButtonModel,
 ) *pbButton.ButtonStandardOut {
 	return &pbButton.ButtonStandardOut{
 		ButtonBaseOut: *ButtonModelToBaseOut(m),
@@ -380,28 +381,28 @@ func ButtonModelToStandardOut(
 }
 
 func ButtonModelToDetailOut(
-	m biz.ButtonModel,
+	m model.ButtonModel,
 ) *pbButton.ButtonDetailOut {
 	var menu *pbMenu.MenuStandardOut
 	if m.Menu.ID != 0 {
 		menu = MenuModelToStandardOut(m.Menu)
 	}
-	var permissionIDs = []uint32{}
-	if len(m.Permissions) > 0 {
-		permissionIDs = make([]uint32, len(m.Permissions))
-		for i, p := range m.Permissions {
-			permissionIDs[i] = p.ID
+	var ApiIDs = []uint32{}
+	if len(m.Apis) > 0 {
+		ApiIDs = make([]uint32, len(m.Apis))
+		for i, p := range m.Apis {
+			ApiIDs[i] = p.ID
 		}
 	}
 	return &pbButton.ButtonDetailOut{
 		ButtonStandardOut: *ButtonModelToStandardOut(m),
 		Menu:              menu,
-		PermissionIDs:     permissionIDs,
+		ApiIDs:            ApiIDs,
 	}
 }
 
 func ListButtonModelToStandardOut(
-	bms *[]biz.ButtonModel,
+	bms *[]model.ButtonModel,
 ) *[]pbButton.ButtonStandardOut {
 	if bms == nil {
 		return &[]pbButton.ButtonStandardOut{}

@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/crypto/ssh"
 
+	"gin-artweb/internal/infra/resource/data"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -18,56 +20,9 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-const (
-	HostTableName = "resource_host"
-	HostIDKey     = "host_id"
-)
-
-type HostModel struct {
-	database.StandardModel
-	Name    string `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Label   string `gorm:"column:label;type:varchar(50);index:idx_host_label;comment:标签" json:"label"`
-	SSHIP   string `gorm:"column:ssh_ip;type:varchar(108);uniqueIndex:idx_host_ip_port_user;comment:IP地址" json:"ssh_ip"`
-	SSHPort uint16 `gorm:"column:ssh_port;type:smallint;uniqueIndex:idx_host_ip_port_user;comment:端口" json:"ssh_port"`
-	SSHUser string `gorm:"column:ssh_user;type:varchar(50);uniqueIndex:idx_host_ip_port_user;comment:用户名" json:"ssh_user"`
-	PyPath  string `gorm:"column:py_path;type:varchar(254);comment:python路径" json:"py_path"`
-	Remark  string `gorm:"column:remark;type:varchar(254);comment:备注" json:"remark"`
-}
-
-func (m *HostModel) TableName() string {
-	return HostTableName
-}
-
-func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("name", m.Name)
-	enc.AddString("label", m.Label)
-	enc.AddString("ssh_ip", m.SSHIP)
-	enc.AddUint16("ssh_port", m.SSHPort)
-	enc.AddString("ssh_user", m.SSHUser)
-	enc.AddString("py_path", m.PyPath)
-	enc.AddString("remark", m.Remark)
-	return nil
-}
-
-type HostRepo interface {
-	CreateModel(context.Context, *HostModel) error
-	UpdateModel(context.Context, map[string]any, ...any) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, []string, ...any) (*HostModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]HostModel, error)
-	NewSSHClient(context.Context, string, uint16, string, []ssh.AuthMethod, time.Duration) (*ssh.Client, error)
-	ExecuteCommand(context.Context, *ssh.Session, string) error
-}
-
 type HostUsecase struct {
 	log        *zap.Logger
-	hostRepo   HostRepo
+	hostRepo   *data.HostRepo
 	sshTimeout time.Duration
 	authMethod ssh.AuthMethod
 	pubKeyB64s []string
@@ -75,7 +30,7 @@ type HostUsecase struct {
 
 func NewHostUsecase(
 	log *zap.Logger,
-	hostRepo HostRepo,
+	hostRepo *data.HostRepo,
 	sshTimeout time.Duration,
 	authMethod ssh.AuthMethod,
 	pubKeyB64s []string,
@@ -91,9 +46,9 @@ func NewHostUsecase(
 
 func (uc *HostUsecase) CreateHost(
 	ctx context.Context,
-	m HostModel,
+	m model.HostModel,
 	password string,
-) (*HostModel, *errors.Error) {
+) (*model.HostModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -132,16 +87,16 @@ func (uc *HostUsecase) CreateHost(
 
 func (uc *HostUsecase) UpdateHostById(
 	ctx context.Context,
-	m HostModel,
+	m model.HostModel,
 	password string,
-) (*HostModel, *errors.Error) {
+) (*model.HostModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始更新主机",
-		zap.Uint32(HostIDKey, m.ID),
+		zap.Uint32("host_id", m.ID),
 		zap.Object(database.ModelKey, &m),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -163,7 +118,7 @@ func (uc *HostUsecase) UpdateHostById(
 		uc.log.Error(
 			"更新主机失败",
 			zap.Error(err),
-			zap.Uint32(HostIDKey, m.ID),
+			zap.Uint32("host_id", m.ID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -192,7 +147,7 @@ func (uc *HostUsecase) DeleteHostById(
 
 	uc.log.Info(
 		"开始删除主机",
-		zap.Uint32(HostIDKey, hostId),
+		zap.Uint32("host_id", hostId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -200,7 +155,7 @@ func (uc *HostUsecase) DeleteHostById(
 		uc.log.Error(
 			"删除主机失败",
 			zap.Error(err),
-			zap.Uint32(HostIDKey, hostId),
+			zap.Uint32("host_id", hostId),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": hostId})
@@ -220,7 +175,7 @@ func (uc *HostUsecase) DeleteHostById(
 
 	uc.log.Info(
 		"删除主机成功",
-		zap.Uint32(HostIDKey, hostId),
+		zap.Uint32("host_id", hostId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -229,14 +184,14 @@ func (uc *HostUsecase) DeleteHostById(
 func (uc *HostUsecase) FindHostById(
 	ctx context.Context,
 	hostId uint32,
-) (*HostModel, *errors.Error) {
+) (*model.HostModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始查询主机",
-		zap.Uint32(HostIDKey, hostId),
+		zap.Uint32("host_id", hostId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -245,7 +200,7 @@ func (uc *HostUsecase) FindHostById(
 		uc.log.Error(
 			"查询主机失败",
 			zap.Error(err),
-			zap.Uint32(HostIDKey, hostId),
+			zap.Uint32("host_id", hostId),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": hostId})
@@ -253,7 +208,7 @@ func (uc *HostUsecase) FindHostById(
 
 	uc.log.Info(
 		"查询主机成功",
-		zap.Uint32(HostIDKey, hostId),
+		zap.Uint32("host_id", hostId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -262,7 +217,7 @@ func (uc *HostUsecase) FindHostById(
 func (uc *HostUsecase) ListHost(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]HostModel, *errors.Error) {
+) (int64, *[]model.HostModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -390,7 +345,7 @@ func (uc *HostUsecase) TestSSHConnection(
 	return nil
 }
 
-func (uc *HostUsecase) ExportHost(ctx context.Context, m HostModel) *errors.Error {
+func (uc *HostUsecase) ExportHost(ctx context.Context, m model.HostModel) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}

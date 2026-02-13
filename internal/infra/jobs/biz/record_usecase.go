@@ -15,133 +15,27 @@ import (
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/infra/jobs/data"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-const (
-	ScriptRecordTableName = "jobs_script_record"
-	ScriptRecordIDKey     = "script_record_id"
-)
-
-type ScriptRecordModel struct {
-	database.StandardModel
-	TriggerType  string      `gorm:"column:trigger_type;type:varchar(20);comment:触发类型(cron/api)" json:"trigger_type"`
-	Status       int         `gorm:"column:status;type:tinyint;not null;default:0;comment:执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)" json:"status"`
-	ExitCode     int         `gorm:"column:exit_code;comment:退出码" json:"exit_code"`
-	EnvVars      string      `gorm:"column:env_vars;type:json;comment:环境变量(JSON对象)" json:"env_vars"`
-	CommandArgs  string      `gorm:"column:command_args;type:varchar(254);comment:命令行参数(JSON数组)" json:"command_args"`
-	WorkDir      string      `gorm:"column:work_dir;type:varchar(255);comment:工作目录" json:"work_dir"`
-	Timeout      int         `gorm:"column:timeout;type:int;not null;default:300;comment:超时时间(秒)" json:"timeout"`
-	LogName      string      `gorm:"column:log_name;type:varchar(255);comment:日志文件路径" json:"log_name"`
-	ErrorMessage string      `gorm:"column:error_message;type:text;comment:错误信息" json:"error_message"`
-	Username     string      `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
-	ScriptID     uint32      `gorm:"column:script_id;not null;index;comment:脚本ID" json:"script_id"`
-	Script       ScriptModel `gorm:"foreignKey:ScriptID;references:ID;constraint:OnDelete:CASCADE" json:"script"`
-}
-
-func (m *ScriptRecordModel) TableName() string {
-	return ScriptRecordTableName
-}
-
-func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("trigger_type", m.TriggerType)
-	enc.AddInt("status", m.Status)
-	enc.AddInt("exit_code", m.ExitCode)
-	enc.AddString("env_vars", m.EnvVars)
-	enc.AddString("command_args", m.CommandArgs)
-	enc.AddString("work_dir", m.WorkDir)
-	enc.AddString("log_path", m.LogName)
-	enc.AddString("username", m.Username)
-	enc.AddUint32("script_id", m.ScriptID)
-	return nil
-}
-
-func (m *ScriptRecordModel) InitEnv() []string {
-	env := os.Environ()
-	env = append(env, fmt.Sprintf("JOBS_RECORD_ID=%d", m.ID))
-	env = append(env, fmt.Sprintf("JOBS_LOG_PATH=%s", m.LogPath()))
-	env = append(env, fmt.Sprintf("JOBS_BASE_DIR=%s", config.BaseDir))
-	if m.EnvVars != "" {
-		var envMap map[string]string
-		if err := json.Unmarshal([]byte(m.EnvVars), &envMap); err == nil {
-			for k, v := range envMap {
-				if k != "" {
-					env = append(env, fmt.Sprintf("%s=%s", k, v))
-				}
-			}
-		}
-	}
-	return env
-}
-
-func (m *ScriptRecordModel) LogPath() string {
-	return filepath.Join(config.StorageDir, "logs", m.CreatedAt.Format(time.DateOnly), m.LogName)
-}
-
-type ScriptRecordRepo interface {
-	CreateModel(context.Context, *ScriptRecordModel) error
-	UpdateModel(context.Context, map[string]any, ...any) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, []string, ...any) (*ScriptRecordModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]ScriptRecordModel, error)
-}
-
-type TaskInfo struct {
-	Status   int
-	ExitCode int
-	ErrMSG   string
-	Error    error
-	LogFile  *os.File
-}
-
-func (t *TaskInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddInt("status", t.Status)
-	enc.AddInt("exit_code", t.ExitCode)
-	enc.AddString("error_message", t.ErrMSG)
-	return nil
-}
-
-func (t *TaskInfo) ToMap() map[string]any {
-	return map[string]any{
-		"status":        t.Status,
-		"exit_code":     t.ExitCode,
-		"error_message": t.ErrMSG,
-	}
-}
-
-type ExecuteRequest struct {
-	TriggerType string `json:"trigger_type"`
-	ScriptID    uint32 `json:"script_id"`
-	CommandArgs string `json:"command_args"`
-	EnvVars     string `json:"env_vars"`
-	Timeout     int    `json:"timeout"`
-	WorkDir     string `json:"work_dir"`
-	Username    string `json:"username"`
-}
-
 type RecordUsecase struct {
 	log        *zap.Logger
-	scriptRepo ScriptRepo
-	recordRepo ScriptRecordRepo
+	scriptRepo *data.ScriptRepo
+	recordRepo *data.RecordRepo
 	contexts   map[uint32]context.CancelFunc
 	mutex      sync.RWMutex
 }
 
 func NewScriptRecordUsecase(
 	log *zap.Logger,
-	scriptRepo ScriptRepo,
-	recordRepo ScriptRecordRepo,
+	scriptRepo *data.ScriptRepo,
+	recordRepo *data.RecordRepo,
 ) *RecordUsecase {
 	return &RecordUsecase{
 		log:        log,
@@ -172,10 +66,10 @@ func (uc *RecordUsecase) GetCancel(id uint32) context.CancelFunc {
 	return uc.contexts[id]
 }
 
-func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
+func (uc *RecordUsecase) Execute(record *model.ScriptRecordModel) *TaskInfo {
 	uc.log.Debug(
 		"开始执行脚本",
-		zap.Object(ScriptRecordIDKey, record),
+		zap.Object("script_record_id", record),
 	)
 	// 初始化执行任务
 	ctx, cancel := context.WithCancel(context.Background())
@@ -218,7 +112,7 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 				zap.String("error", taskinfo.ErrMSG),
 				zap.Any("panic", r),
 				zap.String("stack", string(stack)),
-				zap.Uint32(ScriptRecordIDKey, record.ID),
+				zap.Uint32("script_record_id", record.ID),
 			)
 
 			if taskinfo.LogFile != nil {
@@ -249,12 +143,12 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 		// 输出日志
 		uc.log.Debug(
 			"脚本执行完成",
-			zap.Object(ScriptRecordIDKey, record),
+			zap.Object("script_record_id", record),
 		)
 	}()
 
 	// 生成日志路径并创建日志目录
-	logPath := record.LogPath()
+	logPath := GetScriptLogPath(*record)
 	logDir := filepath.Dir(logPath)
 	if taskinfo.Error = os.MkdirAll(logDir, 0755); taskinfo.Error != nil {
 		taskinfo.Status = 5
@@ -288,7 +182,7 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 		startTime.Format(time.RFC3339), record.ID, record.ScriptID)
 
 	// 交验脚本是否存在
-	scriptPath := record.Script.ScriptPath()
+	scriptPath := GetScriptPath(record.Script)
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		fmt.Fprintf(taskinfo.LogFile, "脚本文件不存在: %s\n", scriptPath)
 		return taskinfo
@@ -331,8 +225,20 @@ func (uc *RecordUsecase) Execute(record *ScriptRecordModel) *TaskInfo {
 		cmd.Dir = record.WorkDir
 	}
 
-	// 设置环境变量
-	cmd.Env = record.InitEnv()
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("JOBS_RECORD_ID=%d", record.ID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("JOBS_LOG_PATH=%s", logPath))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("JOBS_BASE_DIR=%s", config.BaseDir))
+	if record.EnvVars != "" {
+		var envMap map[string]string
+		if err := json.Unmarshal([]byte(record.EnvVars), &envMap); err == nil {
+			for k, v := range envMap {
+				if k != "" {
+					cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+				}
+			}
+		}
+	}
 
 	// 重定向输出到日志文件
 	cmd.Stdout = taskinfo.LogFile
@@ -366,20 +272,20 @@ func (uc *RecordUsecase) Cancel(ctx context.Context, recordID uint32) {
 	if cancel == nil {
 		uc.log.Warn(
 			"未找到要取消的脚本任务",
-			zap.Uint32(ScriptRecordIDKey, recordID),
+			zap.Uint32("script_record_id", recordID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 	} else {
 		uc.log.Info(
 			"开始取消脚本执行",
-			zap.Uint32(ScriptRecordIDKey, recordID),
+			zap.Uint32("script_record_id", recordID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		cancel()
 		uc.DeleteCancel(recordID)
 		uc.log.Info(
 			"取消脚本执行成功",
-			zap.Uint32(ScriptRecordIDKey, recordID),
+			zap.Uint32("script_record_id", recordID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 	}
@@ -388,7 +294,7 @@ func (uc *RecordUsecase) Cancel(ctx context.Context, recordID uint32) {
 func (uc *RecordUsecase) CreateScriptRecord(
 	ctx context.Context,
 	req ExecuteRequest,
-) (*ScriptRecordModel, *errors.Error) {
+) (*model.ScriptRecordModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -398,7 +304,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 		uc.log.Error(
 			"查询脚本失败",
 			zap.Error(err),
-			zap.Uint32(ScriptIDKey, req.ScriptID),
+			zap.Uint32("script_id", req.ScriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": req.ScriptID})
@@ -407,14 +313,14 @@ func (uc *RecordUsecase) CreateScriptRecord(
 	if !script.Status {
 		uc.log.Error(
 			"脚本已禁用",
-			zap.Uint32(ScriptIDKey, req.ScriptID),
+			zap.Uint32("script_id", req.ScriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, errors.FromReason(errors.ReasonScriptIsDisabled).WithField(ScriptIDKey, req.ScriptID)
+		return nil, errors.FromReason(errors.ReasonScriptIsDisabled).WithField("script_id", req.ScriptID)
 	}
 
 	now := time.Now()
-	record := &ScriptRecordModel{
+	record := &model.ScriptRecordModel{
 		StandardModel: database.StandardModel{
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -436,7 +342,7 @@ func (uc *RecordUsecase) CreateScriptRecord(
 		uc.log.Error(
 			"创建执行记录失败",
 			zap.Error(err),
-			zap.Uint32(ScriptIDKey, req.ScriptID),
+			zap.Uint32("script_id", req.ScriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
@@ -458,7 +364,7 @@ func (uc *RecordUsecase) UpdateScriptRecord(
 		uc.log.Error(
 			"更新脚本记录失败",
 			zap.Error(err),
-			zap.Uint32(ScriptRecordIDKey, recordID),
+			zap.Uint32("script_record_id", recordID),
 			zap.Object("taskinfo", taskinfo),
 		)
 		return errors.NewGormError(err, taskinfo.ToMap())
@@ -470,14 +376,14 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 	ctx context.Context,
 	preloads []string,
 	recordID uint32,
-) (*ScriptRecordModel, *errors.Error) {
+) (*model.ScriptRecordModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始查询脚本执行记录",
-		zap.Uint32(ScriptRecordIDKey, recordID),
+		zap.Uint32("script_record_id", recordID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -486,7 +392,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 		uc.log.Error(
 			"查询脚本执行记录失败",
 			zap.Error(err),
-			zap.Uint32(ScriptRecordIDKey, recordID),
+			zap.Uint32("script_record_id", recordID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": recordID})
@@ -495,7 +401,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 
 	uc.log.Info(
 		"查询脚本执行记录成功",
-		zap.Uint32(ScriptRecordIDKey, recordID),
+		zap.Uint32("script_record_id", recordID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -504,7 +410,7 @@ func (uc *RecordUsecase) FindScriptRecordByID(
 func (uc *RecordUsecase) ListcriptRecord(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]ScriptRecordModel, *errors.Error) {
+) (int64, *[]model.ScriptRecordModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -537,7 +443,7 @@ func (uc *RecordUsecase) ListcriptRecord(
 func (uc *RecordUsecase) AsyncExecuteScript(
 	ctx context.Context,
 	req ExecuteRequest,
-) (*ScriptRecordModel, *errors.Error) {
+) (*model.ScriptRecordModel, *errors.Error) {
 	record, err := uc.CreateScriptRecord(ctx, req)
 	if err != nil {
 		return nil, err

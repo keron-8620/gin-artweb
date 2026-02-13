@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	golog "log"
@@ -39,7 +38,6 @@ import (
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
-	"gin-artweb/internal/shared/shell"
 )
 
 var (
@@ -247,15 +245,14 @@ func main() {
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
 func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initialize, func(), error) {
-	signers, err := shell.GetSignersFromDefaultKeys()
-	if err != nil {
-		loggers.Server.Error("初始化加载ssh密钥失败", zap.Error(err))
-		return nil, nil, err
-	}
-	if len(signers) == 0 {
-		loggers.Server.Error("没有可用的SSH密钥")
-		return nil, nil, errors.New("没有可用的SSH密钥")
-	}
+	jwtConf := auth.NewJWTConfig(
+		time.Duration(conf.Security.Token.AccessMinutes)*time.Second,
+		time.Duration(conf.Security.Token.RefreshMinutes)*time.Second,
+		conf.Security.Token.AccessMethod,
+		conf.Security.Token.RefreshMethod,
+		[]byte(os.Getenv("JWT_ACCESS_SECRET")),
+		[]byte(os.Getenv("JWT_REFRESH_SECRET")),
+	)
 
 	// 初始化casbin 权限管理
 	enf, err := auth.NewCasbinEnforcer()
@@ -290,7 +287,7 @@ func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initi
 			DBTimeout: &dbTimeout,
 			Enforcer:  enf,
 			Crontab:   ct,
-			Signers:   signers,
+			JwtConf:   jwtConf,
 		}, func() {
 			// 关闭计划任务
 			if ct != nil {

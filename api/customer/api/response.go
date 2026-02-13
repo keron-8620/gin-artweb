@@ -1,11 +1,11 @@
-package permission
+package api
 
 import (
 	"gin-artweb/api/common"
 )
 
-// PermissionStandardOut 权限基础信息
-type PermissionStandardOut struct {
+// ApiStandardOut API基础信息
+type ApiStandardOut struct {
 	// 唯一标识
 	ID uint32 `json:"id" example:"1"`
 
@@ -28,8 +28,8 @@ type PermissionStandardOut struct {
 	Descr string `json:"descr" example:"用户管理权限"`
 }
 
-// PermissionReply 权限响应结构
-type PermissionReply = common.APIReply[*PermissionStandardOut]
+// ApiReply 权限响应结构
+type ApiReply = common.APIReply[*ApiStandardOut]
 
-// PagPermissionReply 权限的分页响应结构
-type PagPermissionReply = common.APIReply[*common.Pag[PermissionStandardOut]]
+// PagApiReply API的分页响应结构
+type PagApiReply = common.APIReply[*common.Pag[ApiStandardOut]]

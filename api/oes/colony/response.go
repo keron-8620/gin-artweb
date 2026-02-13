@@ -18,6 +18,9 @@ type OesColonyBaseOut struct {
 
 	// 解压后名称
 	ExtractedName string `json:"extracted_name" example:"oes"`
+
+	// 是否启用
+	IsEnable bool `json:"is_enable" example:"true"`
 }
 
 type OesColonyStandardOut struct {

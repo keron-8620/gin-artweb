@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
@@ -17,10 +17,10 @@ import (
 	"gin-artweb/internal/shared/log"
 )
 
-// roleRepo 角色仓库实现
+// RoleRepo 角色仓库实现
 // 负责角色模型的CRUD操作和角色权限策略的管理
 // 使用GORM进行数据库操作，使用Casbin进行权限策略管理
-type roleRepo struct {
+type RoleRepo struct {
 	log      *zap.Logger       // 日志记录器
 	gormDB   *gorm.DB          // GORM数据库连接
 	timeouts *config.DBTimeout // 数据库操作超时配置
@@ -38,14 +38,14 @@ type roleRepo struct {
 //
 // 返回值：
 //
-//	biz.RoleRepo: 角色仓库接口实现
+//	model.RoleRepo: 角色仓库接口实现
 func NewRoleRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
 	enforcer *casbin.Enforcer,
-) biz.RoleRepo {
-	return &roleRepo{
+) *RoleRepo {
+	return &RoleRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
@@ -59,7 +59,7 @@ func NewRoleRepo(
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	m: 角色模型，包含角色的详细信息
-//	perms: 权限模型列表，包含与角色关联的权限
+//	apis: API模型列表，包含与角色关联的权限
 //	menus: 菜单模型列表，包含与角色关联的菜单
 //	buttons: 按钮模型列表，包含与角色关联的按钮
 //
@@ -73,12 +73,12 @@ func NewRoleRepo(
 //  3. 处理关联的权限、菜单和按钮信息
 //  4. 执行数据库创建操作
 //  5. 记录操作日志
-func (r *roleRepo) CreateModel(
+func (r *RoleRepo) CreateModel(
 	ctx context.Context,
-	m *biz.RoleModel,
-	perms *[]biz.PermissionModel,
-	menus *[]biz.MenuModel,
-	buttons *[]biz.ButtonModel,
+	m *model.RoleModel,
+	apis *[]model.ApiModel,
+	menus *[]model.MenuModel,
+	buttons *[]model.ButtonModel,
 ) error {
 	// 检查参数
 	if m == nil {
@@ -102,9 +102,9 @@ func (r *roleRepo) CreateModel(
 	m.UpdatedAt = now
 
 	upmap := make(map[string]any, 3)
-	if perms != nil {
-		if len(*perms) > 0 {
-			upmap["Permissions"] = *perms
+	if apis != nil {
+		if len(*apis) > 0 {
+			upmap["Apis"] = *apis
 		}
 	}
 	if menus != nil {
@@ -118,7 +118,7 @@ func (r *roleRepo) CreateModel(
 		}
 	}
 
-	if err := database.DBCreate(ctx, r.gormDB, &biz.RoleModel{}, m, upmap); err != nil {
+	if err := database.DBCreate(ctx, r.gormDB, &model.RoleModel{}, m, upmap); err != nil {
 		r.log.Error(
 			"创建角色模型失败",
 			zap.Error(err),
@@ -144,7 +144,7 @@ func (r *roleRepo) CreateModel(
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	data: 更新数据，包含要更新的字段和值
-//	perms: 权限模型列表，包含与角色关联的权限
+//	apis: API模型列表，包含与角色关联的权限
 //	menus: 菜单模型列表，包含与角色关联的菜单
 //	buttons: 按钮模型列表，包含与角色关联的按钮
 //	conds: 查询条件，用于指定要更新的记录
@@ -158,12 +158,12 @@ func (r *roleRepo) CreateModel(
 //  2. 处理关联的权限、菜单和按钮信息
 //  3. 执行数据库更新操作
 //  4. 记录操作日志
-func (r *roleRepo) UpdateModel(
+func (r *RoleRepo) UpdateModel(
 	ctx context.Context,
 	data map[string]any,
-	perms *[]biz.PermissionModel,
-	menus *[]biz.MenuModel,
-	buttons *[]biz.ButtonModel,
+	apis *[]model.ApiModel,
+	menus *[]model.MenuModel,
+	buttons *[]model.ButtonModel,
 	conds ...any,
 ) error {
 	if len(data) == 0 {
@@ -180,42 +180,42 @@ func (r *roleRepo) UpdateModel(
 		"开始更新角色模型",
 		zap.Any(database.UpdateDataKey, data),
 		zap.Any(database.ConditionsKey, conds),
-		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
-		zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(menus)),
-		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(buttons)),
+		zap.Uint32s("apis", ListApiModelToUint32s(apis)),
+		zap.Uint32s("menus", ListMenuModelToUint32s(menus)),
+		zap.Uint32s("buttons", ListButtonModelToUint32s(buttons)),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
 	upmap := make(map[string]any, 3)
-	if perms != nil {
-		if len(*perms) > 0 {
-			upmap["Permissions"] = *perms
+	if apis != nil {
+		if len(*apis) > 0 {
+			upmap["Apis"] = *apis
 		} else {
-			upmap["Permissions"] = []biz.PermissionModel{}
+			upmap["Apis"] = []model.ApiModel{}
 		}
 	}
 	if menus != nil {
 		if len(*menus) > 0 {
 			upmap["Menus"] = *menus
 		} else {
-			upmap["Menus"] = []biz.MenuModel{}
+			upmap["Menus"] = []model.MenuModel{}
 		}
 	}
 	if buttons != nil {
 		if len(*buttons) > 0 {
 			upmap["Buttons"] = *buttons
 		} else {
-			upmap["Buttons"] = []biz.ButtonModel{}
+			upmap["Buttons"] = []model.ButtonModel{}
 		}
 	}
-	if err := database.DBUpdate(ctx, r.gormDB, &biz.RoleModel{}, data, upmap, conds...); err != nil {
+	if err := database.DBUpdate(ctx, r.gormDB, &model.RoleModel{}, data, upmap, conds...); err != nil {
 		r.log.Error(
 			"更新角色模型失败",
 			zap.Error(err),
 			zap.Any(database.UpdateDataKey, data),
-			zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
-			zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(menus)),
-			zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(buttons)),
+			zap.Uint32s("apis", ListApiModelToUint32s(apis)),
+			zap.Uint32s("menus", ListMenuModelToUint32s(menus)),
+			zap.Uint32s("buttons", ListButtonModelToUint32s(buttons)),
 			zap.Any(database.ConditionsKey, conds),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			zap.Duration(log.DurationKey, time.Since(now)),
@@ -225,9 +225,9 @@ func (r *roleRepo) UpdateModel(
 	r.log.Debug(
 		"更新角色模型成功",
 		zap.Any(database.UpdateDataKey, data),
-		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(perms)),
-		zap.Uint32s(biz.MenuIDsKey, biz.ListMenuModelToUint32s(menus)),
-		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(buttons)),
+		zap.Uint32s("apis", ListApiModelToUint32s(apis)),
+		zap.Uint32s("menus", ListMenuModelToUint32s(menus)),
+		zap.Uint32s("buttons", ListButtonModelToUint32s(buttons)),
 		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
@@ -249,14 +249,14 @@ func (r *roleRepo) UpdateModel(
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *RoleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除角色模型",
 		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	if err := database.DBDelete(ctx, r.gormDB, &biz.RoleModel{}, conds...); err != nil {
+	if err := database.DBDelete(ctx, r.gormDB, &model.RoleModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除角色模型失败",
 			zap.Error(err),
@@ -285,7 +285,7 @@ func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //
 // 返回值：
 //
-//	*biz.RoleModel: 角色模型指针，包含角色的详细信息
+//	*model.RoleModel: 角色模型指针，包含角色的详细信息
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -293,11 +293,11 @@ func (r *roleRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //  2. 预加载关联字段
 //  3. 获取单个角色模型
 //  4. 记录操作日志
-func (r *roleRepo) GetModel(
+func (r *RoleRepo) GetModel(
 	ctx context.Context,
 	preloads []string,
 	conds ...any,
-) (*biz.RoleModel, error) {
+) (*model.RoleModel, error) {
 	r.log.Debug(
 		"开始查询角色模型",
 		zap.Strings(database.PreloadKey, preloads),
@@ -305,7 +305,7 @@ func (r *roleRepo) GetModel(
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	var m biz.RoleModel
+	var m model.RoleModel
 	if err := database.DBGet(ctx, r.gormDB, preloads, &m, conds...); err != nil {
 		r.log.Error(
 			"查询角色模型失败",
@@ -338,7 +338,7 @@ func (r *roleRepo) GetModel(
 // 返回值：
 //
 //	int64: 总记录数
-//	*[]biz.RoleModel: 角色模型列表指针，包含符合条件的角色模型
+//	*[]model.RoleModel: 角色模型列表指针，包含符合条件的角色模型
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -346,18 +346,18 @@ func (r *roleRepo) GetModel(
 //  2. 获取角色模型列表
 //  3. 返回总记录数和模型列表
 //  4. 记录操作日志
-func (r *roleRepo) ListModel(
+func (r *RoleRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]biz.RoleModel, error) {
+) (int64, *[]model.RoleModel, error) {
 	r.log.Debug(
 		"开始查询角色模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	var ms []biz.RoleModel
-	count, err := database.DBList(ctx, r.gormDB, &biz.RoleModel{}, &ms, qp)
+	var ms []model.RoleModel
+	count, err := database.DBList(ctx, r.gormDB, &model.RoleModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询角色模型列表失败",
@@ -396,9 +396,9 @@ func (r *roleRepo) ListModel(
 //  5. 将按钮转换为Casbin策略
 //  6. 添加角色策略到Casbin
 //  7. 记录操作日志
-func (r *roleRepo) AddGroupPolicy(
+func (r *RoleRepo) AddGroupPolicy(
 	ctx context.Context,
-	role *biz.RoleModel,
+	role *model.RoleModel,
 ) error {
 	// 检查参数
 	if role == nil {
@@ -415,7 +415,6 @@ func (r *roleRepo) AddGroupPolicy(
 	r.log.Debug(
 		"开始添加角色关联策略",
 		zap.Object(database.ModelKey, role),
-		zap.Uint32s(biz.PermissionIDsKey, biz.ListPermissionModelToUint32s(&m.Permissions)),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -423,18 +422,18 @@ func (r *roleRepo) AddGroupPolicy(
 	sub := auth.RoleToSubject(m.ID)
 	rules := [][]string{}
 	// 批量处理权限
-	for i, o := range m.Permissions {
-		// 检查权限模型的有效性
+	for i, o := range m.Apis {
+		// 检查API模型的有效性
 		if o.ID == 0 {
 			r.log.Warn(
 				"跳过无效权限",
 				zap.Object(database.ModelKey, role),
-				zap.Int("permission_index", i),
+				zap.Int("api_index", i),
 				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 			continue
 		}
-		obj := auth.PermissionToSubject(o.ID)
+		obj := auth.ApiToSubject(o.ID)
 		rules = append(rules, []string{sub, obj})
 	}
 
@@ -483,7 +482,6 @@ func (r *roleRepo) AddGroupPolicy(
 	r.log.Debug(
 		"添加角色关联策略成功",
 		zap.Object(database.ModelKey, role),
-		zap.Uint32s(biz.ButtonIDsKey, biz.ListButtonModelToUint32s(&m.Buttons)),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		zap.Duration(log.DurationKey, time.Since(now)),
 	)
@@ -506,9 +504,9 @@ func (r *roleRepo) AddGroupPolicy(
 //  2. 检查角色ID是否有效
 //  3. 删除该角色作为子级的组策略（被其他策略继承）
 //  4. 记录操作日志
-func (r *roleRepo) RemoveGroupPolicy(
+func (r *RoleRepo) RemoveGroupPolicy(
 	ctx context.Context,
-	role *biz.RoleModel,
+	role *model.RoleModel,
 ) error {
 	// 检查参数
 	if role == nil {

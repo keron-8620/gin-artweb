@@ -17,7 +17,7 @@ type CreateButtonRequest struct {
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
 	// 排序字段
-	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"required"`
+	Sort uint32 `json:"sort" form:"sort" binding:"required"`
 
 	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active" binding:"required"`
@@ -28,19 +28,19 @@ type CreateButtonRequest struct {
 	// 菜单ID
 	MenuID uint32 `json:"menu_id" form:"menu_id" binding:"required"`
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
+	// API ID列表
+	ApiIDs []uint32 `json:"api_ids" form:"api_ids" binding:"omitempty"`
 }
 
 func (req *CreateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("id", req.ID)
 	enc.AddString("name", req.Name)
-	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddUint32("sort", req.Sort)
 	enc.AddBool("is_active", req.IsActive)
 	enc.AddString("descr", req.Descr)
 	enc.AddUint32("menu_id", req.MenuID)
-	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, id := range req.PermissionIDs {
+	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
@@ -56,7 +56,7 @@ type UpdateButtonRequest struct {
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
 	// 排序字段
-	ArrangeOrder uint32 `json:"arrange_order" form:"arrange_order" binding:"omitempty"`
+	Sort uint32 `json:"sort" form:"sort" binding:"omitempty"`
 
 	// 是否激活
 	IsActive bool `json:"is_active" form:"is_active"`
@@ -67,18 +67,18 @@ type UpdateButtonRequest struct {
 	// 菜单ID
 	MenuID uint32 `json:"menu_id" form:"menu_id" binding:"required"`
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids" form:"permission_ids" binding:"omitempty"`
+	// API ID列表
+	ApiIDs []uint32 `json:"api_ids" form:"api_ids" binding:"omitempty"`
 }
 
 func (req *UpdateButtonRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", req.Name)
-	enc.AddUint32("arrange_order", req.ArrangeOrder)
+	enc.AddUint32("sort", req.Sort)
 	enc.AddBool("is_active", req.IsActive)
 	enc.AddString("descr", req.Descr)
 	enc.AddUint32("menu_id", req.MenuID)
-	enc.AddArray("permission_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, id := range req.PermissionIDs {
+	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, id := range req.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil

@@ -8,43 +8,44 @@ import (
 	"go.uber.org/zap"
 
 	pbComm "gin-artweb/api/common"
-	pbPerm "gin-artweb/api/customer/permission"
+	pbApi "gin-artweb/api/customer/api"
 	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type PermissionService struct {
-	log    *zap.Logger
-	ucPerm *biz.PermissionUsecase
+type ApiService struct {
+	log   *zap.Logger
+	ucApi *biz.ApiUsecase
 }
 
-func NewPermissionService(
+func NewApiService(
 	logger *zap.Logger,
-	ucPerm *biz.PermissionUsecase,
-) *PermissionService {
-	return &PermissionService{
-		log:    logger,
-		ucPerm: ucPerm,
+	ucApi *biz.ApiUsecase,
+) *ApiService {
+	return &ApiService{
+		log:   logger,
+		ucApi: ucApi,
 	}
 }
 
-// @Summary 新增权限
-// @Description 本接口用于新增权限
-// @Tags 权限管理
+// @Summary 新增API
+// @Description 本接口用于新增API
+// @Tags API管理
 // @Accept json
 // @Produce json
-// @Param request body pbPerm.CreatePermissionRequest true "创建权限请求"
-// @Success 201 {object} pbPerm.PermissionReply "创建权限成功"
+// @Param request body pbApi.CreateApiRequest true "创建API请求"
+// @Success 201 {object} pbApi.ApiReply "创建API成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Router /api/v1/customer/permission [post]
+// @Router /api/v1/customer/api [post]
 // @Security ApiKeyAuth
-func (s *PermissionService) CreatePermission(ctx *gin.Context) {
-	var req pbPerm.CreatePermissionRequest
+func (s *ApiService) CreateApi(ctx *gin.Context) {
+	var req pbApi.CreateApiRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
-			"绑定创建权限请求参数失败",
+			"绑定创建API请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -55,13 +56,13 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始创建权限",
+		"开始创建API",
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucPerm.CreatePermission(ctx, biz.PermissionModel{
+	m, err := s.ucApi.CreateApi(ctx, model.ApiModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: req.ID},
 		},
@@ -72,7 +73,7 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 	})
 	if err != nil {
 		s.log.Error(
-			"创建权限失败",
+			"创建API失败",
 			zap.Error(err),
 			zap.Object(pbComm.RequestModelKey, &req),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -82,36 +83,36 @@ func (s *PermissionService) CreatePermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"创建权限成功",
-		zap.Uint32(biz.PermissionIDKey, m.ID),
+		"创建API成功",
+		zap.Uint32("api_id", m.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	mo := PermModelToStandardOut(*m)
-	ctx.JSON(http.StatusCreated, &pbPerm.PermissionReply{
+	mo := ApiModelToStandardOut(*m)
+	ctx.JSON(http.StatusCreated, &pbApi.ApiReply{
 		Code: http.StatusCreated,
 		Data: mo,
 	})
 }
 
-// @Summary 更新权限
-// @Description 本接口用于更新指定ID的权限
-// @Tags 权限管理
+// @Summary 更新API
+// @Description 本接口用于更新指定ID的API
+// @Tags API管理
 // @Accept json
 // @Produce json
-// @Param id path uint true "权限编号"
-// @Param request body pbPerm.UpdatePermissionRequest true "更新权限请求"
-// @Success 200 {object} pbPerm.PermissionReply "更新权限成功"
+// @Param id path uint true "API编号"
+// @Param request body pbApi.UpdateApiRequest true "更新API请求"
+// @Success 200 {object} pbApi.ApiReply "更新API成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "权限未找到"
-// @Router /api/v1/customer/permission/{id} [put]
+// @Failure 404 {object} errors.Error "API未找到"
+// @Router /api/v1/customer/api/{id} [put]
 // @Security ApiKeyAuth
-func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
+func (s *ApiService) UpdateApi(ctx *gin.Context) {
 	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定权限ID参数失败",
+			"绑定APIID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -121,10 +122,10 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 		return
 	}
 
-	var req pbPerm.UpdatePermissionRequest
+	var req pbApi.UpdateApiRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.log.Error(
-			"绑定更新权限请求参数失败",
+			"绑定更新API请求参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -135,13 +136,13 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始更新权限",
+		"开始更新API",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucPerm.UpdatePermissionByID(ctx, uri.ID, map[string]any{
+	m, err := s.ucApi.UpdateApiByID(ctx, uri.ID, map[string]any{
 		"url":    req.URL,
 		"method": req.Method,
 		"label":  req.Label,
@@ -149,7 +150,7 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 	})
 	if err != nil {
 		s.log.Error(
-			"更新权限失败",
+			"更新API失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.Object(pbComm.RequestModelKey, &req),
@@ -160,34 +161,34 @@ func (s *PermissionService) UpdatePermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"更新权限成功",
+		"更新API成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	mo := PermModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{
+	mo := ApiModelToStandardOut(*m)
+	ctx.JSON(http.StatusOK, &pbApi.ApiReply{
 		Code: http.StatusOK,
 		Data: mo,
 	})
 }
 
-// @Summary 删除权限
-// @Description 本接口用于删除指定ID的权限
-// @Tags 权限管理
+// @Summary 删除API
+// @Description 本接口用于删除指定ID的API
+// @Tags API管理
 // @Accept json
 // @Produce json
-// @Param id path uint true "权限编号"
+// @Param id path uint true "API编号"
 // @Success 200 {object} pbComm.MapAPIReply "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "权限未找到"
-// @Router /api/v1/customer/permission/{id} [delete]
+// @Failure 404 {object} errors.Error "API未找到"
+// @Router /api/v1/customer/api/{id} [delete]
 // @Security ApiKeyAuth
-func (s *PermissionService) DeletePermission(ctx *gin.Context) {
+func (s *ApiService) DeleteApi(ctx *gin.Context) {
 	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定删除权限ID参数失败",
+			"绑定删除ApiID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -198,14 +199,14 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始删除权限",
+		"开始删除API",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	if err := s.ucPerm.DeletePermissionByID(ctx, uri.ID); err != nil {
+	if err := s.ucApi.DeleteApiByID(ctx, uri.ID); err != nil {
 		s.log.Error(
-			"删除权限失败",
+			"删除API失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -215,7 +216,7 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"删除权限成功",
+		"删除API成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -223,22 +224,22 @@ func (s *PermissionService) DeletePermission(ctx *gin.Context) {
 	ctx.JSON(pbComm.NoDataReply.Code, pbComm.NoDataReply)
 }
 
-// @Summary 查询权限
-// @Description 本接口用于查询指定ID的权限
-// @Tags 权限管理
+// @Summary 查询API
+// @Description 本接口用于查询指定ID的API
+// @Tags API管理
 // @Accept json
 // @Produce json
-// @Param id path uint true "权限编号"
-// @Success 200 {object} pbPerm.PermissionReply "获取权限详情成功"
+// @Param id path uint true "API编号"
+// @Success 200 {object} pbApi.ApiReply "获取API详情成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
-// @Failure 404 {object} errors.Error "权限未找到"
-// @Router /api/v1/customer/permission/{id} [get]
+// @Failure 404 {object} errors.Error "API未找到"
+// @Router /api/v1/customer/api/{id} [get]
 // @Security ApiKeyAuth
-func (s *PermissionService) GetPermission(ctx *gin.Context) {
+func (s *ApiService) GetApi(ctx *gin.Context) {
 	var uri pbComm.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		s.log.Error(
-			"绑定查询权限ID参数失败",
+			"绑定查询ApiID参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -249,15 +250,15 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询权限详情",
+		"开始查询API详情",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucPerm.FindPermissionByID(ctx, uri.ID)
+	m, err := s.ucApi.FindApiByID(ctx, uri.ID)
 	if err != nil {
 		s.log.Error(
-			"查询权限详情失败",
+			"查询API详情失败",
 			zap.Error(err),
 			zap.Uint32(pbComm.RequestIDKey, uri.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -267,34 +268,34 @@ func (s *PermissionService) GetPermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"查询权限详情成功",
+		"查询API详情成功",
 		zap.Uint32(pbComm.RequestIDKey, uri.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	mo := PermModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &pbPerm.PermissionReply{
+	mo := ApiModelToStandardOut(*m)
+	ctx.JSON(http.StatusOK, &pbApi.ApiReply{
 		Code: http.StatusOK,
 		Data: mo,
 	})
 }
 
-// @Summary 查询权限列表
-// @Description 本接口用于查询权限列表
-// @Tags 权限管理
+// @Summary 查询API列表
+// @Description 本接口用于查询API列表
+// @Tags API管理
 // @Accept json
 // @Produce json
-// @Param request query pbPerm.ListPermissionRequest false "查询参数"
-// @Success 200 {object} pbPerm.PagPermissionReply "成功返回权限列表"
+// @Param request query pbApi.ListApiRequest false "查询参数"
+// @Success 200 {object} pbApi.PagApiReply "成功返回API列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "内部服务错误"
-// @Router /api/v1/customer/permission [get]
+// @Router /api/v1/customer/api [get]
 // @Security ApiKeyAuth
-func (s *PermissionService) ListPermission(ctx *gin.Context) {
-	var req pbPerm.ListPermissionRequest
+func (s *ApiService) ListApi(ctx *gin.Context) {
+	var req pbApi.ListApiRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		s.log.Error(
-			"绑定查询权限列表参数失败",
+			"绑定查询API列表参数失败",
 			zap.Error(err),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -305,7 +306,7 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"开始查询权限列表",
+		"开始查询API列表",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -318,10 +319,10 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 		OrderBy: []string{"id ASC"},
 		Query:   query,
 	}
-	total, ms, err := s.ucPerm.ListPermission(ctx, qp)
+	total, ms, err := s.ucApi.ListApi(ctx, qp)
 	if err != nil {
 		s.log.Error(
-			"查询权限列表失败",
+			"查询API列表失败",
 			zap.Error(err),
 			zap.Object(database.QueryParamsKey, &qp),
 			zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
@@ -332,30 +333,30 @@ func (s *PermissionService) ListPermission(ctx *gin.Context) {
 	}
 
 	s.log.Info(
-		"查询权限列表成功",
+		"查询API列表成功",
 		zap.String(pbComm.RequestURIKey, ctx.Request.RequestURI),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	mbs := ListPermModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &pbPerm.PagPermissionReply{
+	mbs := ListApiModelToStandardOut(ms)
+	ctx.JSON(http.StatusOK, &pbApi.PagApiReply{
 		Code: http.StatusOK,
 		Data: pbComm.NewPag(page, size, total, mbs),
 	})
 }
 
-func (s *PermissionService) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/permission", s.CreatePermission)
-	r.PUT("/permission/:id", s.UpdatePermission)
-	r.DELETE("/permission/:id", s.DeletePermission)
-	r.GET("/permission/:id", s.GetPermission)
-	r.GET("/permission", s.ListPermission)
+func (s *ApiService) LoadRouter(r *gin.RouterGroup) {
+	r.POST("/api", s.CreateApi)
+	r.PUT("/api/:id", s.UpdateApi)
+	r.DELETE("/api/:id", s.DeleteApi)
+	r.GET("/api/:id", s.GetApi)
+	r.GET("/api", s.ListApi)
 }
 
-func PermModelToStandardOut(
-	m biz.PermissionModel,
-) *pbPerm.PermissionStandardOut {
-	return &pbPerm.PermissionStandardOut{
+func ApiModelToStandardOut(
+	m model.ApiModel,
+) *pbApi.ApiStandardOut {
+	return &pbApi.ApiStandardOut{
 		ID:        m.ID,
 		CreatedAt: m.CreatedAt.Format(time.DateTime),
 		UpdatedAt: m.UpdatedAt.Format(time.DateTime),
@@ -366,17 +367,17 @@ func PermModelToStandardOut(
 	}
 }
 
-func ListPermModelToStandardOut(
-	pms *[]biz.PermissionModel,
-) *[]pbPerm.PermissionStandardOut {
+func ListApiModelToStandardOut(
+	pms *[]model.ApiModel,
+) *[]pbApi.ApiStandardOut {
 	if pms == nil {
-		return &[]pbPerm.PermissionStandardOut{}
+		return &[]pbApi.ApiStandardOut{}
 	}
 
 	ms := *pms
-	mso := make([]pbPerm.PermissionStandardOut, 0, len(ms))
+	mso := make([]pbApi.ApiStandardOut, 0, len(ms))
 	for _, m := range ms {
-		mo := PermModelToStandardOut(m)
+		mo := ApiModelToStandardOut(m)
 		mso = append(mso, *mo)
 	}
 	return &mso

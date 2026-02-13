@@ -8,17 +8,17 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/jobs/biz"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/log"
 )
 
-// scriptRepo 脚本仓库实现
+// ScriptRepo 脚本仓库实现
 // 负责脚本模型的CRUD操作
 // 使用GORM进行数据库操作
-type scriptRepo struct {
+type ScriptRepo struct {
 	log      *zap.Logger       // 日志记录器
 	gormDB   *gorm.DB          // GORM数据库连接
 	timeouts *config.DBTimeout // 数据库操作超时配置
@@ -34,13 +34,13 @@ type scriptRepo struct {
 //
 // 返回值：
 //
-//	biz.ScriptRepo: 脚本仓库接口实现
+//	*ScriptRepo: 脚本仓库实例
 func NewScriptRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
-) biz.ScriptRepo {
-	return &scriptRepo{
+) *ScriptRepo {
+	return &ScriptRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
@@ -63,7 +63,7 @@ func NewScriptRepo(
 //  2. 设置创建时间和更新时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *scriptRepo) CreateModel(ctx context.Context, m *biz.ScriptModel) error {
+func (r *ScriptRepo) CreateModel(ctx context.Context, m *model.ScriptModel) error {
 	// 检查参数
 	if m == nil {
 		err := errors.New("创建脚本模型失败: 模型为空")
@@ -85,7 +85,7 @@ func (r *scriptRepo) CreateModel(ctx context.Context, m *biz.ScriptModel) error 
 	m.UpdatedAt = now
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.ScriptModel{}, m, nil); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &model.ScriptModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建脚本模型失败",
 			zap.Error(err),
@@ -120,7 +120,7 @@ func (r *scriptRepo) CreateModel(ctx context.Context, m *biz.ScriptModel) error 
 //  1. 检查更新数据是否为空
 //  2. 执行数据库更新操作
 //  3. 记录操作日志
-func (r *scriptRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *ScriptRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
 	// 检查参数
 	if len(data) == 0 {
 		err := errors.New("更新脚本模型失败: 更新数据为空")
@@ -142,7 +142,7 @@ func (r *scriptRepo) UpdateModel(ctx context.Context, data map[string]any, conds
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &biz.ScriptModel{}, data, nil, conds...); err != nil {
+	if err := database.DBUpdate(dbCtx, r.gormDB, &model.ScriptModel{}, data, nil, conds...); err != nil {
 		r.log.Error(
 			"更新脚本模型失败",
 			zap.Error(err),
@@ -177,7 +177,7 @@ func (r *scriptRepo) UpdateModel(ctx context.Context, data map[string]any, conds
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *scriptRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *ScriptRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除脚本模型",
 		zap.Any(database.ConditionsKey, conds),
@@ -186,7 +186,7 @@ func (r *scriptRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	startTime := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &biz.ScriptModel{}, conds...); err != nil {
+	if err := database.DBDelete(dbCtx, r.gormDB, &model.ScriptModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除脚本模型失败",
 			zap.Error(err),
@@ -214,24 +214,24 @@ func (r *scriptRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //
 // 返回值：
 //
-//	*biz.ScriptModel: 脚本模型指针，包含脚本的详细信息
+//	*model.ScriptModel: 脚本模型指针，包含脚本的详细信息
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
 //  1. 执行数据库查询操作
 //  2. 获取单个脚本模型
 //  3. 记录操作日志
-func (r *scriptRepo) GetModel(
+func (r *ScriptRepo) GetModel(
 	ctx context.Context,
 	conds ...any,
-) (*biz.ScriptModel, error) {
+) (*model.ScriptModel, error) {
 	r.log.Debug(
 		"开始查询脚本模型",
 		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
-	var m biz.ScriptModel
+	var m model.ScriptModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
 	if err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...); err != nil {
@@ -264,7 +264,7 @@ func (r *scriptRepo) GetModel(
 // 返回值：
 //
 //	int64: 总记录数
-//	*[]biz.ScriptModel: 脚本模型列表指针，包含符合条件的脚本模型
+//	*[]model.ScriptModel: 脚本模型列表指针，包含符合条件的脚本模型
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -272,20 +272,20 @@ func (r *scriptRepo) GetModel(
 //  2. 获取脚本模型列表
 //  3. 返回总记录数和模型列表
 //  4. 记录操作日志
-func (r *scriptRepo) ListModel(
+func (r *ScriptRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]biz.ScriptModel, error) {
+) (int64, *[]model.ScriptModel, error) {
 	r.log.Debug(
 		"开始查询脚本模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	startTime := time.Now()
-	var ms []biz.ScriptModel
+	var ms []model.ScriptModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	count, err := database.DBList(dbCtx, r.gormDB, &biz.ScriptModel{}, &ms, qp)
+	count, err := database.DBList(dbCtx, r.gormDB, &model.ScriptModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询脚本模型列表失败",
@@ -320,11 +320,13 @@ func (r *scriptRepo) ListModel(
 //  1. 执行数据库查询操作
 //  2. 获取所有脚本的项目名称（去重）
 //  3. 记录操作日志
-func (r *scriptRepo) ListProjects(
+func (r *ScriptRepo) ListProjects(
 	ctx context.Context,
+	query map[string]any,
 ) ([]string, error) {
 	r.log.Debug(
 		"开始查询脚本所有的项目名称",
+		zap.Any(database.QueryParamsKey, query),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -332,10 +334,11 @@ func (r *scriptRepo) ListProjects(
 	defer cancel()
 
 	var projects []string
-	if err := r.gormDB.WithContext(dbCtx).Model(&biz.ScriptModel{}).Distinct("project").Pluck("project", &projects).Error; err != nil {
+	if err := r.gormDB.WithContext(dbCtx).Model(&model.ScriptModel{}).Where(query).Distinct("project").Pluck("project", &projects).Error; err != nil {
 		r.log.Error(
 			"查询项目名称失败",
 			zap.Error(err),
+			zap.Any(database.QueryParamsKey, query),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.WrapIf(err, "查询项目名称失败")
@@ -344,6 +347,7 @@ func (r *scriptRepo) ListProjects(
 	r.log.Debug(
 		"查询项目名称成功",
 		zap.Any("projects", projects),
+		zap.Any(database.QueryParamsKey, query),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -365,11 +369,13 @@ func (r *scriptRepo) ListProjects(
 //  1. 执行数据库查询操作
 //  2. 获取所有脚本的标签名称（去重）
 //  3. 记录操作日志
-func (r *scriptRepo) ListLabels(
+func (r *ScriptRepo) ListLabels(
 	ctx context.Context,
+	query map[string]any,
 ) ([]string, error) {
 	r.log.Debug(
 		"开始查询所有标签名称",
+		zap.Any(database.QueryParamsKey, query),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -378,10 +384,11 @@ func (r *scriptRepo) ListLabels(
 	defer cancel()
 
 	// 查询所有唯一的标签名称
-	if err := r.gormDB.WithContext(dbCtx).Model(&biz.ScriptModel{}).Distinct("label").Pluck("label", &labels).Error; err != nil {
+	if err := r.gormDB.WithContext(dbCtx).Model(&model.ScriptModel{}).Where(query).Distinct("label").Pluck("label", &labels).Error; err != nil {
 		r.log.Error(
 			"查询标签名称失败",
 			zap.Error(err),
+			zap.Any(database.QueryParamsKey, query),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.WrapIf(err, "查询标签名称失败")

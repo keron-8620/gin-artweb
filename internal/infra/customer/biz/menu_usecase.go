@@ -4,114 +4,28 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/infra/customer/data"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-const (
-	MenuTableName = "customer_menu"
-	MenuIDKey     = "menu_id"
-	MenuIDsKey    = "menu_ids"
-)
-
-type Meta struct {
-	Title string `json:"title"`
-	Icon  string `json:"icon"`
-}
-
-func (m *Meta) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("title", m.Title)
-	enc.AddString("icon", m.Icon)
-	return nil
-}
-
-type MenuModel struct {
-	database.StandardModel
-	Path         string            `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"path"`
-	Component    string            `gorm:"column:component;type:varchar(200);not null;comment:前端组件" json:"component"`
-	Name         string            `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Meta         Meta              `gorm:"column:meta;serializer:json;comment:菜单信息" json:"meta"`
-	ArrangeOrder uint32            `gorm:"column:arrange_order;type:integer;comment:排序" json:"arrange_order"`
-	IsActive     bool              `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
-	Descr        string            `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	ParentID     *uint32           `gorm:"column:parent_id;comment:父菜单ID" json:"parent_id"`
-	Parent       *MenuModel        `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE" json:"parent"`
-	Permissions  []PermissionModel `gorm:"many2many:customer_menu_permission;joinForeignKey:menu_id;joinReferences:permission_id;constraint:OnDelete:CASCADE"`
-}
-
-func (m *MenuModel) TableName() string {
-	return MenuTableName
-}
-
-func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("path", m.Path)
-	enc.AddString("component", m.Component)
-	enc.AddObject("meta", &m.Meta)
-	enc.AddString("name", m.Name)
-	enc.AddUint32("arrange_order", m.ArrangeOrder)
-	enc.AddBool("is_active", m.IsActive)
-	enc.AddString("descr", m.Descr)
-	if m.ParentID != nil {
-		enc.AddUint32("parent_id", *m.ParentID)
-	}
-	enc.AddArray(PermissionIDsKey, zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, perm := range m.Permissions {
-			ae.AppendUint32(perm.ID)
-		}
-		return nil
-	}))
-	return nil
-}
-
-func ListMenuModelToUint32s(mms *[]MenuModel) []uint32 {
-	if mms == nil {
-		return []uint32{}
-	}
-	ms := *mms
-	if len(ms) == 0 {
-		return []uint32{}
-	}
-
-	ids := make([]uint32, len(ms))
-	for i, m := range ms {
-		ids[i] = m.ID
-	}
-	return ids
-}
-
-type MenuRepo interface {
-	CreateModel(context.Context, *MenuModel, *[]PermissionModel) error
-	UpdateModel(context.Context, map[string]any, *[]PermissionModel, ...any) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, []string, ...any) (*MenuModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]MenuModel, error)
-	AddGroupPolicy(context.Context, *MenuModel) error
-	RemoveGroupPolicy(context.Context, *MenuModel, bool) error
-}
-
 type MenuUsecase struct {
 	log      *zap.Logger
-	permRepo PermissionRepo
-	menuRepo MenuRepo
+	apiRepo  *data.ApiRepo
+	menuRepo *data.MenuRepo
 }
 
 func NewMenuUsecase(
 	log *zap.Logger,
-	permRepo PermissionRepo,
-	menuRepo MenuRepo,
+	apiRepo *data.ApiRepo,
+	menuRepo *data.MenuRepo,
 ) *MenuUsecase {
 	return &MenuUsecase{
 		log:      log,
-		permRepo: permRepo,
+		apiRepo:  apiRepo,
 		menuRepo: menuRepo,
 	}
 }
@@ -119,7 +33,7 @@ func NewMenuUsecase(
 func (uc *MenuUsecase) GetParentMenu(
 	ctx context.Context,
 	parentID *uint32,
-) (*MenuModel, *errors.Error) {
+) (*model.MenuModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -154,33 +68,33 @@ func (uc *MenuUsecase) GetParentMenu(
 	return m, nil
 }
 
-func (uc *MenuUsecase) GetPermissions(
+func (uc *MenuUsecase) GetApis(
 	ctx context.Context,
-	permIDs []uint32,
-) (*[]PermissionModel, *errors.Error) {
+	apiIDs []uint32,
+) (*[]model.ApiModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
-	if len(permIDs) == 0 {
-		return &[]PermissionModel{}, nil
+	if len(apiIDs) == 0 {
+		return &[]model.ApiModel{}, nil
 	}
 
 	uc.log.Info(
 		"开始查询菜单关联的权限列表",
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Uint32s("api_ids", apiIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
 	qp := database.QueryParams{
-		Query: map[string]any{"id in ?": permIDs},
+		Query: map[string]any{"id in ?": apiIDs},
 	}
-	_, ms, err := uc.permRepo.ListModel(ctx, qp)
+	_, ms, err := uc.apiRepo.ListModel(ctx, qp)
 	if err != nil {
 		uc.log.Error(
 			"查询菜单关联的权限列表失败",
 			zap.Error(err),
-			zap.Uint32s(PermissionIDsKey, permIDs),
+			zap.Uint32s("api_ids", apiIDs),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
@@ -188,7 +102,7 @@ func (uc *MenuUsecase) GetPermissions(
 
 	uc.log.Info(
 		"查询菜单关联的权限列表成功",
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Uint32s("api_ids", apiIDs),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return ms, nil
@@ -196,34 +110,40 @@ func (uc *MenuUsecase) GetPermissions(
 
 func (uc *MenuUsecase) CreateMenu(
 	ctx context.Context,
-	permIDs []uint32,
-	m MenuModel,
-) (*MenuModel, *errors.Error) {
+	apiIDs []uint32,
+	m model.MenuModel,
+) (*model.MenuModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始创建菜单",
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Uint32s("api_ids", apiIDs),
 		zap.Object(database.ModelKey, &m),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	menu, err := uc.GetParentMenu(ctx, m.ParentID)
-	if err != nil {
-		return nil, err
+	var (
+		menu *model.MenuModel
+		apis *[]model.ApiModel
+		rErr *errors.Error
+	)
+
+	menu, rErr = uc.GetParentMenu(ctx, m.ParentID)
+	if rErr != nil {
+		return nil, rErr
 	}
 	if menu != nil {
 		m.Parent = menu
 	}
 
-	perms, err := uc.GetPermissions(ctx, permIDs)
-	if err != nil {
-		return nil, err
+	apis, rErr = uc.GetApis(ctx, apiIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
-	if err := uc.menuRepo.CreateModel(ctx, &m, perms); err != nil {
+	if err := uc.menuRepo.CreateModel(ctx, &m, apis); err != nil {
 		uc.log.Error(
 			"创建菜单失败",
 			zap.Error(err),
@@ -233,8 +153,8 @@ func (uc *MenuUsecase) CreateMenu(
 		return nil, errors.NewGormError(err, nil)
 	}
 
-	if perms != nil && len(*perms) > 0 {
-		m.Permissions = *perms
+	if apis != nil && len(*apis) > 0 {
+		m.Apis = *apis
 	}
 
 	if err := uc.menuRepo.AddGroupPolicy(ctx, &m); err != nil {
@@ -258,39 +178,45 @@ func (uc *MenuUsecase) CreateMenu(
 func (uc *MenuUsecase) UpdateMenuByID(
 	ctx context.Context,
 	menuID uint32,
-	permIDs []uint32,
+	apiIDs []uint32,
 	data map[string]any,
-) (*MenuModel, *errors.Error) {
+) (*model.MenuModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始更新菜单",
-		zap.Uint32(MenuIDKey, menuID),
-		zap.Uint32s(PermissionIDsKey, permIDs),
+		zap.Uint32("menu_id", menuID),
+		zap.Uint32s("api_ids", apiIDs),
 		zap.Any(database.UpdateDataKey, data),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	perms, err := uc.GetPermissions(ctx, permIDs)
-	if err != nil {
-		return nil, err
+	var (
+		apis *[]model.ApiModel
+		rErr *errors.Error
+	)
+
+	apis, rErr = uc.GetApis(ctx, apiIDs)
+	if rErr != nil {
+		return nil, rErr
 	}
 
 	data["id"] = menuID
-	if err := uc.menuRepo.UpdateModel(ctx, data, perms, "id = ?", menuID); err != nil {
+	if err := uc.menuRepo.UpdateModel(ctx, data, apis, "id = ?", menuID); err != nil {
 		uc.log.Error(
 			"更新菜单失败",
 			zap.Error(err),
-			zap.Uint32(MenuIDKey, menuID),
+			zap.Uint32("menu_id", menuID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, data)
 	}
 
-	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
+	var m *model.MenuModel
+	m, rErr = uc.FindMenuByID(ctx, []string{"Parent", "Apis"}, menuID)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -298,7 +224,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 		uc.log.Error(
 			"移除旧菜单组策略失败",
 			zap.Error(err),
-			zap.Uint32(MenuIDKey, menuID),
+			zap.Uint32("menu_id", menuID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.FromError(err)
@@ -308,7 +234,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 		uc.log.Error(
 			"添加新菜单组策略失败",
 			zap.Error(err),
-			zap.Uint32(MenuIDKey, menuID),
+			zap.Uint32("menu_id", menuID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.FromError(err)
@@ -316,7 +242,7 @@ func (uc *MenuUsecase) UpdateMenuByID(
 
 	uc.log.Info(
 		"更新菜单成功",
-		zap.Uint32(MenuIDKey, menuID),
+		zap.Uint32("menu_id", menuID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -332,11 +258,11 @@ func (uc *MenuUsecase) DeleteMenuByID(
 
 	uc.log.Info(
 		"开始删除菜单",
-		zap.Uint32(MenuIDKey, menuID),
+		zap.Uint32("menu_id", menuID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Permissions"}, menuID)
+	m, rErr := uc.FindMenuByID(ctx, []string{"Parent", "Apis"}, menuID)
 	if rErr != nil {
 		return rErr
 	}
@@ -345,7 +271,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 		uc.log.Error(
 			"删除菜单失败",
 			zap.Error(err),
-			zap.Uint32(MenuIDKey, menuID),
+			zap.Uint32("menu_id", menuID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": menuID})
@@ -355,7 +281,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 		uc.log.Error(
 			"移除菜单组策略失败",
 			zap.Error(err),
-			zap.Uint32(MenuIDKey, menuID),
+			zap.Uint32("menu_id", menuID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(err)
@@ -363,7 +289,7 @@ func (uc *MenuUsecase) DeleteMenuByID(
 
 	uc.log.Info(
 		"删除菜单成功",
-		zap.Uint32(MenuIDKey, menuID),
+		zap.Uint32("menu_id", menuID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -373,7 +299,7 @@ func (uc *MenuUsecase) FindMenuByID(
 	ctx context.Context,
 	preloads []string,
 	menuID uint32,
-) (*MenuModel, *errors.Error) {
+) (*model.MenuModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -381,7 +307,7 @@ func (uc *MenuUsecase) FindMenuByID(
 	uc.log.Info(
 		"开始查询菜单",
 		zap.Strings(database.PreloadKey, preloads),
-		zap.Uint32(MenuIDKey, menuID),
+		zap.Uint32("menu_id", menuID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -390,7 +316,7 @@ func (uc *MenuUsecase) FindMenuByID(
 		uc.log.Error(
 			"查询菜单失败",
 			zap.Error(err),
-			zap.Uint32(MenuIDKey, menuID),
+			zap.Uint32("menu_id", menuID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": menuID})
@@ -398,7 +324,7 @@ func (uc *MenuUsecase) FindMenuByID(
 
 	uc.log.Info(
 		"查询菜单成功",
-		zap.Uint32(MenuIDKey, menuID),
+		zap.Uint32("menu_id", menuID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -407,7 +333,7 @@ func (uc *MenuUsecase) FindMenuByID(
 func (uc *MenuUsecase) ListMenu(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]MenuModel, *errors.Error) {
+) (int64, *[]model.MenuModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -448,7 +374,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 	)
 
 	qp := database.QueryParams{
-		Preloads: []string{"Permissions"},
+		Preloads: []string{"Apis"},
 		Columns:  []string{"id", "parent_id"},
 	}
 	_, mms, err := uc.ListMenu(ctx, qp)
@@ -470,7 +396,7 @@ func (uc *MenuUsecase) LoadMenuPolicy(ctx context.Context) *errors.Error {
 				uc.log.Error(
 					"加载菜单策略失败",
 					zap.Error(err),
-					zap.Uint32(MenuIDKey, ms[i].ID),
+					zap.Uint32("menu_id", ms[i].ID),
 					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return errors.FromError(err)

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"os"
 	"time"
 
 	emperror "emperror.dev/errors"
@@ -46,6 +45,7 @@ type JWTConfig struct {
 func NewJWTConfig(
 	accessExpiration, refreshExpiration time.Duration,
 	accessMethodstr, refreshMethodstr string,
+	accessSecret, refreshSecret []byte,
 ) *JWTConfig {
 	accessMethod := jwt.GetSigningMethod(accessMethodstr)
 	if accessMethod == nil {
@@ -55,8 +55,6 @@ func NewJWTConfig(
 	if refreshMethod == nil {
 		panic("invalid refresh method")
 	}
-	accessSecret := []byte(os.Getenv("JWT_ACCESS_SECRET"))
-	refreshSecret := []byte(os.Getenv("JWT_REFRESH_SECRET"))
 	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
 		panic("JWT_ACCESS_SECRET or JWT_REFRESH_SECRET is empty")
 	}
@@ -79,7 +77,7 @@ func newUserClaims(c *JWTConfig, u UserInfo, tt TokenType) UserClaims {
 			ExpiresAt: jwt.NewNumericDate(now.Add(c.AccessTokenExpiration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
-			ID:        uuid.New().String(),
+			ID:        uuid.NewString(),
 		},
 		UserInfo: u,
 		Type:     tt,

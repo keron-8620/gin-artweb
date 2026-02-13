@@ -21,8 +21,8 @@ type MenuBaseOut struct {
 	//菜单信息
 	Meta MetaSchemas `json:"meta"`
 
-	// 排列顺序
-	ArrangeOrder uint32 `json:"arrange_order" example:"1000"`
+	// 排序字段
+	Sort uint32 `json:"sort" example:"1000"`
 
 	// 是否激活
 	IsActive bool `json:"is_active" example:"true"`
@@ -49,8 +49,8 @@ type MenuDetailOut struct {
 	// 父级菜单
 	Parent *MenuStandardOut `json:"parent"`
 
-	// 权限ID列表
-	PermissionIDs []uint32 `json:"permission_ids"`
+	// API ID列表
+	ApiIDs []uint32 `json:"api_ids"`
 }
 
 // MenuReply 菜单响应结构

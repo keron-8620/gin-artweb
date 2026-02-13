@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/infra/resource/biz"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -17,10 +17,10 @@ import (
 	"gin-artweb/internal/shared/shell"
 )
 
-// hostRepo 主机仓库实现
+// HostRepo 主机仓库实现
 // 负责主机模型的CRUD操作和SSH连接管理
 // 使用GORM进行数据库操作，使用SSH进行远程主机连接
-type hostRepo struct {
+type HostRepo struct {
 	log      *zap.Logger       // 日志记录器
 	gormDB   *gorm.DB          // GORM数据库连接
 	timeouts *config.DBTimeout // 数据库操作超时配置
@@ -36,13 +36,13 @@ type hostRepo struct {
 //
 // 返回值：
 //
-//	biz.HostRepo: 主机仓库接口实现
+//	*HostRepo: 主机仓库接口实现
 func NewHostRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
-) biz.HostRepo {
-	return &hostRepo{
+) *HostRepo {
+	return &HostRepo{
 		log:      log,
 		gormDB:   gormDB,
 		timeouts: timeouts,
@@ -65,7 +65,7 @@ func NewHostRepo(
 //  2. 设置创建时间和更新时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *hostRepo) CreateModel(ctx context.Context, m *biz.HostModel) error {
+func (r *HostRepo) CreateModel(ctx context.Context, m *model.HostModel) error {
 	// 检查参数
 	if m == nil {
 		err := errors.New("创建主机模型失败: 模型为空")
@@ -86,7 +86,7 @@ func (r *hostRepo) CreateModel(ctx context.Context, m *biz.HostModel) error {
 	m.UpdatedAt = now
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &biz.HostModel{}, m, nil); err != nil {
+	if err := database.DBCreate(dbCtx, r.gormDB, &model.HostModel{}, m, nil); err != nil {
 		r.log.Error(
 			"创建主机模型失败",
 			zap.Error(err),
@@ -121,7 +121,7 @@ func (r *hostRepo) CreateModel(ctx context.Context, m *biz.HostModel) error {
 //  1. 检查更新数据是否为空
 //  2. 执行数据库更新操作
 //  3. 记录操作日志
-func (r *hostRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *HostRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
 	if len(data) == 0 {
 		err := errors.New("更新主机模型失败: 更新数据为空")
 		r.log.Error(
@@ -142,7 +142,7 @@ func (r *hostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &biz.HostModel{}, data, nil, conds...); err != nil {
+	if err := database.DBUpdate(dbCtx, r.gormDB, &model.HostModel{}, data, nil, conds...); err != nil {
 		r.log.Error(
 			"更新主机模型失败",
 			zap.Error(err),
@@ -177,7 +177,7 @@ func (r *hostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *HostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	r.log.Debug(
 		"开始删除主机模型",
 		zap.Any(database.ConditionsKey, conds),
@@ -186,7 +186,7 @@ func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &biz.HostModel{}, conds...); err != nil {
+	if err := database.DBDelete(dbCtx, r.gormDB, &model.HostModel{}, conds...); err != nil {
 		r.log.Error(
 			"删除主机模型失败",
 			zap.Error(err),
@@ -215,7 +215,7 @@ func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //
 // 返回值：
 //
-//	*biz.HostModel: 主机模型指针，包含主机的详细信息
+//	*model.HostModel: 主机模型指针，包含主机的详细信息
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -223,18 +223,18 @@ func (r *hostRepo) DeleteModel(ctx context.Context, conds ...any) error {
 //  2. 预加载关联字段
 //  3. 获取单个主机模型
 //  4. 记录操作日志
-func (r *hostRepo) GetModel(
+func (r *HostRepo) GetModel(
 	ctx context.Context,
 	preloads []string,
 	conds ...any,
-) (*biz.HostModel, error) {
+) (*model.HostModel, error) {
 	r.log.Debug(
 		"开始查询主机模型",
 		zap.Any(database.ConditionsKey, conds),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	var m biz.HostModel
+	var m model.HostModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
 	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
@@ -267,7 +267,7 @@ func (r *hostRepo) GetModel(
 // 返回值：
 //
 //	int64: 总记录数
-//	*[]biz.HostModel: 主机模型列表指针，包含符合条件的主机模型
+//	*[]model.HostModel: 主机模型列表指针，包含符合条件的主机模型
 //	error: 操作错误信息，成功则返回nil
 //
 // 功能：
@@ -275,20 +275,20 @@ func (r *hostRepo) GetModel(
 //  2. 获取主机模型列表
 //  3. 返回总记录数和模型列表
 //  4. 记录操作日志
-func (r *hostRepo) ListModel(
+func (r *HostRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]biz.HostModel, error) {
+) (int64, *[]model.HostModel, error) {
 	r.log.Debug(
 		"开始查询主机模型列表",
 		zap.Object(database.QueryParamsKey, &qp),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	now := time.Now()
-	var ms []biz.HostModel
+	var ms []model.HostModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	count, err := database.DBList(dbCtx, r.gormDB, &biz.HostModel{}, &ms, qp)
+	count, err := database.DBList(dbCtx, r.gormDB, &model.HostModel{}, &ms, qp)
 	if err != nil {
 		r.log.Error(
 			"查询主机模型列表失败",
@@ -328,7 +328,7 @@ func (r *hostRepo) ListModel(
 //  1. 检查上下文是否有效
 //  2. 创建SSH客户端连接
 //  3. 记录操作日志
-func (r *hostRepo) NewSSHClient(
+func (r *HostRepo) NewSSHClient(
 	ctx context.Context,
 	sshIP string,
 	sshPort uint16,
@@ -386,7 +386,7 @@ func (r *hostRepo) NewSSHClient(
 //  1. 检查上下文是否有效
 //  2. 在SSH会话中执行命令
 //  3. 记录操作日志
-func (r *hostRepo) ExecuteCommand(
+func (r *HostRepo) ExecuteCommand(
 	ctx context.Context,
 	session *ssh.Session,
 	command string,

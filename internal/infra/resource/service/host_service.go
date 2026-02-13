@@ -10,6 +10,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbHost "gin-artweb/api/resource/host"
 	"gin-artweb/internal/infra/resource/biz"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -62,7 +63,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucHost.CreateHost(ctx, biz.HostModel{
+	m, err := s.ucHost.CreateHost(ctx, model.HostModel{
 		Name:    req.Name,
 		Label:   req.Label,
 		SSHIP:   req.SSHIP,
@@ -84,7 +85,7 @@ func (s *HostService) CreateHost(ctx *gin.Context) {
 
 	s.log.Info(
 		"创建主机成功",
-		zap.Uint32(biz.HostIDKey, m.ID),
+		zap.Uint32("host_id", m.ID),
 		zap.Object(pbComm.RequestModelKey, &req),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -143,7 +144,7 @@ func (s *HostService) UpdateHost(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucHost.UpdateHostById(ctx, biz.HostModel{
+	m, err := s.ucHost.UpdateHostById(ctx, model.HostModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: uri.ID},
 		},
@@ -363,7 +364,7 @@ func (s *HostService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func HostModelToBaseOut(
-	m biz.HostModel,
+	m model.HostModel,
 ) *pbHost.HostBaseOut {
 	return &pbHost.HostBaseOut{
 		ID:      m.ID,
@@ -378,7 +379,7 @@ func HostModelToBaseOut(
 }
 
 func HostModelToStandardOut(
-	m biz.HostModel,
+	m model.HostModel,
 ) *pbHost.HostStandardOut {
 	return &pbHost.HostStandardOut{
 		HostBaseOut: *HostModelToBaseOut(m),
@@ -388,7 +389,7 @@ func HostModelToStandardOut(
 }
 
 func ListHostModelToStandardOut(
-	hms *[]biz.HostModel,
+	hms *[]model.HostModel,
 ) *[]pbHost.HostStandardOut {
 	if hms == nil {
 		return &[]pbHost.HostStandardOut{}

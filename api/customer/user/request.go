@@ -132,6 +132,11 @@ type LoginRequest struct {
 	Password string `json:"password" form:"password" binding:"required,max=20"`
 }
 
+type RefreshTokenRequest struct {
+	// 刷新令牌
+	RefreshToken string `json:"refresh_token" form:"refresh_token" binding:"required"`
+}
+
 // ListLoginRecordRequest 用于获取用户登陆记录的请求结构体
 // 支持分页查询和多种筛选条件
 //

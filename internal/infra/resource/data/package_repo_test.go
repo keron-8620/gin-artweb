@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"gin-artweb/internal/infra/resource/biz"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/database"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ func TestPackageRepo_CreateModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestPackageRepo()
 		ctx := context.Background()
-		packageModel := &biz.PackageModel{
+		packageModel := &model.PackageModel{
 			Label:           "test",
 			StorageFilename: "test-package-1.0.0.tar.gz",
 			OriginFilename:  "test-package-1.0.0.tar.gz",
@@ -49,7 +49,7 @@ func TestPackageRepo_DeleteModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestPackageRepo()
 		ctx := context.Background()
-		packageModel := &biz.PackageModel{
+		packageModel := &model.PackageModel{
 			Label:           "test",
 			StorageFilename: "test-package-1.0.0.tar.gz",
 			OriginFilename:  "test-package-1.0.0.tar.gz",
@@ -73,7 +73,7 @@ func TestPackageRepo_GetModel(t *testing.T) {
 		// 准备测试数据
 		repo := NewTestPackageRepo()
 		ctx := context.Background()
-		packageModel := &biz.PackageModel{
+		packageModel := &model.PackageModel{
 			Label:           "test",
 			StorageFilename: "test-package-1.0.0.tar.gz",
 			OriginFilename:  "test-package-1.0.0.tar.gz",
@@ -103,7 +103,7 @@ func TestPackageRepo_ListModel(t *testing.T) {
 
 		// 创建多个测试模型
 		for i := 1; i <= 3; i++ {
-			packageModel := &biz.PackageModel{
+			packageModel := &model.PackageModel{
 				Label:           "test",
 				StorageFilename: "test-package-" + string(rune('0'+i)) + ".tar.gz",
 				OriginFilename:  "test-package-" + string(rune('0'+i)) + ".tar.gz",

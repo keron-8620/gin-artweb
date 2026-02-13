@@ -10,6 +10,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbMenu "gin-artweb/api/customer/menu"
 	"gin-artweb/internal/infra/customer/biz"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -66,21 +67,21 @@ func (s *MenuService) CreateMenu(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucMenu.CreateMenu(ctx, req.PermissionIDs, biz.MenuModel{
+	m, err := s.ucMenu.CreateMenu(ctx, req.ApiIDs, model.MenuModel{
 		StandardModel: database.StandardModel{
 			BaseModel: database.BaseModel{ID: req.ID},
 		},
 		Path:      req.Path,
 		Component: req.Component,
 		Name:      req.Name,
-		Meta: biz.Meta{
+		Meta: model.Meta{
 			Icon:  req.Meta.Icon,
 			Title: req.Meta.Title,
 		},
-		ArrangeOrder: req.ArrangeOrder,
-		IsActive:     req.IsActive,
-		Descr:        req.Descr,
-		ParentID:     req.ParentID,
+		Sort:     req.Sort,
+		IsActive: req.IsActive,
+		Descr:    req.Descr,
+		ParentID: req.ParentID,
 	})
 	if err != nil {
 		s.log.Error(
@@ -156,19 +157,19 @@ func (s *MenuService) UpdateMenu(ctx *gin.Context) {
 	)
 
 	data := map[string]any{
-		"path":          req.Path,
-		"component":     req.Component,
-		"name":          req.Name,
-		"meta":          req.Meta.Json(),
-		"arrange_order": req.ArrangeOrder,
-		"is_active":     req.IsActive,
-		"descr":         req.Descr,
+		"path":      req.Path,
+		"component": req.Component,
+		"name":      req.Name,
+		"meta":      req.Meta.Json(),
+		"sort":      req.Sort,
+		"is_active": req.IsActive,
+		"descr":     req.Descr,
 	}
 	if req.ParentID != nil && *req.ParentID != 0 {
 		data["parent_id"] = req.ParentID
 	}
 
-	m, err := s.ucMenu.UpdateMenuByID(ctx, uri.ID, req.PermissionIDs, data)
+	m, err := s.ucMenu.UpdateMenuByID(ctx, uri.ID, req.ApiIDs, data)
 	if err != nil {
 		s.log.Error(
 			"更新菜单失败",
@@ -278,7 +279,7 @@ func (s *MenuService) GetMenu(ctx *gin.Context) {
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
-	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Permissions"}, uri.ID)
+	m, err := s.ucMenu.FindMenuByID(ctx, []string{"Parent", "Apis"}, uri.ID)
 	if err != nil {
 		s.log.Error(
 			"查询菜单详情失败",
@@ -377,7 +378,7 @@ func (s *MenuService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func MenuModelToBaseOut(
-	m biz.MenuModel,
+	m model.MenuModel,
 ) *pbMenu.MenuBaseOut {
 	return &pbMenu.MenuBaseOut{
 		ID:        m.ID,
@@ -388,14 +389,14 @@ func MenuModelToBaseOut(
 			Title: m.Meta.Title,
 			Icon:  m.Meta.Icon,
 		},
-		ArrangeOrder: m.ArrangeOrder,
-		IsActive:     m.IsActive,
-		Descr:        m.Descr,
+		Sort:     m.Sort,
+		IsActive: m.IsActive,
+		Descr:    m.Descr,
 	}
 }
 
 func MenuModelToStandardOut(
-	m biz.MenuModel,
+	m model.MenuModel,
 ) *pbMenu.MenuStandardOut {
 	return &pbMenu.MenuStandardOut{
 		MenuBaseOut: *MenuModelToBaseOut(m),
@@ -405,28 +406,28 @@ func MenuModelToStandardOut(
 }
 
 func MenuModelToDetailOut(
-	m biz.MenuModel,
+	m model.MenuModel,
 ) *pbMenu.MenuDetailOut {
 	var parent *pbMenu.MenuStandardOut
 	if m.Parent != nil {
 		parent = MenuModelToStandardOut(*m.Parent)
 	}
-	var permissionIDs = []uint32{}
-	if len(m.Permissions) > 0 {
-		permissionIDs = make([]uint32, len(m.Permissions))
-		for i, p := range m.Permissions {
-			permissionIDs[i] = p.ID
+	var apiIDs = []uint32{}
+	if len(m.Apis) > 0 {
+		apiIDs = make([]uint32, len(m.Apis))
+		for i, p := range m.Apis {
+			apiIDs[i] = p.ID
 		}
 	}
 	return &pbMenu.MenuDetailOut{
 		MenuStandardOut: *MenuModelToStandardOut(m),
 		Parent:          parent,
-		PermissionIDs:   permissionIDs,
+		ApiIDs:          apiIDs,
 	}
 }
 
 func ListMenuModelToStandardOut(
-	mms *[]biz.MenuModel,
+	mms *[]model.MenuModel,
 ) *[]pbMenu.MenuStandardOut {
 	if mms == nil {
 		return &[]pbMenu.MenuStandardOut{}

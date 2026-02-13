@@ -3,9 +3,9 @@ package common
 import (
 	"github.com/casbin/casbin/v2"
 	"github.com/robfig/cron/v3"
-	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 
+	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/config"
 )
 
@@ -15,5 +15,5 @@ type Initialize struct {
 	DBTimeout *config.DBTimeout
 	Enforcer  *casbin.Enforcer
 	Crontab   *cron.Cron
-	Signers   []ssh.Signer
+	JwtConf   *auth.JWTConfig
 }

@@ -20,15 +20,15 @@ const (
 )
 
 const (
-	permissionSubjectFormat = "perm_%d"
-	menuSubjectFormat       = "menu_%d"
-	buttonSubjectFormat     = "button_%d"
-	roleSubjectFormat       = "role_%d"
+	apiSubjectFormat    = "api_%d"
+	menuSubjectFormat   = "menu_%d"
+	buttonSubjectFormat = "button_%d"
+	roleSubjectFormat   = "role_%d"
 )
 
-// PermissionToSubject 将权限ID转换为对应的Casbin主体
-func PermissionToSubject(pk uint32) string {
-	return fmt.Sprintf(permissionSubjectFormat, pk)
+// ApiToSubject 将ApiID转换为对应的Casbin主体
+func ApiToSubject(pk uint32) string {
+	return fmt.Sprintf(apiSubjectFormat, pk)
 }
 
 // MenuToSubject 将菜单ID转换为对应的Casbin主体
@@ -66,7 +66,7 @@ func NewCasbinEnforcer() (*casbin.Enforcer, error) {
 	if err != nil {
 		return nil, errors.WrapIf(err, "创建Casbin模型失败")
 	}
-	adapter := stringadapter.NewAdapter("p, perm_0, /api/v1/login, POST")
+	adapter := stringadapter.NewAdapter("p, api_0, /api/v1/login, POST")
 	enforcer, eErr := casbin.NewEnforcer(cm, adapter)
 	if eErr != nil {
 		return nil, errors.WrapIf(eErr, "创建Casbin enforce失败")

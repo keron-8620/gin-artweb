@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	jobsModel "gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
 )
@@ -41,14 +41,14 @@ func (mc CrdTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 type CrdTaskExecutionInfo struct {
 	ColonyNum         string
-	Mon               *bizJobs.ScriptRecordModel
-	CounterFetch      *bizJobs.ScriptRecordModel
-	CounterDistribute *bizJobs.ScriptRecordModel
-	Sse               *bizJobs.ScriptRecordModel
-	Szse              *bizJobs.ScriptRecordModel
-	Csdc              *bizJobs.ScriptRecordModel
-	SseLate           *bizJobs.ScriptRecordModel
-	SzseLate          *bizJobs.ScriptRecordModel
+	Mon               *jobsModel.ScriptRecordModel
+	CounterFetch      *jobsModel.ScriptRecordModel
+	CounterDistribute *jobsModel.ScriptRecordModel
+	Sse               *jobsModel.ScriptRecordModel
+	Szse              *jobsModel.ScriptRecordModel
+	Csdc              *jobsModel.ScriptRecordModel
+	SseLate           *jobsModel.ScriptRecordModel
+	SzseLate          *jobsModel.ScriptRecordModel
 }
 
 type CrdTaskExecutionInfoUsecase struct {
@@ -117,7 +117,7 @@ func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	ctx context.Context,
 	tr CrdTaskRecordCache,
-	cache map[uint32]bizJobs.ScriptRecordModel,
+	cache map[uint32]jobsModel.ScriptRecordModel,
 ) (CrdTaskExecutionInfo, *errors.Error) {
 	if ctx.Err() != nil {
 		return CrdTaskExecutionInfo{}, errors.FromError(ctx.Err())

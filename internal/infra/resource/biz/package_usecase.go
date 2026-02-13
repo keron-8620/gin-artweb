@@ -4,65 +4,25 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/infra/resource/data"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-const (
-	PackageTableName = "resource_package"
-	PackageIDKey     = "package_id"
-)
-
-type PackageModel struct {
-	database.BaseModel
-	Label           string    `gorm:"column:label;type:varchar(50);index:idx_package_label;comment:标签" json:"label"`
-	StorageFilename string    `gorm:"column:storage_filename;type:varchar(50);not null;uniqueIndex;comment:磁盘存储文件名" json:"storage_filename"`
-	OriginFilename  string    `gorm:"column:origin_filename;type:varchar(255);comment:原始文件名" json:"origin_filename"`
-	Version         string    `gorm:"column:version;type:varchar(50);comment:版本号" json:"version"`
-	UploadedAt      time.Time `gorm:"column:uploaded_at;autoCreateTime;comment:上传时间" json:"uploaded_at"`
-}
-
-func (m *PackageModel) TableName() string {
-	return "resource_package"
-}
-
-func (m *PackageModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("label", m.Label)
-	enc.AddString("storage_filename", m.StorageFilename)
-	enc.AddString("origin_filename", m.OriginFilename)
-	enc.AddString("version", m.Version)
-	enc.AddTime("uploaded_at", m.UploadedAt)
-	return nil
-}
-
-type PackageRepo interface {
-	CreateModel(context.Context, *PackageModel) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, []string, ...any) (*PackageModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]PackageModel, error)
-}
-
 type PackageUsecase struct {
 	log     *zap.Logger
-	pkgRepo PackageRepo
+	pkgRepo *data.PackageRepo
 }
 
 func NewPackageUsecase(
 	log *zap.Logger,
-	pkgRepo PackageRepo,
+	pkgRepo *data.PackageRepo,
 ) *PackageUsecase {
 	return &PackageUsecase{
 		log:     log,
@@ -72,8 +32,8 @@ func NewPackageUsecase(
 
 func (uc *PackageUsecase) CreatePackage(
 	ctx context.Context,
-	m PackageModel,
-) (*PackageModel, *errors.Error) {
+	m model.PackageModel,
+) (*model.PackageModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -112,7 +72,7 @@ func (uc *PackageUsecase) DeletePackageById(
 
 	uc.log.Info(
 		"开始删除程序包",
-		zap.Uint32(PackageIDKey, pkgId),
+		zap.Uint32("package_id", pkgId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -126,7 +86,7 @@ func (uc *PackageUsecase) DeletePackageById(
 		uc.log.Error(
 			"删除程序包失败",
 			zap.Error(err),
-			zap.Uint32(PackageIDKey, pkgId),
+			zap.Uint32("package_id", pkgId),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": pkgId})
@@ -139,7 +99,7 @@ func (uc *PackageUsecase) DeletePackageById(
 
 	uc.log.Info(
 		"删除程序包成功",
-		zap.Uint32(PackageIDKey, pkgId),
+		zap.Uint32("package_id", pkgId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -148,14 +108,14 @@ func (uc *PackageUsecase) DeletePackageById(
 func (uc *PackageUsecase) FindPackageById(
 	ctx context.Context,
 	pkgId uint32,
-) (*PackageModel, *errors.Error) {
+) (*model.PackageModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始查询程序包",
-		zap.Uint32(PackageIDKey, pkgId),
+		zap.Uint32("package_id", pkgId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -164,7 +124,7 @@ func (uc *PackageUsecase) FindPackageById(
 		uc.log.Error(
 			"查询程序包失败",
 			zap.Error(err),
-			zap.Uint32(PackageIDKey, pkgId),
+			zap.Uint32("package_id", pkgId),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": pkgId})
@@ -172,7 +132,7 @@ func (uc *PackageUsecase) FindPackageById(
 
 	uc.log.Info(
 		"查询程序包成功",
-		zap.Uint32(PackageIDKey, pkgId),
+		zap.Uint32("package_id", pkgId),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -181,7 +141,7 @@ func (uc *PackageUsecase) FindPackageById(
 func (uc *PackageUsecase) ListPackage(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]PackageModel, *errors.Error) {
+) (int64, *[]model.PackageModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -211,7 +171,7 @@ func (uc *PackageUsecase) ListPackage(
 	return count, ms, nil
 }
 
-func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *errors.Error {
+func (uc *PackageUsecase) RemovePackage(ctx context.Context, m model.PackageModel) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}
@@ -221,7 +181,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 	uc.log.Info(
 		"开始删除程序包文件",
 		zap.String("path", savePath),
-		zap.Uint32(PackageIDKey, m.ID),
+		zap.Uint32("package_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -231,7 +191,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 		uc.log.Warn(
 			"程序包文件不存在，无需删除",
 			zap.String("path", savePath),
-			zap.Uint32(PackageIDKey, m.ID),
+			zap.Uint32("package_id", m.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil
@@ -252,7 +212,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 			"删除程序包失败",
 			zap.Error(rmErr),
 			zap.String("path", savePath),
-			zap.Uint32(PackageIDKey, m.ID),
+			zap.Uint32("package_id", m.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(rmErr)
@@ -261,7 +221,7 @@ func (uc *PackageUsecase) RemovePackage(ctx context.Context, m PackageModel) *er
 	uc.log.Info(
 		"删除程序包文件成功",
 		zap.String("path", savePath),
-		zap.Uint32(PackageIDKey, m.ID))
+		zap.Uint32("package_id", m.ID))
 	return nil
 }
 

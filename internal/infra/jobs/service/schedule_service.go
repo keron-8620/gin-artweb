@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/infra/jobs/biz"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -68,7 +69,7 @@ func (s *ScheduleService) CreateSchedule(ctx *gin.Context) {
 		return
 	}
 
-	schedule := biz.ScheduleModel{
+	schedule := model.ScheduleModel{
 		Name:          req.Name,
 		Specification: req.Specification,
 		IsEnabled:     req.IsEnabled,
@@ -378,7 +379,7 @@ func (s *ScheduleService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func ScheduleToStandardOut(
-	m biz.ScheduleModel,
+	m model.ScheduleModel,
 ) *pbSchedule.ScheduleStandardOut {
 	return &pbSchedule.ScheduleStandardOut{
 		ID:            m.ID,
@@ -399,7 +400,7 @@ func ScheduleToStandardOut(
 }
 
 func ScheduleToDetailOut(
-	m biz.ScheduleModel,
+	m model.ScheduleModel,
 ) *pbSchedule.ScheduleDetailOut {
 	var script *pbScript.ScriptStandardOut
 	if m.Script.ID != 0 {
@@ -412,7 +413,7 @@ func ScheduleToDetailOut(
 }
 
 func ListScheduledToDetailOut(
-	rms *[]biz.ScheduleModel,
+	rms *[]model.ScheduleModel,
 ) *[]pbSchedule.ScheduleDetailOut {
 	if rms == nil {
 		return &[]pbSchedule.ScheduleDetailOut{}

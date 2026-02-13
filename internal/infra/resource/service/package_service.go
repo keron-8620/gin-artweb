@@ -12,6 +12,7 @@ import (
 	pbComm "gin-artweb/api/common"
 	pbPkg "gin-artweb/api/resource/pkg"
 	"gin-artweb/internal/infra/resource/biz"
+	"gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -70,7 +71,7 @@ func (s *PackageService) UploadPackage(ctx *gin.Context) {
 		return
 	}
 
-	pkg, rErr := s.ucPkg.CreatePackage(ctx, biz.PackageModel{
+	pkg, rErr := s.ucPkg.CreatePackage(ctx, model.PackageModel{
 		Label:           req.Label,
 		Version:         req.Version,
 		StorageFilename: newFileNameWithExt,
@@ -314,7 +315,7 @@ func (s *PackageService) LoadRouter(r *gin.RouterGroup) {
 }
 
 func PackageModelToOutBase(
-	m biz.PackageModel,
+	m model.PackageModel,
 ) *pbPkg.PackageStandardOut {
 	return &pbPkg.PackageStandardOut{
 		ID:         m.ID,
@@ -326,7 +327,7 @@ func PackageModelToOutBase(
 }
 
 func ListPkgModelToOut(
-	pms *[]biz.PackageModel,
+	pms *[]model.PackageModel,
 ) *[]pbPkg.PackageStandardOut {
 	if pms == nil {
 		return &[]pbPkg.PackageStandardOut{}

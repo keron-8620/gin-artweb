@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizJobs "gin-artweb/internal/infra/jobs/biz"
+	jobsModel "gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
 )
@@ -37,10 +37,10 @@ func (mc MdsTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 type MdsTaskExecutionInfo struct {
 	ColonyNum string
-	Mon       *bizJobs.ScriptRecordModel
-	Bse       *bizJobs.ScriptRecordModel
-	Sse       *bizJobs.ScriptRecordModel
-	Szse      *bizJobs.ScriptRecordModel
+	Mon       *jobsModel.ScriptRecordModel
+	Bse       *jobsModel.ScriptRecordModel
+	Sse       *jobsModel.ScriptRecordModel
+	Szse      *jobsModel.ScriptRecordModel
 }
 
 func (m MdsTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -62,12 +62,12 @@ func (m MdsTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 
 type MdsTaskExecutionInfoUsecase struct {
 	log      *zap.Logger
-	ucRecord *RecordUsecase
+	ucRecord *JobsUsecase
 }
 
 func NewMdsTaskExecutionInfoUsecase(
 	log *zap.Logger,
-	ucRecord *RecordUsecase,
+	ucRecord *JobsUsecase,
 ) *MdsTaskExecutionInfoUsecase {
 	return &MdsTaskExecutionInfoUsecase{
 		log:      log,
@@ -114,7 +114,7 @@ func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	ctx context.Context,
 	tr MdsTaskRecordCache,
-	cache map[uint32]bizJobs.ScriptRecordModel,
+	cache map[uint32]jobsModel.ScriptRecordModel,
 ) (MdsTaskExecutionInfo, *errors.Error) {
 	if ctx.Err() != nil {
 		return MdsTaskExecutionInfo{}, errors.FromError(ctx.Err())

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	bizReso "gin-artweb/internal/infra/resource/biz"
+	resoModel "gin-artweb/internal/infra/resource/model"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -22,12 +22,12 @@ const (
 
 type OesNodeModel struct {
 	database.StandardModel
-	NodeRole    string            `gorm:"column:node_role;type:varchar(50);comment:节点角色" json:"role"`
-	IsEnable    bool              `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
-	OesColonyID uint32            `gorm:"column:oes_colony_id;not null;comment:oes集群ID" json:"oes_colony_id"`
-	OesColony   OesColonyModel    `gorm:"foreignKey:OesColonyID;references:ID;constraint:OnDelete:CASCADE" json:"oes_colony"`
-	HostID      uint32            `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        bizReso.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	NodeRole    string              `gorm:"column:node_role;type:varchar(50);comment:节点角色" json:"role"`
+	IsEnable    bool                `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
+	OesColonyID uint32              `gorm:"column:oes_colony_id;not null;comment:oes集群ID" json:"oes_colony_id"`
+	OesColony   OesColonyModel      `gorm:"foreignKey:OesColonyID;references:ID;constraint:OnDelete:CASCADE" json:"oes_colony"`
+	HostID      uint32              `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
+	Host        resoModel.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
 }
 
 func (m *OesNodeModel) TableName() string {

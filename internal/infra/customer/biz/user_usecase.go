@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/infra/customer/data"
+	"gin-artweb/internal/infra/customer/model"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -14,96 +15,17 @@ import (
 	"gin-artweb/pkg/crypto"
 )
 
-const (
-	UserTableName = "customer_user"
-	UserIDKey     = "user_id"
-	UsernameKey   = "username"
-
-	LoginRecordTableName = "customer_login_record"
-)
-
-type UserModel struct {
-	database.StandardModel
-	Username string    `gorm:"column:username;type:varchar(50);not null;uniqueIndex;comment:用户名" json:"username"`
-	Password string    `gorm:"column:password;type:varchar(150);not null;comment:密码" json:"password"`
-	IsActive bool      `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
-	IsStaff  bool      `gorm:"column:is_staff;type:boolean;comment:是否是工作人员" json:"is_staff"`
-	RoleID   uint32    `gorm:"column:role_id;not null;comment:角色ID" json:"role_id"`
-	Role     RoleModel `gorm:"foreignKey:RoleID;references:ID;constraint:OnDelete:CASCADE" json:"role"`
-}
-
-func (m *UserModel) TableName() string {
-	return UserTableName
-}
-
-func (m *UserModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("username", m.Username)
-	enc.AddBool("is_active", m.IsActive)
-	enc.AddBool("is_staff", m.IsStaff)
-	enc.AddUint32("role_id", m.RoleID)
-	return nil
-}
-
-type UserRepo interface {
-	CreateModel(context.Context, *UserModel) error
-	UpdateModel(context.Context, map[string]any, ...any) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, []string, ...any) (*UserModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]UserModel, error)
-}
-
-type LoginRecordModel struct {
-	database.BaseModel
-	Username  string    `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
-	LoginAt   time.Time `gorm:"column:login_at;autoCreateTime;comment:登录时间" json:"login_at"`
-	IPAddress string    `gorm:"column:ip_address;type:varchar(108);comment:ip地址" json:"ip_address"`
-	UserAgent string    `gorm:"column:user_agent;type:varchar(254);comment:客户端信息" json:"user_agent"`
-	Status    bool      `gorm:"column:status;type:boolean;comment:是否登录成功" json:"status"`
-}
-
-func (m *LoginRecordModel) TableName() string {
-	return LoginRecordTableName
-}
-
-func (m *LoginRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("username", m.Username)
-	enc.AddTime("login_at", m.LoginAt)
-	enc.AddString("ip_address", m.IPAddress)
-	enc.AddString("user_agent", m.UserAgent)
-	enc.AddBool("status", m.Status)
-	return nil
-}
-
-type LoginRecordRepo interface {
-	CreateModel(context.Context, *LoginRecordModel) error
-	ListModel(context.Context, database.QueryParams) (int64, *[]LoginRecordModel, error)
-	GetLoginFailNum(context.Context, string) (int, error)
-	SetLoginFailNum(context.Context, string, int) error
-}
-
 type SecuritySettings struct {
-	MaxFailedAttempts int `yaml:"max_failed_attempts"` // 最大登录失败次数
-	LockMinutes       int `yaml:"lock_minutes"`        // 锁定时长(分钟)
-	PasswordStrength  int `yaml:"password_strength"`   // 密码强度等级
+	MaxFailedAttempts int           `yaml:"max_failed_attempts"` // 最大登录失败次数
+	LockDuration      time.Duration `yaml:"lock_minutes"`        // 锁定时长(分钟)
+	PasswordStrength  int           `yaml:"password_strength"`   // 密码强度等级
 }
 
 type UserUsecase struct {
 	log        *zap.Logger
-	roleRepo   RoleRepo
-	userRepo   UserRepo
-	recordRepo LoginRecordRepo
+	roleRepo   *data.RoleRepo
+	userRepo   *data.UserRepo
+	recordRepo *data.LoginRecordRepo
 	hasher     crypto.Hasher
 	jwt        *auth.JWTConfig
 	sec        SecuritySettings
@@ -111,9 +33,9 @@ type UserUsecase struct {
 
 func NewUserUsecase(
 	log *zap.Logger,
-	roleRepo RoleRepo,
-	userRepo UserRepo,
-	recordRepo LoginRecordRepo,
+	roleRepo *data.RoleRepo,
+	userRepo *data.UserRepo,
+	recordRepo *data.LoginRecordRepo,
 	hasher crypto.Hasher,
 	jwt *auth.JWTConfig,
 	sec SecuritySettings,
@@ -132,14 +54,14 @@ func NewUserUsecase(
 func (uc *UserUsecase) GetRole(
 	ctx context.Context,
 	roleID uint32,
-) (*RoleModel, *errors.Error) {
+) (*model.RoleModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始查询用户关联的角色",
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -148,7 +70,7 @@ func (uc *UserUsecase) GetRole(
 		uc.log.Error(
 			"查询用户关联的角色失败",
 			zap.Error(err),
-			zap.Uint32(RoleIDKey, roleID),
+			zap.Uint32("role_id", roleID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"role_id": roleID})
@@ -156,7 +78,7 @@ func (uc *UserUsecase) GetRole(
 
 	uc.log.Info(
 		"查询用户关联的角色成功",
-		zap.Uint32(RoleIDKey, roleID),
+		zap.Uint32("role_id", roleID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -164,8 +86,8 @@ func (uc *UserUsecase) GetRole(
 
 func (uc *UserUsecase) CreateUser(
 	ctx context.Context,
-	m UserModel,
-) (*UserModel, *errors.Error) {
+	m model.UserModel,
+) (*model.UserModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -182,25 +104,25 @@ func (uc *UserUsecase) CreateUser(
 	}
 
 	// 密码哈希
-	password, err := uc.hashPassword(ctx, m.Password)
-	if err != nil {
+	if password, err := uc.hashPassword(ctx, m.Password); err != nil {
 		return nil, err
+	} else {
+		m.Password = password
 	}
-	m.Password = password
 
 	// 获取角色信息
-	rm, err := uc.GetRole(ctx, m.RoleID)
-	if err != nil {
+	if rm, err := uc.GetRole(ctx, m.RoleID); err != nil {
 		return nil, err
+	} else {
+		m.Role = *rm
 	}
-	m.Role = *rm
 
 	// 创建用户
 	if err := uc.userRepo.CreateModel(ctx, &m); err != nil {
 		uc.log.Error(
 			"创建用户失败",
 			zap.Error(err),
-			zap.String(UsernameKey, m.Username),
+			zap.String("username", m.Username),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, nil)
@@ -208,8 +130,8 @@ func (uc *UserUsecase) CreateUser(
 
 	uc.log.Info(
 		"创建用户成功",
-		zap.String(UsernameKey, m.Username),
-		zap.Uint32(UserIDKey, m.ID),
+		zap.String("username", m.Username),
+		zap.Uint32("user_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return &m, nil
@@ -226,7 +148,7 @@ func (uc *UserUsecase) UpdateUserByID(
 
 	uc.log.Info(
 		"开始更新用户",
-		zap.Uint32(UserIDKey, userID),
+		zap.Uint32("user_id", userID),
 		zap.Any(database.UpdateDataKey, data),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -236,14 +158,14 @@ func (uc *UserUsecase) UpdateUserByID(
 		if pwdStr, ok := password.(string); ok {
 			uc.log.Info(
 				"检测到密码更新，开始验证密码强度",
-				zap.Uint32(UserIDKey, userID),
+				zap.Uint32("user_id", userID),
 				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 
 			if err := uc.validatePasswordStrength(ctx, pwdStr); err != nil {
 				uc.log.Warn(
 					"密码强度不足",
-					zap.Uint32(UserIDKey, userID),
+					zap.Uint32("user_id", userID),
 					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return err
@@ -254,7 +176,7 @@ func (uc *UserUsecase) UpdateUserByID(
 				uc.log.Error(
 					"密码哈希失败",
 					zap.Error(err),
-					zap.Uint32(UserIDKey, userID),
+					zap.Uint32("user_id", userID),
 					zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 				)
 				return err
@@ -263,14 +185,14 @@ func (uc *UserUsecase) UpdateUserByID(
 
 			uc.log.Info(
 				"密码哈希处理完成",
-				zap.Uint32(UserIDKey, userID),
+				zap.Uint32("user_id", userID),
 				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 		} else {
 			uc.log.Warn(
 				"密码不是字符串类型，已删除",
 				zap.Any("password", password),
-				zap.Uint32(UserIDKey, userID),
+				zap.Uint32("user_id", userID),
 				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)
 			delete(data, "password")
@@ -282,7 +204,7 @@ func (uc *UserUsecase) UpdateUserByID(
 		uc.log.Error(
 			"更新用户失败",
 			zap.Error(err),
-			zap.Uint32(UserIDKey, userID),
+			zap.Uint32("user_id", userID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -291,7 +213,7 @@ func (uc *UserUsecase) UpdateUserByID(
 
 	uc.log.Info(
 		"更新用户成功",
-		zap.Uint32(UserIDKey, userID),
+		zap.Uint32("user_id", userID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -307,7 +229,7 @@ func (uc *UserUsecase) DeleteUserByID(
 
 	uc.log.Info(
 		"开始删除用户",
-		zap.Uint32(UserIDKey, userID),
+		zap.Uint32("user_id", userID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -315,7 +237,7 @@ func (uc *UserUsecase) DeleteUserByID(
 		uc.log.Error(
 			"删除用户失败",
 			zap.Error(err),
-			zap.Uint32(UserIDKey, userID),
+			zap.Uint32("user_id", userID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": userID})
@@ -323,7 +245,7 @@ func (uc *UserUsecase) DeleteUserByID(
 
 	uc.log.Info(
 		"删除用户成功",
-		zap.Uint32(UserIDKey, userID),
+		zap.Uint32("user_id", userID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -333,14 +255,14 @@ func (uc *UserUsecase) FindUserByID(
 	ctx context.Context,
 	preloads []string,
 	userID uint32,
-) (*UserModel, *errors.Error) {
+) (*model.UserModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始根据ID查询用户",
-		zap.Uint32(UserIDKey, userID),
+		zap.Uint32("user_id", userID),
 		zap.Strings(database.PreloadKey, preloads),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -350,7 +272,7 @@ func (uc *UserUsecase) FindUserByID(
 		uc.log.Error(
 			"根据ID查询用户失败",
 			zap.Error(err),
-			zap.Uint32(UserIDKey, userID),
+			zap.Uint32("user_id", userID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": userID})
@@ -358,8 +280,8 @@ func (uc *UserUsecase) FindUserByID(
 
 	uc.log.Info(
 		"根据ID查询用户成功",
-		zap.Uint32(UserIDKey, userID),
-		zap.String(UsernameKey, m.Username),
+		zap.Uint32("user_id", userID),
+		zap.String("username", m.Username),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -369,14 +291,14 @@ func (uc *UserUsecase) FindUserByName(
 	ctx context.Context,
 	preloads []string,
 	username string,
-) (*UserModel, *errors.Error) {
+) (*model.UserModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始根据用户名查询用户",
-		zap.String(UsernameKey, username),
+		zap.String("username", username),
 		zap.Strings(database.PreloadKey, preloads),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -386,7 +308,7 @@ func (uc *UserUsecase) FindUserByName(
 		uc.log.Error(
 			"根据用户名查询用户失败",
 			zap.Error(err),
-			zap.String(UsernameKey, username),
+			zap.String("username", username),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"username": username})
@@ -394,8 +316,8 @@ func (uc *UserUsecase) FindUserByName(
 
 	uc.log.Info(
 		"根据用户名查询用户成功",
-		zap.String(UsernameKey, username),
-		zap.Uint32(UserIDKey, m.ID),
+		zap.String("username", username),
+		zap.Uint32("user_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -404,7 +326,7 @@ func (uc *UserUsecase) FindUserByName(
 func (uc *UserUsecase) ListUser(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]UserModel, *errors.Error) {
+) (int64, *[]model.UserModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -438,7 +360,7 @@ func (uc *UserUsecase) ListUser(
 func (uc *UserUsecase) ListLoginRecord(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]LoginRecordModel, *errors.Error) {
+) (int64, *[]model.LoginRecordModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -470,8 +392,8 @@ func (uc *UserUsecase) ListLoginRecord(
 
 func (uc *UserUsecase) createLoginRecord(
 	ctx context.Context,
-	m LoginRecordModel,
-) (*LoginRecordModel, *errors.Error) {
+	m model.LoginRecordModel,
+) (*model.LoginRecordModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -518,12 +440,12 @@ func (uc *UserUsecase) Login(
 
 	uc.log.Info(
 		"用户登录请求",
-		zap.String(UsernameKey, username),
+		zap.String("username", username),
 		zap.String("ip_address", ipAddress),
 		zap.String("user_agent", userAgent),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
-	lrm := LoginRecordModel{
+	lrm := model.LoginRecordModel{
 		Username:  username,
 		LoginAt:   time.Now(),
 		IPAddress: ipAddress,
@@ -565,8 +487,8 @@ func (uc *UserUsecase) Login(
 
 	uc.log.Info(
 		"用户登录成功",
-		zap.String(UsernameKey, username),
-		zap.Uint32(UserIDKey, m.ID),
+		zap.String("username", username),
+		zap.Uint32("user_id", m.ID),
 		zap.String("ip_address", ipAddress),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -578,10 +500,10 @@ func (uc *UserUsecase) validateLogin(
 	username string,
 	password string,
 	ipAddress string,
-) (*UserModel, *errors.Error) {
+) (*model.UserModel, *errors.Error) {
 	uc.log.Info(
 		"开始验证用户登录信息",
-		zap.String(UsernameKey, username),
+		zap.String("username", username),
 		zap.String("ip_address", ipAddress),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -589,7 +511,7 @@ func (uc *UserUsecase) validateLogin(
 	// 检查登录失败次数
 	uc.log.Debug(
 		"检查登录失败次数",
-		zap.String(UsernameKey, username),
+		zap.String("username", username),
 		zap.String("ip_address", ipAddress),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -599,7 +521,7 @@ func (uc *UserUsecase) validateLogin(
 		uc.log.Error(
 			"获取登录失败次数失败",
 			zap.Error(rErr),
-			zap.String(UsernameKey, username),
+			zap.String("username", username),
 			zap.String("ip_address", ipAddress),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -608,7 +530,7 @@ func (uc *UserUsecase) validateLogin(
 
 	uc.log.Debug(
 		"获取登录失败次数成功",
-		zap.String(UsernameKey, username),
+		zap.String("username", username),
 		zap.String("ip_address", ipAddress),
 		zap.Int("remaining_attempts", num),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -617,7 +539,7 @@ func (uc *UserUsecase) validateLogin(
 	if num == 0 {
 		uc.log.Warn(
 			"登录尝试次数用尽，账户被锁定",
-			zap.String(UsernameKey, username),
+			zap.String("username", username),
 			zap.String("ip_address", ipAddress),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -627,7 +549,7 @@ func (uc *UserUsecase) validateLogin(
 	// 查找用户
 	uc.log.Debug(
 		"开始查找用户",
-		zap.String(UsernameKey, username),
+		zap.String("username", username),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -636,7 +558,7 @@ func (uc *UserUsecase) validateLogin(
 		uc.log.Warn(
 			"用户不存在或查找失败",
 			zap.Error(rErr),
-			zap.String(UsernameKey, username),
+			zap.String("username", username),
 			zap.String("ip_address", ipAddress),
 			zap.Int("remaining_attempts", num-1),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -648,8 +570,8 @@ func (uc *UserUsecase) validateLogin(
 
 	uc.log.Debug(
 		"用户查找成功",
-		zap.String(UsernameKey, username),
-		zap.Uint32(UserIDKey, m.ID),
+		zap.String("username", username),
+		zap.Uint32("user_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -657,8 +579,8 @@ func (uc *UserUsecase) validateLogin(
 	if !m.IsActive {
 		uc.log.Warn(
 			"用户账户被锁定",
-			zap.String(UsernameKey, username),
-			zap.Uint32(UserIDKey, m.ID),
+			zap.String("username", username),
+			zap.Uint32("user_id", m.ID),
 			zap.String("ip_address", ipAddress),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -668,8 +590,8 @@ func (uc *UserUsecase) validateLogin(
 	// 验证密码
 	uc.log.Debug(
 		"开始验证用户密码",
-		zap.String(UsernameKey, username),
-		zap.Uint32(UserIDKey, m.ID),
+		zap.String("username", username),
+		zap.Uint32("user_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -677,8 +599,8 @@ func (uc *UserUsecase) validateLogin(
 		uc.log.Warn(
 			"用户密码验证失败",
 			zap.Error(rErr),
-			zap.String(UsernameKey, username),
-			zap.Uint32(UserIDKey, m.ID),
+			zap.String("username", username),
+			zap.Uint32("user_id", m.ID),
 			zap.String("ip_address", ipAddress),
 			zap.Int("remaining_attempts", num-1),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
@@ -689,8 +611,8 @@ func (uc *UserUsecase) validateLogin(
 
 	uc.log.Info(
 		"用户登录验证成功",
-		zap.String(UsernameKey, username),
-		zap.Uint32(UserIDKey, m.ID),
+		zap.String("username", username),
+		zap.Uint32("user_id", m.ID),
 		zap.String("ip_address", ipAddress),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -707,7 +629,7 @@ func (uc *UserUsecase) getLoginFailNum(ctx context.Context, username string, ipA
 		uc.log.Error(
 			"获取登录失败次数失败",
 			zap.Error(err),
-			zap.String(UsernameKey, username),
+			zap.String("username", username),
 			zap.String("ip_address", ipAddress),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -717,7 +639,7 @@ func (uc *UserUsecase) getLoginFailNum(ctx context.Context, username string, ipA
 	if num <= 0 {
 		uc.log.Warn(
 			"登录失败次数超限，账户被锁定",
-			zap.String(UsernameKey, username),
+			zap.String("username", username),
 			zap.String("ip_address", ipAddress),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -888,7 +810,7 @@ func (uc *UserUsecase) PatchPassword(
 		uc.log.Error(
 			"获取用户信息失败",
 			zap.Error(rErr),
-			zap.Uint32(UserIDKey, userID),
+			zap.Uint32("user_id", userID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return rErr
@@ -897,7 +819,7 @@ func (uc *UserUsecase) PatchPassword(
 		uc.log.Error(
 			"旧密码验证失败",
 			zap.Error(rErr),
-			zap.Uint32(UserIDKey, userID),
+			zap.Uint32("user_id", userID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return rErr
@@ -926,7 +848,7 @@ func (uc *UserUsecase) RefreshTokens(
 			zap.Error(err),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return "", "", errors.ErrTokenInvalid.WithCause(err)
+		return "", "", errors.ErrTokenInvalid
 	}
 	accessToken, rErr = uc.newAccessJWT(ctx, claims.UserInfo)
 	if rErr != nil {

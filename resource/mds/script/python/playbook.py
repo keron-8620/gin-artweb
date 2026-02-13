@@ -80,6 +80,32 @@ def pre_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> s
         return pre_trd_date(trd_dates, last_date, the_year)
 
 
+def parse_calendar(csv_path: Path) -> Dict[str, List[int]]:
+    """
+    导出交易日历
+
+    :param csv_path: 交易日历csv文件路径
+    :return: 交易日历
+    """
+    if not csv_path.exists():
+        raise FileNotFoundError(f"没有这个文件: {csv_path}")
+    trd_info = {}
+    with open(csv_path, 'r', encoding='utf-8') as trd_csv:
+        for line in trd_csv.readlines():
+            if line.startswith("#") or not line.strip():
+                continue
+            year_month_dates = line.split('|')
+            year_month, dates = year_month_dates[0].strip(), year_month_dates[1].rstrip('/n').strip().split(",")
+            year = year_month[:4]
+            year_key = 'trd_date_%s_list' % year
+            if not trd_info.get(year_key, None):
+                trd_info[year_key] = []
+            for date in dates:
+                date = date.zfill(2)
+                a_trd_date = year_month + date
+                trd_info[year_key].append(int(a_trd_date.strip()))
+
+
 def load_mon_conf(mon_id: int) -> Dict:
     """
     加载mon配置
@@ -100,7 +126,7 @@ def load_mon_conf(mon_id: int) -> Dict:
     return {**mon_vars, **mon_host}
 
 
-def init_vars(config_path: Path, extravars: str = ""):
+def init_vars(config_dir: Path, extravars: str = ""):
     """
     初始化vars配置
 
@@ -108,32 +134,36 @@ def init_vars(config_path: Path, extravars: str = ""):
     :param extravars: 额外变量
     :return: vars配置
     """
-    colony_path = config_path.joinpath("all", "colony.yaml")
+    colony_path = config_dir.joinpath("all", "colony.yaml")
     if not colony_path.exists():
         raise FileNotFoundError(f"缺少集群配置文件: {colony_path}")
     with open(colony_path, "r") as f:
         vars = yaml.safe_load(f)
+    if vars["is_enable"] == False:
+        raise AssertionError(f"mds集群{vars['colony_num']}配置为禁用状态")
     vars["mon_host"] = load_mon_conf(vars["mon_node_id"])
     if extravars:
         for item in extravars.split(";"):
             if "=" in item:
                 key, value = item.split("=", 1)
                 vars[key.strip()] = value.strip()
-    trd_data_path = MDS_DIR.joinpath("mon", vars["colony_num"], "TrdDateList.yaml")
-    if not trd_data_path.exists():
-        raise FileNotFoundError(f"缺少交易日历文件: {trd_data_path}")
-    with open(trd_data_path, "r") as f:
-        trd_dates = yaml.safe_load(f)
     if "curr_date" not in vars:
         vars["curr_date"] = get_curr_date()
     curr_date_int = int(vars["curr_date"])
     curr_year = int(vars["curr_date"][:4])
-    if "next_trd_date" not in vars:
-        vars["next_trd_date"] = next_trd_date(trd_dates, curr_date_int, curr_year)
-    if "pre_trd_date" not in vars:
-        vars["pre_trd_date"] = pre_trd_date(trd_dates, curr_date_int, curr_year)
-    trd_year = trd_dates.get(f"trd_date_{curr_year}_list", [])
-    vars["is_trading_day"] = True if vars["curr_date"] in trd_year else False
+    trd_data_path = MDS_DIR.joinpath("mon", vars["colony_num"], "TradingCalendar.csv")
+    if trd_data_path.exists():
+        trd_dates = parse_calendar(trd_data_path)
+        if "next_trd_date" not in vars:
+            vars["next_trd_date"] = next_trd_date(trd_dates, curr_date_int, curr_year)
+        if "pre_trd_date" not in vars:
+            vars["pre_trd_date"] = pre_trd_date(trd_dates, curr_date_int, curr_year)
+        trd_year = trd_dates.get(f"trd_date_{curr_year}_list", [])
+        vars["is_trading_day"] = True if vars["curr_date"] in trd_year else False
+    else:
+        vars["next_trd_date"] = "00000000"
+        vars["pre_trd_date"] = "00000000"
+        vars["is_trading_day"] = False
     vars["JOBS_RECORD_ID"] = JOBS_RECORD_ID
     vars["JOBS_LOG_PATH"] = JOBS_LOG_PATH
     vars["local_path_script_home"] = str(SCRIPT_DIR)
@@ -143,7 +173,7 @@ def init_vars(config_path: Path, extravars: str = ""):
     return vars
 
 
-def init_hosts(colony_num: str, conf_path: Path) -> Dict:
+def init_hosts(colony_num: str, config_dir: Path) -> Dict:
     """
     初始化hosts配置
 
@@ -151,16 +181,20 @@ def init_hosts(colony_num: str, conf_path: Path) -> Dict:
     :return: hosts配置
     """
     mds_cluster_hosts = {}
-    for path in conf_path.iterdir():
+    for path in config_dir.iterdir():
         if path.is_dir() and path.name in ("host_01", "host_02", "host_03"):
             with open(path.joinpath("node.yaml"), "r") as f:
                 node_data = yaml.safe_load(f)
+            if node_data["is_enable"] == False:
+                continue
             host_path = HOST_CONF_DIR.joinpath(f"host_{node_data['host_id']}.yaml")
             if not host_path.exists():
                 raise FileNotFoundError(f"缺少节点配置文件: {host_path}")
             with open(host_path, "r") as f:
                 host_data = yaml.safe_load(f)
             mds_cluster_hosts[f"mds_{colony_num}_{node_data['node_role']}"] = {**node_data, **host_data}
+    if len(mds_cluster_hosts) == 0:
+        raise AssertionError(f"mds_{colony_num}集群没有可用的节点")
     return mds_cluster_hosts
 
 
@@ -171,12 +205,11 @@ def main(options):
     colony_num = options.colony_num
     if not colony_num:
         raise ValueError("参数colony_num是必填项")
-    config_path = MDS_DIR.joinpath("config", colony_num)
-    if not config_path.exists():
-        raise FileNotFoundError(f"缺少mds_{colony_num}配置文件目录: {config_path}")
-    vars = init_vars(config_path, options.extravars)
-    vars["colony_num"] = colony_num
-    hosts = init_hosts(colony_num, config_path)
+    config_dir = MDS_DIR.joinpath("config", colony_num)
+    if not config_dir.exists():
+        raise FileNotFoundError(f"缺少mds_{colony_num}配置文件目录: {config_dir}")
+    vars = init_vars(config_dir, options.extravars)
+    hosts = init_hosts(colony_num, config_dir)
     envvars = {}
     if options.enable_ansible_log:
         envvars["ANSIBLE_LOG_PATH"] = JOBS_LOG_PATH

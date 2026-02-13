@@ -3,81 +3,24 @@ package biz
 import (
 	"context"
 	"os"
-	"path/filepath"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
-	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/infra/jobs/data"
+	"gin-artweb/internal/infra/jobs/model"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-const (
-	ScriptTableName = "jobs_script"
-	ScriptIDKey     = "script_id"
-)
-
-type ScriptModel struct {
-	database.StandardModel
-	Name      string `gorm:"column:name;type:varchar(50);not null;index:idx_script_project_label_name;comment:名称" json:"name"`
-	Descr     string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	Project   string `gorm:"column:project;type:varchar(50);index:idx_script_project_label_name;comment:项目" json:"project"`
-	Label     string `gorm:"column:label;type:varchar(50);index:idx_script_project_label_name;;comment:标签" json:"label"`
-	Language  string `gorm:"column:language;type:varchar(50);comment:脚本语言" json:"language"`
-	Status    bool   `gorm:"column:status;type:boolean;comment:是否启用" json:"status"`
-	IsBuiltin bool   `gorm:"column:is_builtin;type:boolean;comment:是否是内置脚本" json:"is_builtin"`
-	Username  string `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
-}
-
-func (m *ScriptModel) TableName() string {
-	return ScriptTableName
-}
-
-func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if m == nil {
-		return nil
-	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
-		return err
-	}
-	enc.AddString("name", m.Name)
-	enc.AddString("descr", m.Descr)
-	enc.AddString("project", m.Project)
-	enc.AddString("label", m.Label)
-	enc.AddString("language", m.Language)
-	enc.AddBool("status", m.Status)
-	enc.AddBool("is_builtin", m.IsBuiltin)
-	enc.AddString("username", m.Username)
-	return nil
-}
-
-func (m *ScriptModel) ScriptPath() string {
-	if m.IsBuiltin {
-		return filepath.Join(config.ResourceDir, m.Project, "script", m.Label, m.Name)
-	}
-	return filepath.Join(config.StorageDir, "script", m.Project, m.Label, m.Name)
-}
-
-type ScriptRepo interface {
-	CreateModel(context.Context, *ScriptModel) error
-	UpdateModel(context.Context, map[string]any, ...any) error
-	DeleteModel(context.Context, ...any) error
-	GetModel(context.Context, ...any) (*ScriptModel, error)
-	ListModel(context.Context, database.QueryParams) (int64, *[]ScriptModel, error)
-	ListProjects(context.Context) ([]string, error)
-	ListLabels(context.Context) ([]string, error)
-}
-
 type ScriptUsecase struct {
 	log        *zap.Logger
-	scriptRepo ScriptRepo
+	scriptRepo *data.ScriptRepo
 }
 
 func NewScriptUsecase(
 	log *zap.Logger,
-	scriptRepo ScriptRepo,
+	scriptRepo *data.ScriptRepo,
 ) *ScriptUsecase {
 	return &ScriptUsecase{
 		log:        log,
@@ -87,8 +30,8 @@ func NewScriptUsecase(
 
 func (uc *ScriptUsecase) CreateScript(
 	ctx context.Context,
-	m ScriptModel,
-) (*ScriptModel, *errors.Error) {
+	m model.ScriptModel,
+) (*model.ScriptModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -121,7 +64,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	ctx context.Context,
 	scriptID uint32,
 	data map[string]any,
-) (*ScriptModel, *errors.Error) {
+) (*model.ScriptModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -133,15 +76,15 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 	if om.IsBuiltin {
 		uc.log.Error(
 			"内置脚本不能修改",
-			zap.Uint32(ScriptIDKey, scriptID),
+			zap.Uint32("script_id", scriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return nil, errors.FromReason(errors.ReasonScriptIsBuiltin).WithField(ScriptIDKey, scriptID)
+		return nil, errors.FromReason(errors.ReasonScriptIsBuiltin).WithField("script_id", scriptID)
 	}
 
 	uc.log.Info(
 		"开始更新脚本",
-		zap.Uint32(ScriptIDKey, scriptID),
+		zap.Uint32("script_id", scriptID),
 		zap.Any(database.UpdateDataKey, data),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
@@ -150,7 +93,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 		uc.log.Error(
 			"更新脚本失败",
 			zap.Error(err),
-			zap.Uint32(ScriptIDKey, scriptID),
+			zap.Uint32("script_id", scriptID),
 			zap.Any(database.UpdateDataKey, data),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
@@ -159,7 +102,7 @@ func (uc *ScriptUsecase) UpdateScriptByID(
 
 	uc.log.Info(
 		"更新脚本成功",
-		zap.Uint32(ScriptIDKey, scriptID),
+		zap.Uint32("script_id", scriptID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return uc.FindScriptByID(ctx, scriptID)
@@ -180,15 +123,15 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 	if m.IsBuiltin {
 		uc.log.Error(
 			"内置脚本不能删除",
-			zap.Uint32(ScriptIDKey, scriptID),
+			zap.Uint32("script_id", scriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
-		return errors.FromReason(errors.ReasonScriptIsBuiltin).WithField(ScriptIDKey, scriptID)
+		return errors.FromReason(errors.ReasonScriptIsBuiltin).WithField("script_id", scriptID)
 	}
 
 	uc.log.Info(
 		"开始删除脚本",
-		zap.Uint32(ScriptIDKey, scriptID),
+		zap.Uint32("script_id", scriptID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -196,7 +139,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 		uc.log.Error(
 			"删除脚本失败",
 			zap.Error(err),
-			zap.Uint32(ScriptIDKey, scriptID),
+			zap.Uint32("script_id", scriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": scriptID})
@@ -208,7 +151,7 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 
 	uc.log.Info(
 		"删除脚本成功",
-		zap.Uint32(ScriptIDKey, scriptID),
+		zap.Uint32("script_id", scriptID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
@@ -217,14 +160,14 @@ func (uc *ScriptUsecase) DeleteScriptByID(
 func (uc *ScriptUsecase) FindScriptByID(
 	ctx context.Context,
 	scriptID uint32,
-) (*ScriptModel, *errors.Error) {
+) (*model.ScriptModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 
 	uc.log.Info(
 		"开始查询脚本",
-		zap.Uint32(ScriptIDKey, scriptID),
+		zap.Uint32("script_id", scriptID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -233,7 +176,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 		uc.log.Error(
 			"查询脚本失败",
 			zap.Error(err),
-			zap.Uint32(ScriptIDKey, scriptID),
+			zap.Uint32("script_id", scriptID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": scriptID})
@@ -241,7 +184,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 
 	uc.log.Info(
 		"查询脚本成功",
-		zap.Uint32(ScriptIDKey, scriptID),
+		zap.Uint32("script_id", scriptID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return m, nil
@@ -250,7 +193,7 @@ func (uc *ScriptUsecase) FindScriptByID(
 func (uc *ScriptUsecase) ListScript(
 	ctx context.Context,
 	qp database.QueryParams,
-) (int64, *[]ScriptModel, *errors.Error) {
+) (int64, *[]model.ScriptModel, *errors.Error) {
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
@@ -280,17 +223,17 @@ func (uc *ScriptUsecase) ListScript(
 	return count, ms, nil
 }
 
-func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *errors.Error {
+func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m model.ScriptModel) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}
 
-	savePath := m.ScriptPath()
+	savePath := GetScriptPath(m)
 
 	uc.log.Info(
 		"开始删除脚本文件",
 		zap.String("path", savePath),
-		zap.Uint32(ScriptIDKey, m.ID),
+		zap.Uint32("script_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 
@@ -300,7 +243,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 		uc.log.Warn(
 			"脚本文件不存在，无需删除",
 			zap.String("path", savePath),
-			zap.Uint32(ScriptIDKey, m.ID),
+			zap.Uint32("script_id", m.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return nil
@@ -310,7 +253,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 			"检查脚本文件状态失败",
 			zap.Error(statErr),
 			zap.String("path", savePath),
-			zap.Uint32(ScriptIDKey, m.ID),
+			zap.Uint32("script_id", m.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(statErr)
@@ -322,7 +265,7 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 			"删除脚本文件失败",
 			zap.Error(rmErr),
 			zap.String("path", savePath),
-			zap.Uint32(ScriptIDKey, m.ID),
+			zap.Uint32("script_id", m.ID),
 			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 		)
 		return errors.FromError(rmErr)
@@ -331,8 +274,42 @@ func (uc *ScriptUsecase) RemoveScript(ctx context.Context, m ScriptModel) *error
 	uc.log.Info(
 		"删除脚本文件成功",
 		zap.String("path", savePath),
-		zap.Uint32(ScriptIDKey, m.ID),
+		zap.Uint32("script_id", m.ID),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
 	return nil
+}
+
+func (uc *ScriptUsecase) ListProjects(ctx context.Context, query map[string]any) ([]string, *errors.Error) {
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
+	}
+	projects, err := uc.scriptRepo.ListProjects(ctx, query)
+	if err != nil {
+		uc.log.Error(
+			"查询项目名称失败",
+			zap.Error(err),
+			zap.Any(database.QueryParamsKey, query),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return nil, errors.NewGormError(err, nil)
+	}
+	return projects, nil
+}
+
+func (uc *ScriptUsecase) ListLabels(ctx context.Context, query map[string]any) ([]string, *errors.Error) {
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
+	}
+	labels, err := uc.scriptRepo.ListLabels(ctx, query)
+	if err != nil {
+		uc.log.Error(
+			"查询标签名称失败",
+			zap.Error(err),
+			zap.Any(database.QueryParamsKey, query),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return nil, errors.NewGormError(err, nil)
+	}
+	return labels, nil
 }
