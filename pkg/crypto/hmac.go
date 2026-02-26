@@ -80,11 +80,11 @@ func (h *HMACHasher) Verify(ctx context.Context, data, hash string) (bool, error
 // GenerateHMAC 生成HMAC值的便捷函数
 func GenerateHMAC(data string, key []byte, hmacType HMACType) (string, error) {
 	hasher := NewHMACHasher(key, hmacType)
-	return hasher.Hash(nil, data)
+	return hasher.Hash(context.Background(), data)
 }
 
 // VerifyHMAC 验证HMAC值的便捷函数
 func VerifyHMAC(data, hash string, key []byte, hmacType HMACType) (bool, error) {
 	hasher := NewHMACHasher(key, hmacType)
-	return hasher.Verify(nil, data, hash)
+	return hasher.Verify(context.Background(), data, hash)
 }

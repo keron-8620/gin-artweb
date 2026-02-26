@@ -21,6 +21,7 @@ sync_items=(
     "cmd"
     "sql"
     "resource"
+    "html"
 )
 
 # 遍历要同步的项，逐个执行rsync（确保每个项独立同步，目录不存在自动创建）

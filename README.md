@@ -10,12 +10,14 @@ pip3 install ansible ansible_runner
 数据库部分请依据需求自行安装，并创建指定的库
 
 3. 创建数据库的表结构
-./bin/artweb -init-database
+./bin/artweb -migrate
 
 4. 导入sql脚本
 ./bin/artweb -exec-sql sql/database.sql
 
 5. 启动bin目录下的可执行程序，通过浏览器访问页面
+启动命令: sh cmd/start.sh
+停止命令: sh cmd/stop.sh
 默认的用户名为mon, 密码为Quant360@mon
 注: 系统默认的脚本使用python3解释器，建议在虚拟环境中启动
 ################################ Web程序部署 #####################################

@@ -15,7 +15,7 @@ database: # 数据库配置
   type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4" # MySql/OceanBase配置
   # dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
-  # dsn: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
+  # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   dns: "artweb.db" # sqlite3数据库配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
@@ -74,10 +74,3 @@ security: # 安全配置
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名
   timeout: 5 # ssh连接超时时间
-
-storage_sync: # 存储同步服务
-  enable: true # 是否启用同步服务
-  remote_host: "192.168.10.12" # 远程主机地址
-  remote_port: 22 # 远程主机端口
-  remote_user: "root" # 远程主机用户名
-  remote_path: "/home/ansible/artweb" # 远程主机路径

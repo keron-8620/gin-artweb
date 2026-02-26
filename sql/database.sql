@@ -96,30 +96,30 @@ insert into customer_api(id,url,method,label,descr) values('5026','/api/v1/oes/:
 
 
 
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('1','/mon','/mon','MON','{"title":"MON","icon":""}',1,'true','MON',null);
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('2','/oes','/oes','OES','{"title":"OES","icon":""}',2,'true','OES',null);
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('3','/mds','/mds','MDS','{"title":"MDS","icon":""}',3,'true','MDS',null);
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"作业管理","icon":""}',4,'true','作业管理',null);
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('5','/conf','/conf','Conf','{"title":"基础配置","icon":""}',5,'true','基础配置',null);
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('6','/api','/api','api','{"title":"权限管理","icon":""}',6,'true','权限管理',null);
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('50','mon_nodes','mon_nodes','mon_nodes','{"title":"MON结点","icon":""}',1,'true','MON结点','1');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('60','oes_colony','oes_colony','oes_colony','{"title":"OES集群","icon":""}',1,'true','OES集群','2');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('61','oes_nodes','oes_nodes','oes_nodes','{"title":"OES结点","icon":""}',2,'true','OES结点','2');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('62','oes_conf','oes_conf','oes_conf','{"title":"OES配置文件","icon":""}',3,'true','OES配置文件','2');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('63','oes_pkg','oes_pkg','oes_pkg','{"title":"OES程序包","icon":""}',4,'true','OES程序包','2');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('70','mds_colony','mds_colony','mds_colony','{"title":"MDS集群","icon":""}',1,'true','MDS集群','3');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('71','mds_nodes','mds_nodes','mds_nodes','{"title":"MDS结点","icon":""}',2,'true','MDS结点','3');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('72','mds_conf','mds_conf','mds_conf','{"title":"MDS配置文件","icon":""}',3,'true','MDS配置文件','3');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('73','mds_pkg','mds_pkg','mds_pkg','{"title":"MDS程序包","icon":""}',4,'true','MDS程序包','3');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('80','oes_daily','oes_daily','oes_daily','{"title":"OES日常任务管理","icon":""}',1,'true','OES日常任务管理','4');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('81','mds_daily','mds_daily','mds_daily','{"title":"MDS日常任务管理","icon":""}',2,'true','MDS日常任务管理','4');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('82','schedule','schedule','schedule','{"title":"计划任务管理","icon":""}',3,'true','计划任务管理','4');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('83','script','script','script','{"title":"脚本管理","icon":""}',4,'true','脚本管理','4');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('84','script_record','script_record','script_record','{"title":"脚本执行记录","icon":""}',5,'true','脚本执行记录','4');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('85','update','update','update','{"title":"部署升级","icon":""}',6,'true','部署升级','4');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('100','host','host','host','{"title":"主机管理","icon":""}',1,'true','主机管理','5');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('110','user','user','user','{"title":"用户管理","icon":""}',1,'true','用户管理','6');
-insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('111','role','role','role','{"title":"角色管理","icon":""}',2,'true','角色管理','6');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('1','/mon','/mon','MON','{"title":"MON","icon":""}','1','true','MON',null);
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('2','/oes','/oes','OES','{"title":"OES","icon":""}','2','true','OES',null);
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('3','/mds','/mds','MDS','{"title":"MDS","icon":""}','3','true','MDS',null);
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"作业管理","icon":""}','4','true','作业管理',null);
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('5','/conf','/conf','Conf','{"title":"基础配置","icon":""}','5','true','基础配置',null);
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('6','/api','/api','api','{"title":"权限管理","icon":""}','6','true','权限管理',null);
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('50','mon_nodes','mon_nodes','mon_nodes','{"title":"MON结点","icon":""}','1','true','MON结点','1');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('60','oes_colony','oes_colony','oes_colony','{"title":"OES集群","icon":""}','1','true','OES集群','2');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('61','oes_nodes','oes_nodes','oes_nodes','{"title":"OES结点","icon":""}','2','true','OES结点','2');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('62','oes_conf','oes_conf','oes_conf','{"title":"OES配置文件","icon":""}','3','true','OES配置文件','2');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('63','oes_pkg','oes_pkg','oes_pkg','{"title":"OES程序包","icon":""}','4','true','OES程序包','2');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('70','mds_colony','mds_colony','mds_colony','{"title":"MDS集群","icon":""}','1','true','MDS集群','3');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('71','mds_nodes','mds_nodes','mds_nodes','{"title":"MDS结点","icon":""}','2','true','MDS结点','3');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('72','mds_conf','mds_conf','mds_conf','{"title":"MDS配置文件","icon":""}','3','true','MDS配置文件','3');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('73','mds_pkg','mds_pkg','mds_pkg','{"title":"MDS程序包","icon":""}','4','true','MDS程序包','3');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('80','daily','daily','daily','{"title":"日常任务运维","icon":""}','1','1','日常任务运维','4');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('81','script_emgy','script_emgy','script_emgy','{"title":"应急脚本管理","icon":""}','4','1','应急脚本管理','4');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('82','schedule','schedule','schedule','{"title":"计划任务管理","icon":""}','2','1','计划任务管理','4');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('83','script','script','script','{"title":"脚本管理","icon":""}','3','1','脚本管理','4');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('84','script_record','script_record','script_record','{"title":"脚本执行记录","icon":""}','5','true','脚本执行记录','4');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('85','update','update','update','{"title":"部署升级","icon":""}','6','true','部署升级','4');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('100','host','host','host','{"title":"主机管理","icon":""}','1','true','主机管理','5');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('110','user','user','user','{"title":"用户管理","icon":""}','1','true','用户管理','6');
+insert into customer_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('111','role','role','role','{"title":"角色管理","icon":""}','2','true','角色管理','6');
 
 
 
@@ -177,19 +177,6 @@ insert into customer_menu_api(menu_id,api_id) values('73','1012');
 insert into customer_menu_api(menu_id,api_id) values('73','1013');
 insert into customer_menu_api(menu_id,api_id) values('73','1015');
 insert into customer_menu_api(menu_id,api_id) values('73','1016');
-insert into customer_menu_api(menu_id,api_id) values('82','2001');
-insert into customer_menu_api(menu_id,api_id) values('82','2021');
-insert into customer_menu_api(menu_id,api_id) values('82','2022');
-insert into customer_menu_api(menu_id,api_id) values('82','2023');
-insert into customer_menu_api(menu_id,api_id) values('82','2024');
-insert into customer_menu_api(menu_id,api_id) values('82','2025');
-insert into customer_menu_api(menu_id,api_id) values('83','2001');
-insert into customer_menu_api(menu_id,api_id) values('83','2002');
-insert into customer_menu_api(menu_id,api_id) values('83','2003');
-insert into customer_menu_api(menu_id,api_id) values('83','2004');
-insert into customer_menu_api(menu_id,api_id) values('83','2005');
-insert into customer_menu_api(menu_id,api_id) values('83','2006');
-insert into customer_menu_api(menu_id,api_id) values('83','2012');
 insert into customer_menu_api(menu_id,api_id) values('84','2011');
 insert into customer_menu_api(menu_id,api_id) values('84','2013');
 insert into customer_menu_api(menu_id,api_id) values('84','2016');
@@ -219,10 +206,24 @@ insert into customer_menu_api(menu_id,api_id) values('111','34');
 insert into customer_menu_api(menu_id,api_id) values('111','35');
 insert into customer_menu_api(menu_id,api_id) values('111','36');
 insert into customer_menu_api(menu_id,api_id) values('80','2001');
-insert into customer_menu_api(menu_id,api_id) values('80','2011');
 insert into customer_menu_api(menu_id,api_id) values('80','2012');
 insert into customer_menu_api(menu_id,api_id) values('80','2016');
+insert into customer_menu_api(menu_id,api_id) values('80','4006');
 insert into customer_menu_api(menu_id,api_id) values('80','5006');
+insert into customer_menu_api(menu_id,api_id) values('80','5007');
+insert into customer_menu_api(menu_id,api_id) values('80','5008');
+insert into customer_menu_api(menu_id,api_id) values('81','2001');
+insert into customer_menu_api(menu_id,api_id) values('81','2006');
+insert into customer_menu_api(menu_id,api_id) values('81','2012');
+insert into customer_menu_api(menu_id,api_id) values('81','2013');
+insert into customer_menu_api(menu_id,api_id) values('81','2016');
+insert into customer_menu_api(menu_id,api_id) values('82','2001');
+insert into customer_menu_api(menu_id,api_id) values('82','2021');
+insert into customer_menu_api(menu_id,api_id) values('82','2022');
+insert into customer_menu_api(menu_id,api_id) values('82','2023');
+insert into customer_menu_api(menu_id,api_id) values('82','2024');
+insert into customer_menu_api(menu_id,api_id) values('82','2025');
+
 
 
 insert into customer_role(name,descr) values('admin','系统管理员');
@@ -325,6 +326,7 @@ insert into customer_role_api(role_id,api_id) values('1','2007');
 insert into customer_role_api(role_id,api_id) values('1','2008');
 
 
+
 insert into customer_role_menu(role_id,menu_id) values('1','1');
 insert into customer_role_menu(role_id,menu_id) values('1','2');
 insert into customer_role_menu(role_id,menu_id) values('1','3');
@@ -349,6 +351,7 @@ insert into customer_role_menu(role_id,menu_id) values('1','85');
 insert into customer_role_menu(role_id,menu_id) values('1','100');
 insert into customer_role_menu(role_id,menu_id) values('1','110');
 insert into customer_role_menu(role_id,menu_id) values('1','111');
+
 
 
 insert into customer_user(username,password,is_active,is_staff,role_id) values('mon','$2a$12$vmjs0S6AShmCBJSsXpJ2d.as4F2w0ywm5yzQmn8JLU9UTyM5qwf1i','true','true','1');
