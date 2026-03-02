@@ -158,7 +158,7 @@ func (suite *ApiTestSuite) TestLoadApiPolicy() {
 	// 创建几个API
 	apiCount := 2
 	createdApis := make([]custmodel.ApiModel, 0, apiCount)
-	for i := 0; i < apiCount; i++ {
+	for range apiCount {
 		sm := CreateTestApiModel()
 		fm, err := suite.apiservice.CreateApi(context.Background(), *sm)
 		suite.Nil(err, "创建API应该成功")

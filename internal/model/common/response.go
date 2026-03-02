@@ -74,8 +74,7 @@ var NoDataReply = MapAPIReply{
 	Data: map[string]any{},
 }
 
-type FileInfo struct { 
+type FileInfo struct {
 	Name string `json:"name"`
-	Size int64 `json:"size"`
-
+	Size int64  `json:"size"`
 }

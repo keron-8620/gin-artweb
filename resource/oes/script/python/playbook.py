@@ -221,7 +221,7 @@ def main(options):
         envvars=envvars,
         verbosity=options.verbosity,
     )
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="本脚本用于执行oes相关的playbook任务")

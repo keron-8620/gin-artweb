@@ -149,7 +149,7 @@ func (s *RecordService) Execute(record *jobsmodel.ScriptRecordModel) *jobsmodel.
 	}()
 
 	// 生成日志路径并创建日志目录
-	logPath := common.GetScriptLogStoragePath(record.CreatedAt.Format(time.DateOnly), record.LogName)
+	logPath := common.GetScriptLogStoragePath(record.CreatedAt, record.LogName)
 	logDir := filepath.Dir(logPath)
 	if taskinfo.Error = os.MkdirAll(logDir, 0755); taskinfo.Error != nil {
 		taskinfo.Status = 5

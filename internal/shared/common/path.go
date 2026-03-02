@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 
@@ -29,8 +30,8 @@ func GetScriptStoragePath(project, label, name string, isBuiltin bool) string {
 	return filepath.Join(config.StorageDir, "script", project, label, name)
 }
 
-func GetScriptLogStoragePath(data, logname string) string {
-	return filepath.Join(config.StorageDir, "logs", data, logname)
+func GetScriptLogStoragePath(data time.Time, logname string) string {
+	return filepath.Join(config.StorageDir, "logs", data.Format(time.DateOnly), logname)
 }
 
 func GetMonNodeExportPath(pk uint32) string {

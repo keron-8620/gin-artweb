@@ -1,12 +1,13 @@
 package service
 
 import (
-	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -256,7 +257,7 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 
-	logPath := common.GetScriptLogStoragePath(m.CreatedAt.Format("20060102"), m.LogName)
+	logPath := common.GetScriptLogStoragePath(m.CreatedAt, m.LogName)
 
 	if err := common.DownloadFile(ctx, h.log, logPath, m.LogName); err != nil {
 		errors.RespondWithError(ctx, err)
@@ -300,7 +301,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 
-	logPath := common.GetScriptLogStoragePath(m.CreatedAt.Format("20060102"), m.LogName)
+	logPath := common.GetScriptLogStoragePath(m.CreatedAt, m.LogName)
 
 	// 检查日志文件是否存在
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
@@ -330,44 +331,59 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	}
 	defer file.Close()
 
-	// 设置SSE响应头
-	ctx.Header("Content-Type", "text/event-stream")
-	ctx.Header("Cache-Control", "no-cache")
-	ctx.Header("Connection", "keep-alive")
-	ctx.Header("Transfer-Encoding", "chunked")
-	ctx.Header("X-Accel-Buffering", "no")
-
+	// 监听客户端断开连接
 	clientGone := ctx.Writer.CloseNotify()
 
 	// 移动到文件末尾，准备读取新内容
-	fileInfo, _ := file.Stat()
+	fileInfo, err := file.Stat()
+	if err != nil {
+		h.log.Error(
+			"获取日志文件状态失败",
+			zap.Error(err),
+			zap.String("log_path", logPath),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.FromError(err)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
 	lastModTime := fileInfo.ModTime()
 	currentSize := fileInfo.Size()
 
 	// 发送初始数据
 	initialBytes := make([]byte, currentSize)
-	n, _ := file.Read(initialBytes)
+	n, err := file.Read(initialBytes)
+	if err != nil && err != io.EOF {
+		h.log.Error(
+			"读取日志文件失败",
+			zap.Error(err),
+			zap.String("log_path", logPath),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		rErr := errors.FromError(err)
+		errors.RespondWithError(ctx, rErr)
+		return
+	}
 	if n > 0 {
 		initialLines := strings.SplitSeq(string(initialBytes[:n]), "\n")
 		for line := range initialLines {
 			if line != "" {
-				fmt.Fprintf(ctx.Writer, "data: %s\n", line)
+				sse.Encode(ctx.Writer, sse.Event{
+					Data: []byte(line),
+				})
 			}
 		}
-		fmt.Fprintf(ctx.Writer, "\n")
-		// ctx.Writer.Flush()
+		ctx.Writer.Flush()
 	}
 
 	// 检查任务是否仍在运行
-	// 如果GetCancel返回nil，表示任务已经完成（无论成功、失败、超时或被取消）
-	// 如果GetCancel返回非nil，表示任务仍在运行
 	if cancel := h.svcRecord.GetCancel(uri.ID); cancel == nil {
 		// 任务已完成，结束流
 		return
 	}
 
 	// 定期检查文件是否有新内容
-	ticker := time.NewTicker(1 * time.Second) // 每秒检查一次
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -394,30 +410,67 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			// 如果文件大小增加了，说明有新内容
 			if newSize > currentSize {
 				// 移动到上次读取的位置
-				file.Seek(currentSize, 0)
+				_, err := file.Seek(currentSize, 0)
+				if err != nil {
+					h.log.Error(
+						"移动文件指针失败",
+						zap.Error(err),
+						zap.String("log_path", logPath),
+						zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+					)
+					return
+				}
 
 				// 读取新增的内容
 				buf := make([]byte, newSize-currentSize)
-				n, _ := file.Read(buf)
+				n, err := file.Read(buf)
+				if err != nil && err != io.EOF {
+					h.log.Error(
+						"读取日志文件失败",
+						zap.Error(err),
+						zap.String("log_path", logPath),
+						zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+					)
+					return
+				}
 
 				if n > 0 {
 					newLines := strings.SplitSeq(string(buf[:n]), "\n")
 					for line := range newLines {
 						if line != "" {
-							fmt.Fprintf(ctx.Writer, "data: %s\n", line)
+							sse.Encode(ctx.Writer, sse.Event{
+								Data: []byte(line),
+							})
 						}
 					}
-					fmt.Fprintf(ctx.Writer, "\n")
 					ctx.Writer.Flush()
 				}
 
 				currentSize = newSize
 			} else if fileInfo.ModTime().After(lastModTime) {
 				// 文件修改时间更新了，可能有追加内容
-				file.Seek(currentSize, 0)
+				_, err := file.Seek(currentSize, 0)
+				if err != nil {
+					h.log.Error(
+						"移动文件指针失败",
+						zap.Error(err),
+						zap.String("log_path", logPath),
+						zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+					)
+					return
+				}
 				buf := make([]byte, 1024) // 尝试读取1KB内容
 				for {
-					n, _ := file.Read(buf)
+					n, err := file.Read(buf)
+					if err != nil && err != io.EOF {
+						h.log.Error(
+							"读取日志文件失败",
+							zap.Error(err),
+							zap.String("log_path", logPath),
+							zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+						)
+						return
+					}
 					if n == 0 {
 						break
 					}
@@ -429,10 +482,11 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 							continue
 						}
 						if line != "" {
-							fmt.Fprintf(ctx.Writer, "data: %s\n", line)
+							sse.Encode(ctx.Writer, sse.Event{
+								Data: []byte(line),
+							})
 						}
 					}
-					fmt.Fprintf(ctx.Writer, "\n")
 					ctx.Writer.Flush()
 					currentSize += int64(n)
 				}

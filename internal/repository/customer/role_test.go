@@ -607,3 +607,146 @@ func TestRoleTestSuite(t *testing.T) {
 	pts := &RoleTestSuite{}
 	suite.Run(t, pts)
 }
+
+// TestCreateRoleWithCasbinPermission 测试角色添加成功后基于casbin的权限校验
+func (suite *RoleTestSuite) TestCreateRoleWithCasbinPermission() {
+	// 创建API用于测试
+	api := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), api)
+	suite.NoError(err, "创建API应该成功")
+
+	// 创建菜单用于测试
+	menu := CreateTestMenuModel(nil)
+	err = suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 创建按钮用于测试
+	button := CreateTestButtonModel(menu.ID)
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 创建角色并关联API、菜单和按钮
+	role := CreateTestRoleModel()
+	apis := []custmodel.ApiModel{*api}
+	menus := []custmodel.MenuModel{*menu}
+	buttons := []custmodel.ButtonModel{*button}
+	err = suite.roleRepo.CreateModel(context.Background(), role, &apis, &menus, &buttons)
+	suite.NoError(err, "创建角色应该成功")
+
+	// 重新加载角色，确保关联字段被正确加载
+	loadedRole, err := suite.roleRepo.GetModel(context.Background(), []string{"Apis", "Menus", "Buttons"}, "id = ?", role.ID)
+	suite.NoError(err, "重新加载角色应该成功")
+
+	// 为角色添加权限策略
+	err = suite.roleRepo.AddGroupPolicy(context.Background(), loadedRole)
+	suite.NoError(err, "为角色添加权限策略应该成功")
+
+	// 验证权限策略是否正确添加
+	// 1. 验证角色与API之间的权限关系
+	roleSubject := auth.RoleToSubject(loadedRole.ID)
+	apiSubject := auth.ApiToSubject(api.ID)
+
+	// 检查组策略是否存在（角色继承API的权限）
+	hasGroupPolicyWithApi, err := suite.roleRepo.enforcer.HasGroupingPolicy(roleSubject, apiSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithApi, "角色应该继承API的权限")
+
+	// 2. 验证角色与菜单之间的权限关系
+	menuSubject := auth.MenuToSubject(menu.ID)
+
+	// 检查组策略是否存在（角色继承菜单的权限）
+	hasGroupPolicyWithMenu, err := suite.roleRepo.enforcer.HasGroupingPolicy(roleSubject, menuSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithMenu, "角色应该继承菜单的权限")
+
+	// 3. 验证角色与按钮之间的权限关系
+	buttonSubject := auth.ButtonToSubject(button.ID)
+
+	// 检查组策略是否存在（角色继承按钮的权限）
+	hasGroupPolicyWithButton, err := suite.roleRepo.enforcer.HasGroupingPolicy(roleSubject, buttonSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithButton, "角色应该继承按钮的权限")
+
+	// 4. 测试权限检查
+	// 为API添加一个具体的权限策略
+	apiPath := "/api/test"
+	apiMethod := "GET"
+	testPolicy := []string{apiSubject, apiPath, apiMethod}
+	err = auth.AddPolicies(context.Background(), suite.roleRepo.enforcer, [][]string{testPolicy})
+	suite.NoError(err, "为API添加权限策略应该成功")
+
+	// 检查角色是否继承了API的权限
+	hasPermission, err := suite.roleRepo.enforcer.Enforce(roleSubject, apiPath, apiMethod)
+	suite.NoError(err, "检查权限应该成功")
+	suite.True(hasPermission, "角色应该继承API的访问权限")
+
+	// 5. 清理权限策略
+	err = auth.RemovePolicies(context.Background(), suite.roleRepo.enforcer, [][]string{testPolicy})
+	suite.NoError(err, "移除API权限策略应该成功")
+
+	// 移除角色的权限策略
+	err = suite.roleRepo.RemoveGroupPolicy(context.Background(), loadedRole)
+	suite.NoError(err, "移除角色权限策略应该成功")
+}
+
+// TestRolePermissionInheritance 测试角色的权限继承关系
+func (suite *RoleTestSuite) TestRolePermissionInheritance() {
+	// 创建API用于测试
+	api := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), api)
+	suite.NoError(err, "创建API应该成功")
+
+	// 创建菜单用于测试
+	menu := CreateTestMenuModel(nil)
+	err = suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 为菜单添加权限策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "为菜单添加权限策略应该成功")
+
+	// 创建按钮用于测试
+	button := CreateTestButtonModel(menu.ID)
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 为按钮添加权限策略
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "为按钮添加权限策略应该成功")
+
+	// 创建角色并关联菜单和按钮
+	role := CreateTestRoleModel()
+	menus := []custmodel.MenuModel{*menu}
+	buttons := []custmodel.ButtonModel{*button}
+	err = suite.roleRepo.CreateModel(context.Background(), role, nil, &menus, &buttons)
+	suite.NoError(err, "创建角色应该成功")
+
+	// 为角色添加权限策略（应该继承菜单和按钮的权限）
+	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
+	suite.NoError(err, "为角色添加权限策略应该成功")
+
+	// 验证权限继承关系
+	roleSubject := auth.RoleToSubject(role.ID)
+	menuSubject := auth.MenuToSubject(menu.ID)
+	buttonSubject := auth.ButtonToSubject(button.ID)
+
+	// 检查组策略是否存在（角色继承菜单的权限）
+	hasGroupPolicyWithMenu, err := suite.roleRepo.enforcer.HasGroupingPolicy(roleSubject, menuSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithMenu, "角色应该继承菜单的权限")
+
+	// 检查组策略是否存在（角色继承按钮的权限）
+	hasGroupPolicyWithButton, err := suite.roleRepo.enforcer.HasGroupingPolicy(roleSubject, buttonSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithButton, "角色应该继承按钮的权限")
+
+	// 清理权限策略
+	err = suite.roleRepo.RemoveGroupPolicy(context.Background(), role)
+	suite.NoError(err, "移除角色权限策略应该成功")
+
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, true)
+	suite.NoError(err, "移除按钮权限策略应该成功")
+
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.NoError(err, "移除菜单权限策略应该成功")
+}

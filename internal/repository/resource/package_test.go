@@ -19,7 +19,7 @@ func CreateTestPackageModel() *resomodel.PackageModel {
 		Label:           "test",
 		StorageFilename: fmt.Sprintf("test-package-%s.tar.gz", uuid.NewString()),
 		OriginFilename:  fmt.Sprintf("test-package-%s.tar.gz", uuid.NewString()),
-		Version:         "1.0.0",
+		Version:         fmt.Sprintf("1.0.0-%s", uuid.NewString()[:8]),
 	}
 }
 

@@ -2,200 +2,269 @@ package customer
 
 import (
 	"context"
-	"fmt"
-	"testing"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/patrickmn/go-cache"
-	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	custmodel "gin-artweb/internal/model/customer"
+	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
-	"gin-artweb/internal/shared/test"
+	"gin-artweb/internal/shared/log"
 )
 
-// CreateTestLoginRecordModel 创建测试用的登录记录模型
-func CreateTestLoginRecordModel(ip string) *custmodel.LoginRecordModel {
-	return &custmodel.LoginRecordModel{
-		Username:  "test_user",
-		IPAddress: ip,
-		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-		Status:    true,
+// LoginRecordRepo 登录记录仓库实现
+// 负责登录记录的CRUD操作和登录失败次数的缓存管理
+// 使用GORM进行数据库操作，使用cache进行登录失败次数的缓存
+
+type LoginRecordRepo struct {
+	log      *zap.Logger       // 日志记录器
+	gormDB   *gorm.DB          // GORM数据库连接
+	timeouts *config.DBTimeout // 数据库操作超时配置
+	cache    *cache.Cache      // 缓存，用于存储登录失败次数
+	maxNum   int               // 最大允许的登录失败次数
+	ttl      time.Duration     // 缓存过期时间
+}
+
+// NewLoginRecordRepo 创建登录记录仓库实例
+//
+// 参数：
+//
+//	log: 日志记录器，用于记录操作日志
+//	gormDB: GORM数据库连接，用于执行数据库操作
+//	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
+//	lockTime: 缓存过期时间
+//	clearTime: 缓存清理时间
+//	num: 最大允许的登录失败次数
+//
+// 返回值：
+//
+//	custmodel.LoginRecordRepo: 登录记录仓库接口实现
+func NewLoginRecordRepo(
+	log *zap.Logger,
+	gormDB *gorm.DB,
+	timeouts *config.DBTimeout,
+	lockTime time.Duration,
+	clearTime time.Duration,
+	num int,
+) *LoginRecordRepo {
+	return &LoginRecordRepo{
+		log:      log,
+		gormDB:   gormDB,
+		timeouts: timeouts,
+		cache:    cache.New(lockTime, clearTime),
+		maxNum:   num,
+		ttl:      lockTime,
 	}
 }
 
-type RecordTestSuite struct {
-	suite.Suite
-	recordRepo *LoginRecordRepo
-}
-
-func (suite *RecordTestSuite) SetupSuite() {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&custmodel.LoginRecordModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	suite.recordRepo = &LoginRecordRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		cache:    cache.New(5*time.Minute, 10*time.Minute),
-		maxNum:   5,
-		ttl:      5 * time.Minute,
-	}
-}
-
-func (suite *RecordTestSuite) TestCreateModel() {
-	// 测试正常场景：创建登录记录模型
-	sm := CreateTestLoginRecordModel("192.168.1.1")
-	err := suite.recordRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建登录记录应该成功")
-
-	// 验证登录时间被设置
-	suite.NotZero(sm.LoginAt, "登录时间应该被设置")
-}
-
-func (suite *RecordTestSuite) TestCreateModelWithNil() {
-	// 测试异常场景：传入nil模型参数
-	err := suite.recordRepo.CreateModel(context.Background(), nil)
-	suite.Error(err, "创建登录记录时传入nil应该返回错误")
-}
-
-func (suite *RecordTestSuite) TestListModel() {
-	// 清理可能存在的数据并创建测试数据
-	for i := range 10 {
-		// 使用不同的ID范围，避免与其他测试冲突
-		sm := CreateTestLoginRecordModel(fmt.Sprintf("192.168.1.%d", i+1))
-		err := suite.recordRepo.CreateModel(context.Background(), sm)
-		suite.NoError(err, "创建登录记录应该成功")
+// CreateModel 创建登录记录模型
+//
+// 参数：
+//
+//	ctx: 上下文，用于传递请求信息和控制超时
+//	m: 登录记录模型，包含登录记录的详细信息
+//
+// 返回值：
+//
+//	error: 操作错误信息，成功则返回nil
+//
+// 功能：
+//  1. 检查登录记录模型是否为空
+//  2. 设置登录时间
+//  3. 执行数据库创建操作
+//  4. 记录操作日志
+func (r *LoginRecordRepo) CreateModel(ctx context.Context, m *custmodel.LoginRecordModel) error {
+	// 检查参数
+	if m == nil {
+		err := errors.New("创建登录记录模型失败: 模型为空")
+		r.log.Error(
+			"创建登录记录模型失败: 模型为空",
+			zap.Error(err),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return err
 	}
 
-	// 测试正常场景：查询登录记录列表
-	qp := database.QueryParams{
-		Size:    10,
-		Page:    0,
-		IsCount: true,
+	r.log.Debug(
+		"开始创建登录记录模型",
+		zap.Object(database.ModelKey, m),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+	now := time.Now()
+	m.LoginAt = now
+	if err := database.DBCreate(ctx, r.gormDB, &custmodel.LoginRecordModel{}, m, nil); err != nil {
+		r.log.Error(
+			"创建登录记录模型失败",
+			zap.Object(database.ModelKey, m),
+			zap.Error(err),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Duration(log.DurationKey, time.Since(now)),
+		)
+		return errors.WrapIf(err, "创建登录记录模型失败")
 	}
-	total, ms, err := suite.recordRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "列出登录记录应该成功")
-	suite.NotNil(ms, "登录记录列表不应该为nil")
-	suite.GreaterOrEqual(total, int64(10), "登录记录总数应该至少有10条")
+	r.log.Debug(
+		"创建登录记录模型成功",
+		zap.Object(database.ModelKey, m),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
+	return nil
+}
 
-	// 测试分页查询
-	qpPaginated := database.QueryParams{
-		Size:    5,
-		Page:    0,
-		IsCount: true,
+// ListModel 查询登录记录模型列表
+//
+// 参数：
+//
+//	ctx: 上下文，用于传递请求信息和控制超时
+//	qp: 查询参数，包含分页、排序等查询条件
+//
+// 返回值：
+//
+//	int64: 总记录数
+//	*[]custmodel.LoginRecordModel: 登录记录模型列表指针，包含符合条件的登录记录
+//	error: 操作错误信息，成功则返回nil
+//
+// 功能：
+//  1. 执行数据库查询操作
+//  2. 获取登录记录模型列表
+//  3. 返回总记录数和模型列表
+//  4. 记录操作日志
+func (r *LoginRecordRepo) ListModel(
+	ctx context.Context,
+	qp database.QueryParams,
+) (int64, *[]custmodel.LoginRecordModel, error) {
+	r.log.Debug(
+		"开始查询登录记录模型列表",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+	now := time.Now()
+	var ms []custmodel.LoginRecordModel
+	count, err := database.DBList(ctx, r.gormDB, &custmodel.LoginRecordModel{}, &ms, qp)
+	if err != nil {
+		r.log.Error(
+			"查询登录记录列表失败",
+			zap.Error(err),
+			zap.Object(database.QueryParamsKey, &qp),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Duration(log.DurationKey, time.Since(now)),
+		)
+		return 0, nil, errors.WrapIf(err, "查询登录记录列表失败")
 	}
-	pTotal, pMs, err := suite.recordRepo.ListModel(context.Background(), qpPaginated)
-	suite.NoError(err, "分页列出登录记录应该成功")
-	suite.NotNil(pMs, "分页登录记录列表不应该为nil")
-	suite.Equal(5, len(*pMs), "分页查询应该返回指定数量的记录")
-	suite.GreaterOrEqual(pTotal, int64(5), "分页总数应该至少等于limit")
-
-	// 测试排序查询
-	qpSorted := database.QueryParams{
-		Size:    10,
-		Page:    0,
-		OrderBy: []string{"id DESC"},
-	}
-	_, sMs, err := suite.recordRepo.ListModel(context.Background(), qpSorted)
-	suite.NoError(err, "排序查询登录记录应该成功")
-	suite.NotNil(sMs, "排序登录记录列表不应该为nil")
-	if len(*sMs) > 1 {
-		// 验证排序结果
-		prevID := (*sMs)[0].ID
-		for _, record := range *sMs {
-			suite.LessOrEqual(record.ID, prevID, "登录记录应该按ID降序排序")
-			prevID = record.ID
-		}
-	}
+	r.log.Debug(
+		"查询登录记录模型列表成功",
+		zap.Object(database.QueryParamsKey, &qp),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Duration(log.DurationKey, time.Since(now)),
+	)
+	return count, &ms, nil
 }
 
-func (suite *RecordTestSuite) TestGetLoginFailNum() {
-	// 测试正常场景：获取不存在IP的登录失败次数，应该返回maxNum
-	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), "192.168.1.100")
-	suite.NoError(err, "获取登录失败次数应该成功")
-	suite.Equal(5, num, "获取不存在IP的登录失败次数应该返回maxNum")
-}
-
-func (suite *RecordTestSuite) TestGetLoginFailNumWithEmptyIP() {
-	// 测试异常场景：传入空IP地址
-	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), "")
-	suite.Error(err, "获取登录失败次数时传入空IP应该返回错误")
-	suite.Equal(0, num, "传入空IP时应该返回0")
-}
-
-func (suite *RecordTestSuite) TestSetLoginFailNum() {
-	// 测试正常场景：设置登录失败次数
-	ip := "192.168.1.100"
-	failNum := 3
-	err := suite.recordRepo.SetLoginFailNum(context.Background(), ip, failNum)
-	suite.NoError(err, "设置登录失败次数应该成功")
-
-	// 验证设置是否成功
-	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), ip)
-	suite.NoError(err, "获取登录失败次数应该成功")
-	suite.Equal(failNum, num, "获取的登录失败次数应该等于设置的值")
-}
-
-func (suite *RecordTestSuite) TestSetLoginFailNumWithEmptyIP() {
-	// 测试异常场景：传入空IP地址
-	err := suite.recordRepo.SetLoginFailNum(context.Background(), "", 3)
-	suite.Error(err, "设置登录失败次数时传入空IP应该返回错误")
-}
-
-func (suite *RecordTestSuite) TestGetLoginFailNumWithCanceledContext() {
-	// 测试异常场景：上下文被取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	num, err := suite.recordRepo.GetLoginFailNum(ctx, "192.168.1.100")
-	suite.Error(err, "获取登录失败次数时上下文被取消应该返回错误")
-	suite.Equal(0, num, "上下文被取消时应该返回0")
-}
-
-func (suite *RecordTestSuite) TestSetLoginFailNumWithCanceledContext() {
-	// 测试异常场景：上下文被取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	err := suite.recordRepo.SetLoginFailNum(ctx, "192.168.1.100", 3)
-	suite.Error(err, "设置登录失败次数时上下文被取消应该返回错误")
-}
-
-func (suite *RecordTestSuite) TestCacheExpiration() {
-	// 创建一个具有短TTL的临时仓库用于测试缓存过期
-	tempRepo := &LoginRecordRepo{
-		log:      suite.recordRepo.log,
-		gormDB:   suite.recordRepo.gormDB,
-		timeouts: suite.recordRepo.timeouts,
-		cache:    cache.New(100*time.Millisecond, 200*time.Millisecond), // 短TTL
-		maxNum:   5,
-		ttl:      100 * time.Millisecond,
+// GetLoginFailNum 获取登录失败次数
+//
+// 参数：
+//
+//	ctx: 上下文，用于传递请求信息和控制超时
+//	ip: IP地址，用于标识登录失败的客户端
+//
+// 返回值：
+//
+//	int: 剩余的登录失败次数（未找到记录时返回最大允许失败次数）
+//	error: 操作错误信息，成功则返回nil
+//
+// 功能：
+//  1. 检查上下文是否有效
+//  2. 检查IP地址是否为空
+//  3. 从缓存中获取登录失败次数
+//  4. 未找到记录时返回最大允许失败次数
+//  5. 记录操作日志
+func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
+	// 检查上下文
+	if ctx.Err() != nil {
+		return 0, errors.WrapIf(ctx.Err(), "GetLoginFailNum操作失败: 上下文错误")
 	}
 
-	// 设置登录失败次数
-	ip := "192.168.1.200"
-	failNum := 3
-	err := tempRepo.SetLoginFailNum(context.Background(), ip, failNum)
-	suite.NoError(err, "设置登录失败次数应该成功")
+	// 检查参数
+	if ip == "" {
+		return 0, errors.New("获取登录失败次数失败: IP地址不能为空")
+	}
 
-	// 验证设置是否成功
-	num, err := tempRepo.GetLoginFailNum(context.Background(), ip)
-	suite.NoError(err, "获取登录失败次数应该成功")
-	suite.Equal(failNum, num, "获取的登录失败次数应该等于设置的值")
+	r.log.Debug(
+		"开始获取登录失败次数",
+		zap.String("ip", ip),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
 
-	// 等待缓存过期
-	time.Sleep(200 * time.Millisecond)
+	// 获取缓存的登录失败次数，不存在返回允许失败次数的最大值
+	num, exists := r.cache.Get(ip)
+	if !exists {
+		r.log.Debug(
+			"未找到IP的登录失败记录, 返回最大允许失败次数",
+			zap.String("ip", ip),
+			zap.Int("max_fail_num", r.maxNum),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return r.maxNum, nil
+	}
 
-	// 验证缓存过期后获取登录失败次数的行为
-	num, err = tempRepo.GetLoginFailNum(context.Background(), ip)
-	suite.NoError(err, "缓存过期后获取登录失败次数应该成功")
-	suite.Equal(tempRepo.maxNum, num, "缓存过期后应该返回maxNum")
+	n, _ := num.(int)
+	r.log.Debug(
+		"获取到IP的登录失败次数",
+		zap.String("ip", ip),
+		zap.Int("fail_num", n),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+	return n, nil
 }
 
-// 每个测试文件都需要这个入口函数
-func TestRecordTestSuite(t *testing.T) {
-	pts := &RecordTestSuite{}
-	suite.Run(t, pts)
+// SetLoginFailNum 设置登录失败次数
+//
+// 参数：
+//
+//	ctx: 上下文，用于传递请求信息和控制超时
+//	ip: IP地址，用于标识登录失败的客户端
+//	num: 登录失败次数
+//
+// 返回值：
+//
+//	error: 操作错误信息，成功则返回nil
+//
+// 功能：
+//  1. 检查上下文是否有效
+//  2. 检查IP地址是否为空
+//  3. 将登录失败次数设置到缓存中
+//  4. 记录操作日志
+func (r *LoginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
+	// 检查上下文
+	if ctx.Err() != nil {
+		return errors.WrapIf(ctx.Err(), "SetLoginFailNum操作失败: 上下文错误")
+	}
+
+	// 检查参数
+	if ip == "" {
+		return errors.New("设置登录失败次数失败: IP地址不能为空")
+	}
+
+	r.log.Debug(
+		"开始设置登录失败次数",
+		zap.String("ip", ip),
+		zap.Int("fail_num", num),
+		zap.Duration("ttl", r.ttl),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+
+	// 设置缓存的登录失败次数
+	r.cache.Set(ip, num, r.ttl)
+
+	r.log.Debug(
+		"设置登录失败次数成功",
+		zap.String("ip", ip),
+		zap.Int("fail_num", num),
+		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	)
+	return nil
 }

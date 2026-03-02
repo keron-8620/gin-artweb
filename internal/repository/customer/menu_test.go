@@ -802,3 +802,92 @@ func (suite *MenuTestSuite) TestRemoveGroupPolicyWithChildMenus() {
 	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), childMenu, true)
 	suite.NoError(err, "删除子菜单权限策略应该成功")
 }
+
+// TestCreateMenuWithCasbinPermission 测试菜单添加成功后基于casbin的权限校验
+func (suite *MenuTestSuite) TestCreateMenuWithCasbinPermission() {
+	// 创建API
+	api := CreateTestApiModel()
+	suite.NoError(suite.apiRepo.CreateModel(context.Background(), api), "创建API应该成功")
+
+	// 创建菜单并关联API
+	menu := CreateTestMenuModel(nil)
+	apis := []custmodel.ApiModel{*api}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, &apis)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 重新加载菜单，确保Apis字段被正确加载
+	loadedMenu, err := suite.menuRepo.GetModel(context.Background(), []string{"Apis"}, "id = ?", menu.ID)
+	suite.NoError(err, "重新加载菜单应该成功")
+
+	// 为菜单添加权限策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), loadedMenu)
+	suite.NoError(err, "为菜单添加权限策略应该成功")
+
+	// 验证权限策略是否正确添加
+	// 1. 验证菜单与API之间的权限关系
+	menuSubject := auth.MenuToSubject(loadedMenu.ID)
+	apiSubject := auth.ApiToSubject(api.ID)
+
+	// 检查组策略是否存在（菜单继承API的权限）
+	hasGroupPolicy, err := suite.menuRepo.enforcer.HasGroupingPolicy(menuSubject, apiSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicy, "菜单应该继承API的权限")
+
+	// 2. 测试权限检查
+	// 为API添加一个具体的权限策略
+	apiPath := "/api/test"
+	apiMethod := "GET"
+	testPolicy := []string{apiSubject, apiPath, apiMethod}
+	err = auth.AddPolicies(context.Background(), suite.menuRepo.enforcer, [][]string{testPolicy})
+	suite.NoError(err, "为API添加权限策略应该成功")
+
+	// 检查菜单是否继承了API的权限
+	hasPermission, err := suite.menuRepo.enforcer.Enforce(menuSubject, apiPath, apiMethod)
+	suite.NoError(err, "检查权限应该成功")
+	suite.True(hasPermission, "菜单应该继承API的访问权限")
+
+	// 3. 清理权限策略
+	err = auth.RemovePolicies(context.Background(), suite.menuRepo.enforcer, [][]string{testPolicy})
+	suite.NoError(err, "移除API权限策略应该成功")
+
+	// 移除菜单的权限策略
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), loadedMenu, true)
+	suite.NoError(err, "移除菜单权限策略应该成功")
+}
+
+// TestCreateMenuWithParentCasbinPermission 测试带父菜单的权限继承
+func (suite *MenuTestSuite) TestCreateMenuWithParentCasbinPermission() {
+	// 创建父菜单
+	parentMenu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), parentMenu, nil)
+	suite.NoError(err, "创建父菜单应该成功")
+
+	// 为父菜单添加权限策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), parentMenu)
+	suite.NoError(err, "为父菜单添加权限策略应该成功")
+
+	// 创建子菜单，继承父菜单
+	childMenu := CreateTestMenuModel(&parentMenu.ID)
+	err = suite.menuRepo.CreateModel(context.Background(), childMenu, nil)
+	suite.NoError(err, "创建子菜单应该成功")
+
+	// 为子菜单添加权限策略（应该继承父菜单的权限）
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), childMenu)
+	suite.NoError(err, "为子菜单添加权限策略应该成功")
+
+	// 验证权限继承关系
+	parentSubject := auth.MenuToSubject(parentMenu.ID)
+	childSubject := auth.MenuToSubject(childMenu.ID)
+
+	// 检查组策略是否存在（子菜单继承父菜单的权限）
+	hasGroupPolicy, err := suite.menuRepo.enforcer.HasGroupingPolicy(childSubject, parentSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicy, "子菜单应该继承父菜单的权限")
+
+	// 清理权限策略
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), childMenu, true)
+	suite.NoError(err, "移除子菜单权限策略应该成功")
+
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), parentMenu, true)
+	suite.NoError(err, "移除父菜单权限策略应该成功")
+}

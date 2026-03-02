@@ -13,10 +13,10 @@ import (
 
 type PackageModel struct {
 	database.BaseModel
-	Label           string    `gorm:"column:label;type:varchar(50);index:idx_package_label;comment:标签" json:"label"`
+	Label           string    `gorm:"column:label;type:varchar(50);uniqueIndex:idx_package_label_version;comment:标签" json:"label"`
 	StorageFilename string    `gorm:"column:storage_filename;type:varchar(50);not null;uniqueIndex;comment:磁盘存储文件名" json:"storage_filename"`
 	OriginFilename  string    `gorm:"column:origin_filename;type:varchar(255);comment:原始文件名" json:"origin_filename"`
-	Version         string    `gorm:"column:version;type:varchar(50);comment:版本号" json:"version"`
+	Version         string    `gorm:"column:version;type:varchar(50);uniqueIndex:idx_package_label_version;comment:版本号" json:"version"`
 	UploadedAt      time.Time `gorm:"column:uploaded_at;autoCreateTime;comment:上传时间" json:"uploaded_at"`
 }
 

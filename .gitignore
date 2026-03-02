@@ -5,3 +5,4 @@ html/
 artweb.pid
 *.db
 .env
+artweb-*.tar.gz

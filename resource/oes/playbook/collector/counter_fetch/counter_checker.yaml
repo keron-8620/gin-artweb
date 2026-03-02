@@ -47,4 +47,3 @@
   delegate_to: 127.0.0.1
   run_once: yes
   register: xcounter_freezed_ok
-

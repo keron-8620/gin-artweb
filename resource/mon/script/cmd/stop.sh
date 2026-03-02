@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 
-cd ../python
+basepath=$(cd `dirname $0`; pwd)
+
+cd $basepath/../python
 
 mon_id=$1
 

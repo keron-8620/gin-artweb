@@ -673,3 +673,106 @@ func TestButtonTestSuite(t *testing.T) {
 	pts := &ButtonTestSuite{}
 	suite.Run(t, pts)
 }
+
+// TestCreateButtonWithCasbinPermission 测试按钮添加成功后基于casbin的权限校验
+func (suite *ButtonTestSuite) TestCreateButtonWithCasbinPermission() {
+	// 先创建一个菜单用于测试
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 创建API用于测试
+	api := CreateTestApiModel()
+	err = suite.apiRepo.CreateModel(context.Background(), api)
+	suite.NoError(err, "创建API应该成功")
+
+	// 创建按钮并关联API
+	button := CreateTestButtonModel(menu.ID)
+	apis := []custmodel.ApiModel{*api}
+	err = suite.buttonRepo.CreateModel(context.Background(), button, &apis)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 重新加载按钮，确保Apis字段被正确加载
+	loadedButton, err := suite.buttonRepo.GetModel(context.Background(), []string{"Apis"}, "id = ?", button.ID)
+	suite.NoError(err, "重新加载按钮应该成功")
+
+	// 为按钮添加权限策略
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), loadedButton)
+	suite.NoError(err, "为按钮添加权限策略应该成功")
+
+	// 验证权限策略是否正确添加
+	// 1. 验证按钮与菜单之间的权限关系
+	buttonSubject := auth.ButtonToSubject(loadedButton.ID)
+	menuSubject := auth.MenuToSubject(menu.ID)
+
+	// 检查组策略是否存在（按钮继承菜单的权限）
+	hasGroupPolicyWithMenu, err := suite.buttonRepo.enforcer.HasGroupingPolicy(buttonSubject, menuSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithMenu, "按钮应该继承菜单的权限")
+
+	// 2. 验证按钮与API之间的权限关系
+	apiSubject := auth.ApiToSubject(api.ID)
+
+	// 检查组策略是否存在（按钮继承API的权限）
+	hasGroupPolicyWithApi, err := suite.buttonRepo.enforcer.HasGroupingPolicy(buttonSubject, apiSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicyWithApi, "按钮应该继承API的权限")
+
+	// 3. 测试权限检查
+	// 为API添加一个具体的权限策略
+	apiPath := "/api/test"
+	apiMethod := "GET"
+	testPolicy := []string{apiSubject, apiPath, apiMethod}
+	err = auth.AddPolicies(context.Background(), suite.buttonRepo.enforcer, [][]string{testPolicy})
+	suite.NoError(err, "为API添加权限策略应该成功")
+
+	// 检查按钮是否继承了API的权限
+	hasPermission, err := suite.buttonRepo.enforcer.Enforce(buttonSubject, apiPath, apiMethod)
+	suite.NoError(err, "检查权限应该成功")
+	suite.True(hasPermission, "按钮应该继承API的访问权限")
+
+	// 4. 清理权限策略
+	err = auth.RemovePolicies(context.Background(), suite.buttonRepo.enforcer, [][]string{testPolicy})
+	suite.NoError(err, "移除API权限策略应该成功")
+
+	// 移除按钮的权限策略
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), loadedButton, true)
+	suite.NoError(err, "移除按钮权限策略应该成功")
+}
+
+// TestButtonPermissionInheritance 测试按钮的权限继承关系
+func (suite *ButtonTestSuite) TestButtonPermissionInheritance() {
+	// 先创建一个菜单用于测试
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 为菜单添加权限策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "为菜单添加权限策略应该成功")
+
+	// 创建按钮并关联到菜单
+	button := CreateTestButtonModel(menu.ID)
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 为按钮添加权限策略（应该继承菜单的权限）
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "为按钮添加权限策略应该成功")
+
+	// 验证权限继承关系
+	menuSubject := auth.MenuToSubject(menu.ID)
+	buttonSubject := auth.ButtonToSubject(button.ID)
+
+	// 检查组策略是否存在（按钮继承菜单的权限）
+	hasGroupPolicy, err := suite.buttonRepo.enforcer.HasGroupingPolicy(buttonSubject, menuSubject)
+	suite.NoError(err, "检查组策略应该成功")
+	suite.True(hasGroupPolicy, "按钮应该继承菜单的权限")
+
+	// 清理权限策略
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, true)
+	suite.NoError(err, "移除按钮权限策略应该成功")
+
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.NoError(err, "移除菜单权限策略应该成功")
+}

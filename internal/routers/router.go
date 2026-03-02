@@ -23,6 +23,9 @@ import (
 func NewRouter(loggers *log.Loggers, init *common.Initialize, version, htmlDir string) *gin.Engine {
 	r := gin.New()
 
+	// 注册链路追踪处理中间件
+	r.Use(middleware.TracingMiddleware(loggers.Service))
+
 	// host请求头防护中间件
 	if init.Conf.Security.HostGuard.Enable {
 		r.Use(middleware.HostGuard(loggers.Service, init.Conf.Security.HostGuard.TrustedHosts...))
@@ -59,9 +62,6 @@ func NewRouter(loggers *log.Loggers, init *common.Initialize, version, htmlDir s
 			defaultExpiration,
 		))
 	}
-
-	// 注册链路追踪处理中间件
-	r.Use(middleware.TracingMiddleware(loggers.Service))
 
 	// 注册统一异常处理中间件
 	r.Use(middleware.ErrorMiddleware(loggers.Service))
