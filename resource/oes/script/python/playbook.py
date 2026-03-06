@@ -4,6 +4,8 @@ import os
 import sys
 import time
 from pathlib import Path
+import tempfile
+import shutil
 import argparse
 
 import yaml
@@ -104,6 +106,7 @@ def parse_calendar(csv_path: Path) -> Dict[str, List[int]]:
                 date = date.zfill(2)
                 a_trd_date = year_month + date
                 trd_info[year_key].append(int(a_trd_date.strip()))
+    return trd_info
 
 
 def load_mon_conf(mon_id: int) -> Dict:
@@ -215,12 +218,17 @@ def main(options):
         envvars["ANSIBLE_LOG_PATH"] = JOBS_LOG_PATH
     if not options.enable_ansible_color:
         envvars["ANSIBLE_NOCOLOR"] = "1"
-    return ansible_runner.run(
-        inventory={"all": {"hosts": hosts, "vars": vars}},
-        playbook=str(playbook_path),
-        envvars=envvars,
-        verbosity=options.verbosity,
-    )
+    tmpdir = tempfile.mkdtemp()
+    try:
+        return ansible_runner.run(
+            inventory={"all": {"hosts": hosts, "vars": vars}},
+            playbook=str(playbook_path),
+            envvars=envvars,
+            verbosity=options.verbosity,
+            private_data_dir=tmpdir
+        )
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 if __name__ == "__main__":

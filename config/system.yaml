@@ -9,14 +9,17 @@ server: # 服务配置
   rate: # 访问频率控制
     rps: 10 # 令牌生成速率
     burst: 20 # 桶容量
-  enable_swagger: true # 是否启用swagger
+  timeout:
+    request: 60 # 请求超时时间(秒)
+    shutdown: 30 # 关闭超时时间(秒)
+  swagger: true # 是否启用swagger
 
 database: # 数据库配置
   type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
+  dns: "artweb.db" # sqlite3数据库配置
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
   # dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
   # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
-  dns: "artweb.db" # sqlite3数据库配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   conn_max_lifetime: 3600 # 连接最大存活时间
@@ -49,9 +52,6 @@ security: # 安全配置
     trusted_hosts: # 受信任的host列表
       - "127.0.0.1:8621"
       - "192.168.10.12:8621"
-  timeout: # 超时相关配置
-    request_timeout: 60 # 请求超时时间
-    shutdown_timeout: 30 # 关闭超时时间
   timestamp: # 时间戳相关配置(用于拦截重放攻击)
     check_timestamp: false # 是否检查时间戳
     tolerance: 300000  # 时间容忍度(毫秒)，允许客户端时间与服务器时间的最大偏差
@@ -64,13 +64,14 @@ security: # 安全配置
   login: # 登录服务
     max_failed_attempts: 5 # 登录失败最大次数
     lock_minutes: 30 # 登录失败锁定时间
-  upload: # 文件上传
-    max_script_size: 1 # 上传脚本大小限制(MB)
-    max_pkg_size: 100 # 上传程序包大小限制(MB)
-    max_conf_size: 1 # 上传配置大小限制(MB)
   password: # 密码策略
     strength_level: 3 # 密码强度等级(0-4)
 
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名
   timeout: 5 # ssh连接超时时间
+
+upload: # 文件上传
+  max_script_size: 1 # 上传脚本大小限制(MB)
+  max_pkg_size: 100 # 上传程序包大小限制(MB)
+  max_conf_size: 1 # 上传配置大小限制(MB)

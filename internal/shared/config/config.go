@@ -1,22 +1,68 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/goccy/go-yaml"
 )
 
+type PathConf struct {
+	BaseDir     string
+	ConfigDir   string
+	HtmlDir     string
+	LogsDir     string
+	StorageDir  string
+	ResourceDir string
+}
+
+func getBaseDir() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		panic(fmt.Sprintf("获取执行路径失败: %v", err))
+	}
+
+	// 处理相对路径
+	absPath, err := filepath.Abs(exePath)
+	if err != nil {
+		panic(fmt.Sprintf("转换绝对路径失败: %v", err))
+	}
+
+	// 处理符号链接
+	resolvedPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		panic(fmt.Sprintf("解析符号链接失败: %v", err))
+	}
+
+	// Windows平台特殊处理
+	if runtime.GOOS == "windows" {
+		resolvedPath = filepath.ToSlash(resolvedPath)
+	}
+
+	binDir := filepath.Dir(resolvedPath)
+	return filepath.Dir(binDir)
+}
+
+var (
+	BaseDir     = getBaseDir()
+	ConfigDir   = filepath.Join(BaseDir, "config")
+	LogDir      = filepath.Join(BaseDir, "logs")
+	StorageDir  = filepath.Join(BaseDir, "storage")
+	ResourceDir = filepath.Join(BaseDir, "resource")
+)
+
 // SystemConf 系统配置结构体
 type SystemConf struct {
-	Server            *ServerConfig      `yaml:"server"`
-	Database          *DBConf            `yaml:"database"`
-	Log               *LogConfig         `yaml:"log"`
-	CORS              *AllowConfig       `yaml:"cors"`
-	Security          *SecurityConfig    `yaml:"security"`
-	SSH               *SSHConfig         `yaml:"ssh"`
-	StorageSyncConfig *StorageSyncConfig `yaml:"storage_sync"`
+	Server   *ServerConfig   `yaml:"server"`
+	Database *DBConf         `yaml:"database"`
+	Log      *LogConfig      `yaml:"log"`
+	CORS     *AllowConfig    `yaml:"cors"`
+	Security *SecurityConfig `yaml:"security"`
+	SSH      *SSHConfig      `yaml:"ssh"`
+	Upload   *UploadConfig   `yaml:"upload"`
 }
 
 // NewSystemConf 加载系统配置文件

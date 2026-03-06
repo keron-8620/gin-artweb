@@ -29,7 +29,7 @@ func newOesRouter(
 
 	colonyHandler := handler.NewOesColonyService(loggers.Service, colonyService, stkTaskUsecase, crdaskUsecase, optTaskUsecase)
 	nodeHandler := handler.NewOesNodeService(loggers.Service, nodeService)
-	confHandler := handler.NewOesConfService(loggers.Service, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
+	confHandler := handler.NewOesConfService(loggers.Service, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/oes")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))

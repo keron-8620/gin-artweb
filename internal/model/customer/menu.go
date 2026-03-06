@@ -11,29 +11,48 @@ import (
 	"gin-artweb/internal/shared/database"
 )
 
-type Meta struct {
-	Title string `json:"title"`
-	Icon  string `json:"icon"`
+type MetaSchemas struct {
+	// 标题
+	Title string `json:"title" example:"用户管理"`
+	// 图标
+	Icon string `json:"icon" example:"icon"`
 }
 
-func (m *Meta) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (m *MetaSchemas) Json() string {
+	jd, _ := json.Marshal(m)
+	return string(jd)
+}
+
+func (m *MetaSchemas) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("title", m.Title)
 	enc.AddString("icon", m.Icon)
 	return nil
 }
 
+func NewMetaSchemas(ms string) (*MetaSchemas, error) {
+	if ms == "" {
+		return nil, fmt.Errorf("meta is empty")
+	}
+	var meta MetaSchemas
+	err := json.Unmarshal([]byte(ms), &meta)
+	if err != nil {
+		return nil, fmt.Errorf("解析 MetaSchemas 失败: %w", err)
+	}
+	return &meta, nil
+}
+
 type MenuModel struct {
 	database.StandardModel
-	Path      string     `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"path"`
-	Component string     `gorm:"column:component;type:varchar(200);not null;comment:前端组件" json:"component"`
-	Name      string     `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	Meta      Meta       `gorm:"column:meta;serializer:json;comment:菜单信息" json:"meta"`
-	Sort      uint32     `gorm:"column:sort;type:integer;comment:排序" json:"sort"`
-	IsActive  bool       `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
-	Descr     string     `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
-	ParentID  *uint32    `gorm:"column:parent_id;comment:父菜单ID" json:"parent_id"`
-	Parent    *MenuModel `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE" json:"parent"`
-	Apis      []ApiModel `gorm:"many2many:customer_menu_api;joinForeignKey:menu_id;joinReferences:api_id;constraint:OnDelete:CASCADE"`
+	Path      string      `gorm:"column:path;type:varchar(100);not null;uniqueIndex;comment:前端路由" json:"path"`
+	Component string      `gorm:"column:component;type:varchar(200);not null;comment:前端组件" json:"component"`
+	Name      string      `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	Meta      MetaSchemas `gorm:"column:meta;serializer:json;comment:菜单信息" json:"meta"`
+	Sort      uint32      `gorm:"column:sort;type:integer;comment:排序" json:"sort"`
+	IsActive  bool        `gorm:"column:is_active;type:boolean;comment:是否激活" json:"is_active"`
+	Descr     string      `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
+	ParentID  *uint32     `gorm:"column:parent_id;comment:父菜单ID" json:"parent_id"`
+	Parent    *MenuModel  `gorm:"foreignKey:ParentID;references:ID;constraint:OnDelete:CASCADE" json:"parent"`
+	Apis      []ApiModel  `gorm:"many2many:customer_menu_api;joinForeignKey:menu_id;joinReferences:api_id;constraint:OnDelete:CASCADE"`
 }
 
 func (m *MenuModel) TableName() string {
@@ -64,36 +83,6 @@ func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 		return nil
 	}))
 	return nil
-}
-
-type MetaSchemas struct {
-	// 标题
-	Title string `json:"title" example:"用户管理"`
-	// 图标
-	Icon string `json:"icon" example:"icon"`
-}
-
-func (m *MetaSchemas) Json() string {
-	jd, _ := json.Marshal(m)
-	return string(jd)
-}
-
-func (m *MetaSchemas) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("title", m.Title)
-	enc.AddString("icon", m.Icon)
-	return nil
-}
-
-func NewMetaSchemas(ms string) (*MetaSchemas, error) {
-	if ms == "" {
-		return nil, fmt.Errorf("meta is empty")
-	}
-	var meta MetaSchemas
-	err := json.Unmarshal([]byte(ms), &meta)
-	if err != nil {
-		return nil, fmt.Errorf("解析 MetaSchemas 失败: %w", err)
-	}
-	return &meta, nil
 }
 
 // CreateMenuRequest 用于创建菜单的请求结构体
@@ -316,13 +305,10 @@ func MenuModelToBaseOut(
 		Path:      m.Path,
 		Component: m.Component,
 		Name:      m.Name,
-		Meta: MetaSchemas{
-			Title: m.Meta.Title,
-			Icon:  m.Meta.Icon,
-		},
-		Sort:     m.Sort,
-		IsActive: m.IsActive,
-		Descr:    m.Descr,
+		Meta:      m.Meta,
+		Sort:      m.Sort,
+		IsActive:  m.IsActive,
+		Descr:     m.Descr,
 	}
 }
 

@@ -22,7 +22,7 @@ func CreateTestMenuModel(parentID *uint32) *custmodel.MenuModel {
 		Name:      uuid.NewString(),
 		Path:      uuid.NewString(),
 		Component: "TestMenu",
-		Meta:      custmodel.Meta{Title: "测试菜单", Icon: "test-icon"},
+		Meta:      custmodel.MetaSchemas{Title: "测试菜单", Icon: "test-icon"},
 		Sort:      10000,
 		IsActive:  true,
 		Descr:     "这是一个测试菜单",

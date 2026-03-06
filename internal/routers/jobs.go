@@ -35,7 +35,7 @@ func NewJobsRouter(
 	// 加载计划任务
 	scheduleService.ReloadScheduleJobs(context.Background(), nil)
 
-	scriptHandler := handler.NewScriptHandler(loggers.Service, scriptService, int64(init.Conf.Security.Upload.MaxScriptSize)*1024*1024)
+	scriptHandler := handler.NewScriptHandler(loggers.Service, scriptService, int64(init.Conf.Upload.MaxScriptSize)*1024*1024)
 	recordHandler := handler.NewScriptRecordHandler(loggers.Service, recordService)
 	scheduleHandler := handler.NewScheduleHandler(loggers.Service, scheduleService)
 

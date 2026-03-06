@@ -200,7 +200,7 @@ func main() {
 
 	// 创建带超时控制的上下文对象用于通知服务器关闭
 	ctx, cancel := context.WithTimeout(context.Background(),
-		time.Duration(i.Conf.Security.Timeout.ShutdownTimeout)*time.Second)
+		time.Duration(i.Conf.Server.Timeout.Shutdown)*time.Second)
 	defer cancel()
 
 	// 执行服务器优雅关闭逻辑
@@ -265,7 +265,7 @@ func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initi
 			// 关闭计划任务
 			if ct != nil {
 				cronLogger.Info("正在关闭计划任务...")
-				shutdownTimeout := time.Duration(conf.Security.Timeout.ShutdownTimeout) * time.Second
+				shutdownTimeout := time.Duration(conf.Server.Timeout.Shutdown) * time.Second
 				ctx := ct.Stop() // Stop 返回一个 context
 				// 等待最多30秒让任务完成
 				select {

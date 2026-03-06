@@ -9,10 +9,6 @@ import (
 // 同时设置了合理的超时时间和安全参数，以提高测试效率和准确性。
 func NewTestSecurityConfig() *SecurityConfig {
 	return &SecurityConfig{
-		Timeout: TimeoutConfig{
-			RequestTimeout:  10, // 请求超时时间为10秒，加快测试反馈速度
-			ShutdownTimeout: 5,  // 关闭超时时间为5秒，加速测试结束
-		},
 		Timestamp: TimestampConfig{
 			CheckTimestamp: false, // 测试环境关闭时间戳验证，避免因时间差异导致测试失败
 		},
@@ -26,12 +22,17 @@ func NewTestSecurityConfig() *SecurityConfig {
 			MaxFailedAttempts: 5,  // 最多允许5次登录失败尝试
 			LockMinutes:       30, // 登录失败锁定30分钟
 		},
-		Upload: UploadConfig{
-			MaxPkgSize: 500, // 最大上传文件500M大小(MB)
-		},
 		Password: PasswordConfig{
 			StrengthLevel: 3, // 中高等密码强度要求，可测试各种密码强度规则
 		},
+	}
+}
+
+func NewTestUploadConfig() *UploadConfig {
+	return &UploadConfig{
+		MaxPkgSize:    500, // 最大上传程序包大小500M(MB)
+		MaxScriptSize: 1,   // 脚本最大上传大小1M(MB)
+		MaxConfSize:   1,   // 配置文件最大上传大小1M(MB)
 	}
 }
 

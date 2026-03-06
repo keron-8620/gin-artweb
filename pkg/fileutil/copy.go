@@ -48,7 +48,7 @@ func CopyFile(ctx context.Context, src, dst string) error {
 	}
 
 	// 确保父目录存在（继承源文件权限）
-	if err := EnsureParentDir(ctx, dst, srcInfo.Mode().Perm()); err != nil {
+	if err = EnsureParentDir(ctx, dst, srcInfo.Mode().Perm()); err != nil {
 		return errors.WithMessage(err, "确保父目录存在失败")
 	}
 
@@ -127,7 +127,7 @@ func CopyDir(ctx context.Context, src, dst string, copyContents bool) error {
 	}
 
 	// 创建目标目录（继承源权限）
-	if err := MkdirAll(ctx, dest, srcInfo.Mode().Perm()); err != nil {
+	if err = MkdirAll(ctx, dest, srcInfo.Mode().Perm()); err != nil {
 		return errors.WithMessagef(err, "创建目标目录失败, dest=%s", dest)
 	}
 

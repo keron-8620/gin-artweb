@@ -27,7 +27,7 @@ func newMdsRouter(
 
 	colonyHandler := handler.NewMdsColonyService(loggers.Service, colonyService, taskService)
 	nodeHandler := handler.NewMdsNodeService(loggers.Service, nodeService)
-	confHandler := handler.NewMdsConfService(loggers.Service, int64(init.Conf.Security.Upload.MaxConfSize)*1024*1024)
+	confHandler := handler.NewMdsConfService(loggers.Service, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/mds")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))

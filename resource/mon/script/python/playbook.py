@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 import argparse
 import json
+import tempfile
+import shutil
 
 import ansible_runner
 
@@ -80,15 +82,20 @@ def main(options):
         raise ValueError("参数mon_host_id是必填项")
     vars = init_vars(mon_id, options.extravars)
     hosts = {f"mon_{mon_id}": init_hosts(vars["host_id"])}
-    return ansible_runner.run(
-        inventory={"all": {"hosts": hosts, "vars": vars}},
-        playbook=str(playbook_path),
-        envvars={
-            "ANSIBLE_NOCOLOR": "1", 
-            "ANSIBLE_LOG_PATH": options.log_path,
-        },
-        verbosity=options.verbosity,
-    )
+    tmpdir = tempfile.mkdtemp()
+    try:
+        return ansible_runner.run(
+            inventory={"all": {"hosts": hosts, "vars": vars}},
+            playbook=str(playbook_path),
+            envvars={
+                "ANSIBLE_NOCOLOR": "1", 
+                "ANSIBLE_LOG_PATH": options.log_path,
+            },
+            verbosity=options.verbosity,
+            private_data_dir=tmpdir
+        )
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 if __name__ == "__main__":

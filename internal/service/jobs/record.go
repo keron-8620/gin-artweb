@@ -79,7 +79,7 @@ func (s *RecordService) Execute(record *jobsmodel.ScriptRecordModel) *jobsmodel.
 	// 创建带超时的上下文
 	timeout := time.Duration(record.Timeout) * time.Second
 	if timeout <= 0 {
-		timeout = 5 * time.Minute // 默认超时时间
+		timeout = 1 * time.Hour // 默认超时时间
 	}
 	var timeoutCancel context.CancelFunc
 	ctx, timeoutCancel = context.WithTimeout(ctx, timeout)

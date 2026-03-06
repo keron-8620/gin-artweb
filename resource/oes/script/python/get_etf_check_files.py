@@ -40,6 +40,8 @@ def get_etc_check_files(path: Path):
         for line in lines:
             if str(line.tradable) == str(0):
                 continue
+            if str(line.SecurityId) == "*":
+                continue
             if int(line.market) == Market.sh_mkt.value:
                 sh_files.append(
                     f"({line.security_id}{{{{ curr_date[4:] }}}}.(?i)ETF|{line.security_id}{{{{ curr_date[4:] }}}}2.(?i)ETF|ssepcf_{line.security_id}_{{{{ curr_date }}}}.xml)"

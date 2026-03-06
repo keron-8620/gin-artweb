@@ -361,20 +361,3 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	)
 	return nil
 }
-
-// func (s *MdsColonyUsecase) InitCrontab(ctx context.Context, mdsColonyID uint32) *errors.Error {
-// 	if ctx.Err() != nil {
-// 		return errors.FromError(ctx.Err())
-// 	}
-
-// 	s.log.Info(
-// 		"初始化mds集群crontab",
-// 		zap.Uint32("mds_colony_id", mdsColonyID),
-// 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-// 	)
-// 	m, rErr := s.FindMdsColonyByID(ctx, nil, mdsColonyID)
-// 	if rErr != nil {
-// 		return rErr
-// 	}
-// 	return nil
-// }

@@ -67,7 +67,7 @@ func NewRouter(loggers *log.Loggers, init *common.Initialize, version, htmlDir s
 	r.Use(middleware.ErrorMiddleware(loggers.Service))
 
 	// 注册超时处理中间件
-	r.Use(middleware.TimeoutMiddleware(time.Duration(init.Conf.Security.Timeout.RequestTimeout) * time.Second))
+	r.Use(middleware.TimeoutMiddleware(time.Duration(init.Conf.Server.Timeout.Request) * time.Second))
 
 	// 配置静态文件处理
 	htmlPath := filepath.Join(htmlDir, "index.html")
@@ -100,7 +100,7 @@ func NewRouter(loggers *log.Loggers, init *common.Initialize, version, htmlDir s
 	})
 
 	// 配置 Swagger 文档
-	if init.Conf.Server.EnableSwagger {
+	if init.Conf.Server.Swagger {
 		docs.SwaggerInfo.Title = "artweb"
 		docs.SwaggerInfo.Description = "artweb自动化运维平台"
 		docs.SwaggerInfo.Version = version

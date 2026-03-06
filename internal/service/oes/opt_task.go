@@ -73,7 +73,7 @@ func (uc *OptTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	// 过滤出两融类型的oes集群
 	var optModels []oesmodel.OesColonyModel
 	for _, m := range ms {
-		if m.SystemType == "CRD" {
+		if m.SystemType == "OPT" {
 			optModels = append(optModels, m)
 		}
 	}

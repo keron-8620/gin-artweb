@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"path/filepath"
 
 	"go.uber.org/zap"
 
@@ -91,35 +92,68 @@ func (uc *JobsService) FindRecordsByMap(
 	return &task
 }
 
-// func (uc *JobsService) FindScriptIDs(
-// 	ctx context.Context,
-// 	tasks []string,
-// ) (map[string]uint32, *errors.Error) {
-// 	if ctx.Err() != nil {
-// 		return nil, errors.FromError(ctx.Err())
-// 	}
+func (uc *JobsService) InitCron(
+	ctx context.Context,
+	colonyNum string,
+	tasks map[string]string,
+) *errors.Error {
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
+	}
 
-// 	result := make(map[string]uint32, len(tasks))
-// 	_, ms, rErr := uc.ucScript.ListScript(ctx, database.QueryParams{
-// 		Query: map[string]any{
-// 			"is_builtin = ?": true,
-// 			"project = ?":    "oes",
-// 			"label = ?":      "cmd",
-// 			"name in ?":      tasks,
-// 		},
-// 		Columns: []string{"id", "name"},
-// 	})
-// 	if rErr != nil {
-// 		return nil, rErr
-// 	}
-// 	if ms == nil || len(*ms) == 0 {
-// 		return result, nil
-// 	}
-// 	for _, m := range *ms {
-// 		uc.ucSchedule.CreateSchedule(ctx, jobsmodel.ScheduleModel{
-// 			ScriptID: m.ID,
-// 			Name:     m.Name,
-// 		})
-// 	}
-// 	return result, nil
-// }
+	claims, cErr := ctxutil.GetUserClaims(ctx)
+	if cErr != nil {
+		uc.log.Error(
+			"获取用户信息失败",
+			zap.Error(cErr),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return cErr
+	}
+
+	_, ms, rErr := uc.ucScript.ListScript(ctx, database.QueryParams{
+		Query: map[string]any{
+			"is_builtin = ?": true,
+			"project = ?":    "oes",
+			"label = ?":      "cmd",
+			"name in ?":      tasks,
+		},
+		Columns: []string{"id", "name"},
+	})
+	if rErr != nil {
+		uc.log.Error(
+			"获取mds的任务脚本失败",
+			zap.Error(rErr),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return rErr
+	}
+	if ms == nil || len(*ms) == 0 {
+		return nil
+	}
+	for _, m := range *ms {
+		_, err := uc.ucSchedule.CreateSchedule(ctx, jobsmodel.ScheduleModel{
+			ScriptID:      m.ID,
+			Name:          filepath.Base(m.Name),
+			Specification: tasks[m.Name],
+			IsEnabled:     true,
+			EnvVars:       "{}",
+			CommandArgs:   colonyNum,
+			WorkDir:       "",
+			Timeout:       3600,
+			IsRetry:       false,
+			RetryInterval: 300,
+			MaxRetries:    3,
+			Username:      claims.Username,
+		})
+		if err != nil {
+			uc.log.Error(
+				"创建mds的任务失败",
+				zap.Error(err),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			)
+			return err
+		}
+	}
+	return nil
+}

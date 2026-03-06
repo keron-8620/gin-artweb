@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+
+	emperror "emperror.dev/errors"
 )
 
 type Error struct {
@@ -74,7 +76,7 @@ func (e *Error) WithCause(cause error) *Error {
 	}
 	err := Clone(e)
 	if err != nil {
-		err.cause = cause
+		err.cause = emperror.WithStackIf(cause)
 	}
 	return err
 }
@@ -162,6 +164,6 @@ func FromError(err error) *Error {
 		Reason: reason,
 		Msg:    defaultErrorMessages[reason],
 		Data:   nil,
-		cause:  err,
+		cause:  emperror.WithStackIf(err),
 	}
 }

@@ -72,7 +72,7 @@ func (h *MenuHandler) CreateMenu(ctx *gin.Context) {
 		Path:      req.Path,
 		Component: req.Component,
 		Name:      req.Name,
-		Meta: custmodel.Meta{
+		Meta: custmodel.MetaSchemas{
 			Icon:  req.Meta.Icon,
 			Title: req.Meta.Title,
 		},

@@ -63,17 +63,17 @@ func (m MdsTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 }
 
 type MdsTaskExecutionInfoUsecase struct {
-	log      *zap.Logger
-	ucRecord *JobsService
+	log     *zap.Logger
+	jobsSvc *JobsService
 }
 
 func NewMdsTaskExecutionInfoUsecase(
 	log *zap.Logger,
-	ucRecord *JobsService,
+	jobsSvc *JobsService,
 ) *MdsTaskExecutionInfoUsecase {
 	return &MdsTaskExecutionInfoUsecase{
-		log:      log,
-		ucRecord: ucRecord,
+		log:     log,
+		jobsSvc: jobsSvc,
 	}
 }
 
@@ -98,7 +98,7 @@ func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 	if rErr != nil {
 		return nil, rErr
 	}
-	cache, rErr := uc.ucRecord.FindRecordsByIDs(ctx, recoids)
+	cache, rErr := uc.jobsSvc.FindRecordsByIDs(ctx, recoids)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -123,10 +123,10 @@ func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
 	}
 	return MdsTaskExecutionInfo{
 		ColonyNum: tr.ColonyNum,
-		Mon:       uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Mon, tr.ColonyNum, "mon"),
-		Bse:       uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Bse, tr.ColonyNum, "bse"),
-		Sse:       uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Sse, tr.ColonyNum, "sse"),
-		Szse:      uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Szse, tr.ColonyNum, "szse"),
+		Mon:       uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Mon, tr.ColonyNum, "mon"),
+		Bse:       uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Bse, tr.ColonyNum, "bse"),
+		Sse:       uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Sse, tr.ColonyNum, "sse"),
+		Szse:      uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Szse, tr.ColonyNum, "szse"),
 	}, nil
 }
 

@@ -50,7 +50,7 @@ func newResourceRouter(
 	pkgService := resosvc.NewPackageService(loggers.Biz, pkgRepo)
 
 	hostHandler := handler.NewHostHandler(loggers.Service, hostService)
-	pkgHandler := handler.NewPackageHandler(loggers.Service, pkgService, int64(init.Conf.Security.Upload.MaxPkgSize)*1024*1024)
+	pkgHandler := handler.NewPackageHandler(loggers.Service, pkgService, int64(init.Conf.Upload.MaxPkgSize)*1024*1024)
 
 	appRouter := router.Group("/v1/resource")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))

@@ -2789,6 +2789,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "参数介绍",
+                        "name": "args_descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "before_created_at",
                         "in": "query"
@@ -3017,6 +3023,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "参数介绍",
+                        "name": "args_descr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "创建时间之前的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "before_created_at",
                         "in": "query"
@@ -3155,6 +3167,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "after_updated_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "参数介绍",
+                        "name": "args_descr",
                         "in": "query"
                     },
                     {
@@ -9287,6 +9305,35 @@ const docTemplate = `{
                 }
             }
         },
+        "jobs.Param": {
+            "type": "object",
+            "properties": {
+                "default_value": {
+                    "description": "默认值",
+                    "type": "string"
+                },
+                "descr": {
+                    "description": "参数描述",
+                    "type": "string"
+                },
+                "example_value": {
+                    "description": "示例值",
+                    "type": "string"
+                },
+                "is_required": {
+                    "description": "是否必填",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "参数名称",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "参数类型",
+                    "type": "string"
+                }
+            }
+        },
         "jobs.ScheduleDetailOut": {
             "type": "object",
             "properties": {
@@ -9506,6 +9553,13 @@ const docTemplate = `{
         "jobs.ScriptStandardOut": {
             "type": "object",
             "properties": {
+                "args_descr": {
+                    "description": "参数介绍",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/jobs.Param"
+                    }
+                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string",
