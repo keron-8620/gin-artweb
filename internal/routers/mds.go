@@ -16,14 +16,15 @@ func newMdsRouter(
 	init *common.Initialize,
 	loggers *log.Loggers,
 	jobsvc *JobsRouter,
+	tasks map[string]string,
 ) {
 	colonyRepo := mdsrepo.NewMdsColonyRepo(loggers.Data, init.DB, init.DBTimeout)
 	nodeRepo := mdsrepo.NewMdsNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 
-	colonyService := mdssvc.NewMdsColonyService(loggers.Biz, colonyRepo)
+	jobsSvc := mdssvc.NewJobsService(loggers.Biz, jobsvc.Script, jobsvc.Record, jobsvc.Schedule)
+	colonyService := mdssvc.NewMdsColonyService(loggers.Biz, colonyRepo, tasks)
 	nodeService := mdssvc.NewMdsNodeService(loggers.Biz, nodeRepo)
-	recordService := mdssvc.NewJobsService(loggers.Biz, jobsvc.Script, jobsvc.Record, jobsvc.Schedule)
-	taskService := mdssvc.NewMdsTaskExecutionInfoUsecase(loggers.Biz, recordService)
+	taskService := mdssvc.NewMdsTaskExecutionInfoUsecase(loggers.Biz, jobsSvc)
 
 	colonyHandler := handler.NewMdsColonyService(loggers.Service, colonyService, taskService)
 	nodeHandler := handler.NewMdsNodeService(loggers.Service, nodeService)

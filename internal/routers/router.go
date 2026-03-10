@@ -20,7 +20,7 @@ import (
 	"gin-artweb/internal/shared/middleware"
 )
 
-func NewRouter(loggers *log.Loggers, init *common.Initialize, version, htmlDir string) *gin.Engine {
+func NewRouter(loggers *log.Loggers, init *common.Initialize, cronTasks map[string]map[string]string, version, htmlDir string) *gin.Engine {
 	r := gin.New()
 
 	// 注册链路追踪处理中间件
@@ -122,7 +122,7 @@ func NewRouter(loggers *log.Loggers, init *common.Initialize, version, htmlDir s
 	newResourceRouter(apiRouter, init, loggers)
 	jobsRouter := NewJobsRouter(apiRouter, init, loggers)
 	newMonRouter(apiRouter, init, loggers)
-	newMdsRouter(apiRouter, init, loggers, jobsRouter)
+	newMdsRouter(apiRouter, init, loggers, jobsRouter, cronTasks["mds"])
 	newOesRouter(apiRouter, init, loggers, jobsRouter)
 	return r
 }

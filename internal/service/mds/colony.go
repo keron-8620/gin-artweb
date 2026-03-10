@@ -1,4 +1,4 @@
-package biz
+package mds
 
 import (
 	"context"
@@ -22,15 +22,19 @@ import (
 type MdsColonyService struct {
 	log        *zap.Logger
 	colonyRepo *mdsrepo.MdsColonyRepo
+	jobsSvc    *JobsService
+	mdsCron    map[string]string
 }
 
 func NewMdsColonyService(
 	log *zap.Logger,
 	colonyRepo *mdsrepo.MdsColonyRepo,
+	mdsCron map[string]string,
 ) *MdsColonyService {
 	return &MdsColonyService{
 		log:        log,
 		colonyRepo: colonyRepo,
+		mdsCron:    mdsCron,
 	}
 }
 
@@ -73,6 +77,19 @@ func (s *MdsColonyService) CreateMdsColony(
 		zap.Object(database.ModelKey, nm),
 		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 	)
+
+	// 初始化mds集群的cron任务
+	if nm.IsEnable {
+		if err := s.jobsSvc.InitCron(ctx, nm.ColonyNum, s.mdsCron); err != nil {
+			s.log.Error(
+				"注册mds集群cron任务失败",
+				zap.Error(err),
+				zap.Object(database.ModelKey, nm),
+				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			)
+			return nil, err
+		}
+	}
 	return nm, nil
 }
 

@@ -42,7 +42,7 @@ func NewScheduleService(
 	}
 }
 
-func (s *ScheduleService) addJob(ctx context.Context, m *jobsmodel.ScheduleModel) *errors.Error {
+func (s *ScheduleService) AddJob(ctx context.Context, m *jobsmodel.ScheduleModel) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}
@@ -114,7 +114,7 @@ func (s *ScheduleService) addJob(ctx context.Context, m *jobsmodel.ScheduleModel
 	return nil
 }
 
-func (s *ScheduleService) removeJob(ctx context.Context, scheduleID uint32) *errors.Error {
+func (s *ScheduleService) RemoveJob(ctx context.Context, scheduleID uint32) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}
@@ -184,8 +184,8 @@ func (s *ScheduleService) CreateSchedule(
 	}
 
 	if m.IsEnabled {
-		if err := s.addJob(ctx, &m); err != nil {
-			s.removeJob(ctx, m.ID)
+		if err := s.AddJob(ctx, &m); err != nil {
+			s.RemoveJob(ctx, m.ID)
 			return nil, err
 		}
 	}
@@ -233,13 +233,13 @@ func (s *ScheduleService) UpdateScheduleByID(
 	// 获取原始计划任务id
 	entryID, exists := s.entryMap[scheduleID]
 
-	if err := s.removeJob(ctx, scheduleID); err != nil {
+	if err := s.RemoveJob(ctx, scheduleID); err != nil {
 		return nil, err
 	}
 
 	// 添加新的计划任务
 	if m.IsEnabled {
-		if err := s.addJob(ctx, m); err != nil {
+		if err := s.AddJob(ctx, m); err != nil {
 			return nil, err
 		}
 	}
@@ -281,7 +281,7 @@ func (s *ScheduleService) DeleteScheduleByID(
 		return errors.NewGormError(err, map[string]any{"id": scheduleID})
 	}
 
-	if err := s.removeJob(ctx, scheduleID); err != nil {
+	if err := s.RemoveJob(ctx, scheduleID); err != nil {
 		return err
 	}
 
@@ -374,11 +374,11 @@ func (s *ScheduleService) ReloadScheduleJobs(ctx context.Context, query map[stri
 	}
 	if ms != nil {
 		for _, m := range *ms {
-			if err := s.removeJob(ctx, m.ID); err != nil {
+			if err := s.RemoveJob(ctx, m.ID); err != nil {
 				return err
 			}
 			if m.IsEnabled {
-				if err := s.addJob(ctx, &m); err != nil {
+				if err := s.AddJob(ctx, &m); err != nil {
 					return err
 				}
 			}

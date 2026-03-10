@@ -1,12 +1,13 @@
-package biz
+package oes
 
 import (
 	"context"
-	"path/filepath"
+	"fmt"
 
 	"go.uber.org/zap"
 
 	jobsmodel "gin-artweb/internal/model/jobs"
+	oesmodel "gin-artweb/internal/model/oes"
 	jobsvc "gin-artweb/internal/service/jobs"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -14,23 +15,23 @@ import (
 )
 
 type JobsService struct {
-	log        *zap.Logger
-	ucScript   *jobsvc.ScriptService
-	ucRecord   *jobsvc.RecordService
-	ucSchedule *jobsvc.ScheduleService
+	log         *zap.Logger
+	svcScript   *jobsvc.ScriptService
+	svcRecord   *jobsvc.RecordService
+	svcSchedule *jobsvc.ScheduleService
 }
 
 func NewRecordService(
 	log *zap.Logger,
-	ucScript *jobsvc.ScriptService,
-	ucRecord *jobsvc.RecordService,
-	ucSchedule *jobsvc.ScheduleService,
+	svcScript *jobsvc.ScriptService,
+	svcRecord *jobsvc.RecordService,
+	svcSchedule *jobsvc.ScheduleService,
 ) *JobsService {
 	return &JobsService{
-		log:        log,
-		ucScript:   ucScript,
-		ucRecord:   ucRecord,
-		ucSchedule: ucSchedule,
+		log:         log,
+		svcScript:   svcScript,
+		svcRecord:   svcRecord,
+		svcSchedule: svcSchedule,
 	}
 }
 
@@ -49,7 +50,7 @@ func (uc *JobsService) FindRecordsByIDs(
 	qp := database.QueryParams{
 		Query: map[string]any{"id in ?": recordIDs},
 	}
-	_, ms, rErr := uc.ucRecord.ListcriptRecord(ctx, qp)
+	_, ms, rErr := uc.svcRecord.ListcriptRecord(ctx, qp)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -92,9 +93,33 @@ func (uc *JobsService) FindRecordsByMap(
 	return &task
 }
 
+func (uc *JobsService) FindOesCMDScripts(
+	ctx context.Context,
+	tasks map[string]string,
+) (*[]jobsmodel.ScriptModel, *errors.Error) {
+	_, ms, rErr := uc.svcScript.ListScript(ctx, database.QueryParams{
+		Query: map[string]any{
+			"is_builtin = ?": true,
+			"project = ?":    "oes",
+			"label = ?":      "cmd",
+			"name in ?":      tasks,
+		},
+		Columns: []string{"id", "name"},
+	})
+	if rErr != nil {
+		uc.log.Error(
+			"获取oes的cmd脚本失败",
+			zap.Error(rErr),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return nil, rErr
+	}
+	return ms, nil
+}
+
 func (uc *JobsService) InitCron(
 	ctx context.Context,
-	colonyNum string,
+	colony *oesmodel.OesColonyModel,
 	tasks map[string]string,
 ) *errors.Error {
 	if ctx.Err() != nil {
@@ -111,34 +136,21 @@ func (uc *JobsService) InitCron(
 		return cErr
 	}
 
-	_, ms, rErr := uc.ucScript.ListScript(ctx, database.QueryParams{
-		Query: map[string]any{
-			"is_builtin = ?": true,
-			"project = ?":    "oes",
-			"label = ?":      "cmd",
-			"name in ?":      tasks,
-		},
-		Columns: []string{"id", "name"},
-	})
+	ms, rErr := uc.FindOesCMDScripts(ctx, tasks)
 	if rErr != nil {
-		uc.log.Error(
-			"获取mds的任务脚本失败",
-			zap.Error(rErr),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
 		return rErr
 	}
 	if ms == nil || len(*ms) == 0 {
 		return nil
 	}
 	for _, m := range *ms {
-		_, err := uc.ucSchedule.CreateSchedule(ctx, jobsmodel.ScheduleModel{
+		_, err := uc.svcSchedule.CreateSchedule(ctx, jobsmodel.ScheduleModel{
 			ScriptID:      m.ID,
-			Name:          filepath.Base(m.Name),
+			Name:          fmt.Sprintf("oes_%s-%s", colony.ColonyNum, m.Name),
 			Specification: tasks[m.Name],
 			IsEnabled:     true,
 			EnvVars:       "{}",
-			CommandArgs:   colonyNum,
+			CommandArgs:   colony.ColonyNum,
 			WorkDir:       "",
 			Timeout:       3600,
 			IsRetry:       false,
@@ -148,7 +160,7 @@ func (uc *JobsService) InitCron(
 		})
 		if err != nil {
 			uc.log.Error(
-				"创建mds的任务失败",
+				"创建oes的任务失败",
 				zap.Error(err),
 				zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
 			)

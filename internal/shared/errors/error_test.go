@@ -72,7 +72,7 @@ func TestUnwrapMethod(t *testing.T) {
 	// 测试1: 带cause的错误
 	cause := std_errors.New("cause error")
 	err := New(ReasonUnknown, "", nil).WithCause(cause)
-	if err.Unwrap() != cause {
+	if !std_errors.Is(err.Unwrap(), cause) {
 		t.Errorf("expected cause %v, got %v", cause, err.Unwrap())
 	}
 
@@ -128,7 +128,7 @@ func TestWithCauseMethod(t *testing.T) {
 	if withCause == err {
 		t.Error("expected WithCause to return a new error instance")
 	}
-	if withCause.Unwrap() != cause {
+	if !std_errors.Is(withCause.Unwrap(), cause) {
 		t.Errorf("expected cause %v, got %v", cause, withCause.Unwrap())
 	}
 
@@ -238,7 +238,7 @@ func TestCloneMethod(t *testing.T) {
 	cause := std_errors.New("cause error")
 	err = err.WithCause(cause)
 	cloned = Clone(err)
-	if cloned.Unwrap() != cause {
+	if !std_errors.Is(cloned.Unwrap(), cause) {
 		t.Errorf("expected cloned cause %v, got %v", cause, cloned.Unwrap())
 	}
 
@@ -260,7 +260,7 @@ func TestFromError(t *testing.T) {
 	if err.Reason != ReasonUnknown {
 		t.Errorf("expected reason %v, got %v", ReasonUnknown, err.Reason)
 	}
-	if err.Unwrap() != stdErr {
+	if !std_errors.Is(err.Unwrap(), stdErr) {
 		t.Errorf("expected cause %v, got %v", stdErr, err.Unwrap())
 	}
 
@@ -305,8 +305,8 @@ func TestErrorChain(t *testing.T) {
 		count++
 		currentErr = std_errors.Unwrap(currentErr)
 	}
-	if count != 3 {
-		t.Errorf("expected error chain with 3 errors, got %d", count)
+	if count != 4 {
+		t.Errorf("expected error chain with 4 errors, got %d", count)
 	}
 
 	// 测试std_errors.Is

@@ -155,28 +155,6 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 		return
 	}
 
-	om, rErr := h.svcScript.FindScriptByID(ctx, uri.ID)
-	if rErr != nil {
-		h.log.Error(
-			"查询脚本失败",
-			zap.Error(rErr),
-			zap.Uint32("script_id", uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		errors.RespondWithError(ctx, rErr)
-		return
-	}
-	if rErr := h.svcScript.RemoveScript(ctx, *om); rErr != nil {
-		h.log.Error(
-			"删除原脚本文件失败",
-			zap.Error(rErr),
-			zap.Uint32("script_id", uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		errors.RespondWithError(ctx, rErr)
-		return
-	}
-
 	claims, rErr := ctxutil.GetUserClaims(ctx)
 	if rErr != nil {
 		h.log.Error(
@@ -188,26 +166,33 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 		return
 	}
 
-	nm := jobsmodel.ScriptModel{
-		Name:      req.File.Filename,
-		Descr:     req.Descr,
-		Project:   req.Project,
-		Label:     req.Label,
-		Language:  req.Language,
-		Status:    req.Status,
-		IsBuiltin: false,
-		Username:  claims.Subject,
+	om, rErr := h.svcScript.FindScriptByID(ctx, uri.ID)
+	if rErr != nil {
+		h.log.Error(
+			"查询脚本失败",
+			zap.Error(rErr),
+			zap.Uint32("script_id", uri.ID),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		errors.RespondWithError(ctx, rErr)
+		return
 	}
-	nm.ID = uri.ID
-	savePath := common.GetScriptStoragePath(nm.Project, nm.Label, nm.Name, nm.IsBuiltin)
-	if err := common.UploadFile(ctx, h.log, h.maxSize, savePath, req.File, 0o755); err != nil {
+
+	if err := h.svcScript.RemoveScript(ctx, *om); err != nil {
+		h.log.Error(
+			"删除原脚本文件失败",
+			zap.Error(err),
+			zap.Uint32("script_id", uri.ID),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	m, rErr := h.svcScript.UpdateScriptByID(ctx, uri.ID, map[string]any{
+	nm, rErr := h.svcScript.UpdateScriptByID(ctx, uri.ID, map[string]any{
 		"name":       req.File.Filename,
 		"descr":      req.Descr,
+		"param_desc": req.ParamDesc,
 		"project":    req.Project,
 		"label":      req.Label,
 		"language":   req.Language,
@@ -226,9 +211,15 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 		return
 	}
 
+	savePath := common.GetScriptStoragePath(nm.Project, nm.Label, nm.Name, nm.IsBuiltin)
+	if err := common.UploadFile(ctx, h.log, h.maxSize, savePath, req.File, 0o755); err != nil {
+		errors.RespondWithError(ctx, err)
+		return
+	}
+
 	ctx.JSON(http.StatusOK, &jobsmodel.ScriptReply{
 		Code: http.StatusOK,
-		Data: *jobsmodel.ScriptModelToStandardOut(*m),
+		Data: *jobsmodel.ScriptModelToStandardOut(*nm),
 	})
 }
 

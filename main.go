@@ -114,6 +114,16 @@ func main() {
 		return
 	}
 
+	// 加载定时任务配置
+	cronTasks := config.NewCrontabConf(filepath.Join(config.ConfigDir, "crontab.yaml"))
+	for _, tasks := range cronTasks {
+		for _, v := range tasks {
+			if ok, err := crontab.ValidateCronExpression(v, false); err != nil || !ok {
+				golog.Fatalf("定时任务表达式无效: %s, 错误: %v", v, err)
+			}
+		}
+	}
+
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
 	i, clearFunc, err := newInitialize(sysConf, loggers)
 	if err != nil {
@@ -127,7 +137,7 @@ func main() {
 	gin.DisableConsoleColor()
 
 	// 创建 Gin 路由引擎
-	r := routers.NewRouter(loggers, i, version, filepath.Join(config.BaseDir, "html"))
+	r := routers.NewRouter(loggers, i, cronTasks, version, filepath.Join(config.BaseDir, "html"))
 
 	// 启动定时任务
 	if i.Crontab != nil {

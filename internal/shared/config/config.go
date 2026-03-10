@@ -67,9 +67,15 @@ type SystemConf struct {
 
 // NewSystemConf 加载系统配置文件
 func NewSystemConf(configPath string) *SystemConf {
+	if configPath == "" {
+		log.Fatal("配置文件路径不能为空")
+	}
 	// 检查配置文件是否存在
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Fatalf("FATAL: 配置文件不存在,请检查: %s", configPath)
+	if _, err := os.Stat(configPath); err != nil {
+		if os.IsNotExist(err) {
+			log.Fatalf("FATAL: 配置文件不存在,请检查: %s", configPath)
+		}
+		log.Fatalf("FATAL: 获取配置文件%s状态失败: %v", configPath, err)
 	}
 
 	// 读取配置文件
@@ -87,6 +93,31 @@ func NewSystemConf(configPath string) *SystemConf {
 
 	if conf.Database.Type == "sqlite" && conf.Database.Dns == "file::memory:" && !filepath.IsAbs(conf.Database.Dns) {
 		conf.Database.Dns = filepath.Join(BaseDir, conf.Database.Dns)
+	}
+
+	return conf
+}
+
+func NewCrontabConf(configPath string) map[string]map[string]string {
+	if configPath == "" {
+		log.Fatal("定时任务配置文件路径不能为空")
+	}
+	// 检查配置文件是否存在
+	if _, err := os.Stat(configPath); err != nil {
+		if os.IsNotExist(err) {
+			log.Fatalf("FATAL: 配置文件不存在,请检查: %s", configPath)
+		}
+		log.Fatalf("FATAL: 获取配置文件%s状态失败: %v", configPath, err)
+	}
+	// 读取配置文件
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		log.Fatalf("FATAL: 读取配置文件失败: %v", err)
+	}
+
+	conf := make(map[string]map[string]string)
+	if err := yaml.Unmarshal(data, &conf); err != nil {
+		log.Fatalf("FATAL: 配置文件解析失败: %v", err)
 	}
 
 	return conf

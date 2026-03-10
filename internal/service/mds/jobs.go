@@ -1,12 +1,13 @@
-package biz
+package mds
 
 import (
 	"context"
-	"path/filepath"
+	"fmt"
 
 	"go.uber.org/zap"
 
 	jobsmodel "gin-artweb/internal/model/jobs"
+	mdsrepo "gin-artweb/internal/repository/mds"
 	jobsvc "gin-artweb/internal/service/jobs"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
@@ -18,6 +19,7 @@ type JobsService struct {
 	svcScript   *jobsvc.ScriptService
 	svcRecord   *jobsvc.RecordService
 	svcSchedule *jobsvc.ScheduleService
+	cronRepo    *mdsrepo.MdsCronRepo
 }
 
 func NewJobsService(
@@ -25,12 +27,14 @@ func NewJobsService(
 	svcScript *jobsvc.ScriptService,
 	svcRecord *jobsvc.RecordService,
 	svcSchedule *jobsvc.ScheduleService,
+	cronRepo *mdsrepo.MdsCronRepo,
 ) *JobsService {
 	return &JobsService{
 		log:         log,
 		svcScript:   svcScript,
 		svcRecord:   svcRecord,
 		svcSchedule: svcSchedule,
+		cronRepo:    cronRepo,
 	}
 }
 
@@ -92,6 +96,37 @@ func (uc *JobsService) FindRecordsByMap(
 	return &task
 }
 
+func (uc *JobsService) FindMdsCMDScripts(
+	ctx context.Context,
+	tasks map[string]string,
+) (*[]jobsmodel.ScriptModel, *errors.Error) {
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
+	}
+
+	_, ms, rErr := uc.svcScript.ListScript(ctx, database.QueryParams{
+		Query: map[string]any{
+			"is_builtin = ?": true,
+			"project = ?":    "mds",
+			"label = ?":      "cmd",
+			"name in ?":      tasks,
+		},
+		Columns: []string{"id", "name"},
+	})
+	if rErr != nil {
+		uc.log.Error(
+			"获取mds的任务脚本失败",
+			zap.Error(rErr),
+			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		)
+		return nil, rErr
+	}
+	if ms == nil || len(*ms) == 0 {
+		return nil, nil
+	}
+	return ms, nil
+}
+
 func (uc *JobsService) InitCron(
 	ctx context.Context,
 	colonyNum string,
@@ -111,21 +146,8 @@ func (uc *JobsService) InitCron(
 		return cErr
 	}
 
-	_, ms, rErr := uc.svcScript.ListScript(ctx, database.QueryParams{
-		Query: map[string]any{
-			"is_builtin = ?": true,
-			"project = ?":    "mds",
-			"label = ?":      "cmd",
-			"name in ?":      tasks,
-		},
-		Columns: []string{"id", "name"},
-	})
+	ms, rErr := uc.FindMdsCMDScripts(ctx, tasks)
 	if rErr != nil {
-		uc.log.Error(
-			"获取mds的任务脚本失败",
-			zap.Error(rErr),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
 		return rErr
 	}
 	if ms == nil || len(*ms) == 0 {
@@ -134,7 +156,7 @@ func (uc *JobsService) InitCron(
 	for _, m := range *ms {
 		_, err := uc.svcSchedule.CreateSchedule(ctx, jobsmodel.ScheduleModel{
 			ScriptID:      m.ID,
-			Name:          filepath.Base(m.Name),
+			Name:          fmt.Sprintf("mds_%s-%s", colonyNum, m.Name),
 			Specification: tasks[m.Name],
 			IsEnabled:     true,
 			EnvVars:       "{}",

@@ -22,6 +22,7 @@ type ScheduleModel struct {
 	IsRetry       bool        `gorm:"column:is_retry;type:boolean;default:false;comment:是否启用重试" json:"is_retry"`
 	RetryInterval int         `gorm:"column:retry_interval;type:int;default:60;comment:重试间隔(秒)" json:"retry_interval"`
 	MaxRetries    int         `gorm:"column:max_retries;type:int;default:3;comment:最大重试次数" json:"max_retries"`
+	CreateType    int8        `gorm:"column:create_type;not null;index;comment:创建类型, 0:手动, 1:业务" json:"create_type"`
 	Username      string      `gorm:"column:username;type:varchar(50);comment:用户名" json:"username"`
 	ScriptID      uint32      `gorm:"column:script_id;not null;index;comment:计划任务ID" json:"script_id"`
 	Script        ScriptModel `gorm:"foreignKey:ScriptID;references:ID" json:"script"`
@@ -45,6 +46,10 @@ func (m *ScheduleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("command_args", m.CommandArgs)
 	enc.AddString("work_dir", m.WorkDir)
 	enc.AddInt("timeout", m.Timeout)
+	enc.AddBool("is_retry", m.IsRetry)
+	enc.AddInt("retry_interval", m.RetryInterval)
+	enc.AddInt("max_retries", m.MaxRetries)
+	enc.AddInt8("create_type", m.CreateType)
 	enc.AddString("username", m.Username)
 	enc.AddUint32("script_id", m.ScriptID)
 	return nil
@@ -91,6 +96,9 @@ type CreateScheduleRequest struct {
 	// 最大重试次数
 	MaxRetries int `json:"max_retries"`
 
+	// 创建类型
+	CreateType int8 `json:"create_type" example:"0"`
+
 	// 脚本ID
 	ScriptID uint32 `json:"script_id" binding:"required"`
 }
@@ -129,6 +137,9 @@ type UpdateScheduleRequest struct {
 	// 最大重试次数
 	MaxRetries int `json:"max_retries"`
 
+	// 创建类型
+	CreateType int8 `json:"create_type" example:"1"`
+
 	// 脚本ID
 	ScriptID uint32 `json:"script_id" binding:"required"`
 }
@@ -146,11 +157,14 @@ type ListScheduleRequest struct {
 	// 是否启用
 	IsEnabled *bool `form:"is_enabled"`
 
-	// 脚本ID
-	ScriptID uint32 `form:"script_id"`
+	// 创建类型
+	CreateType *int8 `form:"create_type" binding:"omitempty"`
 
 	// 用户名
 	Username string `form:"username" binding:"omitempty"`
+
+	// 脚本ID
+	ScriptID uint32 `form:"script_id"`
 }
 
 func (req *ListScheduleRequest) Query() (int, int, map[string]any) {
@@ -161,11 +175,14 @@ func (req *ListScheduleRequest) Query() (int, int, map[string]any) {
 	if req.IsEnabled != nil {
 		query["is_enabled = ?"] = *req.IsEnabled
 	}
-	if req.ScriptID > 0 {
-		query["script_id = ?"] = req.ScriptID
+	if req.CreateType != nil {
+		query["create_type = ?"] = *req.CreateType
 	}
 	if req.Username != "" {
 		query["username like ?"] = "%" + req.Username + "%"
+	}
+	if req.ScriptID > 0 {
+		query["script_id = ?"] = req.ScriptID
 	}
 	return page, size, query
 }
@@ -210,6 +227,9 @@ type ScheduleStandardOut struct {
 	// 最大重试次数
 	MaxRetries int `json:"max_retries"`
 
+	// 创建类型
+	CreateType int8 `json:"create_type" example:"1"`
+
 	// 用户名
 	Username string `json:"username" example:"admin"`
 }
@@ -244,6 +264,7 @@ func ScheduleToStandardOut(
 		IsRetry:       m.IsRetry,
 		MaxRetries:    m.MaxRetries,
 		RetryInterval: m.RetryInterval,
+		CreateType:    m.CreateType,
 		Username:      m.Username,
 	}
 }

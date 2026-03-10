@@ -15,6 +15,7 @@ type ScriptModel struct {
 	database.StandardModel
 	Name      string `gorm:"column:name;type:varchar(50);not null;index:idx_script_project_label_name;comment:名称" json:"name"`
 	Descr     string `gorm:"column:descr;type:varchar(254);comment:描述" json:"descr"`
+	ParamDesc string `gorm:"column:param_desc;type:varchar(254);comment:参数描述" json:"param_desc"`
 	Project   string `gorm:"column:project;type:varchar(50);index:idx_script_project_label_name;comment:项目" json:"project"`
 	Label     string `gorm:"column:label;type:varchar(50);index:idx_script_project_label_name;;comment:标签" json:"label"`
 	Language  string `gorm:"column:language;type:varchar(50);comment:脚本语言" json:"language"`
@@ -51,6 +52,9 @@ type UploadScriptRequest struct {
 
 	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
+
+	// 参数描述
+	ParamDesc string `form:"param_desc" binding:"omitempty,max=254"`
 
 	// 项目
 	Project string `form:"project" binding:"required"`
