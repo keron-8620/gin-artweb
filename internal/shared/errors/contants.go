@@ -62,13 +62,9 @@ const (
 	ReasonSSHKeyDeployFailed  ErrorReason = "SSH_KEY_DEPLOYMENT_FAILED" // ssh密钥部署失败
 
 	// 上传下载文件
-	ReasonUploadFileNotFound            ErrorReason = "UPLOAD_FILE_NOT_FOUND"             // 上传的文件未找到
-	ReasonUploadFileTooLarge            ErrorReason = "UPLOAD_FILE_TOO_LARGE"             // 上传的文件超出大小限制
-	ReasonSaveUploadFileFailed          ErrorReason = "UPLOAD_FILE_SAVE_FAILED"           // 保存上传文件失败
-	ReasonSetUploadFilePermissionFailed ErrorReason = "UPLOAD_FILE_SET_PERMISSION_FAILED" // 设置上传文件权限失败
-	ReasonDownloadFileNotFound          ErrorReason = "DOWNLOAD_FILE_NOT_FOUND"           // 下载的文件未找到
-	ReasonDownloadFilePermissionDenied  ErrorReason = "DOWNLOAD_FILE_PERMISSION_DENIED"   // 下载文件权限被拒绝
-	ReasonDownloadFileFailed            ErrorReason = "DOWNLOAD_FILE_FAILED"              // 下载文件失败
+	ReasonDownloadFileNotFound         ErrorReason = "DOWNLOAD_FILE_NOT_FOUND"         // 下载的文件未找到
+	ReasonDownloadFilePermissionDenied ErrorReason = "DOWNLOAD_FILE_PERMISSION_DENIED" // 下载文件权限被拒绝
+	ReasonDownloadFileFailed           ErrorReason = "DOWNLOAD_FILE_FAILED"            // 下载文件失败
 
 	// 压缩解压文件
 	ReasonUnZIPFailed       ErrorReason = "UNZIP_FAILED"          // 解压文件失败
@@ -82,8 +78,14 @@ const (
 	ReasonDeleteCacheFileFailed ErrorReason = "DELETE_CACHE_FILE_FAILED" // 删除缓存文件失败
 
 	// 脚本相关
-	ReasonScriptNotFound    ErrorReason = "SCRIPT_NOT_FOUND"     // 脚本未找到
-	ReasonScriptIsBuiltin   ErrorReason = "SCRIPT_IS_BUILTIN"    // 脚本为内置脚本
-	ReasonScriptIsDisabled  ErrorReason = "SCRIPT_IS_DISABLED"   // 脚本已禁用
-	ReasonScriptLogNotFound ErrorReason = "SCRIPT_LOG_NOT_FOUND" // 脚本日志未找到
+	ReasonScriptNotFound     ErrorReason = "SCRIPT_NOT_FOUND"     // 脚本未找到
+	ReasonScriptIsBuiltin    ErrorReason = "SCRIPT_IS_BUILTIN"    // 脚本为内置脚本
+	ReasonScriptIsDisabled   ErrorReason = "SCRIPT_IS_DISABLED"   // 脚本已禁用
+	ReasonScriptLogNotFound  ErrorReason = "SCRIPT_LOG_NOT_FOUND" // 脚本日志未找到
+	ReasonScriptSaveFailed   ErrorReason = "SCRIPT_SAVE_FAILED"   // 脚本保存失败
+	ReasonScriptRemoveFailed ErrorReason = "SCRIPT_REMOVE_FAILED" // 脚本删除失败
+
+	ReasonPackageNotFound     ErrorReason = "PACKAGE_NOT_FOUND"     // 程序包未找到
+	ReasonPackageSaveFailed   ErrorReason = "PACKAGE_SAVE_FAILED"   // 程序包保存失败
+	ReasonPackageRemoveFailed ErrorReason = "PACKAGE_REMOVE_FAILED" // 程序包删除失败
 )

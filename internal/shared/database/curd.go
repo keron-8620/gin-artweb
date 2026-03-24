@@ -210,21 +210,13 @@ func DBGet(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...
 // value: 查询结果存储对象
 // query: 查询参数
 // 返回记录总数和操作可能产生的错误
-func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParams) (int64, error) {
+func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParams) error {
 	// 初始化查询构建器
 	mdb := db.WithContext(ctx).Model(model)
 
 	// 添加查询条件
 	for k, v := range query.Query {
 		mdb = mdb.Where(k, v)
-	}
-
-	// 查询总数
-	var count int64 = 0
-	if query.IsCount {
-		if err := mdb.Count(&count).Error; err != nil {
-			return 0, errors.WrapIf(err, "查询数据库记录总数失败")
-		}
 	}
 
 	// 指定查询字段和忽略字段（如果有同时指定了Columns和Omit，Columns优先）
@@ -243,12 +235,11 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	}
 
 	// 添加分页条件
-	if query.Size > 0 {
-		mdb = mdb.Limit(query.Size)
-		if query.Page > 0 {
-			offset := (query.Page - 1) * query.Size
-			mdb = mdb.Offset(offset)
-		}
+	if query.Limit > 0 {
+		mdb = mdb.Limit(query.Limit)
+	}
+	if query.Offset > 0 {
+		mdb = mdb.Offset(query.Offset)
 	}
 
 	// 预加载关联关系
@@ -259,34 +250,40 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 	// 执行查询
 	result := mdb.Find(value)
 	if result.Error != nil {
-		return 0, errors.WrapIf(result.Error, "查询数据库记录失败")
+		return errors.WrapIf(result.Error, "查询数据库记录失败")
 	}
 
-	// 如果没有查询总数，则使用影响行数作为总数
-	if !query.IsCount {
-		count = result.RowsAffected
+	return nil
+}
+
+func DBCount(ctx context.Context, db *gorm.DB, model any, query map[string]any) (int64, error) {
+	// 初始化查询构建器
+	mdb := db.WithContext(ctx).Model(model)
+
+	// 添加查询条件
+	for k, v := range query {
+		if k == "" {
+			continue
+		}
+		mdb = mdb.Where(k, v)
+	}
+
+	// 查询总数
+	var count int64 = 0
+	if err := mdb.Count(&count).Error; err != nil {
+		return 0, errors.WrapIf(err, "查询数据库记录总数失败")
 	}
 
 	return count, nil
 }
-
-// zap日志中数据库相关常用key
-const (
-	UpdateDataKey  = "data"         // 更新数据字段
-	ConditionsKey  = "conds"        // 查询条件参数
-	PreloadKey     = "preloads"     // 预加载关联关系
-	ModelKey       = "model"        // 数据模型
-	QueryParamsKey = "query_params" // 查询参数
-)
 
 // QueryParams 查询参数结构体，用于配置列表查询的各种参数
 type QueryParams struct {
 	Preloads []string       // 需要预加载的关联关系列表
 	Query    map[string]any // 查询条件映射
 	OrderBy  []string       // 排序字段列表
-	Size     int            // 分页大小
-	Page     int            // 分页页码
-	IsCount  bool           // 是否查询总数
+	Limit    int            // 分页大小
+	Offset   int            // 分页偏移量
 	Omit     []string       // 需要忽略的字段列表
 	Columns  []string       // 查询字段列表
 }
@@ -294,9 +291,9 @@ type QueryParams struct {
 func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	// 记录预加载字段
 	if len(q.Preloads) > 0 {
-		enc.AddString(PreloadKey, strings.Join(q.Preloads, ","))
+		enc.AddString("preloads", strings.Join(q.Preloads, ","))
 	} else {
-		enc.AddString(PreloadKey, "")
+		enc.AddString("preloads", "")
 	}
 
 	// 记录查询条件
@@ -310,11 +307,8 @@ func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 
 	// 记录分页参数
-	enc.AddInt("size", q.Size)
-	enc.AddInt("page", q.Page)
-
-	// 记录是否查询总数
-	enc.AddBool("is_count", q.IsCount)
+	enc.AddInt("limit", q.Limit)
+	enc.AddInt("offset", q.Offset)
 
 	// 忽略字段
 	if len(q.Omit) > 0 {

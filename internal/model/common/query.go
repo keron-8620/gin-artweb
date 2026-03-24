@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type IDUri struct {
@@ -18,6 +20,7 @@ type ModelQuerier interface {
 var (
 	DefaultPage int = 1
 	DefaultSize int = 10
+	MaxSize     int = 100
 )
 
 type BaseModelQuery struct {
@@ -34,28 +37,33 @@ type BaseModelQuery struct {
 	IDs string `form:"ids" binding:"omitempty,max=100"`
 }
 
-func (q *BaseModelQuery) QueryMap(l int) (int, int, map[string]any) {
-	var (
-		page int = DefaultPage
-		size int = DefaultSize
-	)
-	if q.Page > 1 {
-		page = q.Page
+func (dto *BaseModelQuery) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if dto == nil {
+		return nil
 	}
-	if q.Size > 1 {
-		size = q.Size
-	}
-	query := make(map[string]any, l)
+	enc.AddInt("page", dto.Page)
+	enc.AddInt("size", dto.Size)
+	enc.AddUint32("id", dto.ID)
+	enc.AddString("ids", dto.IDs)
+	return nil
+}
+
+func (q *BaseModelQuery) GetPageParam() (int, int) {
+	return max(q.Page, DefaultPage), min(max(q.Size, DefaultSize), 100)
+}
+
+func (q *BaseModelQuery) ToQueryMap(l int) map[string]any {
+	queryMap := make(map[string]any, l)
 	if q.ID > 0 {
-		query["id = ?"] = q.ID
+		queryMap["id = ?"] = q.ID
 	}
 	if q.IDs != "" {
 		pks := stringToListUint32(q.IDs)
 		if len(pks) > 1 {
-			query["id in ?"] = pks
+			queryMap["id in ?"] = pks
 		}
 	}
-	return page, size, query
+	return queryMap
 }
 
 type StandardModelQuery struct {
@@ -78,8 +86,22 @@ type StandardModelQuery struct {
 	AfterUpdateAt string `form:"after_updated_at"`
 }
 
-func (q *StandardModelQuery) QueryMap(l int) (int, int, map[string]any) {
-	page, size, query := q.BaseModelQuery.QueryMap(l)
+func (dto *StandardModelQuery) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if dto == nil {
+		return nil
+	}
+	if err := dto.BaseModelQuery.MarshalLogObject(enc); err != nil {
+		return err
+	}
+	enc.AddString("before_created_at", dto.BeforeCreateAt)
+	enc.AddString("after_created_at", dto.AfterCreateAt)
+	enc.AddString("before_updated_at", dto.BeforeUpdateAt)
+	enc.AddString("after_updated_at", dto.AfterUpdateAt)
+	return nil
+}
+
+func (q *StandardModelQuery) ToQueryMap(l int) map[string]any {
+	query := q.BaseModelQuery.ToQueryMap(l)
 	if q.BeforeCreateAt != "" {
 		bft, err := time.Parse(time.RFC3339, q.BeforeCreateAt)
 		if err == nil {
@@ -104,7 +126,7 @@ func (q *StandardModelQuery) QueryMap(l int) (int, int, map[string]any) {
 			query["update_at > ?"] = aut
 		}
 	}
-	return page, size, query
+	return query
 }
 
 func stringToListUint32(pks string) []uint32 {

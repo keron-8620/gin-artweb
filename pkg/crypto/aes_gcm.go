@@ -20,7 +20,7 @@ type AESGCMCipher struct {
 func NewAESGCMCipher(key []byte) (Cipher, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "AES创建加密器错误")
+		return nil, errors.WrapIf(err, "AES创建加密器错误")
 	}
 
 	return &AESGCMCipher{
@@ -33,7 +33,7 @@ func NewAESGCMCipher(key []byte) (Cipher, error) {
 func (a *AESGCMCipher) Encrypt(ctx context.Context, plaintext string) (string, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+		return "", errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	plainBytes := []byte(plaintext)
@@ -41,13 +41,13 @@ func (a *AESGCMCipher) Encrypt(ctx context.Context, plaintext string) (string, e
 	// 创建GCM模式
 	gcm, err := cipher.NewGCM(a.block)
 	if err != nil {
-		return "", errors.Wrap(err, "创建GCM模式错误")
+		return "", errors.WrapIf(err, "创建GCM模式错误")
 	}
 
 	// 生成随机nonce
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
-		return "", errors.Wrap(err, "生成随机nonce错误")
+		return "", errors.WrapIf(err, "生成随机nonce错误")
 	}
 
 	// 加密并添加认证
@@ -61,19 +61,19 @@ func (a *AESGCMCipher) Encrypt(ctx context.Context, plaintext string) (string, e
 func (a *AESGCMCipher) Decrypt(ctx context.Context, ciphertext string) (string, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+		return "", errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	// 解码base64字符串
 	cipherBytes, err := a.DecodeString(ciphertext)
 	if err != nil {
-		return "", errors.Wrap(err, "AES-GCM解密解码错误")
+		return "", errors.WrapIf(err, "AES-GCM解密解码错误")
 	}
 
 	// 创建GCM模式
 	gcm, err := cipher.NewGCM(a.block)
 	if err != nil {
-		return "", errors.Wrap(err, "创建GCM模式错误")
+		return "", errors.WrapIf(err, "创建GCM模式错误")
 	}
 
 	// 检查密文长度
@@ -87,7 +87,7 @@ func (a *AESGCMCipher) Decrypt(ctx context.Context, ciphertext string) (string, 
 	// 解密并验证
 	plainBytes, err := gcm.Open(nil, nonce, ciphertextBytes, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "GCM解密或验证错误")
+		return "", errors.WrapIf(err, "GCM解密或验证错误")
 	}
 
 	return string(plainBytes), nil

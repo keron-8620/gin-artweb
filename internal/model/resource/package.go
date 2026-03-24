@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"io"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -39,7 +40,7 @@ func (m *PackageModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-type UploadPackageRequest struct {
+type UploadPackageDTO struct {
 	// 标签
 	Label string `form:"label" binding:"required,oneof=mds oes xcounter"`
 
@@ -50,13 +51,35 @@ type UploadPackageRequest struct {
 	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
-func (req *UploadPackageRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (req *UploadPackageDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("label", req.Label)
 	enc.AddString("version", req.Version)
 	return nil
 }
 
-type ListPackageRequest struct {
+type UploadPackageBiz struct {
+	Filename string    // 文件名
+	File     io.Reader // 文件内容
+	Label    string    // 标签
+	Version  string    // 版本号
+}
+
+func (dto *UploadPackageBiz) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("origin_filename", dto.Filename)
+	enc.AddString("label", dto.Label)
+	enc.AddString("version", dto.Version)
+	return nil
+}
+
+func (dto *UploadPackageBiz) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"origin_filename": dto.Filename,
+		"label":           dto.Label,
+		"version":         dto.Version,
+	}
+}
+
+type ListPackageDTO struct {
 	common.BaseModelQuery
 
 	// 文件名
@@ -80,13 +103,26 @@ type ListPackageRequest struct {
 	AfterUploadedAt string `form:"after_uploaded_at" binding:"omitempty"`
 }
 
-func (req *ListPackageRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.BaseModelQuery.QueryMap(7)
+func (req *ListPackageDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if err := req.BaseModelQuery.MarshalLogObject(enc); err != nil {
+		return err
+	}
+	enc.AddString("filename", req.Filename)
+	enc.AddString("label", req.Label)
+	enc.AddString("labels", req.Labels)
+	enc.AddString("version", req.Version)
+	enc.AddString("before_uploaded_at", req.BeforeUploadedAt)
+	enc.AddString("after_uploaded_at", req.AfterUploadedAt)
+	return nil
+}
+
+func (req *ListPackageDTO) ToQueryMap() map[string]any {
+	queryMap := req.BaseModelQuery.ToQueryMap(7)
 	if req.Filename != "" {
-		query["origin_filename like ?"] = "%" + req.Filename + "%"
+		queryMap["origin_filename like ?"] = "%" + req.Filename + "%"
 	}
 	if req.Label != "" {
-		query["label = ?"] = req.Label
+		queryMap["label = ?"] = req.Label
 	}
 	if req.Labels != "" {
 		rawLabels := strings.Split(req.Labels, ",")
@@ -98,25 +134,25 @@ func (req *ListPackageRequest) Query() (int, int, map[string]any) {
 			}
 		}
 		if len(labels) > 0 {
-			query["label in ?"] = labels
+			queryMap["label in ?"] = labels
 		}
 	}
 	if req.Version != "" {
-		query["version like ?"] = "%" + req.Version + "%"
+		queryMap["version like ?"] = "%" + req.Version + "%"
 	}
 	if req.BeforeUploadedAt != "" {
 		bft, err := time.Parse(time.RFC3339, req.BeforeUploadedAt)
 		if err == nil {
-			query["uploaded_at < ?"] = bft
+			queryMap["uploaded_at < ?"] = bft
 		}
 	}
 	if req.AfterUploadedAt != "" {
 		act, err := time.Parse(time.RFC3339, req.AfterUploadedAt)
 		if err == nil {
-			query["uploaded_at > ?"] = act
+			queryMap["uploaded_at > ?"] = act
 		}
 	}
-	return page, size, query
+	return queryMap
 }
 
 // PackageStandardOut 程序包基础信息
@@ -137,11 +173,11 @@ type PackageStandardOut struct {
 	UploadedAt string `json:"uploaded_at" example:"2023-01-01 12:00:00"`
 }
 
-// PackageReply 程序包响应结构
-type PackageReply = common.APIReply[PackageStandardOut]
+// PackageResp 程序包响应结构
+type PackageResp = common.APIResp[PackageStandardOut]
 
-// PagPackageReply程序包的分页响应结构
-type PagPackageReply = common.APIReply[*common.Pag[PackageStandardOut]]
+// PagPackageResp程序包的分页响应结构
+type PagPackageResp = common.APIResp[*common.Pag[PackageStandardOut]]
 
 func PackageModelToOutBase(
 	m PackageModel,
@@ -156,13 +192,11 @@ func PackageModelToOutBase(
 }
 
 func ListPkgModelToOut(
-	pms *[]PackageModel,
-) *[]PackageStandardOut {
-	if pms == nil {
-		return &[]PackageStandardOut{}
+	ms []PackageModel,
+) []PackageStandardOut {
+	if len(ms) == 0 {
+		return []PackageStandardOut{}
 	}
-
-	ms := *pms
 	mso := make([]PackageStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
@@ -170,5 +204,5 @@ func ListPkgModelToOut(
 			mso = append(mso, *mo)
 		}
 	}
-	return &mso
+	return mso
 }

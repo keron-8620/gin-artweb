@@ -49,23 +49,18 @@ func JWTAuthMiddleware(c *auth.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set(ctxutil.UserClaimsKey, claims)
+		ctx.Set(ctxutil.JwtClaimsKey, claims)
 		ctx.Next()
 	}
 }
 
 func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		claims, ucErr := ctxutil.GetUserClaims(ctx)
-		if ucErr != nil {
-			logger.Error(
-				"获取用户声明失败",
-				zap.Error(ucErr),
-			)
-			errors.RespondWithError(ctx, ucErr)
+		claims, err := ctxutil.GetJwtClaims(ctx)
+		if err != nil || claims == nil {
+			errors.RespondWithError(ctx, errors.ErrUnauthorized)
 			return
 		}
-
 		role := auth.RoleToSubject(claims.RoleID)
 		fullPath := ctx.FullPath()
 
@@ -75,9 +70,9 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 			logger.Error(
 				"权限校验失败",
 				zap.Error(err),
-				zap.String(auth.SubKey, role),
-				zap.String(auth.ObjKey, fullPath),
-				zap.String(auth.ActKey, ctx.Request.Method),
+				zap.String("sub", role),
+				zap.String("obj", fullPath),
+				zap.String("act", ctx.Request.Method),
 			)
 			errors.RespondWithError(ctx, errors.FromError(err))
 			return
@@ -85,9 +80,9 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 		if !hasPerm {
 			logger.Error(
 				"权限被拒绝",
-				zap.String(auth.SubKey, role),
-				zap.String(auth.ObjKey, fullPath),
-				zap.String(auth.ActKey, ctx.Request.Method),
+				zap.String("sub", role),
+				zap.String("obj", fullPath),
+				zap.String("act", ctx.Request.Method),
 			)
 			errors.RespondWithError(ctx, errors.ErrForbidden)
 			return

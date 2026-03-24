@@ -22,12 +22,12 @@ func NewBcryptHasher(cost int) Hasher {
 func (h *BcryptHasher) Hash(ctx context.Context, data string) (string, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+		return "", errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(data), h.cost)
 	if err != nil {
-		return "", errors.Wrap(err, "Bcrypt生成哈希错误")
+		return "", errors.WrapIf(err, "Bcrypt生成哈希错误")
 	}
 	return string(hashed), nil
 }
@@ -35,7 +35,7 @@ func (h *BcryptHasher) Hash(ctx context.Context, data string) (string, error) {
 func (h *BcryptHasher) Verify(ctx context.Context, data, hash string) (bool, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return false, errors.Wrap(ctx.Err(), "上下文已取消")
+		return false, errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(data))

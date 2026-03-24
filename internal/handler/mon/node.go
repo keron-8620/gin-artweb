@@ -1,7 +1,8 @@
-package service
+package mon
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -10,13 +11,14 @@ import (
 	monmodel "gin-artweb/internal/model/mon"
 	monsvc "gin-artweb/internal/service/mon"
 	"gin-artweb/internal/shared/ctxutil"
-	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
+// NodeHandler 处理mon节点相关的请求
+// 包含日志记录和mon节点服务的引用
 type NodeHandler struct {
-	log     *zap.Logger
-	svcNode *monsvc.MonNodeService
+	log     *zap.Logger            // 日志记录器
+	nodeSvc *monsvc.MonNodeService // mon节点服务
 }
 
 func NewNodeHandler(
@@ -25,58 +27,74 @@ func NewNodeHandler(
 ) *NodeHandler {
 	return &NodeHandler{
 		log:     logger,
-		svcNode: svcNode,
+		nodeSvc: svcNode,
 	}
 }
 
-// @Summary 创建mon节点
-// @Description 本接口用于创建新的mon节点
+// @Summary 新增mon节点
+// @Description 本接口用于新增mon节点
 // @Tags mon节点管理
 // @Accept json
 // @Produce json
-// @Param request body monmodel.CreateOrUpdateMonNodeRequest true "创建mon节点请求"
-// @Success 200 {object} monmodel.MonNodeReply "成功返回mon节点信息"
+// @Param request body monmodel.MonNodeUpsertDTO true "创建mon节点请求"
+// @Success 201 {object} monmodel.MonNodeResp "创建mon节点成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node [post]
 // @Security ApiKeyAuth
 func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
-	var req monmodel.CreateOrUpdateMonNodeRequest
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
+	var req monmodel.MonNodeUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		h.log.Error(
-			"绑定创建mon节点参数失败",
+		log.Error(
+			"新增mon节点：绑定创建mon节点参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	node := monmodel.MonNodeModel{
-		Name:        req.Name,
-		DeployPath:  req.DeployPath,
-		OutportPath: req.OutportPath,
-		JavaHome:    req.JavaHome,
-		URL:         req.URL,
-		HostID:      req.HostID,
-	}
+	log.Info(
+		"创建mon节点：开始执行",
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
+	)
 
-	m, rErr := h.svcNode.CreateMonNode(ctx, node)
+	log.Debug(
+		"创建mon节点：入参详情",
+		zap.Object("mon_node_upsert_dto", &req),
+	)
+
+	createStepStart := time.Now()
+	m, rErr := h.nodeSvc.CreateMonNode(ctx, req)
+	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
-		h.log.Error(
-			"创建mon节点失败",
+		log.Error(
+			"创建mon节点：创建mon节点失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("mon_node_upsert_dto", &req),
+			zap.Duration("create_step_duration", createStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &monmodel.MonNodeReply{
-		Code: http.StatusOK,
+	log.Info(
+		"创建mon节点：创建mon节点成功",
+		zap.Uint32("node_id", m.ID),
+		zap.String("name", m.Name),
+		zap.Duration("create_step_duration", createStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	ctx.JSON(http.StatusCreated, &monmodel.MonNodeResp{
+		Code: http.StatusCreated,
 		Data: *monmodel.MonNodeToDetailOut(*m),
 	})
 }
@@ -87,63 +105,81 @@ func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "mon节点编号"
-// @Param request body monmodel.CreateOrUpdateMonNodeRequest true "更新mon节点请求"
-// @Success 200 {object} monmodel.MonNodeReply "成功返回mon节点信息"
+// @Param request body monmodel.MonNodeUpsertDTO true "更新mon节点请求"
+// @Success 200 {object} monmodel.MonNodeResp "更新mon节点成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mon节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node/{id} [put]
 // @Security ApiKeyAuth
 func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		h.log.Error(
-			"绑定更新mon节点ID参数失败",
+		log.Error(
+			"更新mon节点：绑定mon节点ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	var req monmodel.CreateOrUpdateMonNodeRequest
+	var req monmodel.MonNodeUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		h.log.Error(
-			"绑定更新mon节点参数失败",
+		log.Error(
+			"更新mon节点：绑定更新mon节点参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	data := map[string]any{
-		"name":         req.Name,
-		"deploy_path":  req.DeployPath,
-		"outport_path": req.OutportPath,
-		"java_home":    req.JavaHome,
-		"url":          req.URL,
-		"host_id":      req.HostID,
-	}
+	log.Info(
+		"更新mon节点：开始执行",
+		zap.Uint32("node_id", uri.ID),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
+	)
 
-	m, rErr := h.svcNode.UpdateMonNodeByID(ctx, uri.ID, data)
+	log.Debug(
+		"更新mon节点：入参详情",
+		zap.Uint32("node_id", uri.ID),
+		zap.Object("mon_node_upsert_dto", &req),
+	)
+
+	updateStepStart := time.Now()
+	m, rErr := h.nodeSvc.UpdateMonNodeByID(ctx, uri.ID, req)
+	updateStepDuration := time.Since(updateStepStart)
 	if rErr != nil {
-		h.log.Error(
-			"更新mon节点失败",
+		log.Error(
+			"更新mon节点：更新mon节点失败",
 			zap.Error(rErr),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("node_id", uri.ID),
+			zap.Object("mon_node_upsert_dto", &req),
+			zap.Duration("update_step_duration", updateStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &monmodel.MonNodeReply{
+	log.Info(
+		"更新mon节点：更新mon节点成功",
+		zap.Uint32("node_id", uri.ID),
+		zap.String("name", m.Name),
+		zap.Duration("update_step_duration", updateStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	ctx.JSON(http.StatusOK, &monmodel.MonNodeResp{
 		Code: http.StatusOK,
 		Data: *monmodel.MonNodeToDetailOut(*m),
 	})
@@ -155,104 +191,121 @@ func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "mon节点编号"
-// @Success 200 {object} commodel.MapAPIReply "删除成功"
+// @Success 200 {object} commodel.MapAPIResp "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mon节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node/{id} [delete]
 // @Security ApiKeyAuth
 func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		h.log.Error(
-			"绑定删除mon节点ID参数失败",
+		log.Error(
+			"删除mon节点：绑定mon节点ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始删除mon节点",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"删除mon节点：开始执行",
+		zap.Uint32("node_id", uri.ID),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	if rErr := h.svcNode.DeleteMonNodeByID(ctx, uri.ID); rErr != nil {
-		h.log.Error(
-			"删除mon节点失败",
+	deleteStepStart := time.Now()
+	if rErr := h.nodeSvc.DeleteMonNodeByID(ctx, uri.ID); rErr != nil {
+		log.Error(
+			"删除mon节点：删除mon节点失败",
 			zap.Error(rErr),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("node_id", uri.ID),
+			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+	deleteStepDuration := time.Since(deleteStepStart)
 
-	h.log.Info(
-		"删除mon节点成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"删除mon节点：删除mon节点成功",
+		zap.Uint32("node_id", uri.ID),
+		zap.Duration("delete_step_duration", deleteStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataReply.Code, commodel.NoDataReply)
+	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
-// @Summary 查询mon节点详情
-// @Description 本接口用于查询指定ID的mon节点详情
+// @Summary 查询mon节点
+// @Description 本接口用于查询指定ID的mon节点
 // @Tags mon节点管理
 // @Accept json
 // @Produce json
 // @Param id path uint true "mon节点编号"
-// @Success 200 {object} monmodel.MonNodeReply "成功返回mon节点信息"
+// @Success 200 {object} monmodel.MonNodeResp "获取mon节点详情成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mon节点未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node/{id} [get]
 // @Security ApiKeyAuth
 func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		h.log.Error(
-			"绑定查询mon节点ID参数失败",
+		log.Error(
+			"查询mon节点：绑定mon节点ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始查询mon节点详情",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询mon节点：开始执行",
+		zap.Uint32("node_id", uri.ID),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	m, rErr := h.svcNode.FindMonNodeByID(ctx, []string{"Host"}, uri.ID)
+	findStepStart := time.Now()
+	m, rErr := h.nodeSvc.FindMonNodeByID(ctx, []string{"Host"}, uri.ID)
+	findStepDuration := time.Since(findStepStart)
 	if rErr != nil {
-		h.log.Error(
-			"查询mon节点详情失败",
+		log.Error(
+			"查询mon节点：查询失败",
 			zap.Error(rErr),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("node_id", uri.ID),
+			zap.Duration("find_step_duration", findStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"查询mon节点详情成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询mon节点：查询mon节点成功",
+		zap.Uint32("node_id", uri.ID),
+		zap.String("name", m.Name),
+		zap.Duration("find_step_duration", findStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mo := monmodel.MonNodeToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &monmodel.MonNodeReply{
+	ctx.JSON(http.StatusOK, &monmodel.MonNodeResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -263,62 +316,69 @@ func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
 // @Tags mon节点管理
 // @Accept json
 // @Produce json
-// @Param request query monmodel.ListMonNodeRequest false "查询参数"
-// @Success 200 {object} monmodel.PagMonNodeReply "成功返回mon节点列表"
+// @Param request query monmodel.ListMonNodeDTO false "查询参数"
+// @Success 200 {object} monmodel.PagMonNodeResp "成功返回mon节点列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node [get]
 // @Security ApiKeyAuth
 func (h *NodeHandler) ListMonNode(ctx *gin.Context) {
-	var req monmodel.ListMonNodeRequest
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
+	var req monmodel.ListMonNodeDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		h.log.Error(
-			"绑定查询mon节点列表参数失败",
+		log.Error(
+			"查询mon节点列表：绑定参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始查询mon节点列表",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询mon节点列表：开始执行",
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	page, size, query := req.Query()
-	qp := database.QueryParams{
-		Preloads: []string{"Host"},
-		IsCount:  true,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"id DESC"},
-		Query:    query,
-	}
-	total, ms, rErr := h.svcNode.ListMonNode(ctx, qp)
+	log.Debug(
+		"查询mon节点列表：参数详情",
+		zap.Object("list_mon_node_dto", &req),
+	)
+
+	listStepStart := time.Now()
+	page, size := req.StandardModelQuery.GetPageParam()
+	total, ms, rErr := h.nodeSvc.ListMonNode(ctx, page, size, req)
+	listStepDuration := time.Since(listStepStart)
 	if rErr != nil {
-		h.log.Error(
-			"查询mon节点列表失败",
+		log.Error(
+			"查询mon节点列表：查询mon节点列表失败",
 			zap.Error(rErr),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Int("page", page),
+			zap.Int("size", size),
+			zap.Object("list_mon_node_dto", &req),
+			zap.Duration("list_step_duration", listStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"查询mon节点列表成功",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询mon节点列表：查询mon节点列表成功",
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Int64("total", total),
+		zap.Duration("list_step_duration", listStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mbs := monmodel.ListMonNodeToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &monmodel.PagMonNodeReply{
+	ctx.JSON(http.StatusOK, &monmodel.PagMonNodeResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

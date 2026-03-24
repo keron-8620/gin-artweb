@@ -20,7 +20,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 
 	// 前置检查
 	if options.Context.Err() != nil {
-		return errors.Wrap(options.Context.Err(), "tar.gz压缩:上下文检查失败")
+		return errors.WrapIf(options.Context.Err(), "tar.gz压缩:上下文检查失败")
 	}
 	if src == "" || dst == "" {
 		return errors.New("源路径/目标路径不能为空")
@@ -69,25 +69,25 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 		// 先关闭 tarWriter，确保所有 tar 条目都被正确写入和结束
 		if tarWriter != nil {
 			if closeErr := tarWriter.Close(); closeErr != nil {
-				closeErrors = append(closeErrors, errors.Wrap(closeErr, "关闭tar写入器失败"))
+				closeErrors = append(closeErrors, errors.WrapIf(closeErr, "关闭tar写入器失败"))
 			}
 		}
 
 		// 再关闭 gzipWriter，确保所有压缩数据都被写入
 		if gzWriter != nil {
 			if closeErr := gzWriter.Close(); closeErr != nil {
-				closeErrors = append(closeErrors, errors.Wrap(closeErr, "关闭gzip写入器失败"))
+				closeErrors = append(closeErrors, errors.WrapIf(closeErr, "关闭gzip写入器失败"))
 			}
 		}
 
 		// 再刷新缓冲区
 		if flushErr := bufferedWriter.Flush(); flushErr != nil {
-			closeErrors = append(closeErrors, errors.Wrap(flushErr, "刷新缓冲区失败"))
+			closeErrors = append(closeErrors, errors.WrapIf(flushErr, "刷新缓冲区失败"))
 		}
 
 		// 最后关闭目标文件
 		if closeErr := dstFile.Close(); closeErr != nil {
-			closeErrors = append(closeErrors, errors.Wrap(closeErr, "关闭目标文件失败"))
+			closeErrors = append(closeErrors, errors.WrapIf(closeErr, "关闭目标文件失败"))
 		}
 
 		// 如果有关闭错误且主操作成功，则返回第一个关闭错误
@@ -99,7 +99,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 	// 初始化压缩写入器
 	gzWriter, wErr := gzip.NewWriterLevel(bufferedWriter, options.CompressionLevel)
 	if wErr != nil {
-		return errors.Wrap(wErr, "创建gzip写入器失败")
+		return errors.WrapIf(wErr, "创建gzip写入器失败")
 	}
 	tarWriter = tar.NewWriter(gzWriter)
 
@@ -173,7 +173,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 	}
 
 	if processErr != nil {
-		return errors.Wrap(processErr, "tar.gz压缩失败")
+		return errors.WrapIf(processErr, "tar.gz压缩失败")
 	}
 
 	return nil
@@ -183,7 +183,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 func processTarEntry(filePath, baseDir string, info os.FileInfo, tarWriter *tar.Writer, fileCount *int, totalSize *int64, options ArchiveOptions) error {
 	// 上下文检查
 	if options.Context.Err() != nil {
-		return errors.Wrap(options.Context.Err(), "处理单个tar条目:上下文检查失败")
+		return errors.WrapIf(options.Context.Err(), "处理单个tar条目:上下文检查失败")
 	}
 
 	// 跳过基础目录
@@ -254,7 +254,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 
 	// 前置检查
 	if options.Context.Err() != nil {
-		return errors.Wrap(options.Context.Err(), "tar.gz解压:上下文检查失败")
+		return errors.WrapIf(options.Context.Err(), "tar.gz解压:上下文检查失败")
 	}
 	if src == "" || dst == "" {
 		return errors.New("源路径/目标路径不能为空")
@@ -287,7 +287,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 
 	for {
 		if options.Context.Err() != nil {
-			return errors.Wrap(options.Context.Err(), "tar.gz解压遍历文件:上下文检查失败")
+			return errors.WrapIf(options.Context.Err(), "tar.gz解压遍历文件:上下文检查失败")
 		}
 
 		header, err := tarReader.Next()
@@ -295,7 +295,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 			break
 		}
 		if err != nil {
-			return errors.Wrap(err, "读取tar条目失败")
+			return errors.WrapIf(err, "读取tar条目失败")
 		}
 
 		fileCount++
@@ -347,7 +347,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 
 		// 创建父目录
 		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
-			return 0, errors.Wrap(err, "创建父目录失败")
+			return 0, errors.WrapIf(err, "创建父目录失败")
 		}
 
 		// 写入文件
@@ -362,7 +362,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 
 		file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode)
 		if err != nil {
-			return 0, errors.Wrap(err, "创建目标文件失败")
+			return 0, errors.WrapIf(err, "创建目标文件失败")
 		}
 		defer closeWithError(file, "关闭目标文件失败")
 
@@ -386,7 +386,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 
 		// 确保父目录存在
 		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
-			return 0, errors.Wrap(err, "创建符号链接父目录失败")
+			return 0, errors.WrapIf(err, "创建符号链接父目录失败")
 		}
 
 		if !options.FollowSymlinks {
@@ -409,7 +409,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 	options := applyOptions(opts...)
 
 	if options.Context.Err() != nil {
-		return "", errors.Wrap(options.Context.Err(), "校验 tar.gz 文件是否只包含一个顶层目录:上下文检查失败")
+		return "", errors.WrapIf(options.Context.Err(), "校验 tar.gz 文件是否只包含一个顶层目录:上下文检查失败")
 	}
 
 	srcFile, err := os.Open(src)
@@ -430,7 +430,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 
 	for {
 		if options.Context.Err() != nil {
-			return "", errors.Wrap(options.Context.Err(), "遍历tar文件条目:上下文检查失败")
+			return "", errors.WrapIf(options.Context.Err(), "遍历tar文件条目:上下文检查失败")
 		}
 
 		header, err := tarReader.Next()
@@ -438,7 +438,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 			break
 		}
 		if err != nil {
-			return "", errors.Wrap(err, "读取tar条目失败")
+			return "", errors.WrapIf(err, "读取tar条目失败")
 		}
 
 		// 提取顶层目录
@@ -479,7 +479,7 @@ func TarGzStream(src io.Reader, dst io.Writer, fileName string, opts ...ArchiveO
 
 	// 前置检查
 	if options.Context.Err() != nil {
-		return errors.Wrap(options.Context.Err(), "tar.gz流压缩:上下文检查失败")
+		return errors.WrapIf(options.Context.Err(), "tar.gz流压缩:上下文检查失败")
 	}
 	if src == nil || dst == nil {
 		return errors.New("源/目标流不能为空")
@@ -492,13 +492,13 @@ func TarGzStream(src io.Reader, dst io.Writer, fileName string, opts ...ArchiveO
 	var buffer bytes.Buffer
 	_, err := safeCopy(options.Context, &buffer, src, options.MaxFileSize, options.BufferSize)
 	if err != nil {
-		return errors.Wrap(err, "读取流数据失败")
+		return errors.WrapIf(err, "读取流数据失败")
 	}
 
 	// 创建gzip写入器
 	gzWriter, err := gzip.NewWriterLevel(dst, options.CompressionLevel)
 	if err != nil {
-		return errors.Wrap(err, "创建gzip写入器失败")
+		return errors.WrapIf(err, "创建gzip写入器失败")
 	}
 
 	// 创建tar写入器
@@ -526,13 +526,13 @@ func TarGzStream(src io.Reader, dst io.Writer, fileName string, opts ...ArchiveO
 
 	// 写入tar头
 	if err := tarWriter.WriteHeader(header); err != nil {
-		return errors.Wrap(err, "写入tar头失败")
+		return errors.WrapIf(err, "写入tar头失败")
 	}
 
 	// 复制内容
 	_, err = buffer.WriteTo(tarWriter)
 	if err != nil {
-		return errors.Wrap(err, "复制流内容失败")
+		return errors.WrapIf(err, "复制流内容失败")
 	}
 
 	return nil
@@ -544,7 +544,7 @@ func UntarGzStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error {
 
 	// 前置检查
 	if options.Context.Err() != nil {
-		return errors.Wrap(options.Context.Err(), "tar.gz流解压:上下文检查失败")
+		return errors.WrapIf(options.Context.Err(), "tar.gz流解压:上下文检查失败")
 	}
 	if src == nil || dst == nil {
 		return errors.New("源/目标流不能为空")
@@ -553,7 +553,7 @@ func UntarGzStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error {
 	// 创建gzip读取器
 	gzReader, err := gzip.NewReader(src)
 	if err != nil {
-		return errors.Wrap(err, "创建gzip读取器失败")
+		return errors.WrapIf(err, "创建gzip读取器失败")
 	}
 	defer closeWithError(gzReader, "关闭gzip读取器失败")
 
@@ -566,13 +566,13 @@ func UntarGzStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error {
 		return errors.New("tar.gz流为空")
 	}
 	if err != nil {
-		return errors.Wrap(err, "读取tar条目失败")
+		return errors.WrapIf(err, "读取tar条目失败")
 	}
 
 	// 复制内容
 	_, err = safeCopy(options.Context, dst, tarReader, options.MaxFileSize, options.BufferSize)
 	if err != nil {
-		return errors.Wrap(err, "复制流内容失败")
+		return errors.WrapIf(err, "复制流内容失败")
 	}
 
 	return nil

@@ -16,6 +16,9 @@ import (
 //	Remove(context.Background(), "/tmp/test.txt") // 删除文件
 //	Remove(context.Background(), "/tmp/empty_dir") // 删除空目录
 func Remove(ctx context.Context, filePath string) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
 	if err := ValidatePath(ctx, filePath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}

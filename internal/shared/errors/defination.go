@@ -57,13 +57,9 @@ var (
 	ErrSSHKeyDeployFailed  = FromReason(ReasonSSHKeyDeployFailed)  // ssh密钥部署失败
 
 	// 上传下载文件
-	ErrUploadFileNotFound            = FromReason(ReasonUploadFileNotFound)            // 上传文件不存在
-	ErrUploadFileTooLarge            = FromReason(ReasonUploadFileTooLarge)            // 上传文件过大
-	ErrSaveUploadFileFailed          = FromReason(ReasonSaveUploadFileFailed)          // 保存上传文件失败
-	ErrSetUploadFilePermissionFailed = FromReason(ReasonSetUploadFilePermissionFailed) // 设置上传文件权限失败
-	ErrDownloadFileNotFound          = FromReason(ReasonDownloadFileNotFound)          // 下载文件不存在
-	ErrDownloadFilePermissionDenied  = FromReason(ReasonDownloadFilePermissionDenied)  // 下载文件权限被拒绝
-	ErrDownloadFileFailed            = FromReason(ReasonDownloadFileFailed)            // 下载文件失败
+	ErrDownloadFileNotFound         = FromReason(ReasonDownloadFileNotFound)         // 下载文件不存在
+	ErrDownloadFilePermissionDenied = FromReason(ReasonDownloadFilePermissionDenied) // 下载文件权限被拒绝
+	ErrDownloadFileFailed           = FromReason(ReasonDownloadFileFailed)           // 下载文件失败
 
 	// 压缩解压文件
 	ErrUnZIPFailed       = FromReason(ReasonUnZIPFailed)       // 解压文件失败
@@ -77,8 +73,15 @@ var (
 	ErrDeleteCacheFileFailed = FromReason(ReasonDeleteCacheFileFailed) // 缓存文件删除失败
 
 	// 脚本相关
-	ErrScriptNotFound    = FromReason(ReasonScriptNotFound)    // 脚本不存在
-	ErrScriptIsBuiltin   = FromReason(ReasonScriptIsBuiltin)   // 脚本为内置脚本
-	ErrScriptIsDisabled  = FromReason(ReasonScriptIsDisabled)  // 脚本已禁用
-	ErrScriptLogNotFound = FromReason(ReasonScriptLogNotFound) // 脚本日志不存在
+	ErrScriptNotFound     = FromReason(ReasonScriptNotFound)     // 脚本不存在
+	ErrScriptIsBuiltin    = FromReason(ReasonScriptIsBuiltin)    // 脚本为内置脚本
+	ErrScriptIsDisabled   = FromReason(ReasonScriptIsDisabled)   // 脚本已禁用
+	ErrScriptLogNotFound  = FromReason(ReasonScriptLogNotFound)  // 脚本日志不存在
+	ErrScriptSaveFailed   = FromReason(ReasonScriptSaveFailed)   // 脚本保存失败
+	ErrScriptRemoveFailed = FromReason(ReasonScriptRemoveFailed) // 脚本删除失败
+
+	// 程序包相关
+	ErrPackageNotFound     = FromReason(ReasonPackageNotFound)     // 程序包不存在
+	ErrPackageSaveFailed   = FromReason(ReasonPackageSaveFailed)   // 程序包保存失败
+	ErrPackageRemoveFailed = FromReason(ReasonPackageRemoveFailed) // 程序包删除失败
 )

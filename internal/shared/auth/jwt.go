@@ -7,6 +7,7 @@ import (
 	emperror "emperror.dev/errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/shared/errors"
 )
@@ -25,8 +26,16 @@ type UserInfo struct {
 	IsStaff  bool   `json:"isf"` // 是否是工作人员
 }
 
-// UserClaims 用户Claims
-type UserClaims struct {
+func (u *UserInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("user_id", u.UserID)
+	enc.AddString("username", u.Username)
+	enc.AddUint32("role_id", u.RoleID)
+	enc.AddBool("is_staff", u.IsStaff)
+	return nil
+}
+
+// JwtClaims 用户Claims
+type JwtClaims struct {
 	jwt.RegisteredClaims
 	UserInfo
 	Type TokenType `json:"typ"` // 令牌类型
@@ -68,9 +77,9 @@ func NewJWTConfig(
 	}
 }
 
-func newUserClaims(c *JWTConfig, u UserInfo, tt TokenType) UserClaims {
+func NewUserClaims(c *JWTConfig, u UserInfo, tt TokenType) JwtClaims {
 	now := time.Now()
-	return UserClaims{
+	return JwtClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    c.Issuer,
 			Subject:   u.Username,
@@ -89,7 +98,7 @@ func NewAccessJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error)
 	if ctx.Err() != nil {
 		return "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
 	}
-	claims := newUserClaims(c, u, TokenTypeAccess)
+	claims := NewUserClaims(c, u, TokenTypeAccess)
 	token := jwt.NewWithClaims(c.AccessMethod, claims)
 	tokenString, err := token.SignedString(c.AccessSecret)
 	if err != nil {
@@ -103,7 +112,7 @@ func NewRefreshJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error
 	if ctx.Err() != nil {
 		return "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
 	}
-	claims := newUserClaims(c, u, TokenTypeRefresh)
+	claims := NewUserClaims(c, u, TokenTypeRefresh)
 	token := jwt.NewWithClaims(c.RefreshMethod, claims)
 	tokenString, err := token.SignedString(c.RefreshSecret)
 	if err != nil {
@@ -113,13 +122,13 @@ func NewRefreshJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error
 }
 
 // ParseAccessToken 解析并验证JWT令牌
-func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*UserClaims, *errors.Error) {
+func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&UserClaims{},
+		&JwtClaims{},
 		func(token *jwt.Token) (any, error) {
 			return c.AccessSecret, nil
 		},
@@ -129,7 +138,7 @@ func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*U
 		return nil, errors.ErrTokenInvalid
 	}
 
-	if claims, ok := token.Claims.(*UserClaims); ok && claims != nil && token.Valid {
+	if claims, ok := token.Claims.(*JwtClaims); ok && claims != nil && token.Valid {
 		if claims.Type != TokenTypeAccess {
 			return nil, errors.ErrTokenTypeMismatch
 		}
@@ -140,13 +149,13 @@ func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*U
 }
 
 // ParseRefreshToken 解析并验证刷新JWT令牌
-func ParseRefreshToken(ctx context.Context, c *JWTConfig, tokenString string) (*UserClaims, *errors.Error) {
+func ParseRefreshToken(ctx context.Context, c *JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&UserClaims{},
+		&JwtClaims{},
 		func(token *jwt.Token) (any, error) {
 			return c.RefreshSecret, nil
 		},
@@ -156,7 +165,7 @@ func ParseRefreshToken(ctx context.Context, c *JWTConfig, tokenString string) (*
 		return nil, errors.ErrTokenInvalid
 	}
 
-	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
 		if claims.Type != TokenTypeRefresh {
 			return nil, errors.ErrTokenTypeMismatch
 		}

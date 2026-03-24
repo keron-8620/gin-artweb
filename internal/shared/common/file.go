@@ -13,6 +13,86 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
+// func CheckUploadFile(upFile *multipart.FileHeader, maxSize int64) *errors.Error {
+// 	if upFile.Size > maxSize {
+// 		logger.Error(
+// 			"上传的程序包文件过大",
+// 			zap.Int64("file_size", upFile.Size),
+// 			zap.Int64("max_size", maxSize),
+// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+// 		)
+// 		return errors.ErrUploadFileTooLarge.WithFields(
+// 			map[string]any{
+// 				"file_size": upFile.Size,
+// 				"max_size":  maxSize,
+// 			},
+// 		)
+// 	}
+// }
+
+// func UploadFile(
+// 	ctx context.Context,
+// 	logger *zap.Logger,
+// 	upFile *multipart.FileHeader,
+// 	savePath string,
+// 	mode os.FileMode,
+// ) *errors.Error {
+// 	src, err := upFile.Open()
+// 	if err != nil {
+// 		logger.Error(
+// 			"打开上传文件失败",
+// 			zap.Error(err),
+// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+// 		)
+// 		return errors.FromError(err)
+// 	}
+// 	defer src.Close()
+
+// 	if err = os.MkdirAll(filepath.Dir(savePath), 0o750); err != nil {
+// 		logger.Error(
+// 			"创建上传文件目录失败",
+// 			zap.Error(err),
+// 			zap.String("save_path", savePath),
+// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+// 		)
+// 		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
+// 	}
+
+// 	out, err := os.Create(savePath)
+// 	if err != nil {
+// 		logger.Error(
+// 			"创建上传文件失败",
+// 			zap.Error(err),
+// 			zap.String("save_path", savePath),
+// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+// 		)
+// 		return errors.FromError(err)
+// 	}
+// 	defer out.Close()
+
+// 	if _, err = io.Copy(out, src); err != nil {
+// 		logger.Error(
+// 			"复制上传文件失败",
+// 			zap.Error(err),
+// 			zap.String("save_path", savePath),
+// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+// 		)
+// 		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
+// 	}
+
+// 	if err := os.Chmod(savePath, mode); err != nil {
+// 		logger.Error(
+// 			"设置文件权限失败",
+// 			zap.Error(err),
+// 			zap.String("save_path", savePath),
+// 			zap.String("file_perm", mode.String()),
+// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
+// 		)
+// 		return errors.ErrSetUploadFilePermissionFailed.WithCause(err)
+// 	}
+// 	return nil
+// }
+
 func UploadFile(
 	ctx *gin.Context,
 	logger *zap.Logger,
@@ -28,7 +108,7 @@ func UploadFile(
 			zap.Int64("max_size", maxSize),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrUploadFileTooLarge.WithFields(
+		return errors.ErrUnknown.WithFields(
 			map[string]any{
 				"file_size": upFile.Size,
 				"max_size":  maxSize,
@@ -43,7 +123,7 @@ func UploadFile(
 			zap.String("save_path", savePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
+		return errors.ErrUnknown.WithCause(err)
 	}
 
 	if err := ctx.SaveUploadedFile(upFile, savePath); err != nil {
@@ -53,7 +133,7 @@ func UploadFile(
 			zap.String("save_path", savePath),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
+		return errors.ErrUnknown.WithCause(err)
 	}
 
 	if err := os.Chmod(savePath, filePerm); err != nil {
@@ -64,7 +144,7 @@ func UploadFile(
 			zap.String("file_perm", filePerm.String()),
 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
-		return errors.ErrSetUploadFilePermissionFailed.WithCause(err)
+		return errors.ErrUnknown.WithCause(err)
 	}
 	return nil
 }

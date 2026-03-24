@@ -55,73 +55,88 @@ func (vs *OesNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// CreateOrUpdateOesNodeRequest 用于创建oes节点的请求结构体
+// OesNodeUpsertDTO 用于创建oes节点的请求结构体
 //
-// swagger:model CreateOrUpdateOesNodeRequest
-type CreateOrUpdateOesNodeRequest struct {
+// swagger:model OesNodeUpsertDTO
+type OesNodeUpsertDTO struct {
 	// 节点角色
-	// required: true
-	// example: "01"
 	NodeRole string `json:"node_role" form:"node_role" binding:"required,oneof=master follow arbiter"`
 
 	// 是否启用
-	// required: true
-	// example: true
 	IsEnable bool `json:"is_enable" form:"is_enable"`
 
 	// oes集群ID
-	// required: true
-	// example: 1
 	OesColonyID uint32 `json:"oes_colony_id" form:"oes_colony_id" binding:"required"`
 
 	// 主机ID
-	// required: true
-	// example: 1
 	HostID uint32 `json:"host_id" form:"host_id" binding:"required"`
 }
 
-// ListOesNodeRequest 用于获取oes节点列表的请求结构体
+func (dto OesNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("node_role", dto.NodeRole)
+	enc.AddBool("is_enable", dto.IsEnable)
+	enc.AddUint32("oes_colony_id", dto.OesColonyID)
+	enc.AddUint32("host_id", dto.HostID)
+	return nil
+}
+
+func (dto OesNodeUpsertDTO) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"node_role":     dto.NodeRole,
+		"is_enable":     dto.IsEnable,
+		"oes_colony_id": dto.OesColonyID,
+		"host_id":       dto.HostID,
+	}
+}
+
+// ListOesNodeDTO 用于获取oes节点列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListOesNodeRequest
-type ListOesNodeRequest struct {
+// swagger:model ListOesNodeDTO
+type ListOesNodeDTO struct {
 	common.StandardModelQuery
 
 	// 节点角色
-	// example: "master"
 	NodeRole string `form:"node_role"`
 
 	// 是否启用
-	// required: false
-	// example: true
 	IsEnable *bool `form:"is_enable"`
 
 	// oes集群ID
-	// required: false
-	// example: 1
 	OesColonyID uint32 `form:"oes_colony_id"`
 
 	// 主机ID
-	// required: false
-	// example: 1
 	HostID uint32 `form:"host_id"`
 }
 
-func (req *ListOesNodeRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(12)
-	if req.NodeRole != "" {
-		query["NodeRole = ?"] = req.NodeRole
+func (dto *ListOesNodeDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
 	}
-	if req.IsEnable != nil {
-		query["is_enable = ?"] = *req.IsEnable
+	enc.AddString("node_role", dto.NodeRole)
+	if dto.IsEnable != nil {
+		enc.AddBool("is_enable", *dto.IsEnable)
 	}
-	if req.OesColonyID > 0 {
-		query["oes_colony_id = ?"] = req.OesColonyID
+	enc.AddUint32("oes_colony_id", dto.OesColonyID)
+	enc.AddUint32("host_id", dto.HostID)
+	return nil
+}
+
+func (dto *ListOesNodeDTO) ToQueryMap() map[string]any {
+	queryMap := dto.StandardModelQuery.ToQueryMap(12)
+	if dto.NodeRole != "" {
+		queryMap["node_role = ?"] = dto.NodeRole
 	}
-	if req.HostID > 0 {
-		query["host_id = ?"] = req.HostID
+	if dto.IsEnable != nil {
+		queryMap["is_enable = ?"] = *dto.IsEnable
 	}
-	return page, size, query
+	if dto.OesColonyID > 0 {
+		queryMap["oes_colony_id = ?"] = dto.OesColonyID
+	}
+	if dto.HostID > 0 {
+		queryMap["host_id = ?"] = dto.HostID
+	}
+	return queryMap
 }
 
 type OesNodeBaseOut struct {
@@ -147,11 +162,11 @@ type OesNodeDetailOut struct {
 	Host      *resource.HostBaseOut `json:"host"`
 }
 
-// OesNodeReply 程序包响应结构
-type OesNodeReply = common.APIReply[OesNodeDetailOut]
+// OesNodeResp 程序包响应结构
+type OesNodeResp = common.APIResp[OesNodeDetailOut]
 
-// PagOesNodeReply 程序包的分页响应结构
-type PagOesNodeReply = common.APIReply[*common.Pag[OesNodeDetailOut]]
+// PagOesNodeResp 程序包的分页响应结构
+type PagOesNodeResp = common.APIResp[*common.Pag[OesNodeDetailOut]]
 
 func OesNodeToBaseOut(
 	m OesNodeModel,
@@ -184,13 +199,11 @@ func OesNodeToDetailOut(
 }
 
 func ListOesNodeToDetailOut(
-	rms *[]OesNodeModel,
-) *[]OesNodeDetailOut {
-	if rms == nil {
-		return &[]OesNodeDetailOut{}
+	ms []OesNodeModel,
+) []OesNodeDetailOut {
+	if len(ms) == 0 {
+		return []OesNodeDetailOut{}
 	}
-
-	ms := *rms
 	mso := make([]OesNodeDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
@@ -198,5 +211,5 @@ func ListOesNodeToDetailOut(
 			mso = append(mso, *mo)
 		}
 	}
-	return &mso
+	return mso
 }

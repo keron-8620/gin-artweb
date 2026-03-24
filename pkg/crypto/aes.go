@@ -20,7 +20,7 @@ type aesCipher struct {
 func NewAESCipher(key []byte, iv ...[]byte) (Cipher, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "AES创建加密器错误")
+		return nil, errors.WrapIf(err, "AES创建加密器错误")
 	}
 	// 设置IV，默认生成随机IV
 	actualIV := make([]byte, aes.BlockSize)
@@ -29,7 +29,7 @@ func NewAESCipher(key []byte, iv ...[]byte) (Cipher, error) {
 	} else {
 		// 生成随机IV
 		if _, err := rand.Read(actualIV); err != nil {
-			return nil, errors.Wrap(err, "生成随机IV错误")
+			return nil, errors.WrapIf(err, "生成随机IV错误")
 		}
 	}
 
@@ -44,7 +44,7 @@ func NewAESCipher(key []byte, iv ...[]byte) (Cipher, error) {
 func (a *aesCipher) Encrypt(ctx context.Context, plaintext string) (string, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+		return "", errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	plainBytes := []byte(plaintext)
@@ -68,13 +68,13 @@ func (a *aesCipher) Encrypt(ctx context.Context, plaintext string) (string, erro
 func (a *aesCipher) Decrypt(ctx context.Context, ciphertext string) (string, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+		return "", errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	// 解码base64字符串
 	cipherBytes, err := a.DecodeString(ciphertext)
 	if err != nil {
-		return "", errors.Wrap(err, "AES解密解码错误")
+		return "", errors.WrapIf(err, "AES解密解码错误")
 	}
 
 	// CBC模式解密
@@ -91,7 +91,7 @@ func (a *aesCipher) Decrypt(ctx context.Context, ciphertext string) (string, err
 	// 去除PKCS7填充
 	plainBytes, err = pkcs7Unpadding(plainBytes)
 	if err != nil {
-		return "", errors.Wrap(err, "AES解密去填充错误")
+		return "", errors.WrapIf(err, "AES解密去填充错误")
 	}
 
 	return string(plainBytes), nil

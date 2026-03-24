@@ -2,11 +2,11 @@ package common
 
 import "net/http"
 
-// APIReply 通用响应结构体
+// APIResp 通用响应结构体
 // 用于封装API返回的数据格式
 //
-// swagger:model APIReply
-type APIReply[T any] struct {
+// swagger:model APIResp
+type APIResp[T any] struct {
 	// 状态码
 	// Example: 200
 	Code int `json:"code"`
@@ -36,10 +36,10 @@ type Pag[T any] struct {
 	// Example: 10
 	Pages int64 `json:"pages" example:"10"`
 	// 对象数组
-	Items *[]T `json:"items"`
+	Items []T `json:"items"`
 }
 
-func NewPag[T any](page, size int, total int64, items *[]T) *Pag[T] {
+func NewPag[T any](page, size int, total int64, items []T) *Pag[T] {
 	var pages int64
 	if total == 0 || size <= 0 {
 		pages = 1
@@ -56,7 +56,7 @@ func NewPag[T any](page, size int, total int64, items *[]T) *Pag[T] {
 	}
 }
 
-type MapAPIReply struct {
+type MapAPIResp struct {
 	// 状态码
 	// Example: 200
 	Code int `json:"code"`
@@ -68,7 +68,7 @@ type MapAPIReply struct {
 	Data map[string]any `json:"data"`
 }
 
-var NoDataReply = MapAPIReply{
+var NoDataResp = MapAPIResp{
 	Code: http.StatusOK,
 	Msg:  "",
 	Data: map[string]any{},

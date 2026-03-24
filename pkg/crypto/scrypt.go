@@ -45,19 +45,19 @@ func NewScryptHasherWithParams(saltLen, n, r, p, keyLen int, encodeFmt string) H
 func (h *ScryptHasher) Hash(ctx context.Context, data string) (string, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "上下文已取消")
+		return "", errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	// 生成随机盐值
 	salt := make([]byte, h.saltLen)
 	if _, err := rand.Read(salt); err != nil {
-		return "", errors.Wrap(err, "生成盐值错误")
+		return "", errors.WrapIf(err, "生成盐值错误")
 	}
 
 	// 生成哈希
 	hash, err := scrypt.Key([]byte(data), salt, h.n, h.r, h.p, h.keyLen)
 	if err != nil {
-		return "", errors.Wrap(err, "Scrypt密钥生成错误")
+		return "", errors.WrapIf(err, "Scrypt密钥生成错误")
 	}
 
 	// 将盐值和哈希值组合
@@ -73,7 +73,7 @@ func (h *ScryptHasher) Hash(ctx context.Context, data string) (string, error) {
 func (h *ScryptHasher) Verify(ctx context.Context, data, hash string) (bool, error) {
 	// 检查context是否已取消
 	if ctx.Err() != nil {
-		return false, errors.Wrap(ctx.Err(), "上下文已取消")
+		return false, errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
 	// 解码哈希值
@@ -87,7 +87,7 @@ func (h *ScryptHasher) Verify(ctx context.Context, data, hash string) (bool, err
 	}
 
 	if err != nil {
-		return false, errors.Wrap(err, "解码哈希错误")
+		return false, errors.WrapIf(err, "解码哈希错误")
 	}
 
 	// 提取盐值和哈希部分
@@ -101,7 +101,7 @@ func (h *ScryptHasher) Verify(ctx context.Context, data, hash string) (bool, err
 	// 使用相同参数重新计算哈希
 	computedHash, err := scrypt.Key([]byte(data), salt, h.n, h.r, h.p, h.keyLen)
 	if err != nil {
-		return false, errors.Wrap(err, "Scrypt密钥生成错误")
+		return false, errors.WrapIf(err, "Scrypt密钥生成错误")
 	}
 
 	// 比较哈希值

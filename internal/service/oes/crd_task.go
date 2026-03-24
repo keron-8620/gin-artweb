@@ -3,91 +3,59 @@ package oes
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
-	jobsmodel "gin-artweb/internal/model/jobs"
+	jobmodel "gin-artweb/internal/model/job"
 	oesmodel "gin-artweb/internal/model/oes"
+	oesrepo "gin-artweb/internal/repo/oes"
+	jobsvc "gin-artweb/internal/service/job"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
+	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type CrdTaskRecordCache struct {
-	ColonyNum         string
-	Mon               uint32
-	CounterFetch      uint32
-	CounterDistribute uint32
-	Sse               uint32
-	Szse              uint32
-	Csde              uint32
-	SseLate           uint32
-	SzseLate          uint32
+type CrdTaskService struct {
+	log        *zap.Logger
+	recordSvc  *jobsvc.RecordService
+	colonyRepo *oesrepo.OesColonyRepo
 }
 
-func (mc CrdTaskRecordCache) GetTaskList() []string {
-	return []string{"mon", "counter_fetch", "counter_distribute", "sse", "szse", "csde", "szse_late", "sse_late"}
-}
-
-func (mc CrdTaskRecordCache) GetRecordIDs() []uint32 {
-	return []uint32{mc.Mon, mc.CounterFetch, mc.CounterDistribute, mc.Sse, mc.Szse, mc.Csde, mc.SseLate, mc.SzseLate}
-}
-
-func (mc CrdTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	for i, task := range mc.GetTaskList() {
-		enc.AddUint32(task, mc.GetRecordIDs()[i])
-	}
-	return nil
-}
-
-type CrdTaskExecutionInfo struct {
-	ColonyNum         string
-	Mon               *jobsmodel.ScriptRecordModel
-	CounterFetch      *jobsmodel.ScriptRecordModel
-	CounterDistribute *jobsmodel.ScriptRecordModel
-	Sse               *jobsmodel.ScriptRecordModel
-	Szse              *jobsmodel.ScriptRecordModel
-	Csdc              *jobsmodel.ScriptRecordModel
-	SseLate           *jobsmodel.ScriptRecordModel
-	SzseLate          *jobsmodel.ScriptRecordModel
-}
-
-type CrdTaskExecutionInfoUsecase struct {
-	log      *zap.Logger
-	ucRecord *JobsService
-}
-
-func NewCrdTaskExecutionInfoUsecase(
+func NewCrdTaskService(
 	log *zap.Logger,
-	ucRecord *JobsService,
-) *CrdTaskExecutionInfoUsecase {
-	return &CrdTaskExecutionInfoUsecase{
-		log:      log,
-		ucRecord: ucRecord,
+	recordSvc *jobsvc.RecordService,
+	colonyRepo *oesrepo.OesColonyRepo,
+) *CrdTaskService {
+	return &CrdTaskService{
+		log:        log,
+		recordSvc:  recordSvc,
+		colonyRepo: colonyRepo,
 	}
 }
 
-func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
+func (s *CrdTaskService) BuildTaskExecutionInfos(
 	ctx context.Context,
-	ms []oesmodel.OesColonyModel,
-) (*[]CrdTaskExecutionInfo, *errors.Error) {
+	dto oesmodel.ListOesColonyDTO,
+) ([]oesmodel.CrdColonyTaskExecutionInfo, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
-
-	// 过滤出两融类型的oes集群
-	var crdModels []oesmodel.OesColonyModel
-	for _, m := range ms {
-		if m.SystemType == "CRD" {
-			crdModels = append(crdModels, m)
-		}
+	log := ctxutil.NewLogger(s.log, ctx)
+	qp := database.QueryParams{
+		Preloads: nil,
+		OrderBy:  []string{"id DESC"},
+		Query:    dto.ToQueryMap(),
 	}
-
-	// 获取集群的执行记录,统计执行记录id
-	trs := make([]CrdTaskRecordCache, len(crdModels))
-	for i, m := range crdModels {
-		tr, err := uc.LoadCrdTaskRecordCacheFromFiles(ctx, m.ColonyNum)
+	ms, err := s.colonyRepo.ListModel(ctx, qp)
+	if err != nil {
+		return nil, errors.NewGormError(err, qp.Query)
+	}
+	trs := make([]oesmodel.CrdColonyTaskRecordIDs, len(ms))
+	for i, m := range ms {
+		tr, err := loadCrdTaskRecordCacheFromFiles(log, m.ColonyNum)
 		if err != nil {
 			return nil, errors.FromError(err)
 		}
@@ -95,151 +63,88 @@ func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 			trs[i] = *tr
 		}
 	}
-	recoids, rErr := uc.ExtractValidRecordIDsFromCaches(ctx, trs)
-	if rErr != nil {
-		return nil, rErr
-	}
-
-	// 执行数据库查询，获取集群对应的执行记录
-	cache, rErr := uc.ucRecord.FindRecordsByIDs(ctx, recoids)
-	if rErr != nil {
-		return nil, rErr
-	}
-	tasks := make([]CrdTaskExecutionInfo, len(trs))
-	for i, tr := range trs {
-		info, err := uc.BuildTaskExecutionInfo(ctx, tr, cache)
-		if err != nil {
-			return nil, err
-		}
-		tasks[i] = info
-	}
-	return &tasks, nil
-}
-
-func (uc *CrdTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
-	ctx context.Context,
-	tr CrdTaskRecordCache,
-	cache map[uint32]jobsmodel.ScriptRecordModel,
-) (CrdTaskExecutionInfo, *errors.Error) {
-	if ctx.Err() != nil {
-		return CrdTaskExecutionInfo{}, errors.FromError(ctx.Err())
-	}
-	return CrdTaskExecutionInfo{
-		ColonyNum:         tr.ColonyNum,
-		Mon:               uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Mon, tr.ColonyNum, "mon"),
-		CounterFetch:      uc.ucRecord.FindRecordsByMap(ctx, cache, tr.CounterFetch, tr.ColonyNum, "counter_fetch"),
-		CounterDistribute: uc.ucRecord.FindRecordsByMap(ctx, cache, tr.CounterDistribute, tr.ColonyNum, "counter_distribute"),
-		Sse:               uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Sse, tr.ColonyNum, "sse"),
-		Szse:              uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Szse, tr.ColonyNum, "szse"),
-		Csdc:              uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Csde, tr.ColonyNum, "csde"),
-		SseLate:           uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Sse, tr.ColonyNum, "sse_late"),
-		SzseLate:          uc.ucRecord.FindRecordsByMap(ctx, cache, tr.Szse, tr.ColonyNum, "szse_late"),
-	}, nil
-}
-
-func (uc *CrdTaskExecutionInfoUsecase) ExtractValidRecordIDsFromCaches(
-	ctx context.Context,
-	trs []CrdTaskRecordCache,
-) ([]uint32, *errors.Error) {
-	if ctx.Err() != nil {
-		return nil, errors.FromError(ctx.Err())
-	}
-
 	var recordIDs []uint32
 	for _, tr := range trs {
-		if tr.Mon != 0 {
-			recordIDs = append(recordIDs, tr.Mon)
+		recordIDs = append(recordIDs, tr.GetValidRecordIDs()...)
+	}
+	records, rErr := s.recordSvc.ListScriptRecordByIDs(ctx, nil, recordIDs)
+	if rErr != nil {
+		return nil, rErr
+	}
+	cache := make(map[uint32]jobmodel.ScriptRecordModel, len(records))
+	for _, r := range records {
+		cache[r.ID] = r
+	}
+
+	tasks := make([]oesmodel.CrdColonyTaskExecutionInfo, len(trs))
+	for i, tr := range trs {
+		if ctx.Err() != nil {
+			return nil, errors.FromError(ctx.Err())
 		}
-		if tr.CounterFetch != 0 {
-			recordIDs = append(recordIDs, tr.CounterFetch)
-		}
-		if tr.CounterDistribute != 0 {
-			recordIDs = append(recordIDs, tr.CounterDistribute)
-		}
-		if tr.Sse != 0 {
-			recordIDs = append(recordIDs, tr.Sse)
-		}
-		if tr.Szse != 0 {
-			recordIDs = append(recordIDs, tr.Szse)
-		}
-		if tr.Csde != 0 {
-			recordIDs = append(recordIDs, tr.Csde)
-		}
-		if tr.SseLate != 0 {
-			recordIDs = append(recordIDs, tr.SseLate)
-		}
-		if tr.SzseLate != 0 {
-			recordIDs = append(recordIDs, tr.SzseLate)
+		tasks[i] = oesmodel.CrdColonyTaskExecutionInfo{
+			ColonyNum:         tr.ColonyNum,
+			Mon:               jobsvc.GetRecordIDByMap(cache, tr.Mon),
+			CounterFetch:      jobsvc.GetRecordIDByMap(cache, tr.CounterFetch),
+			CounterDistribute: jobsvc.GetRecordIDByMap(cache, tr.CounterDistribute),
+			Sse:               jobsvc.GetRecordIDByMap(cache, tr.Sse),
+			Szse:              jobsvc.GetRecordIDByMap(cache, tr.Szse),
+			Csdc:              jobsvc.GetRecordIDByMap(cache, tr.Csdc),
+			SseLate:           jobsvc.GetRecordIDByMap(cache, tr.SseLate),
+			SzseLate:          jobsvc.GetRecordIDByMap(cache, tr.SzseLate),
 		}
 	}
-	return recordIDs, nil
+	return tasks, nil
 }
 
-func (uc *CrdTaskExecutionInfoUsecase) LoadCrdTaskRecordCacheFromFiles(
-	ctx context.Context,
+func loadCrdTaskRecordCacheFromFiles(
+	log *zap.Logger,
 	colonyNum string,
-) (*CrdTaskRecordCache, *errors.Error) {
-	if ctx.Err() != nil {
-		return nil, errors.FromError(ctx.Err())
-	}
-	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
-	var (
-		getTaskIDErr      error
-		mon               uint32
-		counterFetch      uint32
-		counterDistribute uint32
-		sse               uint32
-		szse              uint32
-		csde              uint32
-		sseLate           uint32
-		szseLate          uint32
+) (*oesmodel.CrdColonyTaskRecordIDs, *errors.Error) {
+	startTime := time.Now()
+
+	log.Info(
+		"读取crd任务状态对应的执行记录id：开始执行",
+		zap.String("colony_num", colonyNum),
 	)
-	mon, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".mon"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
+
+	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
+	mc := oesmodel.CrdColonyTaskRecordIDs{
+		ColonyNum: colonyNum,
 	}
-	counterFetch, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".counter_fetch"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
+
+	// 定义任务映射表，减少代码重复
+	taskMap := map[string]*uint32{
+		"mon":                &mc.Mon,
+		"counter_fetch":      &mc.CounterFetch,
+		"counter_distribute": &mc.CounterDistribute,
+		"sse":                &mc.Sse,
+		"szse":               &mc.Szse,
+		"csdc":               &mc.Csdc,
+		"sse_late":           &mc.SseLate,
+		"szse_late":          &mc.SzseLate,
 	}
-	counterDistribute, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".counter_distribute"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
+
+	// 遍历处理每个任务
+	for taskName, fieldPtr := range taskMap {
+		flagPath := filepath.Join(flagDir, "."+taskName)
+		if value, err := common.ReadUint32FromFile(flagPath); err != nil {
+			log.Error(
+				"读取crd任务状态对应的执行记录id：获取"+taskName+"任务状态失败",
+				zap.Error(err),
+				zap.String("colony_num", colonyNum),
+				zap.String("task_name", taskName),
+				zap.String("flag_path", flagPath),
+			)
+			return nil, errors.FromError(err)
+		} else {
+			*fieldPtr = value
+		}
 	}
-	sse, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".sse"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	szse, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".szse"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	csde, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".csde"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	sseLate, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".sse_late"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	szseLate, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".szse_late"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	mc := CrdTaskRecordCache{
-		ColonyNum:         colonyNum,
-		Mon:               mon,
-		CounterFetch:      counterFetch,
-		CounterDistribute: counterDistribute,
-		Sse:               sse,
-		Szse:              szse,
-		Csde:              csde,
-		SseLate:           sseLate,
-		SzseLate:          szseLate,
-	}
-	uc.log.Debug(
-		"查询oes两融任务状态对应的执行记录id成功",
-		zap.Object("crd_task_record", mc),
+
+	log.Debug(
+		"读取crd任务状态对应的执行记录id：任务状态读取成功",
+		zap.Object("crd_task_record_ids", &mc),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &mc, nil
 }

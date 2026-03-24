@@ -59,10 +59,10 @@ func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// CreateOrUpdateMonNodeRequest 用于创建mon节点的请求结构体
+// MonNodeUpsertDTO 用于创建mon节点的请求结构体
 //
-// swagger:model CreateOrUpdateMonNodeRequest
-type CreateOrUpdateMonNodeRequest struct {
+// swagger:model MonNodeUpsertDTO
+type MonNodeUpsertDTO struct {
 	// 名称
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
@@ -82,11 +82,32 @@ type CreateOrUpdateMonNodeRequest struct {
 	HostID uint32 `json:"host_id" form:"host_id" binding:"required"`
 }
 
-// ListMonNodeRequest 用于获取mon节点列表的请求结构体
+func (dto *MonNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", dto.Name)
+	enc.AddString("deploy_path", dto.DeployPath)
+	enc.AddString("outport_path", dto.OutportPath)
+	enc.AddString("java_home", dto.JavaHome)
+	enc.AddString("url", dto.URL)
+	enc.AddUint32("host_id", dto.HostID)
+	return nil
+}
+
+func (dto *MonNodeUpsertDTO) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"name":         dto.Name,
+		"deploy_path":  dto.DeployPath,
+		"outport_path": dto.OutportPath,
+		"java_home":    dto.JavaHome,
+		"url":          dto.URL,
+		"host_id":      dto.HostID,
+	}
+}
+
+// ListMonNodeDTO 用于获取mon节点列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListMonNodeRequest
-type ListMonNodeRequest struct {
+// swagger:model ListMonNodeDTO
+type ListMonNodeDTO struct {
 	common.StandardModelQuery
 
 	// 名称
@@ -96,15 +117,24 @@ type ListMonNodeRequest struct {
 	HostID uint32 `form:"host_id"`
 }
 
-func (req *ListMonNodeRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(10)
-	if req.Name != "" {
-		query["name like ?"] = "%" + req.Name + "%"
+func (dto *ListMonNodeDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
 	}
-	if req.HostID > 0 {
-		query["host_id = ?"] = req.HostID
+	enc.AddString("name", dto.Name)
+	enc.AddUint32("host_id", dto.HostID)
+	return nil
+}
+
+func (dto *ListMonNodeDTO) ToQueryMap() map[string]any {
+	queryMap := dto.StandardModelQuery.ToQueryMap(10)
+	if dto.Name != "" {
+		queryMap["name like ?"] = "%" + dto.Name + "%"
 	}
-	return page, size, query
+	if dto.HostID > 0 {
+		queryMap["host_id = ?"] = dto.HostID
+	}
+	return queryMap
 }
 
 type MonNodeBaseOut struct {
@@ -144,11 +174,11 @@ type MonNodeDetailOut struct {
 	Host *resource.HostBaseOut `json:"host"`
 }
 
-// MonNodeReply 程序包响应结构
-type MonNodeReply = common.APIReply[MonNodeDetailOut]
+// MonNodeResp 程序包响应结构
+type MonNodeResp = common.APIResp[MonNodeDetailOut]
 
-// PagMonNodeReply 程序包的分页响应结构
-type PagMonNodeReply = common.APIReply[*common.Pag[MonNodeDetailOut]]
+// PagMonNodeResp 程序包的分页响应结构
+type PagMonNodeResp = common.APIResp[*common.Pag[MonNodeDetailOut]]
 
 func MonNodeToBaseOut(
 	m MonNodeModel,
@@ -183,13 +213,11 @@ func MonNodeToDetailOut(
 }
 
 func ListMonNodeToDetailOut(
-	rms *[]MonNodeModel,
-) *[]MonNodeDetailOut {
-	if rms == nil {
-		return &[]MonNodeDetailOut{}
+	ms []MonNodeModel,
+) []MonNodeDetailOut {
+	if len(ms) == 0 {
+		return []MonNodeDetailOut{}
 	}
-
-	ms := *rms
 	mso := make([]MonNodeDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
@@ -197,5 +225,5 @@ func ListMonNodeToDetailOut(
 			mso = append(mso, *mo)
 		}
 	}
-	return &mso
+	return mso
 }

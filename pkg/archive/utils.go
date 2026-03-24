@@ -56,7 +56,7 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 	for {
 		// 上下文检查（优先退出）
 		if ctx.Err() != nil {
-			return written, errors.Wrap(ctx.Err(), "遍历读取文件块:上下文检查失败")
+			return written, errors.WrapIf(ctx.Err(), "遍历读取文件块:上下文检查失败")
 		}
 
 		n, err := src.Read(buf)
@@ -64,7 +64,7 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 			if err == io.EOF {
 				break
 			}
-			return written, errors.Wrap(err, "读取数据失败")
+			return written, errors.WrapIf(err, "读取数据失败")
 		}
 
 		if n > 0 {
@@ -79,7 +79,7 @@ func safeCopy(ctx context.Context, dst io.Writer, src io.Reader, maxSize int64, 
 			written += int64(nw)
 
 			if writeErr != nil {
-				return written, errors.Wrap(writeErr, "写入数据失败")
+				return written, errors.WrapIf(writeErr, "写入数据失败")
 			}
 
 			if nw != n {
@@ -97,7 +97,7 @@ func closeWithError(closer io.Closer, errMsg string) error {
 		return nil
 	}
 	if err := closer.Close(); err != nil {
-		return errors.Wrap(err, errMsg)
+		return errors.WrapIf(err, errMsg)
 	}
 	return nil
 }

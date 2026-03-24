@@ -24,6 +24,9 @@ type FileInfo struct {
 //	info, _ := ListFileInfo(context.Background(), "/tmp/test")
 //	// 返回 /tmp/test 的所有层级信息
 func ListFileInfo(ctx context.Context, filePath string) (*FileInfo, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, errors.WrapIf(err, "上下文已取消")
+	}
 	if err := ValidatePath(ctx, filePath); err != nil {
 		return nil, errors.WithMessage(err, "路径校验失败")
 	}

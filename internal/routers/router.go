@@ -16,26 +16,25 @@ import (
 
 	"gin-artweb/docs"
 	"gin-artweb/internal/shared/common"
-	"gin-artweb/internal/shared/log"
 	"gin-artweb/internal/shared/middleware"
 )
 
-func NewRouter(loggers *log.Loggers, init *common.Initialize, cronTasks map[string]map[string]string, version, htmlDir string) *gin.Engine {
+func NewRouter(loggers *common.Loggers, init *common.Initialize, version, htmlDir string) *gin.Engine {
 	r := gin.New()
 
 	// 注册链路追踪处理中间件
-	r.Use(middleware.TracingMiddleware(loggers.Service))
+	r.Use(middleware.TracingMiddleware(loggers.Handler))
 
-	// host请求头防护中间件
-	if init.Conf.Security.HostGuard.Enable {
-		r.Use(middleware.HostGuard(loggers.Service, init.Conf.Security.HostGuard.TrustedHosts...))
-	}
-
-	// IP限流中间件
-	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
+	// 注册统一异常处理中间件
+	r.Use(middleware.ErrorMiddleware(loggers.Handler))
 
 	// 注册跨域请求处理中间件
 	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
+
+	// host请求头防护中间件
+	if init.Conf.Security.HostGuard.Enable {
+		r.Use(middleware.HostGuard(loggers.Handler, init.Conf.Security.HostGuard.TrustedHosts...))
+	}
 
 	// 注册时间戳处理中间件,用于防御重放攻击
 	if init.Conf.Security.Timestamp.CheckTimestamp {
@@ -56,18 +55,18 @@ func NewRouter(loggers *log.Loggers, init *common.Initialize, cronTasks map[stri
 		// 设置缓存过期时间为容忍度+未来容忍度，确保过期的nonce自动清除
 		nonceCache := cache.New(defaultExpiration, 1*time.Minute)
 		r.Use(middleware.TimestampMiddleware(
-			nonceCache, loggers.Service,
+			nonceCache, loggers.Handler,
 			int64(tolerance),
 			int64(futureTolerance),
 			defaultExpiration,
 		))
 	}
 
-	// 注册统一异常处理中间件
-	r.Use(middleware.ErrorMiddleware(loggers.Service))
+	// IP限流中间件
+	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
 
 	// 注册超时处理中间件
-	r.Use(middleware.TimeoutMiddleware(time.Duration(init.Conf.Server.Timeout.Request) * time.Second))
+	r.Use(middleware.TimeoutMiddleware(loggers.Handler, time.Duration(init.Conf.Server.Timeout.Request)*time.Second))
 
 	// 配置静态文件处理
 	htmlPath := filepath.Join(htmlDir, "index.html")
@@ -118,11 +117,11 @@ func NewRouter(loggers *log.Loggers, init *common.Initialize, cronTasks map[stri
 	apiRouter := r.Group("/api")
 
 	// 初始化加载业务模块
-	newCustomerRouter(apiRouter, init, loggers)
+	newSysRouter(apiRouter, init, loggers)
 	newResourceRouter(apiRouter, init, loggers)
-	jobsRouter := NewJobsRouter(apiRouter, init, loggers)
+	jobService := NewJobRouter(apiRouter, init, loggers)
 	newMonRouter(apiRouter, init, loggers)
-	newMdsRouter(apiRouter, init, loggers, jobsRouter, cronTasks["mds"])
-	newOesRouter(apiRouter, init, loggers, jobsRouter)
+	newMdsRouter(apiRouter, init, loggers, jobService)
+	newOesRouter(apiRouter, init, loggers, jobService)
 	return r
 }

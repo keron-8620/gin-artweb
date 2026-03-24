@@ -124,7 +124,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回API列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagApiReply"
+                            "$ref": "#/definitions/sys.PagApiResp"
                         }
                     },
                     "400": {
@@ -165,7 +165,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.CreateApiRequest"
+                            "$ref": "#/definitions/sys.CreateApiDTO"
                         }
                     }
                 ],
@@ -173,7 +173,7 @@ const docTemplate = `{
                     "201": {
                         "description": "创建API成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.ApiReply"
+                            "$ref": "#/definitions/sys.ApiResp"
                         }
                     },
                     "400": {
@@ -216,7 +216,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取API详情成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.ApiReply"
+                            "$ref": "#/definitions/sys.ApiResp"
                         }
                     },
                     "400": {
@@ -264,7 +264,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.UpdateApiRequest"
+                            "$ref": "#/definitions/sys.UpdateApiDTO"
                         }
                     }
                 ],
@@ -272,7 +272,7 @@ const docTemplate = `{
                     "200": {
                         "description": "更新API成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.ApiReply"
+                            "$ref": "#/definitions/sys.ApiResp"
                         }
                     },
                     "400": {
@@ -319,7 +319,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -437,7 +437,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回按钮列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagButtonReply"
+                            "$ref": "#/definitions/sys.PagButtonResp"
                         }
                     },
                     "400": {
@@ -478,15 +478,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.CreateButtonRequest"
+                            "$ref": "#/definitions/sys.CreateButtonDTO"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "成功返回按钮信息",
+                        "description": "创建按钮成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.ButtonReply"
+                            "$ref": "#/definitions/sys.ButtonResp"
                         }
                     },
                     "400": {
@@ -533,9 +533,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回按钮信息",
+                        "description": "获取按钮详情成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.ButtonReply"
+                            "$ref": "#/definitions/sys.ButtonResp"
                         }
                     },
                     "400": {
@@ -589,15 +589,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.UpdateButtonRequest"
+                            "$ref": "#/definitions/sys.UpdateButtonDTO"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回按钮信息",
+                        "description": "更新按钮成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.ButtonReply"
+                            "$ref": "#/definitions/sys.ButtonResp"
                         }
                     },
                     "400": {
@@ -650,7 +650,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -696,7 +696,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回菜单权限树",
                         "schema": {
-                            "$ref": "#/definitions/customer.RoleMenuTreeReply"
+                            "$ref": "#/definitions/sys.RoleMenuTreeResp"
                         }
                     },
                     "401": {
@@ -739,7 +739,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.PatchPasswordRequest"
+                            "$ref": "#/definitions/sys.PatchPasswordDTO"
                         }
                     }
                 ],
@@ -747,7 +747,7 @@ const docTemplate = `{
                     "200": {
                         "description": "密码修改成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -853,7 +853,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回用户登录记录列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagLoginRecordReply"
+                            "$ref": "#/definitions/sys.PagLoginRecordResp"
                         }
                     },
                     "400": {
@@ -991,7 +991,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回菜单列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagMenuReply"
+                            "$ref": "#/definitions/sys.PagMenuResp"
                         }
                     },
                     "400": {
@@ -1032,15 +1032,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.CreateMenuRequest"
+                            "$ref": "#/definitions/sys.CreateMenuDTO"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "成功返回菜单信息",
+                    "201": {
+                        "description": "创建菜单成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.MenuReply"
+                            "$ref": "#/definitions/sys.MenuResp"
                         }
                     },
                     "400": {
@@ -1087,9 +1087,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回用户信息",
+                        "description": "获取菜单详情成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.MenuReply"
+                            "$ref": "#/definitions/sys.MenuResp"
                         }
                     },
                     "400": {
@@ -1143,15 +1143,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.UpdateMenuRequest"
+                            "$ref": "#/definitions/sys.UpdateMenuDTO"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回菜单信息",
+                        "description": "更新菜单成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.MenuReply"
+                            "$ref": "#/definitions/sys.MenuResp"
                         }
                     },
                     "400": {
@@ -1204,7 +1204,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -1316,7 +1316,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回角色列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagRoleReply"
+                            "$ref": "#/definitions/sys.PagRoleResp"
                         }
                     },
                     "400": {
@@ -1357,15 +1357,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.CreateOrUpdateRoleRequest"
+                            "$ref": "#/definitions/sys.RoleUpsertDTO"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "成功返回角色信息",
+                        "description": "创建角色成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.RoleReply"
+                            "$ref": "#/definitions/sys.RoleResp"
                         }
                     },
                     "400": {
@@ -1412,9 +1412,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回角色信息",
+                        "description": "获取角色详情成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.RoleReply"
+                            "$ref": "#/definitions/sys.RoleResp"
                         }
                     },
                     "400": {
@@ -1468,15 +1468,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.CreateOrUpdateRoleRequest"
+                            "$ref": "#/definitions/sys.RoleUpsertDTO"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回角色信息",
+                        "description": "更新角色成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.RoleReply"
+                            "$ref": "#/definitions/sys.RoleResp"
                         }
                     },
                     "400": {
@@ -1529,7 +1529,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -1652,7 +1652,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回用户列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagUserReply"
+                            "$ref": "#/definitions/sys.PagUserResp"
                         }
                     },
                     "400": {
@@ -1693,15 +1693,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.CreateUserRequest"
+                            "$ref": "#/definitions/sys.CreateUserDTO"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "成功返回用户信息",
+                        "description": "创建用户成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.UserReply"
+                            "$ref": "#/definitions/sys.UserResp"
                         }
                     },
                     "400": {
@@ -1751,7 +1751,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.ResetPasswordRequest"
+                            "$ref": "#/definitions/sys.ResetPasswordDTO"
                         }
                     }
                 ],
@@ -1759,7 +1759,7 @@ const docTemplate = `{
                     "200": {
                         "description": "密码重置成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -1865,7 +1865,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回用户登录记录列表",
                         "schema": {
-                            "$ref": "#/definitions/customer.PagLoginRecordReply"
+                            "$ref": "#/definitions/sys.PagLoginRecordResp"
                         }
                     },
                     "400": {
@@ -1912,9 +1912,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回用户信息",
+                        "description": "获取用户详情成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.UserReply"
+                            "$ref": "#/definitions/sys.UserResp"
                         }
                     },
                     "400": {
@@ -1968,15 +1968,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.UpdateUserRequest"
+                            "$ref": "#/definitions/sys.UpdateUserDTO"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回用户信息",
+                        "description": "更新用户成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.UserReply"
+                            "$ref": "#/definitions/sys.UserResp"
                         }
                     },
                     "400": {
@@ -2029,7 +2029,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -2157,7 +2157,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回执行记录列表",
                         "schema": {
-                            "$ref": "#/definitions/jobs.PagScriptRecordReply"
+                            "$ref": "#/definitions/job.PagScriptRecordResp"
                         }
                     },
                     "400": {
@@ -2198,7 +2198,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/jobs.CreateScriptRecordRequest"
+                            "$ref": "#/definitions/job.CreateScriptRecordDTO"
                         }
                     }
                 ],
@@ -2206,7 +2206,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回执行记录信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScriptRecordReply"
+                            "$ref": "#/definitions/job.ScriptRecordResp"
                         }
                     },
                     "400": {
@@ -2255,7 +2255,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回执行记录信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScriptRecordReply"
+                            "$ref": "#/definitions/job.ScriptRecordResp"
                         }
                     },
                     "400": {
@@ -2308,7 +2308,7 @@ const docTemplate = `{
                     "200": {
                         "description": "终止信号",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     }
                 }
@@ -2466,6 +2466,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "description": "创建类型",
+                        "name": "create_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
                         "description": "唯一标识",
                         "name": "id",
                         "in": "query"
@@ -2519,7 +2525,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回计划任务列表",
                         "schema": {
-                            "$ref": "#/definitions/jobs.PagScheduleReply"
+                            "$ref": "#/definitions/job.PagScheduleResp"
                         }
                     },
                     "400": {
@@ -2560,7 +2566,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/jobs.CreateScheduleRequest"
+                            "$ref": "#/definitions/job.ScheduleUpsertDTO"
                         }
                     }
                 ],
@@ -2568,7 +2574,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回计划任务信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScheduleReply"
+                            "$ref": "#/definitions/job.ScheduleResp"
                         }
                     },
                     "400": {
@@ -2617,7 +2623,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回计划任务信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScheduleReply"
+                            "$ref": "#/definitions/job.ScheduleResp"
                         }
                     },
                     "400": {
@@ -2671,7 +2677,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/jobs.UpdateScheduleRequest"
+                            "$ref": "#/definitions/job.ScheduleUpsertDTO"
                         }
                     }
                 ],
@@ -2679,7 +2685,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回计划任务信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScheduleReply"
+                            "$ref": "#/definitions/job.ScheduleResp"
                         }
                     },
                     "400": {
@@ -2732,7 +2738,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -2785,12 +2791,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "after_updated_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "参数介绍",
-                        "name": "args_descr",
                         "in": "query"
                     },
                     {
@@ -2886,7 +2886,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回脚本列表",
                         "schema": {
-                            "$ref": "#/definitions/jobs.PagScriptReply"
+                            "$ref": "#/definitions/job.PagScriptResp"
                         }
                     },
                     "400": {
@@ -2966,7 +2966,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回脚本信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScriptReply"
+                            "$ref": "#/definitions/job.ScriptResp"
                         }
                     },
                     "400": {
@@ -3019,12 +3019,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "after_updated_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "参数介绍",
-                        "name": "args_descr",
                         "in": "query"
                     },
                     {
@@ -3120,7 +3114,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回标签列表",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ListLableReply"
+                            "$ref": "#/definitions/job.ListProjectResp"
                         }
                     },
                     "400": {
@@ -3167,12 +3161,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "更新时间之后的记录 (RFC3339格式)\nexample: 2023-01-01T00:00:00Z",
                         "name": "after_updated_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "参数介绍",
-                        "name": "args_descr",
                         "in": "query"
                     },
                     {
@@ -3268,7 +3256,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回项目列表",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ListProjectReply"
+                            "$ref": "#/definitions/job.ListProjectResp"
                         }
                     },
                     "400": {
@@ -3317,7 +3305,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回脚本信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScriptReply"
+                            "$ref": "#/definitions/job.ScriptResp"
                         }
                     },
                     "400": {
@@ -3410,7 +3398,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回脚本信息",
                         "schema": {
-                            "$ref": "#/definitions/jobs.ScriptReply"
+                            "$ref": "#/definitions/job.ScriptResp"
                         }
                     },
                     "400": {
@@ -3469,7 +3457,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -3568,7 +3556,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.LoginRequest"
+                            "$ref": "#/definitions/sys.LoginDTO"
                         }
                     }
                 ],
@@ -3576,7 +3564,7 @@ const docTemplate = `{
                     "200": {
                         "description": "登录成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.LoginReply"
+                            "$ref": "#/definitions/sys.LoginResp"
                         }
                     },
                     "400": {
@@ -3657,7 +3645,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds集群列表",
                         "schema": {
-                            "$ref": "#/definitions/mds.PagMdsColonyReply"
+                            "$ref": "#/definitions/mds.PagMdsColonyResp"
                         }
                     },
                     "400": {
@@ -3698,7 +3686,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mds.CreateOrUpdateMdsColonyRequest"
+                            "$ref": "#/definitions/mds.MdsColonyUpsertDTO"
                         }
                     }
                 ],
@@ -3706,7 +3694,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds集群信息",
                         "schema": {
-                            "$ref": "#/definitions/mds.MdsColonyReply"
+                            "$ref": "#/definitions/mds.MdsColonyResp"
                         }
                     },
                     "400": {
@@ -3828,7 +3816,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds集群列表的任务状态",
                         "schema": {
-                            "$ref": "#/definitions/mds.ListMdsTasksInfoReply"
+                            "$ref": "#/definitions/mds.ListMdsTasksInfoResp"
                         }
                     },
                     "400": {
@@ -3877,7 +3865,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds集群信息",
                         "schema": {
-                            "$ref": "#/definitions/mds.MdsColonyReply"
+                            "$ref": "#/definitions/mds.MdsColonyResp"
                         }
                     },
                     "400": {
@@ -3931,7 +3919,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mds.CreateOrUpdateMdsColonyRequest"
+                            "$ref": "#/definitions/mds.MdsColonyUpsertDTO"
                         }
                     }
                 ],
@@ -3939,7 +3927,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds集群信息",
                         "schema": {
-                            "$ref": "#/definitions/mds.MdsColonyReply"
+                            "$ref": "#/definitions/mds.MdsColonyResp"
                         }
                     },
                     "400": {
@@ -3992,7 +3980,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -4114,7 +4102,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds节点列表",
                         "schema": {
-                            "$ref": "#/definitions/mds.PagMdsNodeReply"
+                            "$ref": "#/definitions/mds.PagMdsNodeResp"
                         }
                     },
                     "400": {
@@ -4155,7 +4143,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mds.CreateOrUpdateMdsNodeRequest"
+                            "$ref": "#/definitions/mds.MdsNodeUpsertDTO"
                         }
                     }
                 ],
@@ -4163,7 +4151,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds节点信息",
                         "schema": {
-                            "$ref": "#/definitions/mds.MdsNodeReply"
+                            "$ref": "#/definitions/mds.MdsNodeResp"
                         }
                     },
                     "400": {
@@ -4212,7 +4200,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds节点信息",
                         "schema": {
-                            "$ref": "#/definitions/mds.MdsNodeReply"
+                            "$ref": "#/definitions/mds.MdsNodeResp"
                         }
                     },
                     "400": {
@@ -4266,7 +4254,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mds.CreateOrUpdateMdsNodeRequest"
+                            "$ref": "#/definitions/mds.MdsNodeUpsertDTO"
                         }
                     }
                 ],
@@ -4274,7 +4262,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mds节点信息",
                         "schema": {
-                            "$ref": "#/definitions/mds.MdsNodeReply"
+                            "$ref": "#/definitions/mds.MdsNodeResp"
                         }
                     },
                     "400": {
@@ -4327,7 +4315,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -4382,7 +4370,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回配置文件列表",
                         "schema": {
-                            "$ref": "#/definitions/mds.PagMdsConfReply"
+                            "$ref": "#/definitions/mds.PagMdsConfResp"
                         }
                     },
                     "400": {
@@ -4445,7 +4433,7 @@ const docTemplate = `{
                     "200": {
                         "description": "上传成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -4566,7 +4554,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -4670,7 +4658,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回mon节点列表",
                         "schema": {
-                            "$ref": "#/definitions/mon.PagMonNodeReply"
+                            "$ref": "#/definitions/mon.PagMonNodeResp"
                         }
                     },
                     "400": {
@@ -4693,7 +4681,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于创建新的mon节点",
+                "description": "本接口用于新增mon节点",
                 "consumes": [
                     "application/json"
                 ],
@@ -4703,7 +4691,7 @@ const docTemplate = `{
                 "tags": [
                     "mon节点管理"
                 ],
-                "summary": "创建mon节点",
+                "summary": "新增mon节点",
                 "parameters": [
                     {
                         "description": "创建mon节点请求",
@@ -4711,15 +4699,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mon.CreateOrUpdateMonNodeRequest"
+                            "$ref": "#/definitions/mon.MonNodeUpsertDTO"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "成功返回mon节点信息",
+                    "201": {
+                        "description": "创建mon节点成功",
                         "schema": {
-                            "$ref": "#/definitions/mon.MonNodeReply"
+                            "$ref": "#/definitions/mon.MonNodeResp"
                         }
                     },
                     "400": {
@@ -4744,7 +4732,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于查询指定ID的mon节点详情",
+                "description": "本接口用于查询指定ID的mon节点",
                 "consumes": [
                     "application/json"
                 ],
@@ -4754,7 +4742,7 @@ const docTemplate = `{
                 "tags": [
                     "mon节点管理"
                 ],
-                "summary": "查询mon节点详情",
+                "summary": "查询mon节点",
                 "parameters": [
                     {
                         "type": "integer",
@@ -4766,9 +4754,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回mon节点信息",
+                        "description": "获取mon节点详情成功",
                         "schema": {
-                            "$ref": "#/definitions/mon.MonNodeReply"
+                            "$ref": "#/definitions/mon.MonNodeResp"
                         }
                     },
                     "400": {
@@ -4822,15 +4810,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mon.CreateOrUpdateMonNodeRequest"
+                            "$ref": "#/definitions/mon.MonNodeUpsertDTO"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回mon节点信息",
+                        "description": "更新mon节点成功",
                         "schema": {
-                            "$ref": "#/definitions/mon.MonNodeReply"
+                            "$ref": "#/definitions/mon.MonNodeResp"
                         }
                     },
                     "400": {
@@ -4883,7 +4871,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -5023,7 +5011,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes集群列表",
                         "schema": {
-                            "$ref": "#/definitions/oes.PagOesColonyReply"
+                            "$ref": "#/definitions/oes.PagOesColonyResp"
                         }
                     },
                     "400": {
@@ -5064,7 +5052,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/oes.CreateOrUpdateOesColonyRequest"
+                            "$ref": "#/definitions/oes.OesColonyUpsertDTO"
                         }
                     }
                 ],
@@ -5072,7 +5060,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes集群信息",
                         "schema": {
-                            "$ref": "#/definitions/oes.OesColonyReply"
+                            "$ref": "#/definitions/oes.OesColonyResp"
                         }
                     },
                     "400": {
@@ -5206,7 +5194,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes两融集群列表的任务状态",
                         "schema": {
-                            "$ref": "#/definitions/oes.ListOesTasksInfoReply"
+                            "$ref": "#/definitions/oes.ListOesTasksInfoResp"
                         }
                     },
                     "400": {
@@ -5340,7 +5328,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes期权集群列表的任务状态",
                         "schema": {
-                            "$ref": "#/definitions/oes.ListOesTasksInfoReply"
+                            "$ref": "#/definitions/oes.ListOesTasksInfoResp"
                         }
                     },
                     "400": {
@@ -5474,7 +5462,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes现货集群列表的任务状态",
                         "schema": {
-                            "$ref": "#/definitions/oes.ListOesTasksInfoReply"
+                            "$ref": "#/definitions/oes.ListOesTasksInfoResp"
                         }
                     },
                     "400": {
@@ -5523,7 +5511,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes集群信息",
                         "schema": {
-                            "$ref": "#/definitions/oes.OesColonyReply"
+                            "$ref": "#/definitions/oes.OesColonyResp"
                         }
                     },
                     "400": {
@@ -5577,7 +5565,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/oes.CreateOrUpdateOesColonyRequest"
+                            "$ref": "#/definitions/oes.OesColonyUpsertDTO"
                         }
                     }
                 ],
@@ -5585,7 +5573,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes集群信息",
                         "schema": {
-                            "$ref": "#/definitions/oes.OesColonyReply"
+                            "$ref": "#/definitions/oes.OesColonyResp"
                         }
                     },
                     "400": {
@@ -5638,7 +5626,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -5707,7 +5695,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "主机ID\nrequired: false\nexample: 1",
+                        "description": "主机ID",
                         "name": "host_id",
                         "in": "query"
                     },
@@ -5726,19 +5714,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "是否启用\nrequired: false\nexample: true",
+                        "description": "是否启用",
                         "name": "is_enable",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "节点角色\nexample: \"master\"",
+                        "description": "节点角色",
                         "name": "node_role",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "oes集群ID\nrequired: false\nexample: 1",
+                        "description": "oes集群ID",
                         "name": "oes_colony_id",
                         "in": "query"
                     },
@@ -5760,7 +5748,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes节点列表",
                         "schema": {
-                            "$ref": "#/definitions/oes.PagOesNodeReply"
+                            "$ref": "#/definitions/oes.PagOesNodeResp"
                         }
                     },
                     "400": {
@@ -5801,7 +5789,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/oes.CreateOrUpdateOesNodeRequest"
+                            "$ref": "#/definitions/oes.OesNodeUpsertDTO"
                         }
                     }
                 ],
@@ -5809,7 +5797,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes节点信息",
                         "schema": {
-                            "$ref": "#/definitions/oes.OesNodeReply"
+                            "$ref": "#/definitions/oes.OesNodeResp"
                         }
                     },
                     "400": {
@@ -5858,7 +5846,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes节点信息",
                         "schema": {
-                            "$ref": "#/definitions/oes.OesNodeReply"
+                            "$ref": "#/definitions/oes.OesNodeResp"
                         }
                     },
                     "400": {
@@ -5912,7 +5900,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/oes.CreateOrUpdateOesNodeRequest"
+                            "$ref": "#/definitions/oes.OesNodeUpsertDTO"
                         }
                     }
                 ],
@@ -5920,7 +5908,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回oes节点信息",
                         "schema": {
-                            "$ref": "#/definitions/oes.OesNodeReply"
+                            "$ref": "#/definitions/oes.OesNodeResp"
                         }
                     },
                     "400": {
@@ -5973,7 +5961,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -6028,7 +6016,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回配置文件列表",
                         "schema": {
-                            "$ref": "#/definitions/oes.PagOesConfReply"
+                            "$ref": "#/definitions/oes.PagOesConfResp"
                         }
                     },
                     "400": {
@@ -6091,7 +6079,7 @@ const docTemplate = `{
                     "200": {
                         "description": "上传成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -6212,7 +6200,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -6250,7 +6238,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/customer.RefreshTokenRequest"
+                            "$ref": "#/definitions/sys.RefreshTokenDTO"
                         }
                     }
                 ],
@@ -6258,7 +6246,7 @@ const docTemplate = `{
                     "200": {
                         "description": "刷新令牌成功",
                         "schema": {
-                            "$ref": "#/definitions/customer.LoginReply"
+                            "$ref": "#/definitions/sys.LoginResp"
                         }
                     },
                     "400": {
@@ -6289,7 +6277,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于查询主机配置信息列表",
+                "description": "本接口用于查询主机列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -6404,7 +6392,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回主机列表",
                         "schema": {
-                            "$ref": "#/definitions/resource.PagHostReply"
+                            "$ref": "#/definitions/resource.PagHostResp"
                         }
                     },
                     "400": {
@@ -6427,11 +6415,9 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于创建新的主机配置信息",
+                "description": "本接口用于新增主机",
                 "consumes": [
-                    "application/json",
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -6439,7 +6425,7 @@ const docTemplate = `{
                 "tags": [
                     "主机管理"
                 ],
-                "summary": "创建主机",
+                "summary": "新增主机",
                 "parameters": [
                     {
                         "description": "创建主机请求",
@@ -6447,7 +6433,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.CreateOrUpdateHosrRequest"
+                            "$ref": "#/definitions/resource.HostUpsertDTO"
                         }
                     }
                 ],
@@ -6455,7 +6441,7 @@ const docTemplate = `{
                     "201": {
                         "description": "创建主机成功",
                         "schema": {
-                            "$ref": "#/definitions/resource.HostReply"
+                            "$ref": "#/definitions/resource.HostResp"
                         }
                     },
                     "400": {
@@ -6480,7 +6466,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于查询指定ID的主机详细信息",
+                "description": "本接口用于查询指定ID的主机",
                 "consumes": [
                     "application/json"
                 ],
@@ -6490,7 +6476,7 @@ const docTemplate = `{
                 "tags": [
                     "主机管理"
                 ],
-                "summary": "查询主机详情",
+                "summary": "查询主机",
                 "parameters": [
                     {
                         "type": "integer",
@@ -6504,7 +6490,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取主机详情成功",
                         "schema": {
-                            "$ref": "#/definitions/resource.HostReply"
+                            "$ref": "#/definitions/resource.HostResp"
                         }
                     },
                     "400": {
@@ -6533,11 +6519,9 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于更新指定ID的主机配置信息",
+                "description": "本接口用于更新指定ID的主机",
                 "consumes": [
-                    "application/json",
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -6560,7 +6544,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.CreateOrUpdateHosrRequest"
+                            "$ref": "#/definitions/resource.HostUpsertDTO"
                         }
                     }
                 ],
@@ -6568,7 +6552,7 @@ const docTemplate = `{
                     "200": {
                         "description": "更新主机成功",
                         "schema": {
-                            "$ref": "#/definitions/resource.HostReply"
+                            "$ref": "#/definitions/resource.HostResp"
                         }
                     },
                     "400": {
@@ -6597,7 +6581,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于删除指定ID的主机配置信息",
+                "description": "本接口用于删除指定ID的主机",
                 "consumes": [
                     "application/json"
                 ],
@@ -6621,7 +6605,7 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
@@ -6731,7 +6715,7 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回程序包列表",
                         "schema": {
-                            "$ref": "#/definitions/resource.PagPackageReply"
+                            "$ref": "#/definitions/resource.PagPackageResp"
                         }
                     },
                     "400": {
@@ -6792,7 +6776,7 @@ const docTemplate = `{
                     "201": {
                         "description": "成功返回程序包信息",
                         "schema": {
-                            "$ref": "#/definitions/resource.PackageReply"
+                            "$ref": "#/definitions/resource.PackageResp"
                         }
                     },
                     "400": {
@@ -6824,12 +6808,11 @@ const docTemplate = `{
                 "tags": [
                     "程序包管理"
                 ],
-                "summary": "查询程序包详情",
+                "summary": "查询程序包",
                 "parameters": [
                     {
                         "type": "integer",
-                        "format": "int32",
-                        "description": "程序包唯一标识符",
+                        "description": "程序包编号",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -6839,11 +6822,17 @@ const docTemplate = `{
                     "200": {
                         "description": "成功返回程序包详情",
                         "schema": {
-                            "$ref": "#/definitions/resource.PackageReply"
+                            "$ref": "#/definitions/resource.PackageResp"
                         }
                     },
                     "400": {
                         "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "程序包未找到",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -6873,8 +6862,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "format": "int32",
-                        "description": "程序包唯一标识符",
+                        "description": "程序包编号",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -6884,11 +6872,17 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/common.MapAPIReply"
+                            "$ref": "#/definitions/common.MapAPIResp"
                         }
                     },
                     "400": {
                         "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "程序包未找到",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -6920,8 +6914,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "format": "int32",
-                        "description": "程序包唯一标识符",
+                        "description": "程序包编号",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -6957,7 +6950,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "common.MapAPIReply": {
+        "common.MapAPIResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -6975,14 +6968,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-customer_ApiStandardOut": {
+        "common.Pag-job_ScheduleDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/customer.ApiStandardOut"
+                        "$ref": "#/definitions/job.ScheduleDetailOut"
                     }
                 },
                 "page": {
@@ -7007,14 +7000,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-customer_ButtonStandardOut": {
+        "common.Pag-job_ScriptRecordDetailOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/customer.ButtonStandardOut"
+                        "$ref": "#/definitions/job.ScriptRecordDetailOut"
                     }
                 },
                 "page": {
@@ -7039,206 +7032,14 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Pag-customer_LoginRecordStandardOut": {
+        "common.Pag-job_ScriptStandardOut": {
             "type": "object",
             "properties": {
                 "items": {
                     "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/customer.LoginRecordStandardOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-customer_MenuStandardOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/customer.MenuStandardOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-customer_RoleStandardOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/customer.RoleStandardOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-customer_UserDetailOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/customer.UserDetailOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-jobs_ScheduleDetailOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/jobs.ScheduleDetailOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-jobs_ScriptRecordDetailOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/jobs.ScriptRecordDetailOut"
-                    }
-                },
-                "page": {
-                    "description": "当前页码\nExample: 1",
-                    "type": "integer",
-                    "example": 1
-                },
-                "pages": {
-                    "description": "总页数\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "size": {
-                    "description": "每页数量\nExample: 10",
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "description": "总记录数\nExample: 100",
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.Pag-jobs_ScriptStandardOut": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "description": "对象数组",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/jobs.ScriptStandardOut"
+                        "$ref": "#/definitions/job.ScriptStandardOut"
                     }
                 },
                 "page": {
@@ -7487,1328 +7288,195 @@ const docTemplate = `{
                 }
             }
         },
-        "common.TaskInfo": {
+        "common.Pag-sys_ApiStandardOut": {
             "type": "object",
             "properties": {
-                "end_time": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.ApiStandardOut"
+                    }
                 },
-                "record_id": {
-                    "description": "执行记录ID(0表示非正常执行的任务)",
-                    "type": "integer"
-                },
-                "start_time": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "status": {
-                    "description": "执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)",
-                    "type": "integer",
-                    "example": 2
-                },
-                "task_name": {
-                    "description": "任务名称",
-                    "type": "string",
-                    "example": "mon"
-                },
-                "trigger_type": {
-                    "description": "触发类型(cron/api,未执行为空)",
-                    "type": "string",
-                    "example": "cron"
-                }
-            }
-        },
-        "customer.ApiReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.ApiStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.ApiStandardOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理权限"
-                },
-                "id": {
-                    "description": "唯一标识",
+                "page": {
+                    "description": "当前页码\nExample: 1",
                     "type": "integer",
                     "example": 1
                 },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "example": "customer"
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
                 },
-                "method": {
-                    "description": "请求方法",
-                    "type": "string",
-                    "example": "GET"
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
                 },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "url": {
-                    "description": "HTTP路径",
-                    "type": "string",
-                    "example": "/api/v1/users"
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
-        "customer.ButtonBaseOut": {
+        "common.Pag-sys_ButtonStandardOut": {
             "type": "object",
             "properties": {
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.ButtonStandardOut"
+                    }
                 },
-                "id": {
-                    "description": "唯一标识",
+                "page": {
+                    "description": "当前页码\nExample: 1",
                     "type": "integer",
                     "example": 1
                 },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "sort": {
-                    "description": "排序字段",
+                "pages": {
+                    "description": "总页数\nExample: 10",
                     "type": "integer",
-                    "example": 1000
+                    "example": 10
+                },
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
-        "customer.ButtonDetailOut": {
+        "common.Pag-sys_LoginRecordStandardOut": {
             "type": "object",
             "properties": {
-                "api_ids": {
-                    "description": "API ID列表",
+                "items": {
+                    "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/sys.LoginRecordStandardOut"
                     }
                 },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
+                "page": {
+                    "description": "当前页码\nExample: 1",
                     "type": "integer",
                     "example": 1
                 },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "menu": {
-                    "description": "菜单",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MenuStandardOut"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "sort": {
-                    "description": "排序字段",
+                "pages": {
+                    "description": "总页数\nExample: 10",
                     "type": "integer",
-                    "example": 1000
+                    "example": 10
                 },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
-        "customer.ButtonReply": {
+        "common.Pag-sys_MenuStandardOut": {
             "type": "object",
             "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
+                "items": {
+                    "description": "对象数组",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.MenuStandardOut"
+                    }
                 },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.ButtonDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.ButtonStandardOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
+                "page": {
+                    "description": "当前页码\nExample: 1",
                     "type": "integer",
                     "example": 1
                 },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "sort": {
-                    "description": "排序字段",
+                "pages": {
+                    "description": "总页数\nExample: 10",
                     "type": "integer",
-                    "example": 1000
+                    "example": 10
                 },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
-        "customer.CreateApiRequest": {
+        "common.Pag-sys_RoleStandardOut": {
             "type": "object",
-            "required": [
-                "id",
-                "label",
-                "method",
-                "url"
-            ],
             "properties": {
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer"
-                },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "method": {
-                    "description": "请求方法",
-                    "type": "string",
-                    "enum": [
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "PATCH",
-                        "WS"
-                    ]
-                },
-                "url": {
-                    "description": "URL地址",
-                    "type": "string",
-                    "maxLength": 150
-                }
-            }
-        },
-        "customer.CreateButtonRequest": {
-            "type": "object",
-            "required": [
-                "id",
-                "is_active",
-                "menu_id",
-                "name",
-                "sort"
-            ],
-            "properties": {
-                "api_ids": {
-                    "description": "API ID列表",
+                "items": {
+                    "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/sys.RoleStandardOut"
                     }
                 },
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer"
-                },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean"
-                },
-                "menu_id": {
-                    "description": "菜单ID",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "sort": {
-                    "description": "排序字段",
-                    "type": "integer"
-                }
-            }
-        },
-        "customer.CreateMenuRequest": {
-            "type": "object",
-            "required": [
-                "component",
-                "id",
-                "meta",
-                "name",
-                "path",
-                "sort"
-            ],
-            "properties": {
-                "api_ids": {
-                    "description": "权限ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "component": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "maxLength": 200
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer"
-                },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean"
-                },
-                "meta": {
-                    "description": "菜单元信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MetaSchemas"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "parent_id": {
-                    "description": "父级菜单ID",
-                    "type": "integer"
-                },
-                "path": {
-                    "description": "前端路由路径",
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "sort": {
-                    "description": "排序字段",
-                    "type": "integer"
-                }
-            }
-        },
-        "customer.CreateOrUpdateRoleRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "api_ids": {
-                    "description": "APIID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "button_ids": {
-                    "description": "按钮ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "menu_ids": {
-                    "description": "菜单ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                }
-            }
-        },
-        "customer.CreateUserRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "role_id",
-                "username"
-            ],
-            "properties": {
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean"
-                },
-                "is_staff": {
-                    "description": "是否是工作人员",
-                    "type": "boolean"
-                },
-                "password": {
-                    "description": "密码",
-                    "type": "string",
-                    "maxLength": 20
-                },
-                "role_id": {
-                    "description": "角色ID",
-                    "type": "integer"
-                },
-                "username": {
-                    "description": "用户名",
-                    "type": "string",
-                    "maxLength": 50
-                }
-            }
-        },
-        "customer.LoginOut": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "description": "登录令牌",
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "description": "刷新令牌",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.LoginRecordStandardOut": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "唯一标识",
+                "page": {
+                    "description": "当前页码\nExample: 1",
                     "type": "integer",
                     "example": 1
                 },
-                "ip_address": {
-                    "description": "IP地址",
-                    "type": "string",
-                    "example": "192.168.1.1"
+                "pages": {
+                    "description": "总页数\nExample: 10",
+                    "type": "integer",
+                    "example": 10
                 },
-                "is_active": {
-                    "description": "登录状态",
-                    "type": "boolean",
-                    "example": true
+                "size": {
+                    "description": "每页数量\nExample: 10",
+                    "type": "integer",
+                    "example": 10
                 },
-                "login_at": {
-                    "description": "登录时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "user_agent": {
-                    "description": "用户浏览器信息",
-                    "type": "string",
-                    "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
-                },
-                "username": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "judgement"
+                "total": {
+                    "description": "总记录数\nExample: 100",
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
-        "customer.LoginReply": {
+        "common.Pag-sys_UserDetailOut": {
             "type": "object",
             "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.LoginOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "description": "密码",
-                    "type": "string",
-                    "maxLength": 20
-                },
-                "username": {
-                    "description": "用户名",
-                    "type": "string",
-                    "maxLength": 50
-                }
-            }
-        },
-        "customer.MenuDetailOut": {
-            "type": "object",
-            "properties": {
-                "api_ids": {
-                    "description": "API ID列表",
+                "items": {
+                    "description": "对象数组",
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/sys.UserDetailOut"
                     }
                 },
-                "component": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
+                "page": {
+                    "description": "当前页码\nExample: 1",
                     "type": "integer",
                     "example": 1
                 },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "meta": {
-                    "description": "菜单信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MetaSchemas"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "parent": {
-                    "description": "父级菜单",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MenuStandardOut"
-                        }
-                    ]
-                },
-                "path": {
-                    "description": "前端路由",
-                    "type": "string",
-                    "example": "/api/v1/users"
-                },
-                "sort": {
-                    "description": "排序字段",
+                "pages": {
+                    "description": "总页数\nExample: 10",
                     "type": "integer",
-                    "example": 1000
+                    "example": 10
                 },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
-        "customer.MenuReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MenuDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.MenuStandardOut": {
-            "type": "object",
-            "properties": {
-                "component": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
+                "size": {
+                    "description": "每页数量\nExample: 10",
                     "type": "integer",
-                    "example": 1
+                    "example": 10
                 },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "meta": {
-                    "description": "菜单信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MetaSchemas"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "path": {
-                    "description": "前端路由",
-                    "type": "string",
-                    "example": "/api/v1/users"
-                },
-                "sort": {
-                    "description": "排序字段",
+                "total": {
+                    "description": "总记录数\nExample: 100",
                     "type": "integer",
-                    "example": 1000
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
-        "customer.MenuTreeNode": {
-            "type": "object",
-            "properties": {
-                "buttons": {
-                    "description": "按钮",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/customer.ButtonBaseOut"
-                    }
-                },
-                "children": {
-                    "description": "子菜单",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/customer.MenuTreeNode"
-                    }
-                },
-                "component": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "example": "GET"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "meta": {
-                    "description": "菜单信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MetaSchemas"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "path": {
-                    "description": "前端路由",
-                    "type": "string",
-                    "example": "/api/v1/users"
-                },
-                "sort": {
-                    "description": "排序字段",
-                    "type": "integer",
-                    "example": 1000
-                }
-            }
-        },
-        "customer.MetaSchemas": {
-            "type": "object",
-            "properties": {
-                "icon": {
-                    "description": "图标",
-                    "type": "string",
-                    "example": "icon"
-                },
-                "title": {
-                    "description": "标题",
-                    "type": "string",
-                    "example": "用户管理"
-                }
-            }
-        },
-        "customer.PagApiReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-customer_ApiStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.PagButtonReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-customer_ButtonStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.PagLoginRecordReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-customer_LoginRecordStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.PagMenuReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-customer_MenuStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.PagRoleReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-customer_RoleStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.PagUserReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-customer_UserDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.PatchPasswordRequest": {
-            "type": "object",
-            "required": [
-                "confirm_password",
-                "new_password",
-                "old_password"
-            ],
-            "properties": {
-                "confirm_password": {
-                    "description": "确认密码",
-                    "type": "string"
-                },
-                "new_password": {
-                    "description": "新密码",
-                    "type": "string",
-                    "maxLength": 20
-                },
-                "old_password": {
-                    "description": "原密码",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.RefreshTokenRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "description": "刷新令牌",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.ResetPasswordRequest": {
-            "type": "object",
-            "required": [
-                "confirm_password",
-                "new_password"
-            ],
-            "properties": {
-                "confirm_password": {
-                    "description": "确认密码",
-                    "type": "string"
-                },
-                "new_password": {
-                    "description": "新密码",
-                    "type": "string",
-                    "maxLength": 20
-                }
-            }
-        },
-        "customer.RoleBaseOut": {
-            "type": "object",
-            "properties": {
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer",
-                    "example": 1
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                }
-            }
-        },
-        "customer.RoleDetailOut": {
-            "type": "object",
-            "properties": {
-                "api_ids": {
-                    "description": "APIID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "button_ids": {
-                    "description": "按钮ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer",
-                    "example": 1
-                },
-                "menu_ids": {
-                    "description": "菜单ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
-        "customer.RoleMenuTreeReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/customer.MenuTreeNode"
-                    }
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.RoleReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.RoleDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "customer.RoleStandardOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "descr": {
-                    "description": "描述",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer",
-                    "example": 1
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "用户管理"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                }
-            }
-        },
-        "customer.UpdateApiRequest": {
-            "type": "object",
-            "required": [
-                "label",
-                "method",
-                "url"
-            ],
-            "properties": {
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "method": {
-                    "description": "请求方法",
-                    "type": "string",
-                    "enum": [
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "PATCH",
-                        "WS"
-                    ]
-                },
-                "url": {
-                    "description": "URL地址",
-                    "type": "string",
-                    "maxLength": 150
-                }
-            }
-        },
-        "customer.UpdateButtonRequest": {
-            "type": "object",
-            "required": [
-                "menu_id",
-                "name"
-            ],
-            "properties": {
-                "api_ids": {
-                    "description": "API ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean"
-                },
-                "menu_id": {
-                    "description": "菜单ID",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "sort": {
-                    "description": "排序字段",
-                    "type": "integer"
-                }
-            }
-        },
-        "customer.UpdateMenuRequest": {
-            "type": "object",
-            "required": [
-                "component",
-                "meta",
-                "name",
-                "path",
-                "sort"
-            ],
-            "properties": {
-                "api_ids": {
-                    "description": "API ID列表",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "component": {
-                    "description": "组件路径",
-                    "type": "string",
-                    "maxLength": 200
-                },
-                "descr": {
-                    "description": "描述信息",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean"
-                },
-                "meta": {
-                    "description": "菜单元信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.MetaSchemas"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "parent_id": {
-                    "description": "父级菜单ID",
-                    "type": "integer"
-                },
-                "path": {
-                    "description": "前端路由路径",
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "sort": {
-                    "description": "排序字段",
-                    "type": "integer"
-                }
-            }
-        },
-        "customer.UpdateUserRequest": {
-            "type": "object",
-            "required": [
-                "role_id",
-                "username"
-            ],
-            "properties": {
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean"
-                },
-                "is_staff": {
-                    "description": "是否是工作人员",
-                    "type": "boolean"
-                },
-                "role_id": {
-                    "description": "角色ID",
-                    "type": "integer"
-                },
-                "username": {
-                    "description": "用户名",
-                    "type": "string",
-                    "maxLength": 50
-                }
-            }
-        },
-        "customer.UserDetailOut": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_active": {
-                    "description": "是否激活",
-                    "type": "boolean",
-                    "example": true
-                },
-                "is_staff": {
-                    "description": "是否是工作人员",
-                    "type": "boolean",
-                    "example": false
-                },
-                "role": {
-                    "description": "角色",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.RoleBaseOut"
-                        }
-                    ]
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "username": {
-                    "description": "用户名",
-                    "type": "string",
-                    "example": "judgement"
-                }
-            }
-        },
-        "customer.UserReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/customer.UserDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
+                    "example": 100
                 }
             }
         },
@@ -8876,10 +7544,6 @@ const docTemplate = `{
                 "GORM_CHECK_CONSTRAINT_VIOLATED",
                 "SSH_CONNECTION_FAILED",
                 "SSH_KEY_DEPLOYMENT_FAILED",
-                "UPLOAD_FILE_NOT_FOUND",
-                "UPLOAD_FILE_TOO_LARGE",
-                "UPLOAD_FILE_SAVE_FAILED",
-                "UPLOAD_FILE_SET_PERMISSION_FAILED",
                 "DOWNLOAD_FILE_NOT_FOUND",
                 "DOWNLOAD_FILE_PERMISSION_DENIED",
                 "DOWNLOAD_FILE_FAILED",
@@ -8893,7 +7557,12 @@ const docTemplate = `{
                 "SCRIPT_NOT_FOUND",
                 "SCRIPT_IS_BUILTIN",
                 "SCRIPT_IS_DISABLED",
-                "SCRIPT_LOG_NOT_FOUND"
+                "SCRIPT_LOG_NOT_FOUND",
+                "SCRIPT_SAVE_FAILED",
+                "SCRIPT_REMOVE_FAILED",
+                "PACKAGE_NOT_FOUND",
+                "PACKAGE_SAVE_FAILED",
+                "PACKAGE_REMOVE_FAILED"
             ],
             "x-enum-comments": {
                 "ReasonAccountLocked": "账号已被锁定",
@@ -8925,6 +7594,9 @@ const docTemplate = `{
                 "ReasonNoContext": "上下文为空",
                 "ReasonNonceNotFound": "请求头缺少随机数",
                 "ReasonNotImplemented": "功能未实现",
+                "ReasonPackageNotFound": "程序包未找到",
+                "ReasonPackageRemoveFailed": "程序包删除失败",
+                "ReasonPackageSaveFailed": "程序包保存失败",
                 "ReasonPasswordStrengthFailed": "密码强度不足",
                 "ReasonPreloadNotAllowed": "使用计数时不允许预加载",
                 "ReasonPrimaryKeyRequired": "主键未设置",
@@ -8935,12 +7607,12 @@ const docTemplate = `{
                 "ReasonRequestTimeout": "请求超时",
                 "ReasonSSHConnectionFailed": "ssh连接失败",
                 "ReasonSSHKeyDeployFailed": "ssh密钥部署失败",
-                "ReasonSaveUploadFileFailed": "保存上传文件失败",
                 "ReasonScriptIsBuiltin": "脚本为内置脚本",
                 "ReasonScriptIsDisabled": "脚本已禁用",
                 "ReasonScriptLogNotFound": "脚本日志未找到",
                 "ReasonScriptNotFound": "脚本未找到",
-                "ReasonSetUploadFilePermissionFailed": "设置上传文件权限失败",
+                "ReasonScriptRemoveFailed": "脚本删除失败",
+                "ReasonScriptSaveFailed": "脚本保存失败",
                 "ReasonSubQueryRequired": "子查询未设置",
                 "ReasonTimestampExpired": "时间戳已过期",
                 "ReasonTimestampInvalid": "无效的时间戳",
@@ -8953,8 +7625,6 @@ const docTemplate = `{
                 "ReasonUnknown": "未知错误",
                 "ReasonUnsupportedDriver": "不支持的数据库驱动",
                 "ReasonUnsupportedRelation": "关联关系不支持",
-                "ReasonUploadFileNotFound": "上传的文件未找到",
-                "ReasonUploadFileTooLarge": "上传的文件超出大小限制",
                 "ReasonValidationFailed": "参数验证错误",
                 "ReasonZIPFailed": "压缩文件失败",
                 "ReasonZIPFileIsEmpty": "压缩文件为空",
@@ -9008,10 +7678,6 @@ const docTemplate = `{
                 "检查约束冲突",
                 "ssh连接失败",
                 "ssh密钥部署失败",
-                "上传的文件未找到",
-                "上传的文件超出大小限制",
-                "保存上传文件失败",
-                "设置上传文件权限失败",
                 "下载的文件未找到",
                 "下载文件权限被拒绝",
                 "下载文件失败",
@@ -9025,7 +7691,12 @@ const docTemplate = `{
                 "脚本未找到",
                 "脚本为内置脚本",
                 "脚本已禁用",
-                "脚本日志未找到"
+                "脚本日志未找到",
+                "脚本保存失败",
+                "脚本删除失败",
+                "程序包未找到",
+                "程序包保存失败",
+                "程序包删除失败"
             ],
             "x-enum-varnames": [
                 "ReasonUnknown",
@@ -9074,10 +7745,6 @@ const docTemplate = `{
                 "ReasonCheckConstraintViolated",
                 "ReasonSSHConnectionFailed",
                 "ReasonSSHKeyDeployFailed",
-                "ReasonUploadFileNotFound",
-                "ReasonUploadFileTooLarge",
-                "ReasonSaveUploadFileFailed",
-                "ReasonSetUploadFilePermissionFailed",
                 "ReasonDownloadFileNotFound",
                 "ReasonDownloadFilePermissionDenied",
                 "ReasonDownloadFileFailed",
@@ -9091,7 +7758,12 @@ const docTemplate = `{
                 "ReasonScriptNotFound",
                 "ReasonScriptIsBuiltin",
                 "ReasonScriptIsDisabled",
-                "ReasonScriptLogNotFound"
+                "ReasonScriptLogNotFound",
+                "ReasonScriptSaveFailed",
+                "ReasonScriptRemoveFailed",
+                "ReasonPackageNotFound",
+                "ReasonPackageSaveFailed",
+                "ReasonPackageRemoveFailed"
             ]
         },
         "fileutil.FileInfo": {
@@ -9118,7 +7790,259 @@ const docTemplate = `{
                 }
             }
         },
-        "jobs.CreateScheduleRequest": {
+        "job.BizTaskInfo": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "record_id": {
+                    "description": "执行记录ID(0表示非正常执行的任务)",
+                    "type": "integer"
+                },
+                "start_time": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "status": {
+                    "description": "执行状态(0-待执行,1-执行中,2-成功,3-失败,4-超时,5-崩溃)",
+                    "type": "integer",
+                    "example": 2
+                },
+                "task_name": {
+                    "description": "任务名称",
+                    "type": "string",
+                    "example": "mon"
+                },
+                "trigger_type": {
+                    "description": "触发类型(cron/api,未执行为空)",
+                    "type": "string",
+                    "example": "cron"
+                }
+            }
+        },
+        "job.CreateScriptRecordDTO": {
+            "type": "object",
+            "required": [
+                "script_id",
+                "timeout"
+            ],
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数",
+                    "type": "string"
+                },
+                "env_vars": {
+                    "description": "环境变量 (JSON对象)",
+                    "type": "string"
+                },
+                "script_id": {
+                    "description": "脚本ID",
+                    "type": "integer"
+                },
+                "timeout": {
+                    "description": "超时时间(秒)",
+                    "type": "integer"
+                },
+                "work_dir": {
+                    "description": "工作目录",
+                    "type": "string"
+                }
+            }
+        },
+        "job.ListProjectResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "job.PagScheduleResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-job_ScheduleDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "job.PagScriptRecordResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-job_ScriptRecordDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "job.PagScriptResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-job_ScriptStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "job.ScheduleDetailOut": {
+            "type": "object",
+            "properties": {
+                "command_args": {
+                    "description": "命令行参数",
+                    "type": "string",
+                    "example": ""
+                },
+                "create_type": {
+                    "description": "创建类型",
+                    "type": "integer",
+                    "example": 1
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "env_vars": {
+                    "description": "环境变量(JSON对象)",
+                    "type": "string",
+                    "example": "{}"
+                },
+                "id": {
+                    "description": "计划任务ID",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_enabled": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_retry": {
+                    "description": "是否重试",
+                    "type": "boolean"
+                },
+                "max_retries": {
+                    "description": "最大重试次数",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "test"
+                },
+                "retry_interval": {
+                    "description": "重试间隔时间(秒)",
+                    "type": "integer"
+                },
+                "script": {
+                    "description": "脚本",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/job.ScriptStandardOut"
+                        }
+                    ]
+                },
+                "specification": {
+                    "description": "Cron 表达式",
+                    "type": "string",
+                    "example": "0 12 * * 1-5"
+                },
+                "timeout": {
+                    "description": "超时时间(秒)",
+                    "type": "integer",
+                    "example": 300
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "work_dir": {
+                    "description": "工作目录",
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "job.ScheduleResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/job.ScheduleDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "job.ScheduleUpsertDTO": {
             "type": "object",
             "required": [
                 "name",
@@ -9129,6 +8053,11 @@ const docTemplate = `{
                 "command_args": {
                     "description": "命令行参数",
                     "type": "string"
+                },
+                "create_type": {
+                    "description": "创建类型",
+                    "type": "integer",
+                    "example": 0
                 },
                 "env_vars": {
                     "description": "环境变量(JSON对象)",
@@ -9173,269 +8102,7 @@ const docTemplate = `{
                 }
             }
         },
-        "jobs.CreateScriptRecordRequest": {
-            "type": "object",
-            "required": [
-                "script_id",
-                "timeout"
-            ],
-            "properties": {
-                "command_args": {
-                    "description": "命令行参数",
-                    "type": "string"
-                },
-                "env_vars": {
-                    "description": "环境变量 (JSON对象)",
-                    "type": "string"
-                },
-                "script_id": {
-                    "description": "脚本ID",
-                    "type": "integer"
-                },
-                "timeout": {
-                    "description": "超时时间(秒)",
-                    "type": "integer"
-                },
-                "work_dir": {
-                    "description": "工作目录",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.ListLableReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.ListProjectReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.PagScheduleReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-jobs_ScheduleDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.PagScriptRecordReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-jobs_ScriptRecordDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.PagScriptReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.Pag-jobs_ScriptStandardOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.Param": {
-            "type": "object",
-            "properties": {
-                "default_value": {
-                    "description": "默认值",
-                    "type": "string"
-                },
-                "descr": {
-                    "description": "参数描述",
-                    "type": "string"
-                },
-                "example_value": {
-                    "description": "示例值",
-                    "type": "string"
-                },
-                "is_required": {
-                    "description": "是否必填",
-                    "type": "boolean"
-                },
-                "name": {
-                    "description": "参数名称",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "参数类型",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.ScheduleDetailOut": {
-            "type": "object",
-            "properties": {
-                "command_args": {
-                    "description": "命令行参数",
-                    "type": "string",
-                    "example": ""
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "env_vars": {
-                    "description": "环境变量(JSON对象)",
-                    "type": "string",
-                    "example": "{}"
-                },
-                "id": {
-                    "description": "计划任务ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_enabled": {
-                    "description": "是否启用",
-                    "type": "boolean",
-                    "example": true
-                },
-                "is_retry": {
-                    "description": "是否重试",
-                    "type": "boolean"
-                },
-                "max_retries": {
-                    "description": "最大重试次数",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "example": "test"
-                },
-                "retry_interval": {
-                    "description": "重试间隔时间(秒)",
-                    "type": "integer"
-                },
-                "script": {
-                    "description": "脚本",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/jobs.ScriptStandardOut"
-                        }
-                    ]
-                },
-                "specification": {
-                    "description": "Cron 表达式",
-                    "type": "string",
-                    "example": "0 12 * * 1-5"
-                },
-                "timeout": {
-                    "description": "超时时间(秒)",
-                    "type": "integer",
-                    "example": 300
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-01-01 12:00:00"
-                },
-                "username": {
-                    "description": "用户名",
-                    "type": "string",
-                    "example": "admin"
-                },
-                "work_dir": {
-                    "description": "工作目录",
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
-        "jobs.ScheduleReply": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "状态码\nExample: 200",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "数据\n可以是任意类型的数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/jobs.ScheduleDetailOut"
-                        }
-                    ]
-                },
-                "msg": {
-                    "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "jobs.ScriptRecordDetailOut": {
+        "job.ScriptRecordDetailOut": {
             "type": "object",
             "properties": {
                 "command_args": {
@@ -9472,7 +8139,7 @@ const docTemplate = `{
                     "description": "脚本信息",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/jobs.ScriptStandardOut"
+                            "$ref": "#/definitions/job.ScriptStandardOut"
                         }
                     ]
                 },
@@ -9508,7 +8175,7 @@ const docTemplate = `{
                 }
             }
         },
-        "jobs.ScriptRecordReply": {
+        "job.ScriptRecordResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9519,7 +8186,7 @@ const docTemplate = `{
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/jobs.ScriptRecordDetailOut"
+                            "$ref": "#/definitions/job.ScriptRecordDetailOut"
                         }
                     ]
                 },
@@ -9529,7 +8196,7 @@ const docTemplate = `{
                 }
             }
         },
-        "jobs.ScriptReply": {
+        "job.ScriptResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9540,7 +8207,7 @@ const docTemplate = `{
                     "description": "数据\n可以是任意类型的数据",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/jobs.ScriptStandardOut"
+                            "$ref": "#/definitions/job.ScriptStandardOut"
                         }
                     ]
                 },
@@ -9550,16 +8217,9 @@ const docTemplate = `{
                 }
             }
         },
-        "jobs.ScriptStandardOut": {
+        "job.ScriptStandardOut": {
             "type": "object",
             "properties": {
-                "args_descr": {
-                    "description": "参数介绍",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/jobs.Param"
-                    }
-                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string",
@@ -9617,127 +8277,7 @@ const docTemplate = `{
                 }
             }
         },
-        "jobs.UpdateScheduleRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "script_id",
-                "specification"
-            ],
-            "properties": {
-                "command_args": {
-                    "description": "命令行参数",
-                    "type": "string"
-                },
-                "env_vars": {
-                    "description": "环境变量(JSON对象)",
-                    "type": "string"
-                },
-                "is_enabled": {
-                    "description": "是否启用",
-                    "type": "boolean"
-                },
-                "is_retry": {
-                    "description": "是否重试",
-                    "type": "boolean"
-                },
-                "max_retries": {
-                    "description": "最大重试次数",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "计划任务名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "retry_interval": {
-                    "description": "重试间隔时间(秒)",
-                    "type": "integer"
-                },
-                "script_id": {
-                    "description": "脚本ID",
-                    "type": "integer"
-                },
-                "specification": {
-                    "description": "Cron 表达式",
-                    "type": "string"
-                },
-                "timeout": {
-                    "description": "超时时间(秒)",
-                    "type": "integer"
-                },
-                "work_dir": {
-                    "description": "工作目录",
-                    "type": "string"
-                }
-            }
-        },
-        "mds.CreateOrUpdateMdsColonyRequest": {
-            "type": "object",
-            "required": [
-                "colony_num",
-                "extracted_name",
-                "is_enable",
-                "mon_node_id",
-                "package_id"
-            ],
-            "properties": {
-                "colony_num": {
-                    "description": "集群号",
-                    "type": "string",
-                    "maxLength": 2
-                },
-                "extracted_name": {
-                    "description": "解压后名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "is_enable": {
-                    "description": "是否启用",
-                    "type": "boolean"
-                },
-                "mon_node_id": {
-                    "description": "mon节点ID",
-                    "type": "integer"
-                },
-                "package_id": {
-                    "description": "程序包ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "mds.CreateOrUpdateMdsNodeRequest": {
-            "type": "object",
-            "required": [
-                "host_id",
-                "mds_colony_id",
-                "node_role"
-            ],
-            "properties": {
-                "host_id": {
-                    "description": "主机ID",
-                    "type": "integer"
-                },
-                "is_enable": {
-                    "description": "是否启用",
-                    "type": "boolean"
-                },
-                "mds_colony_id": {
-                    "description": "mds集群ID",
-                    "type": "integer"
-                },
-                "node_role": {
-                    "description": "节点角色",
-                    "type": "string",
-                    "enum": [
-                        "master",
-                        "follow",
-                        "arbiter"
-                    ]
-                }
-            }
-        },
-        "mds.ListMdsTasksInfoReply": {
+        "mds.ListMdsTasksInfoResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9833,7 +8373,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mds.MdsColonyReply": {
+        "mds.MdsColonyResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9866,8 +8406,42 @@ const docTemplate = `{
                     "description": "任务状态",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.TaskInfo"
+                        "$ref": "#/definitions/job.BizTaskInfo"
                     }
+                }
+            }
+        },
+        "mds.MdsColonyUpsertDTO": {
+            "type": "object",
+            "required": [
+                "colony_num",
+                "extracted_name",
+                "is_enable",
+                "mon_node_id",
+                "package_id"
+            ],
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "maxLength": 2
+                },
+                "extracted_name": {
+                    "description": "解压后名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "mon_node_id": {
+                    "description": "mon节点ID",
+                    "type": "integer"
+                },
+                "package_id": {
+                    "description": "程序包ID",
+                    "type": "integer"
                 }
             }
         },
@@ -9916,7 +8490,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mds.MdsNodeReply": {
+        "mds.MdsNodeResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9937,7 +8511,38 @@ const docTemplate = `{
                 }
             }
         },
-        "mds.PagMdsColonyReply": {
+        "mds.MdsNodeUpsertDTO": {
+            "type": "object",
+            "required": [
+                "host_id",
+                "mds_colony_id",
+                "node_role"
+            ],
+            "properties": {
+                "host_id": {
+                    "description": "主机ID",
+                    "type": "integer"
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "mds_colony_id": {
+                    "description": "mds集群ID",
+                    "type": "integer"
+                },
+                "node_role": {
+                    "description": "节点角色",
+                    "type": "string",
+                    "enum": [
+                        "master",
+                        "follow",
+                        "arbiter"
+                    ]
+                }
+            }
+        },
+        "mds.PagMdsColonyResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9958,7 +8563,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mds.PagMdsConfReply": {
+        "mds.PagMdsConfResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9979,7 +8584,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mds.PagMdsNodeReply": {
+        "mds.PagMdsNodeResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -9996,42 +8601,6 @@ const docTemplate = `{
                 },
                 "msg": {
                     "description": "信息\nExample: \"success\"",
-                    "type": "string"
-                }
-            }
-        },
-        "mon.CreateOrUpdateMonNodeRequest": {
-            "type": "object",
-            "required": [
-                "deploy_path",
-                "host_id",
-                "name",
-                "outport_path"
-            ],
-            "properties": {
-                "deploy_path": {
-                    "description": "部署路径",
-                    "type": "string"
-                },
-                "host_id": {
-                    "description": "主机ID",
-                    "type": "integer"
-                },
-                "java_home": {
-                    "description": "JAVA_HOME",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "outport_path": {
-                    "description": "导出路径",
-                    "type": "string"
-                },
-                "url": {
-                    "description": "URL地址",
                     "type": "string"
                 }
             }
@@ -10124,7 +8693,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mon.MonNodeReply": {
+        "mon.MonNodeResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10145,7 +8714,43 @@ const docTemplate = `{
                 }
             }
         },
-        "mon.PagMonNodeReply": {
+        "mon.MonNodeUpsertDTO": {
+            "type": "object",
+            "required": [
+                "deploy_path",
+                "host_id",
+                "name",
+                "outport_path"
+            ],
+            "properties": {
+                "deploy_path": {
+                    "description": "部署路径",
+                    "type": "string"
+                },
+                "host_id": {
+                    "description": "主机ID",
+                    "type": "integer"
+                },
+                "java_home": {
+                    "description": "JAVA_HOME",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "outport_path": {
+                    "description": "导出路径",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "URL地址",
+                    "type": "string"
+                }
+            }
+        },
+        "mon.PagMonNodeResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10166,87 +8771,7 @@ const docTemplate = `{
                 }
             }
         },
-        "oes.CreateOrUpdateOesColonyRequest": {
-            "type": "object",
-            "required": [
-                "colony_num",
-                "extracted_name",
-                "is_enable",
-                "mon_node_id",
-                "package_id",
-                "system_type",
-                "xcounter_id"
-            ],
-            "properties": {
-                "colony_num": {
-                    "description": "集群号",
-                    "type": "string",
-                    "maxLength": 2
-                },
-                "extracted_name": {
-                    "description": "解压后名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "is_enable": {
-                    "description": "是否启用",
-                    "type": "boolean"
-                },
-                "mon_node_id": {
-                    "description": "mon节点ID",
-                    "type": "integer"
-                },
-                "package_id": {
-                    "description": "程序包ID",
-                    "type": "integer"
-                },
-                "system_type": {
-                    "description": "系统类型",
-                    "type": "string",
-                    "enum": [
-                        "STK",
-                        "CRD",
-                        "OPT"
-                    ]
-                },
-                "xcounter_id": {
-                    "description": "xcounter包ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "oes.CreateOrUpdateOesNodeRequest": {
-            "type": "object",
-            "required": [
-                "host_id",
-                "node_role",
-                "oes_colony_id"
-            ],
-            "properties": {
-                "host_id": {
-                    "description": "主机ID\nrequired: true\nexample: 1",
-                    "type": "integer"
-                },
-                "is_enable": {
-                    "description": "是否启用\nrequired: true\nexample: true",
-                    "type": "boolean"
-                },
-                "node_role": {
-                    "description": "节点角色\nrequired: true\nexample: \"01\"",
-                    "type": "string",
-                    "enum": [
-                        "master",
-                        "follow",
-                        "arbiter"
-                    ]
-                },
-                "oes_colony_id": {
-                    "description": "oes集群ID\nrequired: true\nexample: 1",
-                    "type": "integer"
-                }
-            }
-        },
-        "oes.ListOesTasksInfoReply": {
+        "oes.ListOesTasksInfoResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10360,7 +8885,7 @@ const docTemplate = `{
                 }
             }
         },
-        "oes.OesColonyReply": {
+        "oes.OesColonyResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10393,8 +8918,57 @@ const docTemplate = `{
                     "description": "任务状态",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.TaskInfo"
+                        "$ref": "#/definitions/job.BizTaskInfo"
                     }
+                }
+            }
+        },
+        "oes.OesColonyUpsertDTO": {
+            "type": "object",
+            "required": [
+                "colony_num",
+                "extracted_name",
+                "is_enable",
+                "mon_node_id",
+                "package_id",
+                "system_type",
+                "xcounter_id"
+            ],
+            "properties": {
+                "colony_num": {
+                    "description": "集群号",
+                    "type": "string",
+                    "maxLength": 2
+                },
+                "extracted_name": {
+                    "description": "解压后名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "mon_node_id": {
+                    "description": "mon节点ID",
+                    "type": "integer"
+                },
+                "package_id": {
+                    "description": "程序包ID",
+                    "type": "integer"
+                },
+                "system_type": {
+                    "description": "系统类型",
+                    "type": "string",
+                    "enum": [
+                        "STK",
+                        "CRD",
+                        "OPT"
+                    ]
+                },
+                "xcounter_id": {
+                    "description": "xcounter包ID",
+                    "type": "integer"
                 }
             }
         },
@@ -10433,7 +9007,7 @@ const docTemplate = `{
                 }
             }
         },
-        "oes.OesNodeReply": {
+        "oes.OesNodeResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10454,7 +9028,38 @@ const docTemplate = `{
                 }
             }
         },
-        "oes.PagOesColonyReply": {
+        "oes.OesNodeUpsertDTO": {
+            "type": "object",
+            "required": [
+                "host_id",
+                "node_role",
+                "oes_colony_id"
+            ],
+            "properties": {
+                "host_id": {
+                    "description": "主机ID",
+                    "type": "integer"
+                },
+                "is_enable": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "node_role": {
+                    "description": "节点角色",
+                    "type": "string",
+                    "enum": [
+                        "master",
+                        "follow",
+                        "arbiter"
+                    ]
+                },
+                "oes_colony_id": {
+                    "description": "oes集群ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "oes.PagOesColonyResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10475,7 +9080,7 @@ const docTemplate = `{
                 }
             }
         },
-        "oes.PagOesConfReply": {
+        "oes.PagOesConfResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10496,7 +9101,7 @@ const docTemplate = `{
                 }
             }
         },
-        "oes.PagOesNodeReply": {
+        "oes.PagOesNodeResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10514,58 +9119,6 @@ const docTemplate = `{
                 "msg": {
                     "description": "信息\nExample: \"success\"",
                     "type": "string"
-                }
-            }
-        },
-        "resource.CreateOrUpdateHosrRequest": {
-            "type": "object",
-            "required": [
-                "label",
-                "name",
-                "ssh_ip",
-                "ssh_password",
-                "ssh_port",
-                "ssh_user"
-            ],
-            "properties": {
-                "label": {
-                    "description": "标签",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "py_path": {
-                    "description": "python路径",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "remark": {
-                    "description": "备注",
-                    "type": "string",
-                    "maxLength": 254
-                },
-                "ssh_ip": {
-                    "description": "ip地址",
-                    "type": "string",
-                    "maxLength": 108
-                },
-                "ssh_password": {
-                    "description": "密码",
-                    "type": "string",
-                    "maxLength": 150
-                },
-                "ssh_port": {
-                    "description": "端口",
-                    "type": "integer"
-                },
-                "ssh_user": {
-                    "description": "用户名",
-                    "type": "string",
-                    "maxLength": 50
                 }
             }
         },
@@ -10614,7 +9167,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.HostReply": {
+        "resource.HostResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10690,7 +9243,59 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.PackageReply": {
+        "resource.HostUpsertDTO": {
+            "type": "object",
+            "required": [
+                "label",
+                "name",
+                "ssh_ip",
+                "ssh_password",
+                "ssh_port",
+                "ssh_user"
+            ],
+            "properties": {
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "py_path": {
+                    "description": "python路径",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "ssh_ip": {
+                    "description": "ip地址",
+                    "type": "string",
+                    "maxLength": 108
+                },
+                "ssh_password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "ssh_port": {
+                    "description": "端口",
+                    "type": "integer"
+                },
+                "ssh_user": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "resource.PackageResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10741,7 +9346,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.PagHostReply": {
+        "resource.PagHostResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10762,7 +9367,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.PagPackageReply": {
+        "resource.PagPackageResp": {
             "type": "object",
             "properties": {
                 "code": {
@@ -10774,6 +9379,1297 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/common.Pag-resource_PackageStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.ApiResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.ApiStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.ApiStandardOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理权限"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "example": "customer"
+                },
+                "method": {
+                    "description": "请求方法",
+                    "type": "string",
+                    "example": "GET"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "url": {
+                    "description": "HTTP路径",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                }
+            }
+        },
+        "sys.ButtonBaseOut": {
+            "type": "object",
+            "properties": {
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                }
+            }
+        },
+        "sys.ButtonDetailOut": {
+            "type": "object",
+            "properties": {
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "menu": {
+                    "description": "菜单",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MenuStandardOut"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "sys.ButtonResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.ButtonDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.ButtonStandardOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "sys.CreateApiDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "label",
+                "method",
+                "url"
+            ],
+            "properties": {
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer"
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "method": {
+                    "description": "请求方法",
+                    "type": "string",
+                    "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "WS"
+                    ]
+                },
+                "url": {
+                    "description": "URL地址",
+                    "type": "string",
+                    "maxLength": 150
+                }
+            }
+        },
+        "sys.CreateButtonDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "is_active",
+                "menu_id",
+                "name",
+                "sort"
+            ],
+            "properties": {
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer"
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean"
+                },
+                "menu_id": {
+                    "description": "菜单ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
+                }
+            }
+        },
+        "sys.CreateMenuDTO": {
+            "type": "object",
+            "required": [
+                "component",
+                "id",
+                "meta",
+                "name",
+                "path",
+                "sort"
+            ],
+            "properties": {
+                "api_ids": {
+                    "description": "权限ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer"
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean"
+                },
+                "meta": {
+                    "description": "菜单元信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MetaSchemas"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "parent_id": {
+                    "description": "父级菜单ID",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "前端路由路径",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
+                }
+            }
+        },
+        "sys.CreateUserDTO": {
+            "type": "object",
+            "required": [
+                "password",
+                "role_id",
+                "username"
+            ],
+            "properties": {
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean"
+                },
+                "is_staff": {
+                    "description": "是否是工作人员",
+                    "type": "boolean"
+                },
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "role_id": {
+                    "description": "角色ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "sys.LoginDTO": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "sys.LoginOut": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "登录令牌",
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "description": "刷新令牌",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.LoginRecordStandardOut": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "ip_address": {
+                    "description": "IP地址",
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "is_active": {
+                    "description": "登录状态",
+                    "type": "boolean",
+                    "example": true
+                },
+                "login_at": {
+                    "description": "登录时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "user_agent": {
+                    "description": "用户浏览器信息",
+                    "type": "string",
+                    "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
+                },
+                "username": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "judgement"
+                }
+            }
+        },
+        "sys.LoginResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.LoginOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.MenuDetailOut": {
+            "type": "object",
+            "properties": {
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "meta": {
+                    "description": "菜单信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MetaSchemas"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "parent": {
+                    "description": "父级菜单",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MenuStandardOut"
+                        }
+                    ]
+                },
+                "path": {
+                    "description": "前端路由",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "sys.MenuResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MenuDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.MenuStandardOut": {
+            "type": "object",
+            "properties": {
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "meta": {
+                    "description": "菜单信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MetaSchemas"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "path": {
+                    "description": "前端路由",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "sys.MenuTreeNode": {
+            "type": "object",
+            "properties": {
+                "buttons": {
+                    "description": "按钮",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.ButtonBaseOut"
+                    }
+                },
+                "children": {
+                    "description": "子菜单",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.MenuTreeNode"
+                    }
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "example": "GET"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "meta": {
+                    "description": "菜单信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MetaSchemas"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "path": {
+                    "description": "前端路由",
+                    "type": "string",
+                    "example": "/api/v1/users"
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer",
+                    "example": 1000
+                }
+            }
+        },
+        "sys.MetaSchemas": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "description": "图标",
+                    "type": "string",
+                    "example": "icon"
+                },
+                "title": {
+                    "description": "标题",
+                    "type": "string",
+                    "example": "用户管理"
+                }
+            }
+        },
+        "sys.PagApiResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-sys_ApiStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.PagButtonResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-sys_ButtonStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.PagLoginRecordResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-sys_LoginRecordStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.PagMenuResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-sys_MenuStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.PagRoleResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-sys_RoleStandardOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.PagUserResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.Pag-sys_UserDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.PatchPasswordDTO": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "description": "确认密码",
+                    "type": "string"
+                },
+                "new_password": {
+                    "description": "新密码",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "old_password": {
+                    "description": "原密码",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.RefreshTokenDTO": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "description": "刷新令牌",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.ResetPasswordDTO": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "description": "确认密码",
+                    "type": "string"
+                },
+                "new_password": {
+                    "description": "新密码",
+                    "type": "string",
+                    "maxLength": 20
+                }
+            }
+        },
+        "sys.RoleBaseOut": {
+            "type": "object",
+            "properties": {
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                }
+            }
+        },
+        "sys.RoleDetailOut": {
+            "type": "object",
+            "properties": {
+                "api_ids": {
+                    "description": "APIID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "button_ids": {
+                    "description": "按钮ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "menu_ids": {
+                    "description": "菜单ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "sys.RoleMenuTreeResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.MenuTreeNode"
+                    }
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.RoleResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.RoleDetailOut"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
+                    "type": "string"
+                }
+            }
+        },
+        "sys.RoleStandardOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "descr": {
+                    "description": "描述",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "example": "用户管理"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                }
+            }
+        },
+        "sys.RoleUpsertDTO": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "api_ids": {
+                    "description": "APIID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "button_ids": {
+                    "description": "按钮ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "menu_ids": {
+                    "description": "菜单ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "sys.UpdateApiDTO": {
+            "type": "object",
+            "required": [
+                "label",
+                "method",
+                "url"
+            ],
+            "properties": {
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "label": {
+                    "description": "标签",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "method": {
+                    "description": "请求方法",
+                    "type": "string",
+                    "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "WS"
+                    ]
+                },
+                "url": {
+                    "description": "URL地址",
+                    "type": "string",
+                    "maxLength": 150
+                }
+            }
+        },
+        "sys.UpdateButtonDTO": {
+            "type": "object",
+            "required": [
+                "menu_id",
+                "name"
+            ],
+            "properties": {
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean"
+                },
+                "menu_id": {
+                    "description": "菜单ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
+                }
+            }
+        },
+        "sys.UpdateMenuDTO": {
+            "type": "object",
+            "required": [
+                "component",
+                "meta",
+                "name",
+                "path",
+                "sort"
+            ],
+            "properties": {
+                "api_ids": {
+                    "description": "API ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "descr": {
+                    "description": "描述信息",
+                    "type": "string",
+                    "maxLength": 254
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean"
+                },
+                "meta": {
+                    "description": "菜单元信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.MetaSchemas"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "parent_id": {
+                    "description": "父级菜单ID",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "前端路由路径",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "sort": {
+                    "description": "排序字段",
+                    "type": "integer"
+                }
+            }
+        },
+        "sys.UpdateUserDTO": {
+            "type": "object",
+            "required": [
+                "role_id",
+                "username"
+            ],
+            "properties": {
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean"
+                },
+                "is_staff": {
+                    "description": "是否是工作人员",
+                    "type": "boolean"
+                },
+                "role_id": {
+                    "description": "角色ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "sys.UserDetailOut": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "id": {
+                    "description": "唯一标识",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "description": "是否激活",
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_staff": {
+                    "description": "是否是工作人员",
+                    "type": "boolean",
+                    "example": false
+                },
+                "role": {
+                    "description": "角色",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.RoleBaseOut"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "judgement"
+                }
+            }
+        },
+        "sys.UserResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sys.UserDetailOut"
                         }
                     ]
                 },

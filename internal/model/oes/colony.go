@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/model/common"
+	"gin-artweb/internal/model/job"
 	"gin-artweb/internal/model/mon"
 	"gin-artweb/internal/model/resource"
 	"gin-artweb/internal/shared/database"
@@ -68,10 +69,10 @@ func (vs *OesColonyVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// CreateOrUpdateOesColonyRequest 用于创建mon节点的请求结构体
+// OesColonyUpsertDTO 用于创建mon节点的请求结构体
 //
-// swagger:model CreateOrUpdateOesColonyRequest
-type CreateOrUpdateOesColonyRequest struct {
+// swagger:model OesColonyUpsertDTO
+type OesColonyUpsertDTO struct {
 	// 系统类型
 	SystemType string `json:"system_type" form:"system_type" binding:"required,oneof=STK CRD OPT"`
 
@@ -94,11 +95,37 @@ type CreateOrUpdateOesColonyRequest struct {
 	MonNodeID uint32 `json:"mon_node_id" form:"mon_node_id" binding:"required"`
 }
 
-// ListOesColonyRequest 用于获取mon节点列表的请求结构体
+func (dto *OesColonyUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if dto == nil {
+		return nil
+	}
+	enc.AddString("system_type", dto.SystemType)
+	enc.AddString("colony_num", dto.ColonyNum)
+	enc.AddString("extracted_name", dto.ExtractedName)
+	enc.AddBool("is_enable", dto.IsEnable)
+	enc.AddUint32("package_id", dto.PackageID)
+	enc.AddUint32("xcounter_id", dto.XCounterID)
+	enc.AddUint32("mon_node_id", dto.MonNodeID)
+	return nil
+}
+
+func (dto *OesColonyUpsertDTO) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"system_type":    dto.SystemType,
+		"colony_num":     dto.ColonyNum,
+		"extracted_name": dto.ExtractedName,
+		"is_enable":      dto.IsEnable,
+		"package_id":     dto.PackageID,
+		"xcounter_id":    dto.XCounterID,
+		"mon_node_id":    dto.MonNodeID,
+	}
+}
+
+// ListOesColonyDTO 用于获取mon节点列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListOesColonyRequest
-type ListOesColonyRequest struct {
+// swagger:model ListOesColonyDTO
+type ListOesColonyDTO struct {
 	common.StandardModelQuery
 
 	// 系统类型
@@ -123,30 +150,46 @@ type ListOesColonyRequest struct {
 	MonNodeID uint32 `form:"mon_node_id"`
 }
 
-func (req *ListOesColonyRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(14)
-	if req.SystemType != "" {
-		query["system_type = ?"] = req.SystemType
+func (dto *ListOesColonyDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
 	}
-	if req.ColonyNum != "" {
-		query["colony_num = ?"] = req.ColonyNum
+	enc.AddString("system_type", dto.SystemType)
+	enc.AddString("colony_num", dto.ColonyNum)
+	enc.AddString("extracted_name", dto.ExtractedName)
+	if dto.IsEnable != nil {
+		enc.AddBool("is_enable", *dto.IsEnable)
 	}
-	if req.ExtractedName != "" {
-		query["extracted_name = ?"] = "%" + req.ExtractedName + "%"
+	enc.AddUint32("package_id", dto.PackageID)
+	enc.AddUint32("xcounter_id", dto.XCounterID)
+	enc.AddUint32("mon_node_id", dto.MonNodeID)
+	return nil
+}
+
+func (dto *ListOesColonyDTO) ToQueryMap() map[string]any {
+	queryMap := dto.StandardModelQuery.ToQueryMap(12)
+	if dto.SystemType != "" {
+		queryMap["system_type = ?"] = dto.SystemType
 	}
-	if req.IsEnable != nil {
-		query["is_enable = ?"] = *req.IsEnable
+	if dto.ColonyNum != "" {
+		queryMap["colony_num = ?"] = dto.ColonyNum
 	}
-	if req.PackageID > 0 {
-		query["package_id = ?"] = req.PackageID
+	if dto.ExtractedName != "" {
+		queryMap["extracted_name = ?"] = "%" + dto.ExtractedName + "%"
 	}
-	if req.XCounterID > 0 {
-		query["xcounter_id"] = req.XCounterID
+	if dto.IsEnable != nil {
+		queryMap["is_enable = ?"] = *dto.IsEnable
 	}
-	if req.MonNodeID > 0 {
-		query["mon_node_id = ?"] = req.MonNodeID
+	if dto.PackageID > 0 {
+		queryMap["package_id = ?"] = dto.PackageID
 	}
-	return page, size, query
+	if dto.XCounterID > 0 {
+		queryMap["xcounter_id"] = dto.XCounterID
+	}
+	if dto.MonNodeID > 0 {
+		queryMap["mon_node_id = ?"] = dto.MonNodeID
+	}
+	return queryMap
 }
 
 type OesColonyBaseOut struct {
@@ -189,11 +232,11 @@ type OesColonyDetailOut struct {
 	MonNode *mon.MonNodeBaseOut `json:"mon_node"`
 }
 
-// OesColonyReply 程序包响应结构
-type OesColonyReply = common.APIReply[OesColonyDetailOut]
+// OesColonyResp 程序包响应结构
+type OesColonyResp = common.APIResp[OesColonyDetailOut]
 
-// PagOesColonyReply 程序包的分页响应结构
-type PagOesColonyReply = common.APIReply[*common.Pag[OesColonyDetailOut]]
+// PagOesColonyResp 程序包的分页响应结构
+type PagOesColonyResp = common.APIResp[*common.Pag[OesColonyDetailOut]]
 
 // oes 任务状态
 type OesColonyTaskInfo struct {
@@ -201,11 +244,11 @@ type OesColonyTaskInfo struct {
 	ColonyNum string `json:"colony_num" example:"01"`
 
 	// 任务状态
-	Tasks []common.TaskInfo `json:"tasks"`
+	Tasks []job.BizTaskInfo `json:"tasks"`
 }
 
-// ListOesTasksInfoReply 多个oes集群的任务状态响应结构
-type ListOesTasksInfoReply = common.APIReply[[]OesColonyTaskInfo]
+// ListOesTasksInfoResp 多个oes集群的任务状态响应结构
+type ListOesTasksInfoResp = common.APIResp[[]OesColonyTaskInfo]
 
 func OesColonyToBaseOut(
 	m OesColonyModel,
@@ -241,13 +284,11 @@ func OesColonyToDetailOut(
 }
 
 func ListOesColonyToDetailOut(
-	rms *[]OesColonyModel,
-) *[]OesColonyDetailOut {
-	if rms == nil {
-		return &[]OesColonyDetailOut{}
+	ms []OesColonyModel,
+) []OesColonyDetailOut {
+	if len(ms) == 0 {
+		return []OesColonyDetailOut{}
 	}
-
-	ms := *rms
 	mso := make([]OesColonyDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
@@ -255,5 +296,5 @@ func ListOesColonyToDetailOut(
 			mso = append(mso, *mo)
 		}
 	}
-	return &mso
+	return mso
 }

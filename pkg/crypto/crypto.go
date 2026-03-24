@@ -39,7 +39,7 @@ func (c *BaseCipher) EncodeToString(data []byte) string {
 func (c *BaseCipher) DecodeString(data string) ([]byte, error) {
 	dataBytes, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return nil, errors.Wrap(err, "Base64解码错误")
+		return nil, errors.WrapIf(err, "Base64解码错误")
 	}
 	return dataBytes, nil
 }

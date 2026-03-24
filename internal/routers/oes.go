@@ -1,35 +1,57 @@
 package routers
 
 import (
+	golog "log"
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 
 	handler "gin-artweb/internal/handler/oes"
-	oesrepo "gin-artweb/internal/repository/oes"
+	oesmodel "gin-artweb/internal/model/oes"
+	oesrepo "gin-artweb/internal/repo/oes"
 	oessvc "gin-artweb/internal/service/oes"
 	"gin-artweb/internal/shared/common"
-	"gin-artweb/internal/shared/log"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
+	"gin-artweb/pkg/serializer"
 )
 
 func newOesRouter(
 	router *gin.RouterGroup,
 	init *common.Initialize,
-	loggers *log.Loggers,
-	jobsvc *JobsRouter,
+	loggers *common.Loggers,
+	jobsvc *JobServices,
 ) {
+	var (
+		stkCronConf map[string]oesmodel.OesCronTask
+		crdCronConf map[string]oesmodel.OesCronTask
+		optCronConf map[string]oesmodel.OesCronTask
+	)
+	cronConfDir := filepath.Join(config.ResourceDir, "oes", "config")
+	if _, err := serializer.ReadYAML(filepath.Join(cronConfDir, "stk_cron.yaml"), &stkCronConf); err != nil {
+		golog.Fatalf("加载stk_cron.yaml失败: %v", err)
+	}
+	if _, err := serializer.ReadYAML(filepath.Join(cronConfDir, "crd_cron.yaml"), &crdCronConf); err != nil {
+		golog.Fatalf("加载crd_cron.yaml失败: %v", err)
+	}
+	if _, err := serializer.ReadYAML(filepath.Join(cronConfDir, "opt_cron.yaml"), &optCronConf); err != nil {
+		golog.Fatalf("加载opt_cron.yaml失败: %v", err)
+	}
+
 	colonyRepo := oesrepo.NewOesColonyRepo(loggers.Data, init.DB, init.DBTimeout)
 	nodeRepo := oesrepo.NewOesNodeRepo(loggers.Data, init.DB, init.DBTimeout)
+	cronRepo := oesrepo.NewOesCronRepo(loggers.Data, init.DB, init.DBTimeout)
 
-	colonyService := oessvc.NewOesColonyService(loggers.Biz, colonyRepo)
-	nodeService := oessvc.NewOesNodeService(loggers.Biz, nodeRepo)
-	recordService := oessvc.NewRecordService(loggers.Biz, jobsvc.Script, jobsvc.Record, jobsvc.Schedule)
-	stkTaskUsecase := oessvc.NewStkTaskExecutionInfoUsecase(loggers.Biz, recordService)
-	crdaskUsecase := oessvc.NewCrdTaskExecutionInfoUsecase(loggers.Biz, recordService)
-	optTaskUsecase := oessvc.NewOptTaskExecutionInfoUsecase(loggers.Biz, recordService)
+	cronService := oessvc.NewOesCronService(loggers.Service, jobsvc.Schedule, cronRepo, stkCronConf, crdCronConf, optCronConf)
+	colonyService := oessvc.NewOesColonyService(loggers.Service, colonyRepo, cronService)
+	nodeService := oessvc.NewOesNodeService(loggers.Service, nodeRepo)
+	stkService := oessvc.NewStkTaskService(loggers.Service, jobsvc.Record, colonyRepo)
+	crdService := oessvc.NewCrdTaskService(loggers.Service, jobsvc.Record, colonyRepo)
+	optService := oessvc.NewOptTaskService(loggers.Service, jobsvc.Record, colonyRepo)
 
-	colonyHandler := handler.NewOesColonyService(loggers.Service, colonyService, stkTaskUsecase, crdaskUsecase, optTaskUsecase)
-	nodeHandler := handler.NewOesNodeService(loggers.Service, nodeService)
-	confHandler := handler.NewOesConfService(loggers.Service, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
+	colonyHandler := handler.NewOesColonyHandler(loggers.Service, colonyService, stkService, crdService, optService)
+	nodeHandler := handler.NewOesNodeHandler(loggers.Service, nodeService)
+	confHandler := handler.NewOesConfHandler(loggers.Service, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/oes")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))

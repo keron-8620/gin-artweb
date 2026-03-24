@@ -63,6 +63,7 @@ type SystemConf struct {
 	Security *SecurityConfig `yaml:"security"`
 	SSH      *SSHConfig      `yaml:"ssh"`
 	Upload   *UploadConfig   `yaml:"upload"`
+	API      *APIConfig      `yaml:"api"`
 }
 
 // NewSystemConf 加载系统配置文件

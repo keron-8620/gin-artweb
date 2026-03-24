@@ -2,6 +2,7 @@ package resource
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -10,13 +11,14 @@ import (
 	resomodel "gin-artweb/internal/model/resource"
 	resosvc "gin-artweb/internal/service/resource"
 	"gin-artweb/internal/shared/ctxutil"
-	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
+// HostHandler 处理主机相关的请求
+// 包含日志记录和主机服务的引用
 type HostHandler struct {
-	log     *zap.Logger
-	svcHost *resosvc.HostService
+	log     *zap.Logger          // 日志记录器
+	hostSvc *resosvc.HostService // 主机服务
 }
 
 func NewHostHandler(
@@ -25,329 +27,374 @@ func NewHostHandler(
 ) *HostHandler {
 	return &HostHandler{
 		log:     logger,
-		svcHost: svcHost,
+		hostSvc: svcHost,
 	}
 }
 
-// @Summary 创建主机
-// @Description 本接口用于创建新的主机配置信息
+// @Summary 新增主机
+// @Description 本接口用于新增主机
 // @Tags 主机管理
-// @Accept json,application/x-www-form-urlencoded,multipart/form-data
+// @Accept json
 // @Produce json
-// @Param request body resomodel.CreateOrUpdateHosrRequest true "创建主机请求"
-// @Success 201 {object} resomodel.HostReply "创建主机成功"
+// @Param request body resomodel.HostUpsertDTO true "创建主机请求"
+// @Success 201 {object} resomodel.HostResp "创建主机成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host [post]
 // @Security ApiKeyAuth
 func (h *HostHandler) CreateHost(ctx *gin.Context) {
-	var req resomodel.CreateOrUpdateHosrRequest
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
+	var req resomodel.HostUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		h.log.Error(
-			"绑定创建主机请求参数失败",
+		log.Error(
+			"新增主机：绑定创建主机请求参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始创建主机",
-		zap.Object(commodel.RequestModelKey, &req),
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"创建主机：开始执行",
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	m, err := h.svcHost.CreateHost(ctx, resomodel.HostModel{
-		Name:    req.Name,
-		Label:   req.Label,
-		SSHIP:   req.SSHIP,
-		SSHPort: req.SSHPort,
-		SSHUser: req.SSHUser,
-		PyPath:  req.PyPath,
-		Remark:  req.Remark,
-	}, req.SSHPassword)
+	log.Debug(
+		"创建主机：入参详情",
+		zap.Object("host_upsert_dto", &req),
+	)
+
+	createStepStart := time.Now()
+	m, err := h.hostSvc.CreateHost(ctx, req)
+	createStepDuration := time.Since(createStepStart)
 	if err != nil {
-		h.log.Error(
-			"创建主机失败",
+		log.Error(
+			"创建主机：创建主机失败",
 			zap.Error(err),
-			zap.Object(commodel.RequestModelKey, &req),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("host_upsert_dto", &req),
+			zap.Duration("create_step_duration", createStepDuration),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"创建主机：创建主机成功",
+		zap.Object("host_model", m),
+		zap.Duration("create_step_duration", createStepDuration),
+	)
 
-	h.log.Info(
-		"创建主机成功",
+	log.Info(
+		"创建主机：创建主机成功",
 		zap.Uint32("host_id", m.ID),
-		zap.Object(commodel.RequestModelKey, &req),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
+		zap.Duration("create_step_duration", createStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mo := resomodel.HostModelToStandardOut(*m)
-	ctx.JSON(http.StatusCreated, &resomodel.HostReply{
+	ctx.JSON(http.StatusCreated, &resomodel.HostResp{
 		Code: http.StatusCreated,
 		Data: *mo,
 	})
 }
 
 // @Summary 更新主机
-// @Description 本接口用于更新指定ID的主机配置信息
+// @Description 本接口用于更新指定ID的主机
 // @Tags 主机管理
-// @Accept json,application/x-www-form-urlencoded,multipart/form-data
+// @Accept json
 // @Produce json
 // @Param id path uint true "主机编号"
-// @Param request body resomodel.CreateOrUpdateHosrRequest true "更新主机请求"
-// @Success 200 {object} resomodel.HostReply "更新主机成功"
+// @Param request body resomodel.HostUpsertDTO true "更新主机请求"
+// @Success 200 {object} resomodel.HostResp "更新主机成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{id} [put]
 // @Security ApiKeyAuth
 func (h *HostHandler) UpdateHost(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		h.log.Error(
-			"绑定主机ID参数失败",
+		log.Error(
+			"更新主机：绑定主机ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	var req resomodel.CreateOrUpdateHosrRequest
+	var req resomodel.HostUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		h.log.Error(
-			"绑定更新主机请求参数失败",
+		log.Error(
+			"更新主机：绑定更新主机请求参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始更新主机",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.Object(commodel.RequestModelKey, &req),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"更新主机：开始执行",
+		zap.Uint32("host_id", uri.ID),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	m, err := h.svcHost.UpdateHostById(ctx, resomodel.HostModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{ID: uri.ID},
-		},
-		Name:    req.Name,
-		Label:   req.Label,
-		SSHIP:   req.SSHIP,
-		SSHPort: req.SSHPort,
-		SSHUser: req.SSHUser,
-		PyPath:  req.PyPath,
-		Remark:  req.Remark,
-	}, req.SSHPassword)
+	log.Debug(
+		"更新主机：入参详情",
+		zap.Uint32("host_id", uri.ID),
+		zap.Object("host_upsert_dto", &req),
+	)
+
+	updateStepStart := time.Now()
+	m, err := h.hostSvc.UpdateHostById(ctx, uri.ID, req)
+	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
-		h.log.Error(
-			"更新主机失败",
+		log.Error(
+			"更新主机：更新主机失败",
 			zap.Error(err),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.Object(commodel.RequestModelKey, &req),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("host_id", uri.ID),
+			zap.Object("host_upsert_dto", &req),
+			zap.Duration("update_step_duration", updateStepDuration),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"更新主机：更新主机成功",
+		zap.Object("host_model", m),
+		zap.Duration("update_step_duration", updateStepDuration),
+	)
 
-	h.log.Info(
-		"更新主机成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"更新主机：更新主机成功",
+		zap.Uint32("host_id", uri.ID),
+		zap.Duration("update_step_duration", updateStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mo := resomodel.HostModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &resomodel.HostReply{
+	ctx.JSON(http.StatusOK, &resomodel.HostResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
 }
 
 // @Summary 删除主机
-// @Description 本接口用于删除指定ID的主机配置信息
+// @Description 本接口用于删除指定ID的主机
 // @Tags 主机管理
 // @Accept json
 // @Produce json
 // @Param id path uint true "主机编号"
-// @Success 200 {object} commodel.MapAPIReply "删除成功"
+// @Success 200 {object} commodel.MapAPIResp "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{id} [delete]
 // @Security ApiKeyAuth
 func (h *HostHandler) DeleteHost(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		h.log.Error(
-			"绑定删除主机ID参数失败",
+		log.Error(
+			"删除主机：绑定主机ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始删除主机",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"删除主机：开始执行",
+		zap.Uint32("host_id", uri.ID),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	if err := h.svcHost.DeleteHostById(ctx, uri.ID); err != nil {
-		h.log.Error(
-			"删除主机失败",
+	deleteStepStart := time.Now()
+	if err := h.hostSvc.DeleteHostById(ctx, uri.ID); err != nil {
+		log.Error(
+			"删除主机：删除主机失败",
 			zap.Error(err),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("host_id", uri.ID),
+			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-
-	h.log.Info(
-		"删除主机成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	deleteStepDuration := time.Since(deleteStepStart)
+	log.Debug(
+		"删除主机：删除主机成功",
+		zap.Uint32("host_id", uri.ID),
+		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
-	ctx.JSON(commodel.NoDataReply.Code, commodel.NoDataReply)
+	log.Info(
+		"删除主机：删除主机成功",
+		zap.Uint32("host_id", uri.ID),
+		zap.Duration("delete_step_duration", deleteStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
-// @Summary 查询主机详情
-// @Description 本接口用于查询指定ID的主机详细信息
+// @Summary 查询主机
+// @Description 本接口用于查询指定ID的主机
 // @Tags 主机管理
 // @Accept json
 // @Produce json
 // @Param id path uint true "主机编号"
-// @Success 200 {object} resomodel.HostReply "获取主机详情成功"
+// @Success 200 {object} resomodel.HostResp "获取主机详情成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "主机未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{id} [get]
 // @Security ApiKeyAuth
 func (h *HostHandler) GetHost(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		h.log.Error(
-			"绑定查询主机ID参数失败",
+		log.Error(
+			"查询主机：绑定主机ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始查询主机详情",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询主机：开始执行",
+		zap.Uint32("host_id", uri.ID),
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	m, err := h.svcHost.FindHostById(ctx, uri.ID)
+	findStepStart := time.Now()
+	m, err := h.hostSvc.FindHostById(ctx, uri.ID)
+	findStepDuration := time.Since(findStepStart)
 	if err != nil {
-		h.log.Error(
-			"查询主机详情失败",
+		log.Error(
+			"查询主机：查询失败",
 			zap.Error(err),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("host_id", uri.ID),
+			zap.Duration("find_step_duration", findStepDuration),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"查询主机：查询主机成功",
+		zap.Uint32("host_id", uri.ID),
+		zap.Duration("find_step_duration", findStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 
-	h.log.Info(
-		"查询主机详情成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询主机：查询主机成功",
+		zap.Uint32("host_id", uri.ID),
+		zap.Duration("find_step_duration", findStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mo := resomodel.HostModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &resomodel.HostReply{
+	ctx.JSON(http.StatusOK, &resomodel.HostResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
 }
 
 // @Summary 查询主机列表
-// @Description 本接口用于查询主机配置信息列表
+// @Description 本接口用于查询主机列表
 // @Tags 主机管理
 // @Accept json
 // @Produce json
-// @Param request query resomodel.ListHostRequest false "查询参数"
-// @Success 200 {object} resomodel.PagHostReply "成功返回主机列表"
+// @Param request query resomodel.ListHostDTO false "查询参数"
+// @Success 200 {object} resomodel.PagHostResp "成功返回主机列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host [get]
 // @Security ApiKeyAuth
 func (h *HostHandler) ListHost(ctx *gin.Context) {
-	var req resomodel.ListHostRequest
+	startTime := time.Now()
+	log := ctxutil.NewLogger(h.log, ctx)
+	var req resomodel.ListHostDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		h.log.Error(
-			"绑定查询主机列表参数失败",
+		log.Error(
+			"查询主机列表：绑定参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	h.log.Info(
-		"开始查询主机列表",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询主机列表：开始执行",
+		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.String("request_method", ctx.Request.Method),
 	)
 
-	page, size, query := req.Query()
-	qp := database.QueryParams{
-		IsCount: true,
-		Size:    size,
-		Page:    page,
-		OrderBy: []string{"id ASC"},
-		Query:   query,
-	}
-	total, ms, err := h.svcHost.ListHost(ctx, qp)
+	log.Debug(
+		"查询主机列表：参数详情",
+		zap.Object("list_host_dto", &req),
+	)
+
+	listStepStart := time.Now()
+	page, size := req.StandardModelQuery.GetPageParam()
+	total, ms, err := h.hostSvc.ListHost(ctx, page, size, req)
+	listStepDuration := time.Since(listStepStart)
 	if err != nil {
-		h.log.Error(
-			"查询主机列表失败",
+		log.Error(
+			"查询主机列表：查询主机列表失败",
 			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Int("page", page),
+			zap.Int("size", size),
+			zap.Object("list_host_dto", &req),
+			zap.Duration("list_step_duration", listStepDuration),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	h.log.Info(
-		"查询主机列表成功",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+	log.Info(
+		"查询主机列表：查询主机列表成功",
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Int64("total", total),
+		zap.Duration("list_step_duration", listStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mbs := resomodel.ListHostModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &resomodel.PagHostReply{
+	ctx.JSON(http.StatusOK, &resomodel.PagHostResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

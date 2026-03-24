@@ -3,28 +3,28 @@ package model
 import (
 	"gorm.io/gorm"
 
-	"gin-artweb/internal/model/customer"
-	"gin-artweb/internal/model/jobs"
+	"gin-artweb/internal/model/job"
 	"gin-artweb/internal/model/mds"
 	"gin-artweb/internal/model/mon"
 	"gin-artweb/internal/model/oes"
 	"gin-artweb/internal/model/resource"
+	"gin-artweb/internal/model/sys"
 )
 
 func DBAutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		// 客户模型
-		&customer.ApiModel{},
-		&customer.MenuModel{},
-		&customer.ButtonModel{},
-		&customer.RoleModel{},
-		&customer.UserModel{},
-		&customer.LoginRecordModel{},
+		// 系统模型
+		&sys.ApiModel{},
+		&sys.MenuModel{},
+		&sys.ButtonModel{},
+		&sys.RoleModel{},
+		&sys.UserModel{},
+		&sys.LoginRecordModel{},
 
 		// 任务模型
-		&jobs.ScriptModel{},
-		&jobs.ScriptRecordModel{},
-		&jobs.ScheduleModel{},
+		&job.ScriptModel{},
+		&job.ScriptRecordModel{},
+		&job.ScheduleModel{},
 
 		// 资源模型
 		&resource.HostModel{},

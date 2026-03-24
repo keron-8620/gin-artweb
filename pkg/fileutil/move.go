@@ -20,6 +20,9 @@ import (
 //	Move(context.Background(), "/tmp/src.txt", "/tmp/dir/")    // 移动到目录
 //	Move(context.Background(), "/tmp/src", "/tmp/dst")         // 移动目录
 func Move(ctx context.Context, src, dst string) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
 	// 公共校验
 	if err := ValidatePath(ctx, src); err != nil {
 		return errors.WithMessage(err, "源路径校验失败")

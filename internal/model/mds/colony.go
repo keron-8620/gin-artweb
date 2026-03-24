@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"gin-artweb/internal/model/common"
+	"gin-artweb/internal/model/job"
 	"gin-artweb/internal/model/mon"
 	"gin-artweb/internal/model/resource"
 	"gin-artweb/internal/shared/database"
@@ -62,10 +63,10 @@ func (vs *MdsColonyVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// CreateOrUpdateMdsColonyRequest 用于创建mon节点的请求结构体
+// MdsColonyUpsertDTO 用于创建mon节点的请求结构体
 //
-// swagger:model CreateOrUpdateMdsColonyRequest
-type CreateOrUpdateMdsColonyRequest struct {
+// swagger:model MdsColonyUpsertDTO
+type MdsColonyUpsertDTO struct {
 	// 集群号
 	ColonyNum string `json:"colony_num" form:"colony_num" binding:"required,max=2"`
 
@@ -82,11 +83,30 @@ type CreateOrUpdateMdsColonyRequest struct {
 	MonNodeID uint32 `json:"mon_node_id" form:"mon_node_id" binding:"required"`
 }
 
-// ListMdsColonyRequest 用于获取mon节点列表的请求结构体
+func (vs *MdsColonyUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("colony_num", vs.ColonyNum)
+	enc.AddString("extracted_name", vs.ExtractedName)
+	enc.AddBool("is_enable", vs.IsEnable)
+	enc.AddUint32("package_id", vs.PackageID)
+	enc.AddUint32("mon_node_id", vs.MonNodeID)
+	return nil
+}
+
+func (dto *MdsColonyUpsertDTO) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"colony_num":     dto.ColonyNum,
+		"extracted_name": dto.ExtractedName,
+		"is_enable":      dto.IsEnable,
+		"package_id":     dto.PackageID,
+		"mon_node_id":    dto.MonNodeID,
+	}
+}
+
+// ListMdsColonyDTO 用于获取mon节点列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListMdsColonyRequest
-type ListMdsColonyRequest struct {
+// swagger:model ListMdsColonyDTO
+type ListMdsColonyDTO struct {
 	common.StandardModelQuery
 
 	// 集群号
@@ -105,24 +125,38 @@ type ListMdsColonyRequest struct {
 	MonNodeID uint32 `form:"mon_node_id"`
 }
 
-func (req *ListMdsColonyRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(12)
-	if req.ColonyNum != "" {
-		query["colony_num = ?"] = req.ColonyNum
+func (dto *ListMdsColonyDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
 	}
-	if req.ExtractedName != "" {
-		query["extracted_name = ?"] = "%" + req.ExtractedName + "%"
+	enc.AddString("colony_num", dto.ColonyNum)
+	enc.AddString("extracted_name", dto.ExtractedName)
+	if dto.IsEnable != nil {
+		enc.AddBool("is_enable", *dto.IsEnable)
 	}
-	if req.IsEnable != nil {
-		query["is_enable = ?"] = *req.IsEnable
+	enc.AddUint32("package_id", dto.PackageID)
+	enc.AddUint32("mon_node_id", dto.MonNodeID)
+	return nil
+}
+
+func (dto *ListMdsColonyDTO) ToQueryMap() map[string]any {
+	queryMap := dto.StandardModelQuery.ToQueryMap(12)
+	if dto.ColonyNum != "" {
+		queryMap["colony_num = ?"] = dto.ColonyNum
 	}
-	if req.PackageID > 0 {
-		query["package_id = ?"] = req.PackageID
+	if dto.ExtractedName != "" {
+		queryMap["extracted_name = ?"] = "%" + dto.ExtractedName + "%"
 	}
-	if req.MonNodeID > 0 {
-		query["mon_node_id = ?"] = req.MonNodeID
+	if dto.IsEnable != nil {
+		queryMap["is_enable = ?"] = *dto.IsEnable
 	}
-	return page, size, query
+	if dto.PackageID > 0 {
+		queryMap["package_id = ?"] = dto.PackageID
+	}
+	if dto.MonNodeID > 0 {
+		queryMap["mon_node_id = ?"] = dto.MonNodeID
+	}
+	return queryMap
 }
 
 type MdsColonyBaseOut struct {
@@ -159,11 +193,11 @@ type MdsColonyDetailOut struct {
 	MonNode *mon.MonNodeBaseOut `json:"mon_node"`
 }
 
-// MdsColonyReply mds集群配置的响应结构
-type MdsColonyReply = common.APIReply[MdsColonyDetailOut]
+// MdsColonyResp mds集群配置的响应结构
+type MdsColonyResp = common.APIResp[MdsColonyDetailOut]
 
-// PagMdsColonyReply mds集群配置的分页响应结构
-type PagMdsColonyReply = common.APIReply[*common.Pag[MdsColonyDetailOut]]
+// PagMdsColonyResp mds集群配置的分页响应结构
+type PagMdsColonyResp = common.APIResp[*common.Pag[MdsColonyDetailOut]]
 
 // mds 任务状态
 type MdsColonyTaskInfo struct {
@@ -171,11 +205,11 @@ type MdsColonyTaskInfo struct {
 	ColonyNum string `json:"colony_num" example:"01"`
 
 	// 任务状态
-	Tasks []common.TaskInfo `json:"tasks"`
+	Tasks []job.BizTaskInfo `json:"tasks"`
 }
 
-// ListMdsTasksInfoReply 多个mds集群的任务状态响应结构
-type ListMdsTasksInfoReply = common.APIReply[[]MdsColonyTaskInfo]
+// ListMdsTasksInfoResp 多个mds集群的任务状态响应结构
+type ListMdsTasksInfoResp = common.APIResp[[]MdsColonyTaskInfo]
 
 func MdsColonyToBaseOut(
 	m MdsColonyModel,
@@ -209,13 +243,11 @@ func MdsColonyToDetailOut(
 }
 
 func ListMdsColonyToDetailOut(
-	rms *[]MdsColonyModel,
-) *[]MdsColonyDetailOut {
-	if rms == nil {
-		return &[]MdsColonyDetailOut{}
+	ms []MdsColonyModel,
+) []MdsColonyDetailOut {
+	if len(ms) == 0 {
+		return []MdsColonyDetailOut{}
 	}
-
-	ms := *rms
 	mso := make([]MdsColonyDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
@@ -223,5 +255,5 @@ func ListMdsColonyToDetailOut(
 			mso = append(mso, *mo)
 		}
 	}
-	return &mso
+	return mso
 }

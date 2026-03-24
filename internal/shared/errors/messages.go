@@ -56,18 +56,14 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonForeignKeyViolated:            "外键约束冲突",
 	ReasonCheckConstraintViolated:       "检查约束冲突",
 
+	// 上传下载文件
+	ReasonDownloadFileNotFound:         "下载的文件未找到",
+	ReasonDownloadFilePermissionDenied: "下载文件权限被拒绝",
+	ReasonDownloadFileFailed:           "下载文件失败",
+
 	// ssh服务
 	ReasonSSHConnectionFailed: "ssh连接失败",
 	ReasonSSHKeyDeployFailed:  "ssh密钥部署失败",
-
-	// 上传下载文件
-	ReasonUploadFileNotFound:            "上传的文件未找到",
-	ReasonUploadFileTooLarge:            "上传的文件超出大小限制",
-	ReasonSaveUploadFileFailed:          "保存上传文件失败",
-	ReasonSetUploadFilePermissionFailed: "设置上传文件权限失败",
-	ReasonDownloadFileNotFound:          "下载的文件未找到",
-	ReasonDownloadFilePermissionDenied:  "下载文件权限被拒绝",
-	ReasonDownloadFileFailed:            "下载文件失败",
 
 	// 压缩解压文件
 	ReasonUnZIPFailed:       "解压文件失败",
@@ -81,8 +77,15 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonDeleteCacheFileFailed: "缓存文件删除失败",
 
 	// 脚本相关
-	ReasonScriptNotFound:    "脚本未找到",
-	ReasonScriptIsBuiltin:   "脚本为内置脚本",
-	ReasonScriptIsDisabled:  "脚本已禁用",
-	ReasonScriptLogNotFound: "脚本日志未找到",
+	ReasonScriptNotFound:     "脚本未找到",
+	ReasonScriptIsBuiltin:    "脚本为内置脚本",
+	ReasonScriptIsDisabled:   "脚本已禁用",
+	ReasonScriptLogNotFound:  "脚本日志未找到",
+	ReasonScriptSaveFailed:   "脚本保存失败",
+	ReasonScriptRemoveFailed: "脚本删除失败",
+
+	// 程序包相关
+	ReasonPackageNotFound:     "程序包未找到",
+	ReasonPackageSaveFailed:   "程序包保存失败",
+	ReasonPackageRemoveFailed: "程序包删除失败",
 }

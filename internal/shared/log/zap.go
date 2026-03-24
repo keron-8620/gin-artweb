@@ -8,10 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const (
-	DurationKey = "duration"
-)
-
 // NewZapLogger 根据配置初始化日志
 func NewZapLogger(level string, w io.Writer) (*zap.Logger, error) {
 	// 解析日志级别
@@ -58,11 +54,4 @@ func NewZapLoggerMust(level string, w io.Writer) *zap.Logger {
 		panic(err)
 	}
 	return logger
-}
-
-type Loggers struct {
-	Server  *zap.Logger
-	Service *zap.Logger
-	Biz     *zap.Logger
-	Data    *zap.Logger
 }

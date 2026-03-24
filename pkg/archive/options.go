@@ -177,7 +177,7 @@ func (o *ArchiveOptions) ShouldInclude(filePath string) (bool, error) {
 func (o *ArchiveOptions) IsPathAllowed(filePath string, baseDir string) (bool, error) {
 	relPath, err := filepath.Rel(baseDir, filePath)
 	if err != nil {
-		return false, errors.Wrap(err, "计算相对路径失败")
+		return false, errors.WrapIf(err, "计算相对路径失败")
 	}
 
 	// 防止路径遍历攻击

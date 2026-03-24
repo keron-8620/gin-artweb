@@ -2,25 +2,23 @@ package ctxutil
 
 import (
 	"context"
+	"strings"
 )
 
-const TraceIDKey = "request_id"
+const (
+	TraceIDKey     = "request_id"
+	defaultTraceID = "unknown-trace-id"
+)
 
 func GetTraceID(ctx context.Context) string {
 	if ctx == nil {
-		return ""
+		return defaultTraceID
 	}
-
-	value := ctx.Value(TraceIDKey)
-	if value == nil {
-		return ""
+	requestID, ok := ctx.Value(TraceIDKey).(string)
+	if !ok || strings.TrimSpace(requestID) == "" {
+		return defaultTraceID
 	}
-
-	if requestID, ok := value.(string); ok {
-		return requestID
-	}
-
-	return ""
+	return requestID
 }
 
 func SetTraceID(ctx context.Context, requestID string) context.Context {

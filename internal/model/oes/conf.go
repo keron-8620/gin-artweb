@@ -7,12 +7,12 @@ import (
 	"gin-artweb/pkg/fileutil"
 )
 
-type UploadOesConfRequest struct {
+type UploadOesConfDto struct {
 	// 上传的oes配置文件
 	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
-type DownloadOrDeleteOesConfRequest struct {
+type OesConfFileDTO struct {
 	// 集群号
 	ColonyNum string `uri:"colony_num" binding:"required,max=2"`
 
@@ -23,7 +23,7 @@ type DownloadOrDeleteOesConfRequest struct {
 	Filename string `uri:"filename" form:"filename" binding:"required"`
 }
 
-type GetOesConfRequest struct {
+type GetOesConfDTO struct {
 	// 集群号
 	ColonyNum string `uri:"colony_num" binding:"required,max=2"`
 
@@ -31,10 +31,10 @@ type GetOesConfRequest struct {
 	DirName string `uri:"dir_name" binding:"required,oneof=all host_01 host_02 host_03"`
 }
 
-type ListOesConfRequest struct {
+type ListOesConfDTO struct {
 	// 集群号
 	ColonyNum string `uri:"colony_num" binding:"required,max=2"`
 }
 
-// PagOesConfReply 配置文件名列表结构
-type PagOesConfReply = common.APIReply[*fileutil.FileInfo]
+// PagOesConfResp 配置文件名列表结构
+type PagOesConfResp = common.APIResp[*fileutil.FileInfo]

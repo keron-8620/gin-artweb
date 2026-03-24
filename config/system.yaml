@@ -15,19 +15,19 @@ server: # 服务配置
   swagger: true # 是否启用swagger
 
 database: # 数据库配置
-  type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
-  dns: "artweb.db" # sqlite3数据库配置
+  type: "opengauss" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
+  # dns: "artweb.db" # sqlite3数据库配置
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
-  # dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
+  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable" # PostgreSql/OpenGauss配置
   # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   conn_max_lifetime: 3600 # 连接最大存活时间
   conn_max_idle_time: 600 # 连接最大空闲时间
   log_sql: true # 是否记录sql日志
-  read_timeout: 3 # 读超时时间
-  write_timeout: 8 # 写超时时间
-  list_timeout: 10 # 批量查询超时
+  read_timeout: 5 # 读超时时间
+  write_timeout: 10 # 写超时时间
+  list_timeout: 15 # 批量查询超时
 
 log: # 日志服务
   level: "DEBUG" # 日志级别
@@ -66,6 +66,13 @@ security: # 安全配置
     refresh_minutes: 180 # token刷新时间(分钟)
     access_method: "HS256" # token访问方法
     refresh_method: "HS512" # token刷新方法
+
+api:
+  total_timeout: 10s       # 接口层总超时（所有API请求的最大耗时）
+  biz_create_timeout: 8s   # 创建API业务逻辑超时
+  biz_update_timeout: 8s   # 更新API业务逻辑超时
+  biz_query_timeout: 5s    # 查询API业务逻辑超时
+  biz_delete_timeout: 5s   # 删除API业务逻辑超时
 
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名

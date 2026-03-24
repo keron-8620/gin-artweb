@@ -3,90 +3,67 @@ package mds
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
-	jobsmodel "gin-artweb/internal/model/jobs"
+	jobmodel "gin-artweb/internal/model/job"
 	mdsmodel "gin-artweb/internal/model/mds"
+	mdsrepo "gin-artweb/internal/repo/mds"
+	jobsvc "gin-artweb/internal/service/job"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
+	"gin-artweb/internal/shared/ctxutil"
+	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type MdsTaskRecordCache struct {
-	ColonyNum string
-	Mon       uint32
-	Bse       uint32
-	Sse       uint32
-	Szse      uint32
+type MdsTaskService struct {
+	log        *zap.Logger
+	recordSvc  *jobsvc.RecordService
+	colonyRepo *mdsrepo.MdsColonyRepo
 }
 
-func (mc MdsTaskRecordCache) GetTaskList() []string {
-	return []string{"mon", "bse", "sse", "szse"}
-}
-
-func (mc MdsTaskRecordCache) GetRecordIDs() []uint32 {
-	return []uint32{mc.Mon, mc.Bse, mc.Sse, mc.Szse}
-}
-
-func (mc MdsTaskRecordCache) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	for i, task := range mc.GetTaskList() {
-		enc.AddUint32(task, mc.GetRecordIDs()[i])
-	}
-	return nil
-}
-
-type MdsTaskExecutionInfo struct {
-	ColonyNum string
-	Mon       *jobsmodel.ScriptRecordModel
-	Bse       *jobsmodel.ScriptRecordModel
-	Sse       *jobsmodel.ScriptRecordModel
-	Szse      *jobsmodel.ScriptRecordModel
-}
-
-func (m MdsTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("colony_num", m.ColonyNum)
-	if m.Mon != nil {
-		enc.AddObject("mon", m.Mon)
-	}
-	if m.Bse != nil {
-		enc.AddObject("bse", m.Bse)
-	}
-	if m.Sse != nil {
-		enc.AddObject("sse", m.Sse)
-	}
-	if m.Szse != nil {
-		enc.AddObject("szse", m.Szse)
-	}
-	return nil
-}
-
-type MdsTaskExecutionInfoUsecase struct {
-	log     *zap.Logger
-	jobsSvc *JobsService
-}
-
-func NewMdsTaskExecutionInfoUsecase(
+func NewMdsTaskService(
 	log *zap.Logger,
-	jobsSvc *JobsService,
-) *MdsTaskExecutionInfoUsecase {
-	return &MdsTaskExecutionInfoUsecase{
-		log:     log,
-		jobsSvc: jobsSvc,
+	recordSvc *jobsvc.RecordService,
+	colonyRepo *mdsrepo.MdsColonyRepo,
+) *MdsTaskService {
+	return &MdsTaskService{
+		log:        log,
+		recordSvc:  recordSvc,
+		colonyRepo: colonyRepo,
 	}
 }
 
-func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
+func (s *MdsTaskService) BuildTaskExecutionInfos(
 	ctx context.Context,
-	ms []mdsmodel.MdsColonyModel,
-) (*[]MdsTaskExecutionInfo, *errors.Error) {
+	dto mdsmodel.ListMdsColonyDTO,
+) ([]mdsmodel.MdsColonyTaskExecutionInfo, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
-	trs := make([]MdsTaskRecordCache, len(ms))
+	log := ctxutil.NewLogger(s.log, ctx)
+
+	log.Info(
+		"开始构建mds任务执行信息",
+		zap.String("colony_num", dto.ColonyNum),
+	)
+
+	qp := database.QueryParams{
+		Preloads: nil,
+		OrderBy:  []string{"id DESC"},
+		Query:    dto.ToQueryMap(),
+	}
+
+	ms, err := s.colonyRepo.ListModel(ctx, qp)
+	if err != nil {
+		return nil, errors.NewGormError(err, qp.Query)
+	}
+
+	trs := make([]mdsmodel.MdsColonyTaskRecordIDs, len(ms))
 	for i, m := range ms {
-		tr, err := uc.LoadMdsTaskRecordCacheFromFiles(ctx, m.ColonyNum)
+		tr, err := loadMdsTaskRecordCacheFromFiles(log, m.ColonyNum)
 		if err != nil {
 			return nil, errors.FromError(err)
 		}
@@ -94,112 +71,80 @@ func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfos(
 			trs[i] = *tr
 		}
 	}
-	recoids, rErr := uc.ExtractValidRecordIDsFromCaches(ctx, trs)
-	if rErr != nil {
-		return nil, rErr
-	}
-	cache, rErr := uc.jobsSvc.FindRecordsByIDs(ctx, recoids)
-	if rErr != nil {
-		return nil, rErr
-	}
-	tasks := make([]MdsTaskExecutionInfo, len(trs))
-	for i, tr := range trs {
-		info, err := uc.BuildTaskExecutionInfo(ctx, tr, cache)
-		if err != nil {
-			return nil, err
-		}
-		tasks[i] = info
-	}
-	return &tasks, nil
-}
-
-func (uc *MdsTaskExecutionInfoUsecase) BuildTaskExecutionInfo(
-	ctx context.Context,
-	tr MdsTaskRecordCache,
-	cache map[uint32]jobsmodel.ScriptRecordModel,
-) (MdsTaskExecutionInfo, *errors.Error) {
-	if ctx.Err() != nil {
-		return MdsTaskExecutionInfo{}, errors.FromError(ctx.Err())
-	}
-	return MdsTaskExecutionInfo{
-		ColonyNum: tr.ColonyNum,
-		Mon:       uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Mon, tr.ColonyNum, "mon"),
-		Bse:       uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Bse, tr.ColonyNum, "bse"),
-		Sse:       uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Sse, tr.ColonyNum, "sse"),
-		Szse:      uc.jobsSvc.FindRecordsByMap(ctx, cache, tr.Szse, tr.ColonyNum, "szse"),
-	}, nil
-}
-
-func (uc *MdsTaskExecutionInfoUsecase) ExtractValidRecordIDsFromCaches(
-	ctx context.Context,
-	trs []MdsTaskRecordCache,
-) ([]uint32, *errors.Error) {
-	if ctx.Err() != nil {
-		return nil, errors.FromError(ctx.Err())
-	}
-
 	var recordIDs []uint32
 	for _, tr := range trs {
-		if tr.Mon != 0 {
-			recordIDs = append(recordIDs, tr.Mon)
+		recordIDs = append(recordIDs, tr.GetValidRecordIDs()...)
+	}
+	records, rErr := s.recordSvc.ListScriptRecordByIDs(ctx, nil, recordIDs)
+	if rErr != nil {
+		return nil, rErr
+	}
+	cache := make(map[uint32]jobmodel.ScriptRecordModel, len(records))
+	for _, r := range records {
+		cache[r.ID] = r
+	}
+
+	tasks := make([]mdsmodel.MdsColonyTaskExecutionInfo, len(trs))
+	for i, tr := range trs {
+		if ctx.Err() != nil {
+			return nil, errors.FromError(ctx.Err())
 		}
-		if tr.Bse != 0 {
-			recordIDs = append(recordIDs, tr.Bse)
-		}
-		if tr.Sse != 0 {
-			recordIDs = append(recordIDs, tr.Sse)
-		}
-		if tr.Szse != 0 {
-			recordIDs = append(recordIDs, tr.Szse)
+		tasks[i] = mdsmodel.MdsColonyTaskExecutionInfo{
+			ColonyNum: tr.ColonyNum,
+			Mon:       jobsvc.GetRecordIDByMap(cache, tr.Mon),
+			Bse:       jobsvc.GetRecordIDByMap(cache, tr.Bse),
+			Sse:       jobsvc.GetRecordIDByMap(cache, tr.Sse),
+			Szse:      jobsvc.GetRecordIDByMap(cache, tr.Szse),
 		}
 	}
-	if len(recordIDs) == 0 {
-		return []uint32{}, nil
-	}
-	return recordIDs, nil
+	return tasks, nil
 }
 
-func (uc *MdsTaskExecutionInfoUsecase) LoadMdsTaskRecordCacheFromFiles(
-	ctx context.Context,
+func loadMdsTaskRecordCacheFromFiles(
+	log *zap.Logger,
 	colonyNum string,
-) (*MdsTaskRecordCache, *errors.Error) {
-	if ctx.Err() != nil {
-		return nil, errors.FromError(ctx.Err())
-	}
-	flagDir := filepath.Join(config.StorageDir, "mds", "flags", colonyNum)
-	var (
-		getTaskIDErr error
-		mon          uint32
-		bse          uint32
-		sse          uint32
-		szse         uint32
+) (*mdsmodel.MdsColonyTaskRecordIDs, *errors.Error) {
+	startTime := time.Now()
+
+	log.Info(
+		"读取mds任务状态对应的执行记录id：开始执行",
+		zap.String("colony_num", colonyNum),
 	)
-	mon, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".mon"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	bse, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".bse"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	sse, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".sse"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	szse, getTaskIDErr = common.ReadUint32FromFile(filepath.Join(flagDir, ".szse"))
-	if getTaskIDErr != nil {
-		return nil, errors.FromError(getTaskIDErr)
-	}
-	mc := MdsTaskRecordCache{
+
+	flagDir := filepath.Join(config.StorageDir, "mds", "flags", colonyNum)
+	mc := mdsmodel.MdsColonyTaskRecordIDs{
 		ColonyNum: colonyNum,
-		Mon:       mon,
-		Bse:       bse,
-		Sse:       sse,
-		Szse:      szse,
 	}
-	uc.log.Debug(
-		"查询mds任务状态对应的执行记录id成功",
+
+	// 定义任务映射表，减少代码重复
+	taskMap := map[string]*uint32{
+		"mon":  &mc.Mon,
+		"bse":  &mc.Bse,
+		"sse":  &mc.Sse,
+		"szse": &mc.Szse,
+	}
+
+	// 遍历处理每个任务
+	for taskName, fieldPtr := range taskMap {
+		flagPath := filepath.Join(flagDir, "."+taskName)
+		if value, err := common.ReadUint32FromFile(flagPath); err != nil {
+			log.Error(
+				"读取mds任务状态对应的执行记录id：获取"+taskName+"任务状态失败",
+				zap.Error(err),
+				zap.String("colony_num", colonyNum),
+				zap.String("task_name", taskName),
+				zap.String("flag_path", flagPath),
+			)
+			return nil, errors.FromError(err)
+		} else {
+			*fieldPtr = value
+		}
+	}
+
+	log.Debug(
+		"读取mds任务状态对应的执行记录id：任务状态读取成功",
 		zap.Object("mds_task_record_ids", &mc),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &mc, nil
 }

@@ -55,10 +55,10 @@ func (vs *MdsNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// CreateOrUpdateMdsNodeRequest 用于创建mds节点的请求结构体
+// MdsNodeUpsertDTO 用于创建mds节点的请求结构体
 //
-// swagger:model CreateOrUpdateMdsNodeRequest
-type CreateOrUpdateMdsNodeRequest struct {
+// swagger:model MdsNodeUpsertDTO
+type MdsNodeUpsertDTO struct {
 	// 节点角色
 	NodeRole string `json:"node_role" form:"node_role" binding:"required,oneof=master follow arbiter"`
 
@@ -72,11 +72,28 @@ type CreateOrUpdateMdsNodeRequest struct {
 	HostID uint32 `json:"host_id" form:"host_id" binding:"required"`
 }
 
-// ListMdsNodeRequest 用于获取mds节点列表的请求结构体
+func (dto *MdsNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("node_role", dto.NodeRole)
+	enc.AddBool("is_enable", dto.IsEnable)
+	enc.AddUint32("mds_colony_id", dto.MdsColonyID)
+	enc.AddUint32("host_id", dto.HostID)
+	return nil
+}
+
+func (dto *MdsNodeUpsertDTO) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"node_role":     dto.NodeRole,
+		"is_enable":     dto.IsEnable,
+		"mds_colony_id": dto.MdsColonyID,
+		"host_id":       dto.HostID,
+	}
+}
+
+// ListMdsNodeDTO 用于获取mds节点列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListMdsNodeRequest
-type ListMdsNodeRequest struct {
+// swagger:model ListMdsNodeDTO
+type ListMdsNodeDTO struct {
 	common.StandardModelQuery
 
 	// 节点角色
@@ -92,21 +109,34 @@ type ListMdsNodeRequest struct {
 	HostID uint32 `form:"host_id"`
 }
 
-func (req *ListMdsNodeRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(12)
-	if req.NodeRole != "" {
-		query["NodeRole = ?"] = req.NodeRole
+func (dto *ListMdsNodeDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
 	}
-	if req.IsEnable != nil {
-		query["is_enable = ?"] = *req.IsEnable
+	enc.AddString("node_role", dto.NodeRole)
+	if dto.IsEnable != nil {
+		enc.AddBool("is_enable", *dto.IsEnable)
 	}
-	if req.MdsColonyID > 0 {
-		query["mds_colony_id = ?"] = req.MdsColonyID
+	enc.AddUint32("mds_colony_id", dto.MdsColonyID)
+	enc.AddUint32("host_id", dto.HostID)
+	return nil
+}
+
+func (dto *ListMdsNodeDTO) ToQueryMap() map[string]any {
+	queryMap := dto.StandardModelQuery.ToQueryMap(12)
+	if dto.NodeRole != "" {
+		queryMap["node_role = ?"] = dto.NodeRole
 	}
-	if req.HostID > 0 {
-		query["host_id = ?"] = req.HostID
+	if dto.IsEnable != nil {
+		queryMap["is_enable = ?"] = *dto.IsEnable
 	}
-	return page, size, query
+	if dto.MdsColonyID > 0 {
+		queryMap["mds_colony_id = ?"] = dto.MdsColonyID
+	}
+	if dto.HostID > 0 {
+		queryMap["host_id = ?"] = dto.HostID
+	}
+	return queryMap
 }
 
 type MdsNodeBaseOut struct {
@@ -140,11 +170,11 @@ type MdsNodeDetailOut struct {
 	Host *resource.HostBaseOut `json:"host"`
 }
 
-// MdsNodeReply mds节点配置的响应结构
-type MdsNodeReply = common.APIReply[MdsNodeDetailOut]
+// MdsNodeResp mds节点配置的响应结构
+type MdsNodeResp = common.APIResp[MdsNodeDetailOut]
 
-// PagMdsNodeReply mds节点配置的分页响应结构
-type PagMdsNodeReply = common.APIReply[*common.Pag[MdsNodeDetailOut]]
+// PagMdsNodeResp mds节点配置的分页响应结构
+type PagMdsNodeResp = common.APIResp[*common.Pag[MdsNodeDetailOut]]
 
 func MdsNodeToBaseOut(
 	m MdsNodeModel,
@@ -177,13 +207,11 @@ func MdsNodeToDetailOut(
 }
 
 func ListMdsNodeToDetailOut(
-	rms *[]MdsNodeModel,
-) *[]MdsNodeDetailOut {
-	if rms == nil {
-		return &[]MdsNodeDetailOut{}
+	ms []MdsNodeModel,
+) []MdsNodeDetailOut {
+	if len(ms) == 0 {
+		return []MdsNodeDetailOut{}
 	}
-
-	ms := *rms
 	mso := make([]MdsNodeDetailOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
@@ -191,5 +219,5 @@ func ListMdsNodeToDetailOut(
 			mso = append(mso, *mo)
 		}
 	}
-	return &mso
+	return mso
 }

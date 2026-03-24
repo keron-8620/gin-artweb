@@ -1,4 +1,4 @@
-package service
+package oes
 
 import (
 	"net/http"
@@ -8,36 +8,35 @@ import (
 	"go.uber.org/zap"
 
 	commodel "gin-artweb/internal/model/common"
-	jobsmodel "gin-artweb/internal/model/jobs"
+	jobmodel "gin-artweb/internal/model/job"
 	oesmodel "gin-artweb/internal/model/oes"
-	biz "gin-artweb/internal/service/oes"
+	jobsvc "gin-artweb/internal/service/job"
 	oessvc "gin-artweb/internal/service/oes"
 	"gin-artweb/internal/shared/ctxutil"
-	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type OesColonyService struct {
-	log      *zap.Logger
-	ucColony *oessvc.OesColonyService
-	ucStk    *oessvc.StkTaskExecutionInfoUsecase
-	ucCrd    *oessvc.CrdTaskExecutionInfoUsecase
-	ucOpt    *oessvc.OptTaskExecutionInfoUsecase
+type OesColonyHandler struct {
+	log        *zap.Logger
+	colonySvc  *oessvc.OesColonyService
+	stkTaskSvc *oessvc.StkTaskService
+	crdTaskSvc *oessvc.CrdTaskService
+	optTaskSvc *oessvc.OptTaskService
 }
 
-func NewOesColonyService(
+func NewOesColonyHandler(
 	logger *zap.Logger,
 	ucColony *oessvc.OesColonyService,
-	ucStk *oessvc.StkTaskExecutionInfoUsecase,
-	ucCrd *oessvc.CrdTaskExecutionInfoUsecase,
-	ucOpt *oessvc.OptTaskExecutionInfoUsecase,
-) *OesColonyService {
-	return &OesColonyService{
-		log:      logger,
-		ucColony: ucColony,
-		ucStk:    ucStk,
-		ucCrd:    ucCrd,
-		ucOpt:    ucOpt,
+	stkTaskSvc *oessvc.StkTaskService,
+	crdTaskSvc *oessvc.CrdTaskService,
+	optTaskSvc *oessvc.OptTaskService,
+) *OesColonyHandler {
+	return &OesColonyHandler{
+		log:        logger,
+		colonySvc:  ucColony,
+		stkTaskSvc: stkTaskSvc,
+		crdTaskSvc: crdTaskSvc,
+		optTaskSvc: optTaskSvc,
 	}
 }
 
@@ -46,49 +45,41 @@ func NewOesColonyService(
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param request body oesmodel.CreateOrUpdateOesColonyRequest true "创建oes集群请求"
-// @Success 200 {object} oesmodel.OesColonyReply "成功返回oes集群信息"
+// @Param request body oesmodel.OesColonyUpsertDTO true "创建oes集群请求"
+// @Success 200 {object} oesmodel.OesColonyResp "成功返回oes集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony [post]
 // @Security ApiKeyAuth
-func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
-	var req oesmodel.CreateOrUpdateOesColonyRequest
+func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.OesColonyUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定创建oes集群参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	colony := oesmodel.OesColonyModel{
-		SystemType:    req.SystemType,
-		ColonyNum:     req.ColonyNum,
-		ExtractedName: req.ExtractedName,
-		IsEnable:      req.IsEnable,
-		MonNodeID:     req.MonNodeID,
-		PackageID:     req.PackageID,
-		XCounterID:    req.XCounterID,
-	}
-
-	m, rErr := s.ucColony.CreateOesColony(ctx, colony)
+	m, rErr := s.colonySvc.CreateOesColony(ctx, req)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"创建oes集群失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("oes_colony_dto", &req),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &oesmodel.OesColonyReply{
+	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
 		Code: http.StatusOK,
 		Data: *oesmodel.OesColonyToDetailOut(*m),
 	})
@@ -100,64 +91,56 @@ func (s *OesColonyService) CreateOesColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "oes集群编号"
-// @Param request body oesmodel.CreateOrUpdateOesColonyRequest true "更新oes集群请求"
-// @Success 200 {object} oesmodel.OesColonyReply "成功返回oes集群信息"
+// @Param request body oesmodel.OesColonyUpsertDTO true "更新oes集群请求"
+// @Success 200 {object} oesmodel.OesColonyResp "成功返回oes集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id} [put]
 // @Security ApiKeyAuth
-func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定更新oes集群ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	var req oesmodel.CreateOrUpdateOesColonyRequest
+	var req oesmodel.OesColonyUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定更新oes集群参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	data := map[string]any{
-		"system_type":    req.SystemType,
-		"colony_num":     req.ColonyNum,
-		"extracted_name": req.ExtractedName,
-		"is_enable":      req.IsEnable,
-		"package_id":     req.PackageID,
-		"xcounter_id":    req.XCounterID,
-		"mon_node_id":    req.MonNodeID,
-	}
-
-	m, rErr := s.ucColony.UpdateOesColonyByID(ctx, uri.ID, data)
+	m, rErr := s.colonySvc.UpdateOesColonyByID(ctx, uri.ID, req)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"更新oes集群失败",
 			zap.Error(rErr),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("oes_colony_id", uri.ID),
+			zap.Object("oes_colony_dto", &req),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &oesmodel.OesColonyReply{
+	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
 		Code: http.StatusOK,
 		Data: *oesmodel.OesColonyToDetailOut(*m),
 	})
@@ -169,51 +152,52 @@ func (s *OesColonyService) UpdateOesColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "oes集群编号"
-// @Success 200 {object} commodel.MapAPIReply "删除成功"
+// @Success 200 {object} commodel.MapAPIResp "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id} [delete]
 // @Security ApiKeyAuth
-func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定删除oes集群ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"开始删除oes集群",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("oes_colony_id", uri.ID),
 	)
 
-	rErr := s.ucColony.DeleteOesColonyByID(ctx, uri.ID)
+	rErr := s.colonySvc.DeleteOesColonyByID(ctx, uri.ID)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"删除oes集群失败",
 			zap.Error(rErr),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("oes_colony_id", uri.ID),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"删除oes集群成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("oes_colony_id", uri.ID),
+		zap.Duration("total_time", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataReply.Code, commodel.NoDataReply)
+	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询oes集群详情
@@ -222,52 +206,54 @@ func (s *OesColonyService) DeleteOesColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "oes集群编号"
-// @Success 200 {object} oesmodel.OesColonyReply "成功返回oes集群信息"
+// @Success 200 {object} oesmodel.OesColonyResp "成功返回oes集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id} [get]
 // @Security ApiKeyAuth
-func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询oes集群ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"开始查询oes集群详情",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("oes_colony_id", uri.ID),
 	)
 
-	m, rErr := s.ucColony.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, uri.ID)
+	preloads := []string{"Package", "XCounter", "MonNode"}
+	m, rErr := s.colonySvc.FindOesColonyByID(ctx, preloads, uri.ID)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"查询oes集群详情失败",
 			zap.Error(rErr),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Strings("preloads", preloads),
+			zap.Uint32("oes_colony_id", uri.ID),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"查询oes集群详情成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("oes_colony_id", uri.ID),
 	)
 
 	mo := oesmodel.OesColonyToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &oesmodel.OesColonyReply{
+	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -278,62 +264,55 @@ func (s *OesColonyService) GetOesColony(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param request query oesmodel.ListOesColonyRequest false "查询参数"
-// @Success 200 {object} oesmodel.PagOesColonyReply "成功返回oes集群列表"
+// @Param request query oesmodel.ListOesColonyDTO false "查询参数"
+// @Success 200 {object} oesmodel.PagOesColonyResp "成功返回oes集群列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony [get]
 // @Security ApiKeyAuth
-func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
-	var req oesmodel.ListOesColonyRequest
+func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.ListOesColonyDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询oes集群列表参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
-		"开始查询oes集群列表",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-	)
+	log.Info("开始查询oes集群列表")
 
-	page, size, query := req.Query()
-	qp := database.QueryParams{
-		Preloads: []string{"Package", "XCounter", "MonNode"},
-		IsCount:  true,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"id DESC"},
-		Query:    query,
-	}
-	total, ms, err := s.ucColony.ListOesColony(ctx, qp)
+	page, size := req.StandardModelQuery.GetPageParam()
+	total, ms, err := s.colonySvc.ListOesColony(ctx, page, size, req)
 	if err != nil {
-		s.log.Error(
+		log.Error(
 			"查询oes集群列表失败",
 			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Int("page", page),
+			zap.Int("size", size),
+			zap.Object("oes_colony_dto", &req),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"查询oes集群列表成功",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Int64("total", total),
+		zap.Duration("total_time", time.Since(startTime)),
 	)
 
 	mbs := oesmodel.ListOesColonyToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &oesmodel.PagOesColonyReply{
+	ctx.JSON(http.StatusOK, &oesmodel.PagOesColonyResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -344,77 +323,46 @@ func (s *OesColonyService) ListOesColony(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param request query oesmodel.ListOesColonyRequest false "查询参数"
-// @Success 200 {object} oesmodel.ListOesTasksInfoReply "成功返回oes现货集群列表的任务状态"
+// @Param request query oesmodel.ListOesColonyDTO false "查询参数"
+// @Success 200 {object} oesmodel.ListOesTasksInfoResp "成功返回oes现货集群列表的任务状态"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/status/stk [get]
 // @Security ApiKeyAuth
-func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
-	var req oesmodel.ListOesColonyRequest
+func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.ListOesColonyDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询oes集群列表参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	page, size, query := req.Query()
-	query["system_type"] = "STK"
-	query["is_enable = ?"] = true
-	qp := database.QueryParams{
-		Preloads: nil,
-		IsCount:  false,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"colony_num ASC"},
-		Query:    query,
-	}
-
-	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
-	if err != nil {
-		s.log.Error(
-			"查询oes现货集群列表失败",
-			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		errors.RespondWithError(ctx, err)
-		return
-	}
-
-	tasks, rErr := s.ucStk.BuildTaskExecutionInfos(ctx, *ms)
+	tasks, rErr := s.stkTaskSvc.BuildTaskExecutionInfos(ctx, req)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"构建oes现货集群任务信息失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("oes_colony_dto", &req),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	if tasks == nil || len(*tasks) == 0 {
-		ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoReply{
-			Code: http.StatusOK,
-			Data: []oesmodel.OesColonyTaskInfo{},
-		})
-		return
+
+	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
+	for i, task := range tasks {
+		results[i] = BuildStkColonyTaskInfo(task)
 	}
 
-	infos := *tasks
-	results := make([]oesmodel.OesColonyTaskInfo, len(infos))
-	for i, info := range infos {
-		results[i] = BuildStkColonyTaskInfo(info)
-	}
-
-	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoReply{
+	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})
@@ -425,77 +373,46 @@ func (s *OesColonyService) ListStkTaskStatus(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param request query oesmodel.ListOesColonyRequest false "查询参数"
-// @Success 200 {object} oesmodel.ListOesTasksInfoReply "成功返回oes两融集群列表的任务状态"
+// @Param request query oesmodel.ListOesColonyDTO false "查询参数"
+// @Success 200 {object} oesmodel.ListOesTasksInfoResp "成功返回oes两融集群列表的任务状态"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/status/crd [get]
 // @Security ApiKeyAuth
-func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
-	var req oesmodel.ListOesColonyRequest
+func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.ListOesColonyDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询oes集群列表参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	page, size, query := req.Query()
-	query["system_type"] = "CRD"
-	query["is_enable = ?"] = true
-	qp := database.QueryParams{
-		Preloads: nil,
-		IsCount:  false,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"colony_num ASC"},
-		Query:    query,
-	}
-
-	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
-	if err != nil {
-		s.log.Error(
-			"查询oes两融集群列表失败",
-			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		errors.RespondWithError(ctx, err)
-		return
-	}
-
-	tasks, rErr := s.ucCrd.BuildTaskExecutionInfos(ctx, *ms)
+	tasks, rErr := s.crdTaskSvc.BuildTaskExecutionInfos(ctx, req)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"构建oes两融集群任务信息失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("oes_colony_dto", &req),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	if tasks == nil || len(*tasks) == 0 {
-		ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoReply{
-			Code: http.StatusOK,
-			Data: []oesmodel.OesColonyTaskInfo{},
-		})
-		return
+
+	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
+	for i, task := range tasks {
+		results[i] = BuildCrdColonyTaskInfo(task)
 	}
 
-	infos := *tasks
-	results := make([]oesmodel.OesColonyTaskInfo, len(infos))
-	for i, info := range infos {
-		results[i] = BuildCrdColonyTaskInfo(info)
-	}
-
-	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoReply{
+	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})
@@ -506,83 +423,51 @@ func (s *OesColonyService) ListCrdTaskStatus(ctx *gin.Context) {
 // @Tags oes集群管理
 // @Accept json
 // @Produce json
-// @Param request query oesmodel.ListOesColonyRequest false "查询参数"
-// @Success 200 {object} oesmodel.ListOesTasksInfoReply "成功返回oes期权集群列表的任务状态"
+// @Param request query oesmodel.ListOesColonyDTO false "查询参数"
+// @Success 200 {object} oesmodel.ListOesTasksInfoResp "成功返回oes期权集群列表的任务状态"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/status/opt [get]
 // @Security ApiKeyAuth
-func (s *OesColonyService) ListOptTaskStatus(ctx *gin.Context) {
-	var req oesmodel.ListOesColonyRequest
+func (s *OesColonyHandler) ListOptTaskStatus(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.ListOesColonyDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询oes集群列表参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	page, size, query := req.Query()
-	query["system_type"] = "OPT"
-	query["is_enable = ?"] = true
-	qp := database.QueryParams{
-		Preloads: nil,
-		IsCount:  false,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"colony_num ASC"},
-		Query:    query,
-	}
-
-	_, ms, err := s.ucColony.ListOesColony(ctx, qp)
-	if err != nil {
-		s.log.Error(
-			"查询oes期权集群列表失败",
-			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		errors.RespondWithError(ctx, err)
-		return
-	}
-
-	tasks, rErr := s.ucOpt.BuildTaskExecutionInfos(ctx, *ms)
+	tasks, rErr := s.optTaskSvc.BuildTaskExecutionInfos(ctx, req)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"构建oes期权集群任务信息失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("oes_colony_dto", &req),
+			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	if tasks == nil || len(*tasks) == 0 {
-		ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoReply{
-			Code: http.StatusOK,
-			Data: []oesmodel.OesColonyTaskInfo{},
-		})
-		return
+	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
+	for i, task := range tasks {
+		results[i] = BuildOptColonyTaskInfo(task)
 	}
 
-	infos := *tasks
-	results := make([]oesmodel.OesColonyTaskInfo, len(infos))
-	for i, info := range infos {
-		results[i] = BuildOptColonyTaskInfo(info)
-	}
-
-	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoReply{
+	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})
 }
 
-func (s *OesColonyService) LoadRouter(r *gin.RouterGroup) {
+func (s *OesColonyHandler) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/colony", s.CreateOesColony)
 	r.PUT("/colony/:id", s.UpdateOesColony)
 	r.DELETE("/colony/:id", s.DeleteOesColony)
@@ -593,57 +478,43 @@ func (s *OesColonyService) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/colony/status/opt", s.ListOptTaskStatus)
 }
 
-func BuildStkColonyTaskInfo(t oessvc.StkTaskExecutionInfo) oesmodel.OesColonyTaskInfo {
-	mon := BuildTaskInfoFromScriptRecord("mon", t.Mon)
-	conterFetch := BuildTaskInfoFromScriptRecord("counter_fetch", t.CounterFetch)
-	counterDistribute := BuildTaskInfoFromScriptRecord("counter_distribute", t.CounterDistribute)
-	bse := BuildTaskInfoFromScriptRecord("bse", t.Bse)
-	sse := BuildTaskInfoFromScriptRecord("sse", t.Sse)
-	szse := BuildTaskInfoFromScriptRecord("szse", t.Szse)
-	csdc := BuildTaskInfoFromScriptRecord("csdc", t.Csdc)
+func BuildStkColonyTaskInfo(t oesmodel.StkColonyTaskExecutionInfo) oesmodel.OesColonyTaskInfo {
+	mon := jobsvc.BuildTaskInfoFromScriptRecord("mon", t.Mon)
+	conterFetch := jobsvc.BuildTaskInfoFromScriptRecord("counter_fetch", t.CounterFetch)
+	counterDistribute := jobsvc.BuildTaskInfoFromScriptRecord("counter_distribute", t.CounterDistribute)
+	bse := jobsvc.BuildTaskInfoFromScriptRecord("bse", t.Bse)
+	sse := jobsvc.BuildTaskInfoFromScriptRecord("sse", t.Sse)
+	szse := jobsvc.BuildTaskInfoFromScriptRecord("szse", t.Szse)
+	csdc := jobsvc.BuildTaskInfoFromScriptRecord("csdc", t.Csdc)
 	return oesmodel.OesColonyTaskInfo{
 		ColonyNum: t.ColonyNum,
-		Tasks:     []commodel.TaskInfo{mon, conterFetch, counterDistribute, bse, sse, szse, csdc},
+		Tasks:     []jobmodel.BizTaskInfo{mon, conterFetch, counterDistribute, bse, sse, szse, csdc},
 	}
 }
 
-func BuildCrdColonyTaskInfo(t biz.CrdTaskExecutionInfo) oesmodel.OesColonyTaskInfo {
-	mon := BuildTaskInfoFromScriptRecord("mon", t.Mon)
-	conterFetch := BuildTaskInfoFromScriptRecord("counter_fetch", t.CounterFetch)
-	counterDistribute := BuildTaskInfoFromScriptRecord("counter_distribute", t.CounterDistribute)
-	sse := BuildTaskInfoFromScriptRecord("sse", t.Sse)
-	szse := BuildTaskInfoFromScriptRecord("szse", t.Szse)
-	csdc := BuildTaskInfoFromScriptRecord("csdc", t.Csdc)
-	sseLate := BuildTaskInfoFromScriptRecord("sse_late", t.SseLate)
-	szseLate := BuildTaskInfoFromScriptRecord("szse_late", t.SzseLate)
+func BuildCrdColonyTaskInfo(t oesmodel.CrdColonyTaskExecutionInfo) oesmodel.OesColonyTaskInfo {
+	mon := jobsvc.BuildTaskInfoFromScriptRecord("mon", t.Mon)
+	conterFetch := jobsvc.BuildTaskInfoFromScriptRecord("counter_fetch", t.CounterFetch)
+	counterDistribute := jobsvc.BuildTaskInfoFromScriptRecord("counter_distribute", t.CounterDistribute)
+	sse := jobsvc.BuildTaskInfoFromScriptRecord("sse", t.Sse)
+	szse := jobsvc.BuildTaskInfoFromScriptRecord("szse", t.Szse)
+	csdc := jobsvc.BuildTaskInfoFromScriptRecord("csdc", t.Csdc)
+	sseLate := jobsvc.BuildTaskInfoFromScriptRecord("sse_late", t.SseLate)
+	szseLate := jobsvc.BuildTaskInfoFromScriptRecord("szse_late", t.SzseLate)
 	return oesmodel.OesColonyTaskInfo{
 		ColonyNum: t.ColonyNum,
-		Tasks:     []commodel.TaskInfo{mon, conterFetch, counterDistribute, sse, szse, csdc, sseLate, szseLate},
+		Tasks:     []jobmodel.BizTaskInfo{mon, conterFetch, counterDistribute, sse, szse, csdc, sseLate, szseLate},
 	}
 }
 
-func BuildOptColonyTaskInfo(t biz.OptTaskExecutionInfo) oesmodel.OesColonyTaskInfo {
-	mon := BuildTaskInfoFromScriptRecord("mon", t.Mon)
-	conterFetch := BuildTaskInfoFromScriptRecord("counter_fetch", t.CounterFetch)
-	counterDistribute := BuildTaskInfoFromScriptRecord("counter_distribute", t.CounterDistribute)
-	sse := BuildTaskInfoFromScriptRecord("sse", t.Sse)
-	szse := BuildTaskInfoFromScriptRecord("szse", t.Szse)
+func BuildOptColonyTaskInfo(t oesmodel.OptColonyTaskExecutionInfo) oesmodel.OesColonyTaskInfo {
+	mon := jobsvc.BuildTaskInfoFromScriptRecord("mon", t.Mon)
+	conterFetch := jobsvc.BuildTaskInfoFromScriptRecord("counter_fetch", t.CounterFetch)
+	counterDistribute := jobsvc.BuildTaskInfoFromScriptRecord("counter_distribute", t.CounterDistribute)
+	sse := jobsvc.BuildTaskInfoFromScriptRecord("sse", t.Sse)
+	szse := jobsvc.BuildTaskInfoFromScriptRecord("szse", t.Szse)
 	return oesmodel.OesColonyTaskInfo{
 		ColonyNum: t.ColonyNum,
-		Tasks:     []commodel.TaskInfo{mon, conterFetch, counterDistribute, sse, szse},
+		Tasks:     []jobmodel.BizTaskInfo{mon, conterFetch, counterDistribute, sse, szse},
 	}
-}
-
-func BuildTaskInfoFromScriptRecord(taskName string, m *jobsmodel.ScriptRecordModel) commodel.TaskInfo {
-	result := commodel.TaskInfo{
-		TaskName: taskName,
-	}
-	if m != nil {
-		result.RecordID = m.ID
-		result.Status = m.Status
-		result.StartTime = m.CreatedAt.Format(time.DateTime)
-		result.EndTime = m.UpdatedAt.Format(time.DateTime)
-		result.TriggerType = m.TriggerType
-	}
-	return result
 }

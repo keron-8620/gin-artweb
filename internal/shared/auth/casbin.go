@@ -11,15 +11,6 @@ import (
 )
 
 const (
-	SubKey = "sub"
-	ObjKey = "obj"
-	ActKey = "act"
-
-	GroupSubKey = "group_parent" // 组策略主体键
-	GroupObjKey = "group_child"  // 组策略对象键
-)
-
-const (
 	apiSubjectFormat    = "api_%d"
 	menuSubjectFormat   = "menu_%d"
 	buttonSubjectFormat = "button_%d"

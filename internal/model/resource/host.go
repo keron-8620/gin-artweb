@@ -58,10 +58,10 @@ func (vs *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// CreateOrUpdateHosrRequest 用于创建主机的请求结构体
+// HostUpsertDTO 用于创建主机的请求结构体
 //
-// swagger:model CreateOrUpdateHosrRequest
-type CreateOrUpdateHosrRequest struct {
+// swagger:model HostUpsertDTO
+type HostUpsertDTO struct {
 	// 名称
 	Name string `json:"name" form:"name" binding:"required,max=50"`
 
@@ -87,7 +87,7 @@ type CreateOrUpdateHosrRequest struct {
 	Remark string `json:"remark" form:"remark" binding:"max=254"`
 }
 
-func (req *CreateOrUpdateHosrRequest) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (req *HostUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", req.Name)
 	enc.AddString("label", req.Label)
 	enc.AddString("ssh_ip", req.SSHIP)
@@ -98,11 +98,11 @@ func (req *CreateOrUpdateHosrRequest) MarshalLogObject(enc zapcore.ObjectEncoder
 	return nil
 }
 
-// ListHostRequest 用于获取主机列表的请求结构体
+// ListHostDTO 用于获取主机列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
-// swagger:model ListHostRequest
-type ListHostRequest struct {
+// swagger:model ListHostDTO
+type ListHostDTO struct {
 	common.StandardModelQuery
 
 	// 名称
@@ -127,30 +127,41 @@ type ListHostRequest struct {
 	Remark string `form:"remark" binding:"omitempty,max=254"`
 }
 
-func (req *ListHostRequest) Query() (int, int, map[string]any) {
-	page, size, query := req.StandardModelQuery.QueryMap(13)
+func (req *ListHostDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", req.Name)
+	enc.AddString("label", req.Label)
+	enc.AddString("ssh_ip", req.SSHIP)
+	enc.AddUint16("ssh_port", *req.SSHPort)
+	enc.AddString("ssh_user", req.SSHUser)
+	enc.AddString("py_path", req.PyPath)
+	enc.AddString("remark", req.Remark)
+	return nil
+}
+
+func (req *ListHostDTO) ToQueryMap() map[string]any {
+	queryMap := req.StandardModelQuery.ToQueryMap(13)
 	if req.Name != "" {
-		query["name like ?"] = "%" + req.Name + "%"
+		queryMap["name like ?"] = "%" + req.Name + "%"
 	}
 	if req.Label != "" {
-		query["label = ?"] = req.Label
+		queryMap["label = ?"] = req.Label
 	}
 	if req.SSHIP != "" {
-		query["ip_addr = ?"] = req.SSHIP
+		queryMap["ip_addr = ?"] = req.SSHIP
 	}
 	if req.SSHPort != nil {
-		query["ssh_port = ?"] = *req.SSHPort
+		queryMap["ssh_port = ?"] = *req.SSHPort
 	}
 	if req.SSHUser != "" {
-		query["ssh_user like ?"] = "%" + req.SSHUser + "%"
+		queryMap["ssh_user like ?"] = "%" + req.SSHUser + "%"
 	}
 	if req.PyPath != "" {
-		query["py_path like ?"] = "%" + req.PyPath + "%"
+		queryMap["py_path like ?"] = "%" + req.PyPath + "%"
 	}
 	if req.Remark != "" {
-		query["remark like ?"] = "%" + req.Remark + "%"
+		queryMap["remark like ?"] = "%" + req.Remark + "%"
 	}
-	return page, size, query
+	return queryMap
 }
 
 type HostBaseOut struct {
@@ -190,11 +201,11 @@ type HostStandardOut struct {
 	UpdatedAt string `json:"updated_at" example:"2023-01-01 12:00:00"`
 }
 
-// HostReply 主机响应结构
-type HostReply = common.APIReply[HostStandardOut]
+// HostResp 主机响应结构
+type HostResp = common.APIResp[HostStandardOut]
 
-// PagHostReply 主机的分页响应结构
-type PagHostReply = common.APIReply[*common.Pag[HostStandardOut]]
+// PagHostResp 主机的分页响应结构
+type PagHostResp = common.APIResp[*common.Pag[HostStandardOut]]
 
 func HostModelToBaseOut(
 	m HostModel,
@@ -222,17 +233,15 @@ func HostModelToStandardOut(
 }
 
 func ListHostModelToStandardOut(
-	hms *[]HostModel,
-) *[]HostStandardOut {
-	if hms == nil {
-		return &[]HostStandardOut{}
+	ms []HostModel,
+) []HostStandardOut {
+	if len(ms) == 0 {
+		return []HostStandardOut{}
 	}
-
-	ms := *hms
 	mso := make([]HostStandardOut, 0, len(ms))
 	for _, m := range ms {
 		mo := HostModelToStandardOut(m)
 		mso = append(mso, *mo)
 	}
-	return &mso
+	return mso
 }

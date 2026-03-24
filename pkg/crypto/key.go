@@ -45,13 +45,13 @@ func (km *KeyManager) DeriveKey(password string, salt []byte) ([]byte, error) {
 	if len(salt) == 0 {
 		salt = make([]byte, km.saltLen)
 		if _, err := rand.Read(salt); err != nil {
-			return nil, errors.Wrap(err, "生成盐值错误")
+			return nil, errors.WrapIf(err, "生成盐值错误")
 		}
 	}
 
 	key, err := scrypt.Key([]byte(password), salt, km.n, km.r, km.p, km.keyLen)
 	if err != nil {
-		return nil, errors.Wrap(err, "密钥派生错误")
+		return nil, errors.WrapIf(err, "密钥派生错误")
 	}
 
 	return key, nil
@@ -61,7 +61,7 @@ func (km *KeyManager) DeriveKey(password string, salt []byte) ([]byte, error) {
 func (km *KeyManager) GenerateRandomKey() ([]byte, error) {
 	key := make([]byte, km.keyLen)
 	if _, err := rand.Read(key); err != nil {
-		return nil, errors.Wrap(err, "生成随机密钥错误")
+		return nil, errors.WrapIf(err, "生成随机密钥错误")
 	}
 	return key, nil
 }
@@ -70,7 +70,7 @@ func (km *KeyManager) GenerateRandomKey() ([]byte, error) {
 func GenerateRandomKeyWithSize(size int) ([]byte, error) {
 	key := make([]byte, size)
 	if _, err := rand.Read(key); err != nil {
-		return nil, errors.Wrap(err, "生成随机密钥错误")
+		return nil, errors.WrapIf(err, "生成随机密钥错误")
 	}
 	return key, nil
 }

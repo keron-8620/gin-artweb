@@ -16,6 +16,10 @@ import (
 //	CopyFile(context.Background(), "/tmp/src.txt", "/tmp/dst.txt") // 直接复制
 //	CopyFile(context.Background(), "/tmp/src.txt", "/tmp/dir/")    // 复制到目录（自动拼接文件名）
 func CopyFile(ctx context.Context, src, dst string) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
+
 	// 公共校验
 	if err := ValidatePath(ctx, src); err != nil {
 		return errors.WithMessage(err, "源路径校验失败")
@@ -93,6 +97,9 @@ func CopyFile(ctx context.Context, src, dst string) error {
 //	CopyDir(context.Background(), "/tmp/src", "/tmp/dst", false) // 结果: /tmp/dst/src
 //	CopyDir(context.Background(), "/tmp/src", "/tmp/dst", true)  // 结果: /tmp/dst/[src内的文件]
 func CopyDir(ctx context.Context, src, dst string, copyContents bool) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
 	// 公共校验
 	if err := ValidatePath(ctx, src); err != nil {
 		return errors.WithMessage(err, "源路径校验失败")

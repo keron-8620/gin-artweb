@@ -72,7 +72,16 @@ func main() {
 	// 加载系统配置
 	sysConf := config.NewSystemConf(filepath.Join(config.ConfigDir, configPath))
 	// 初始化服务器日志记录器
-	loggers := NewLoggers(sysConf.Log)
+	serverWrite := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "server.log"))
+	serviceWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "service.log"))
+	bizWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "biz.log"))
+	dataWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "data.log"))
+	loggers := &common.Loggers{
+		Server:  log.NewZapLoggerMust(sysConf.Log.Level, serverWrite),
+		Handler: log.NewZapLoggerMust(sysConf.Log.Level, serviceWrire),
+		Service: log.NewZapLoggerMust(sysConf.Log.Level, bizWrire),
+		Data:    log.NewZapLoggerMust(sysConf.Log.Level, dataWrire),
+	}
 
 	if migrator {
 		db, err := initGromDB(sysConf)
@@ -114,16 +123,6 @@ func main() {
 		return
 	}
 
-	// 加载定时任务配置
-	cronTasks := config.NewCrontabConf(filepath.Join(config.ConfigDir, "crontab.yaml"))
-	for _, tasks := range cronTasks {
-		for _, v := range tasks {
-			if ok, err := crontab.ValidateCronExpression(v, false); err != nil || !ok {
-				golog.Fatalf("定时任务表达式无效: %s, 错误: %v", v, err)
-			}
-		}
-	}
-
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
 	i, clearFunc, err := newInitialize(sysConf, loggers)
 	if err != nil {
@@ -137,7 +136,7 @@ func main() {
 	gin.DisableConsoleColor()
 
 	// 创建 Gin 路由引擎
-	r := routers.NewRouter(loggers, i, cronTasks, version, filepath.Join(config.BaseDir, "html"))
+	r := routers.NewRouter(loggers, i, version, filepath.Join(config.BaseDir, "html"))
 
 	// 启动定时任务
 	if i.Crontab != nil {
@@ -227,7 +226,7 @@ func main() {
 // 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
-func newInitialize(conf *config.SystemConf, loggers *log.Loggers) (*common.Initialize, func(), error) {
+func newInitialize(conf *config.SystemConf, loggers *common.Loggers) (*common.Initialize, func(), error) {
 	jwtConf := auth.NewJWTConfig(
 		time.Duration(conf.Security.Token.AccessMinutes)*time.Minute,
 		time.Duration(conf.Security.Token.RefreshMinutes)*time.Minute,
@@ -307,17 +306,4 @@ func initGromDB(conf *config.SystemConf) (*gorm.DB, error) {
 	}
 	dbConf := database.NewGormConfig(dbLog)
 	return database.NewGormDB(conf.Database, dbConf)
-}
-
-func NewLoggers(conf *config.LogConfig) *log.Loggers {
-	serverWrite := log.NewLumLogger(conf, filepath.Join(config.LogDir, "server.log"))
-	serviceWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "service.log"))
-	bizWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "biz.log"))
-	dataWrire := log.NewLumLogger(conf, filepath.Join(config.LogDir, "data.log"))
-	return &log.Loggers{
-		Server:  log.NewZapLoggerMust(conf.Level, serverWrite),
-		Service: log.NewZapLoggerMust(conf.Level, serviceWrire),
-		Biz:     log.NewZapLoggerMust(conf.Level, bizWrire),
-		Data:    log.NewZapLoggerMust(conf.Level, dataWrire),
-	}
 }

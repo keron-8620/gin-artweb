@@ -13,7 +13,7 @@ import (
 func GenerateRandomBytes(length int) ([]byte, error) {
 	b := make([]byte, length)
 	if _, err := rand.Read(b); err != nil {
-		return nil, errors.Wrap(err, "生成随机字节错误")
+		return nil, errors.WrapIf(err, "生成随机字节错误")
 	}
 	return b, nil
 }
@@ -40,7 +40,7 @@ func GenerateRandomHex(length int) (string, error) {
 func GenerateRandomInt(min, max int64) (int64, error) {
 	n, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
 	if err != nil {
-		return 0, errors.Wrap(err, "生成随机整数错误")
+		return 0, errors.WrapIf(err, "生成随机整数错误")
 	}
 	return n.Int64() + min, nil
 }

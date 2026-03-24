@@ -63,13 +63,9 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonSSHKeyDeployFailed:  http.StatusInternalServerError,
 
 	// 上传下载文件
-	ReasonUploadFileNotFound:            http.StatusBadRequest,
-	ReasonUploadFileTooLarge:            http.StatusRequestEntityTooLarge,
-	ReasonSaveUploadFileFailed:          http.StatusInternalServerError,
-	ReasonSetUploadFilePermissionFailed: http.StatusInternalServerError,
-	ReasonDownloadFileNotFound:          http.StatusNotFound,
-	ReasonDownloadFilePermissionDenied:  http.StatusForbidden,
-	ReasonDownloadFileFailed:            http.StatusInternalServerError,
+	ReasonDownloadFileNotFound:         http.StatusNotFound,
+	ReasonDownloadFilePermissionDenied: http.StatusForbidden,
+	ReasonDownloadFileFailed:           http.StatusInternalServerError,
 
 	// 压缩解压文件
 	ReasonUnZIPFailed:       http.StatusInternalServerError,
@@ -83,8 +79,15 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonDeleteCacheFileFailed: http.StatusInternalServerError,
 
 	// 脚本相关
-	ReasonScriptNotFound:    http.StatusNotFound,
-	ReasonScriptIsBuiltin:   http.StatusBadRequest,
-	ReasonScriptIsDisabled:  http.StatusBadRequest,
-	ReasonScriptLogNotFound: http.StatusNotFound,
+	ReasonScriptNotFound:     http.StatusNotFound,
+	ReasonScriptIsBuiltin:    http.StatusBadRequest,
+	ReasonScriptIsDisabled:   http.StatusBadRequest,
+	ReasonScriptLogNotFound:  http.StatusNotFound,
+	ReasonScriptSaveFailed:   http.StatusInternalServerError,
+	ReasonScriptRemoveFailed: http.StatusInternalServerError,
+
+	// 程序包相关
+	ReasonPackageNotFound:     http.StatusNotFound,
+	ReasonPackageSaveFailed:   http.StatusInternalServerError,
+	ReasonPackageRemoveFailed: http.StatusInternalServerError,
 }

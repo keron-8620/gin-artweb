@@ -14,6 +14,10 @@ import (
 //
 //	Mkdir(context.Background(), "/tmp/test", 0755) // 创建 /tmp/test（父目录必须存在）
 func Mkdir(ctx context.Context, dirPath string, perm os.FileMode) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
+
 	if err := ValidatePath(ctx, dirPath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
@@ -43,6 +47,10 @@ func Mkdir(ctx context.Context, dirPath string, perm os.FileMode) error {
 //
 //	MkdirAll(context.Background(), "/tmp/a/b/c", 0755) // 递归创建 a/b/c
 func MkdirAll(ctx context.Context, dirPath string, perm os.FileMode) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
+
 	if err := ValidatePath(ctx, dirPath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}
@@ -72,6 +80,10 @@ func MkdirAll(ctx context.Context, dirPath string, perm os.FileMode) error {
 //
 //	EnsureDir(context.Background(), "/tmp/a/b/c.txt") // 确保 /tmp/a/b 存在
 func EnsureDir(ctx context.Context, dirPath string) error {
+	if err := ctx.Err(); err != nil {
+		return errors.WrapIf(err, "上下文已取消")
+	}
+
 	if err := ValidatePath(ctx, dirPath); err != nil {
 		return errors.WithMessage(err, "路径校验失败")
 	}

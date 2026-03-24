@@ -1,4 +1,4 @@
-package service
+package mds
 
 import (
 	"net/http"
@@ -8,29 +8,29 @@ import (
 	"go.uber.org/zap"
 
 	commodel "gin-artweb/internal/model/common"
-	jobsmodel "gin-artweb/internal/model/jobs"
+	jobmodel "gin-artweb/internal/model/job"
 	mdsmodel "gin-artweb/internal/model/mds"
+	jobsvc "gin-artweb/internal/service/job"
 	mdssvc "gin-artweb/internal/service/mds"
 	"gin-artweb/internal/shared/ctxutil"
-	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
-type MdsColonyService struct {
-	log      *zap.Logger
-	ucColony *mdssvc.MdsColonyService
-	ucTask   *mdssvc.MdsTaskExecutionInfoUsecase
+type MdsColonyHandler struct {
+	log        *zap.Logger
+	colonySvc  *mdssvc.MdsColonyService
+	mdsTaskSvc *mdssvc.MdsTaskService
 }
 
-func NewMdsColonyService(
+func NewMdsColonyHandler(
 	logger *zap.Logger,
-	ucColony *mdssvc.MdsColonyService,
-	ucTask *mdssvc.MdsTaskExecutionInfoUsecase,
-) *MdsColonyService {
-	return &MdsColonyService{
-		log:      logger,
-		ucColony: ucColony,
-		ucTask:   ucTask,
+	colony *mdssvc.MdsColonyService,
+	mdsTaskSvc *mdssvc.MdsTaskService,
+) *MdsColonyHandler {
+	return &MdsColonyHandler{
+		log:        logger,
+		colonySvc:  colony,
+		mdsTaskSvc: mdsTaskSvc,
 	}
 }
 
@@ -39,47 +39,46 @@ func NewMdsColonyService(
 // @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param request body mdsmodel.CreateOrUpdateMdsColonyRequest true "创建mds集群请求"
-// @Success 200 {object} mdsmodel.MdsColonyReply "成功返回mds集群信息"
+// @Param request body mdsmodel.MdsColonyUpsertDTO true "创建mds集群请求"
+// @Success 200 {object} mdsmodel.MdsColonyResp "成功返回mds集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony [post]
 // @Security ApiKeyAuth
-func (s *MdsColonyService) CreateMdsColony(ctx *gin.Context) {
-	var req mdsmodel.CreateOrUpdateMdsColonyRequest
+func (s *MdsColonyHandler) CreateMdsColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req mdsmodel.MdsColonyUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		s.log.Error(
-			"绑定创建mds集群参数失败",
+		log.Error(
+			"创建mds集群：绑定参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	colony := mdsmodel.MdsColonyModel{
-		ColonyNum:     req.ColonyNum,
-		ExtractedName: req.ExtractedName,
-		IsEnable:      req.IsEnable,
-		MonNodeID:     req.MonNodeID,
-		PackageID:     req.PackageID,
-	}
-
-	m, rErr := s.ucColony.CreateMdsColony(ctx, colony)
+	m, rErr := s.colonySvc.CreateMdsColony(ctx, &req)
 	if rErr != nil {
-		s.log.Error(
-			"创建mds集群失败",
+		log.Error(
+			"创建mds集群：创建失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Object("mds_colony_dto", &req),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyReply{
+	log.Info(
+		"创建mds集群：创建成功",
+		zap.Uint32("mds_colony_id", m.ID),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
 		Data: *mdsmodel.MdsColonyToDetailOut(*m),
 	})
@@ -91,62 +90,55 @@ func (s *MdsColonyService) CreateMdsColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "mds集群编号"
-// @Param request body mdsmodel.CreateOrUpdateMdsColonyRequest true "更新mds集群请求"
-// @Success 200 {object} mdsmodel.MdsColonyReply "成功返回mds集群信息"
+// @Param request body mdsmodel.MdsColonyUpsertDTO true "更新mds集群请求"
+// @Success 200 {object} mdsmodel.MdsColonyResp "成功返回mds集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id} [put]
 // @Security ApiKeyAuth
-func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) UpdateMdsColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定更新mds集群ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	var req mdsmodel.CreateOrUpdateMdsColonyRequest
+	var req mdsmodel.MdsColonyUpsertDTO
 	if err := ctx.ShouldBind(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定更新mds集群参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	data := map[string]any{
-		"colony_num":     req.ColonyNum,
-		"extracted_name": req.ExtractedName,
-		"is_enable":      req.IsEnable,
-		"package_id":     req.PackageID,
-		"mon_node_id":    req.MonNodeID,
-	}
-
-	m, err := s.ucColony.UpdateMdsColonyByID(ctx, uri.ID, data)
+	m, err := s.colonySvc.UpdateMdsColonyByID(ctx, uri.ID, req)
 	if err != nil {
-		s.log.Error(
+		log.Error(
 			"更新mds集群失败",
 			zap.Error(err),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("mds_colony_id", uri.ID),
+			zap.Object("mds_colony_dto", &req),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyReply{
+	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
 		Data: *mdsmodel.MdsColonyToDetailOut(*m),
 	})
@@ -158,50 +150,50 @@ func (s *MdsColonyService) UpdateMdsColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "mds集群编号"
-// @Success 200 {object} commodel.MapAPIReply "删除成功"
+// @Success 200 {object} commodel.MapAPIResp "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id} [delete]
 // @Security ApiKeyAuth
-func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) DeleteMdsColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定删除mds集群ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"开始删除mds集群",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("mds_colony_id", uri.ID),
 	)
 
-	if err := s.ucColony.DeleteMdsColonyByID(ctx, uri.ID); err != nil {
-		s.log.Error(
+	if err := s.colonySvc.DeleteMdsColonyByID(ctx, uri.ID); err != nil {
+		log.Error(
 			"删除mds集群失败",
 			zap.Error(err),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("mds_colony_id", uri.ID),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"删除mds集群成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("mds_colony_id", uri.ID),
 	)
 
-	ctx.JSON(commodel.NoDataReply.Code, commodel.NoDataReply)
+	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询mds集群详情
@@ -210,52 +202,52 @@ func (s *MdsColonyService) DeleteMdsColony(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "mds集群编号"
-// @Success 200 {object} mdsmodel.MdsColonyReply "成功返回mds集群信息"
+// @Success 200 {object} mdsmodel.MdsColonyResp "成功返回mds集群信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "mds集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id} [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) GetMdsColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询mds集群ID参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"开始查询mds集群详情",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("mds_colony_id", uri.ID),
 	)
 
-	m, err := s.ucColony.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.ID)
+	m, err := s.colonySvc.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.ID)
 	if err != nil {
-		s.log.Error(
+		log.Error(
 			"查询mds集群详情失败",
 			zap.Error(err),
-			zap.Uint32(commodel.RequestIDKey, uri.ID),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Uint32("mds_colony_id", uri.ID),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"查询mds集群详情成功",
-		zap.Uint32(commodel.RequestIDKey, uri.ID),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Uint32("mds_colony_id", uri.ID),
 	)
 
 	mo := mdsmodel.MdsColonyToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyReply{
+	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -271,61 +263,57 @@ func (s *MdsColonyService) GetMdsColony(ctx *gin.Context) {
 // @Param name query string false "mds集群名称"
 // @Param is_enabled query bool false "是否启用"
 // @Param username query string false "创建用户名"
-// @Success 200 {object} mdsmodel.PagMdsColonyReply "成功返回mds集群列表"
+// @Success 200 {object} mdsmodel.PagMdsColonyResp "成功返回mds集群列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
-	var req mdsmodel.ListMdsColonyRequest
+func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req mdsmodel.ListMdsColonyDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询mds集群列表参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"开始查询mds集群列表",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Object("mds_colony_dto", &req),
 	)
 
-	page, size, query := req.Query()
-	qp := database.QueryParams{
-		Preloads: []string{"Package", "MonNode"},
-		IsCount:  true,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"id DESC"},
-		Query:    query,
-	}
-	total, ms, err := s.ucColony.ListMdsColony(ctx, qp)
+	page, size := req.StandardModelQuery.GetPageParam()
+	total, ms, err := s.colonySvc.ListMdsColony(ctx, page, size, req)
 	if err != nil {
-		s.log.Error(
+		log.Error(
 			"查询mds集群列表失败",
 			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.Int("page", page),
+			zap.Int("size", size),
+			zap.Object("mds_colony_dto", &req),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	s.log.Info(
+	log.Info(
 		"查询mds集群列表成功",
-		zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-		zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+		zap.Int64("total", total),
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mbs := mdsmodel.ListMdsColonyToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &mdsmodel.PagMdsColonyReply{
+	ctx.JSON(http.StatusOK, &mdsmodel.PagMdsColonyResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -336,111 +324,75 @@ func (s *MdsColonyService) ListMdsColony(ctx *gin.Context) {
 // @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param request query mdsmodel.ListMdsColonyRequest false "查询参数"
-// @Success 200 {object} mdsmodel.ListMdsTasksInfoReply "成功返回mds集群列表的任务状态"
+// @Param request query mdsmodel.ListMdsColonyDTO false "查询参数"
+// @Success 200 {object} mdsmodel.ListMdsTasksInfoResp "成功返回mds集群列表的任务状态"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/status [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyService) ListMdsTaskStatus(ctx *gin.Context) {
-	var req mdsmodel.ListMdsColonyRequest
+func (s *MdsColonyHandler) ListMdsTaskStatus(ctx *gin.Context) {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req mdsmodel.ListMdsColonyDTO
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定查询mds集群列表参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_method", ctx.Request.Method),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	page, size, query := req.Query()
-	query["is_enable = ?"] = true
-	qp := database.QueryParams{
-		Preloads: nil,
-		IsCount:  false,
-		Size:     size,
-		Page:     page,
-		OrderBy:  []string{"colony_num ASC"},
-		Query:    query,
-	}
-
-	_, ms, err := s.ucColony.ListMdsColony(ctx, qp)
-	if err != nil {
-		s.log.Error(
-			"查询mds集群列表失败",
-			zap.Error(err),
-			zap.Object(database.QueryParamsKey, &qp),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
-		)
-		errors.RespondWithError(ctx, err)
-		return
-	}
-
-	mdsModels := *ms
-	tasks, rErr := s.ucTask.BuildTaskExecutionInfos(ctx, mdsModels)
+	tasks, rErr := s.mdsTaskSvc.BuildTaskExecutionInfos(ctx, req)
 	if rErr != nil {
-		s.log.Error(
+		log.Error(
 			"构建mds集群任务信息失败",
 			zap.Error(rErr),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	if tasks == nil || len(*tasks) == 0 {
-		ctx.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoReply{
+	if len(tasks) == 0 {
+		ctx.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoResp{
 			Code: http.StatusOK,
 			Data: []mdsmodel.MdsColonyTaskInfo{},
 		})
 		return
 	}
 
-	infos := *tasks
-	results := make([]mdsmodel.MdsColonyTaskInfo, len(infos))
-	for i, info := range infos {
-		results[i] = BuildMdsColonyTaskInfo(info)
+	results := make([]mdsmodel.MdsColonyTaskInfo, len(tasks))
+	for i, info := range tasks {
+		// results[i] = s.svcTask.BuildTaskMdsTaskInfo(info)
+		mon := jobsvc.BuildTaskInfoFromScriptRecord("mon", info.Mon)
+		bse := jobsvc.BuildTaskInfoFromScriptRecord("bse", info.Bse)
+		sse := jobsvc.BuildTaskInfoFromScriptRecord("sse", info.Sse)
+		szse := jobsvc.BuildTaskInfoFromScriptRecord("szse", info.Szse)
+		results[i] = mdsmodel.MdsColonyTaskInfo{
+			ColonyNum: info.ColonyNum,
+			Tasks:     []jobmodel.BizTaskInfo{mon, bse, sse, szse},
+		}
 	}
-	ctx.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoReply{
+
+	log.Info(
+		"查询mds集群任务状态成功",
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	ctx.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})
 }
 
-func (s *MdsColonyService) LoadRouter(r *gin.RouterGroup) {
+func (s *MdsColonyHandler) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/colony", s.CreateMdsColony)
 	r.PUT("/colony/:id", s.UpdateMdsColony)
 	r.DELETE("/colony/:id", s.DeleteMdsColony)
 	r.GET("/colony/:id", s.GetMdsColony)
 	r.GET("/colony", s.ListMdsColony)
 	r.GET("/colony/status", s.ListMdsTaskStatus)
-}
-
-func BuildMdsColonyTaskInfo(t mdssvc.MdsTaskExecutionInfo) mdsmodel.MdsColonyTaskInfo {
-	mon := BuildTaskInfoFromScriptRecord("mon", t.Mon)
-	bse := BuildTaskInfoFromScriptRecord("bse", t.Bse)
-	sse := BuildTaskInfoFromScriptRecord("sse", t.Sse)
-	szse := BuildTaskInfoFromScriptRecord("szse", t.Szse)
-	return mdsmodel.MdsColonyTaskInfo{
-		ColonyNum: t.ColonyNum,
-		Tasks:     []commodel.TaskInfo{mon, bse, sse, szse},
-	}
-}
-
-func BuildTaskInfoFromScriptRecord(taskName string, m *jobsmodel.ScriptRecordModel) commodel.TaskInfo {
-	result := commodel.TaskInfo{
-		TaskName: taskName,
-	}
-	if m != nil {
-		result.RecordID = m.ID
-		result.Status = m.Status
-		result.StartTime = m.CreatedAt.Format(time.DateTime)
-		result.EndTime = m.UpdatedAt.Format(time.DateTime)
-		result.TriggerType = m.TriggerType
-	}
-	return result
 }

@@ -1,4 +1,4 @@
-package service
+package oes
 
 import (
 	"net/http"
@@ -15,16 +15,16 @@ import (
 	"gin-artweb/pkg/fileutil"
 )
 
-type OesConfService struct {
+type OesConfHandler struct {
 	log     *zap.Logger
 	maxSize int64
 }
 
-func NewOesConfService(
+func NewOesConfHandler(
 	logger *zap.Logger,
 	maxSize int64,
-) *OesConfService {
-	return &OesConfService{
+) *OesConfHandler {
+	return &OesConfHandler{
 		log:     logger,
 		maxSize: maxSize,
 	}
@@ -39,20 +39,20 @@ func NewOesConfService(
 // @Param colony_num path string true "集群编号"
 // @Param dir_name path string true "目录名称"
 // @Param file formData file true "配置文件"
-// @Success 200 {object} commodel.MapAPIReply "上传成功"
+// @Success 200 {object} commodel.MapAPIResp "上传成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name} [post]
 // @Security ApiKeyAuth
-func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
+func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
+	log := ctxutil.NewLogger(s.log, ctx)
 	// 1. 绑定URL路径参数
-	var pathReq oesmodel.GetOesConfRequest
+	var pathReq oesmodel.GetOesConfDTO
 	if err := ctx.ShouldBindUri(&pathReq); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定上传的oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
@@ -60,13 +60,12 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 	}
 
 	// 2. 绑定表单数据（包含文件）
-	var formReq oesmodel.UploadOesConfRequest
+	var formReq oesmodel.UploadOesConfDto
 	if err := ctx.ShouldBind(&formReq); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定上传的oes配置文件表单参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
@@ -76,12 +75,12 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 	// 3. 将配置文件保存到指定的位置
 	dirName := common.GetOesColonyConfigDir(pathReq.ColonyNum)
 	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
-	if err := common.UploadFile(ctx, s.log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
+	if err := common.UploadFile(ctx, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	ctx.JSON(commodel.NoDataReply.Code, commodel.NoDataReply)
+	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // DownloadOesConf 下载oes配置文件
@@ -98,14 +97,14 @@ func (s *OesConfService) UploadOesConf(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name}/{filename} [get]
 // @Security ApiKeyAuth
-func (s *OesConfService) DownloadOesConf(ctx *gin.Context) {
-	var req oesmodel.DownloadOrDeleteOesConfRequest
+func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.OesConfFileDTO
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定删除的oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
@@ -114,7 +113,7 @@ func (s *OesConfService) DownloadOesConf(ctx *gin.Context) {
 
 	dirName := common.GetOesColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
-	if err := common.DownloadFile(ctx, s.log, filePath, ""); err != nil {
+	if err := common.DownloadFile(ctx, log, filePath, ""); err != nil {
 		errors.RespondWithError(ctx, err)
 	}
 }
@@ -128,19 +127,19 @@ func (s *OesConfService) DownloadOesConf(ctx *gin.Context) {
 // @Param colony_num path string true "集群编号"
 // @Param dir_name path string true "目录名称"
 // @Param filename path string true "文件名"
-// @Success 200 {object} commodel.MapAPIReply "删除成功"
+// @Success 200 {object} commodel.MapAPIResp "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name}/{filename} [delete]
 // @Security ApiKeyAuth
-func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
-	var req oesmodel.DownloadOrDeleteOesConfRequest
+func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.OesConfFileDTO
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定删除的oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
@@ -150,18 +149,17 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 	dirName := common.GetOesColonyConfigDir(req.ColonyNum)
 	savePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := fileutil.Remove(ctx, savePath); err != nil {
-		s.log.Error(
+		log.Error(
 			"删除oes配置文件失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.FromError(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
 
-	ctx.JSON(commodel.NoDataReply.Code, commodel.NoDataReply)
+	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // ListOesConf 获取oes配置文件列表
@@ -171,19 +169,19 @@ func (s *OesConfService) DeleteOesConf(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param colony_num path string true "集群编号"
-// @Success 200 {object} oesmodel.PagOesConfReply "成功返回配置文件列表"
+// @Success 200 {object} oesmodel.PagOesConfResp "成功返回配置文件列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf [get]
 // @Security ApiKeyAuth
-func (s *OesConfService) ListOesConf(ctx *gin.Context) {
-	var req oesmodel.ListOesConfRequest
+func (s *OesConfHandler) ListOesConf(ctx *gin.Context) {
+	log := ctxutil.NewLogger(s.log, ctx)
+	var req oesmodel.ListOesConfDTO
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		s.log.Error(
+		log.Error(
 			"绑定oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
 		errors.RespondWithError(ctx, rErr)
@@ -193,23 +191,22 @@ func (s *OesConfService) ListOesConf(ctx *gin.Context) {
 	dirName := common.GetOesColonyConfigDir(req.ColonyNum)
 	info, err := fileutil.ListFileInfo(ctx, dirName)
 	if err != nil {
-		s.log.Error(
+		log.Error(
 			"获取oes配置文件列表失败",
 			zap.Error(err),
-			zap.String(commodel.RequestURIKey, ctx.Request.RequestURI),
-			zap.String(ctxutil.TraceIDKey, ctxutil.GetTraceID(ctx)),
+			zap.String("request_uri", ctx.Request.RequestURI),
 		)
 		rErr := errors.FromError(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	ctx.JSON(http.StatusOK, oesmodel.PagOesConfReply{
+	ctx.JSON(http.StatusOK, oesmodel.PagOesConfResp{
 		Code: http.StatusOK,
 		Data: info,
 	})
 }
 
-func (s *OesConfService) LoadRouter(r *gin.RouterGroup) {
+func (s *OesConfHandler) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/:colony_num/conf/:dir_name", s.UploadOesConf)
 	r.GET("/:colony_num/conf/:dir_name/:filename", s.DownloadOesConf)
 	r.DELETE("/:colony_num/conf/:dir_name/:filename", s.DeleteOesConf)
