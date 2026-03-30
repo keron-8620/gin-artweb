@@ -73,4 +73,10 @@
   delegate_to: 127.0.0.1
   run_once: true
 
-
+- name: unzip csdc zip files
+  command: "{{ local_python_interpreter }} unzip_files.py {{ local_path_oes_home_csdc_colodir }}"
+  args:
+    chdir: "{{ local_path_script_home_python }}"
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  run_once: true

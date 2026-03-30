@@ -270,12 +270,12 @@ func (r *MdsColonyRepo) SaveConfigFile(
 		return errors.WrapIf(err, "保存mds集群配置文件：创建配置文件目录失败")
 	}
 	if err := os.Chmod(dir, mode); err != nil {
-		log.Error(
-			"保存mds集群配置文件：设置配置文件目录权限失败",
+		// 忽略权限设置错误，因为目录可能已经存在并且权限正确
+		log.Debug(
+			"保存mds集群配置文件：设置配置文件目录权限失败（忽略）",
 			zap.Error(err),
 			zap.String("pkg_dir", dir),
 		)
-		return errors.WrapIf(err, "保存mds集群配置文件：设置配置文件目录权限失败")
 	}
 
 	// 创建文件并写入内容

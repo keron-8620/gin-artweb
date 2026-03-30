@@ -2198,7 +2198,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/job.CreateScriptRecordDTO"
+                            "$ref": "#/definitions/job.ExecScriptDTO"
                         }
                     }
                 ],
@@ -7824,7 +7824,7 @@ const docTemplate = `{
                 }
             }
         },
-        "job.CreateScriptRecordDTO": {
+        "job.ExecScriptDTO": {
             "type": "object",
             "required": [
                 "script_id",

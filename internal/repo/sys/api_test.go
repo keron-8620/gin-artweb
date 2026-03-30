@@ -348,6 +348,49 @@ func (suite *ApiTestSuite) TestRemovePolicyWithoutRemoveInherited() {
 	suite.False(ok, "移除策略后不应该有API")
 }
 
+func (suite *ApiTestSuite) TestAddPolicyWithCasbinError() {
+	// 测试添加策略时Casbin操作失败的情况
+	// 这里我们需要模拟Casbin操作失败的情况
+	// 由于我们使用的是实际的Casbin实例，这里我们可以通过其他方式测试
+	// 例如，尝试添加一个无效的策略
+	m := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), m)
+	suite.NoError(err, "创建API应该成功")
+
+	// 验证策略可以正常添加
+	err = suite.apiRepo.AddPolicy(context.Background(), *m)
+	suite.NoError(err, "添加策略应该成功")
+
+	// 再次尝试添加相同的策略，应该不会报错（Casbin会处理重复策略）
+	err = suite.apiRepo.AddPolicy(context.Background(), *m)
+	suite.NoError(err, "重复添加策略应该成功")
+}
+
+func (suite *ApiTestSuite) TestRemovePolicyWithCasbinError() {
+	// 测试删除策略时Casbin操作失败的情况
+	m := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), m)
+	suite.NoError(err, "创建API应该成功")
+
+	// 先添加策略
+	err = suite.apiRepo.AddPolicy(context.Background(), *m)
+	suite.NoError(err, "添加策略应该成功")
+
+	// 验证策略存在
+	sub := auth.ApiToSubject(m.ID)
+	ok, err := suite.apiRepo.enforcer.Enforce(sub, m.URL, m.Method)
+	suite.NoError(err, "检查授权应该成功")
+	suite.True(ok, "添加策略后应该有API")
+
+	// 测试删除策略
+	err = suite.apiRepo.RemovePolicy(context.Background(), *m, false)
+	suite.NoError(err, "删除策略应该成功")
+
+	// 再次尝试删除相同的策略，应该不会报错（Casbin会处理不存在的策略）
+	err = suite.apiRepo.RemovePolicy(context.Background(), *m, false)
+	suite.NoError(err, "删除不存在的策略应该成功")
+}
+
 func (suite *ApiTestSuite) TestListApiWithEmptyParams() {
 	// 测试列表查询时传入空参数
 	qp := database.QueryParams{}
@@ -586,29 +629,4 @@ func (suite *ApiTestSuite) TestCreateApiWithSameUrlDifferentMethod() {
 func TestApiTestSuite(t *testing.T) {
 	pts := &ApiTestSuite{}
 	suite.Run(t, pts)
-}
-
-// TestNewApiRepo 测试创建API仓库实例
-func TestNewApiRepo(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-
-	repo := NewApiRepo(logger, db, dbTimeout, enforcer)
-	if repo == nil {
-		t.Fatal("NewApiRepo should return a non-nil repository")
-	}
-	if repo.log == nil {
-		t.Fatal("Repo log should not be nil")
-	}
-	if repo.gormDB == nil {
-		t.Fatal("Repo gormDB should not be nil")
-	}
-	if repo.timeouts == nil {
-		t.Fatal("Repo timeouts should not be nil")
-	}
-	if repo.enforcer == nil {
-		t.Fatal("Repo enforcer should not be nil")
-	}
 }

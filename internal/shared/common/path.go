@@ -2,57 +2,12 @@ package common
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"emperror.dev/errors"
-
-	"gin-artweb/internal/shared/config"
 )
-
-func GetHostVarsExportPath(pk uint32) string {
-	filename := fmt.Sprintf("host_%d.yaml", pk)
-	return filepath.Join(config.StorageDir, "host_vars", filename)
-}
-
-func GetPackageStoragePath(filename string) string {
-	return filepath.Join(config.StorageDir, "packages", filename)
-}
-
-func GetScriptStoragePath(project, label, name string, isBuiltin bool) string {
-	if isBuiltin {
-		return filepath.Join(config.ResourceDir, project, "script", label, name)
-	}
-	return filepath.Join(config.StorageDir, "script", project, label, name)
-}
-
-func GetScriptLogStoragePath(data time.Time, logname string) string {
-	return filepath.Join(config.StorageDir, "logs", data.Format(time.DateOnly), logname)
-}
-
-func GetMonNodeExportPath(pk uint32) string {
-	return filepath.Join(config.StorageDir, "mon", "config", fmt.Sprintf("%d", pk), "mon.yaml")
-}
-
-func GetMdsColonyBinDir(colonyNum string) string {
-	return filepath.Join(config.StorageDir, "mds", "bin", colonyNum)
-}
-
-func GetMdsColonyConfigDir(colonyNum string) string {
-	return filepath.Join(config.StorageDir, "mds", "config", colonyNum)
-}
-
-func GetOesColonyBinDir(colonyNum string) string {
-	return filepath.Join(config.StorageDir, "oes", "bin", colonyNum)
-}
-
-func GetOesColonyConfigDir(colonyNum string) string {
-	return filepath.Join(config.StorageDir, "oes", "config", colonyNum)
-}
 
 // readUint32FromFile 从指定文件读取单个数字并转换为uint32
 func ReadUint32FromFile(filePath string) (uint32, error) {

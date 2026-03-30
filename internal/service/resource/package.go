@@ -11,23 +11,27 @@ import (
 	resomodel "gin-artweb/internal/model/resource"
 	resorepo "gin-artweb/internal/repo/resource"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
 )
 
 type PackageService struct {
-	log     *zap.Logger
-	pkgRepo *resorepo.PackageRepo
+	log        *zap.Logger
+	pkgRepo    *resorepo.PackageRepo
+	storageDir string
 }
 
 func NewPackageService(
 	log *zap.Logger,
 	pkgRepo *resorepo.PackageRepo,
+	storageDir string,
 ) *PackageService {
 	return &PackageService{
-		log:     log,
-		pkgRepo: pkgRepo,
+		log:        log,
+		pkgRepo:    pkgRepo,
+		storageDir: storageDir,
 	}
 }
 
@@ -81,7 +85,7 @@ func (s *PackageService) CreatePackage(
 
 	saveStepStart := time.Now()
 	log.Debug("创建程序包：开始保存程序包文件")
-	savePath := common.GetPackageStoragePath(newFileNameWithExt)
+	savePath := GetPackageStoragePath(newFileNameWithExt)
 	if err := s.pkgRepo.SavePackageFile(ctx, dto.File, savePath, false); err != nil {
 		log.Error(
 			"创建程序包：程序包文件创建失败",
@@ -159,7 +163,7 @@ func (s *PackageService) DeletePackageByID(
 
 	// 再删除物理文件
 	removeFileStepStart := time.Now()
-	deletePath := common.GetPackageStoragePath(m.StorageFilename)
+	deletePath := GetPackageStoragePath(m.StorageFilename)
 	log.Debug(
 		"删除程序包：开始删除物理文件",
 		zap.String("pkg_path", deletePath),
@@ -322,4 +326,8 @@ func (s *PackageService) ListPackage(
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
+}
+
+func GetPackageStoragePath(filename string) string {
+	return filepath.Join(config.StorageDir, "packages", filename)
 }

@@ -10,6 +10,7 @@ import (
 	commodel "gin-artweb/internal/model/common"
 	oesmodel "gin-artweb/internal/model/oes"
 	oessvc "gin-artweb/internal/service/oes"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -45,29 +46,46 @@ func (s *OesNodeHandler) CreateOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.OesNodeUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"绑定创建oes节点参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"创建oes节点：绑定创建oes节点参数失败") {
 		return
 	}
 
+	log.Info("创建oes节点：开始执行")
+
+	log.Debug(
+		"创建oes节点：创建oes节点参数",
+		zap.Object("oes_node_dto", &req),
+	)
+
+	createStepStart := time.Now()
 	m, rErr := s.nodeSvc.CreateOesNode(ctx, req)
+	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
 			"创建oes节点失败",
 			zap.Error(rErr),
 			zap.Object("oes_node_dto", &req),
+			zap.Duration("create_step_duration", createStepDuration),
+			zap.Duration("create_step_duration", time.Since(createStepStart)),
 			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+
+	log.Debug(
+		"创建oes节点：创建oes节点模型详情",
+		zap.Object("oes_node_model", m),
+		zap.Duration("create_step_duration", createStepDuration),
+	)
+
+	log.Info(
+		"创建oes节点：执行成功",
+		zap.Duration("create_step_duration", time.Since(createStepStart)),
+		zap.Duration("total_time", time.Since(startTime)),
+	)
 
 	ctx.JSON(http.StatusOK, &oesmodel.OesNodeResp{
 		Code: http.StatusOK,
@@ -93,42 +111,54 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定更新oes节点ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"绑定更新oes节点ID参数失败") {
 		return
 	}
 
 	var req oesmodel.OesNodeUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"绑定更新oes节点参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"绑定更新oes节点参数失败") {
 		return
 	}
 
-	m, rErr := s.nodeSvc.UpdateOesNodeByID(ctx, uri.ID, req)
-	if rErr != nil {
+	log.Info("更新oes节点：开始执行")
+
+	log.Debug(
+		"更新oes节点：更新oes节点参数",
+		zap.Object("oes_node_dto", &req),
+	)
+
+	updateStepStart := time.Now()
+	m, err := s.nodeSvc.UpdateOesNodeByID(ctx, uri.ID, req)
+	updateStepDuration := time.Since(updateStepStart)
+	if err != nil {
 		log.Error(
 			"更新oes节点失败",
-			zap.Error(rErr),
+			zap.Error(err),
 			zap.Uint32("oes_node_id", uri.ID),
 			zap.Object("oes_node_dto", &req),
+			zap.Duration("update_step_duration", updateStepDuration),
 			zap.Duration("total_time", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
+
+	log.Debug(
+		"更新oes节点：更新后的oes节点模型详情",
+		zap.Object("oes_node_model", m),
+		zap.Duration("update_step_duration", updateStepDuration),
+	)
+
+	log.Info(
+		"更新oes节点：执行成功",
+		zap.Uint32("oes_node_id", uri.ID),
+		zap.Duration("update_step_duration", updateStepDuration),
+		zap.Duration("total_time", time.Since(startTime)),
+	)
 
 	ctx.JSON(http.StatusOK, &oesmodel.OesNodeResp{
 		Code: http.StatusOK,
@@ -153,15 +183,9 @@ func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定删除oes节点ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"绑定删除oes节点ID参数失败") {
 		return
 	}
 
@@ -170,21 +194,25 @@ func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
 		zap.Uint32("oes_node_id", uri.ID),
 	)
 
-	rErr := s.nodeSvc.DeleteOesNodeByID(ctx, uri.ID)
-	if rErr != nil {
+	deleteStepStart := time.Now()
+	err := s.nodeSvc.DeleteOesNodeByID(ctx, uri.ID)
+	deleteStepDuration := time.Since(deleteStepStart)
+	if err != nil {
 		log.Error(
 			"删除oes节点失败",
-			zap.Error(rErr),
+			zap.Error(err),
 			zap.Uint32("oes_node_id", uri.ID),
+			zap.Duration("delete_step_duration", deleteStepDuration),
 			zap.Duration("total_time", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	log.Info(
 		"删除oes节点成功",
 		zap.Uint32("oes_node_id", uri.ID),
+		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_time", time.Since(startTime)),
 	)
 
@@ -208,38 +236,40 @@ func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定查询oes节点ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"查询oes节点：绑定查询oes节点ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"开始查询oes节点详情",
+		"查询oes节点：开始执行",
 		zap.Uint32("oes_node_id", uri.ID),
 	)
-
-	m, rErr := s.nodeSvc.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.ID)
-	if rErr != nil {
+	findStepStart := time.Now()
+	m, err := s.nodeSvc.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, uri.ID)
+	findStepDuration := time.Since(findStepStart)
+	if err != nil {
 		log.Error(
-			"查询oes节点详情失败",
-			zap.Error(rErr),
+			"查询oes节点：执行失败",
+			zap.Error(err),
 			zap.Uint32("oes_node_id", uri.ID),
+			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_time", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"查询oes节点：查询到的oes节点模型详情",
+		zap.Object("oes_node_model", m),
+		zap.Duration("find_step_duration", findStepDuration),
+	)
 
 	log.Info(
-		"查询oes节点详情成功",
+		"查询oes节点：执行成功",
 		zap.Uint32("oes_node_id", uri.ID),
+		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_time", time.Since(startTime)),
 	)
 
@@ -266,29 +296,31 @@ func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesNodeDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"绑定查询oes节点列表参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询oes节点列表：绑定查询oes节点列表参数失败") {
 		return
 	}
 
-	log.Info("开始查询oes节点列表")
+	log.Info("查询oes节点列表：开始执行")
 
+	log.Debug(
+		"查询oes节点列表：查询参数",
+		zap.Object("oes_node_dto", &req),
+	)
+
+	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, rErr := s.nodeSvc.ListOesNode(ctx, page, size, req)
+	listStepDuration := time.Since(listStepStart)
 	if rErr != nil {
 		log.Error(
-			"查询oes节点列表失败",
+			"查询oes节点列表：执行失败",
 			zap.Error(rErr),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("oes_node_dto", &req),
+			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_time", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
@@ -296,10 +328,11 @@ func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询oes节点列表成功",
+		"查询oes节点列表：执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
+		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_time", time.Since(startTime)),
 	)
 

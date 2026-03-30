@@ -421,6 +421,10 @@ func (r *HostRepo) ExecuteCommand(
 		return errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
 
+	if session == nil {
+		return errors.New("session is nil")
+	}
+
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(

@@ -10,6 +10,7 @@ import (
 	commodel "gin-artweb/internal/model/common"
 	sysmodel "gin-artweb/internal/model/sys"
 	syssvc "gin-artweb/internal/service/sys"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -45,24 +46,13 @@ func (h *ApiHandler) CreateApi(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.CreateApiDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"创建API：绑定请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"创建API：绑定创建API请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"创建API：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("创建API：开始执行")
 
 	log.Debug(
 		"创建API：入参详情",
@@ -74,25 +64,24 @@ func (h *ApiHandler) CreateApi(ctx *gin.Context) {
 	createStepDuration := time.Since(createStepStart)
 	if err != nil {
 		log.Error(
-			"创建API：创建API失败",
+			"创建API：执行失败",
 			zap.Error(err),
 			zap.Object("create_api_dto", &req),
 			zap.Duration("create_step_duration", createStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"创建API：创建API成功",
+		"创建API：创建的API模型详情",
 		zap.Object("api_model", m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"创建API：创建API成功",
+		"创建API：执行成功",
 		zap.Uint32("api_id", m.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -120,38 +109,22 @@ func (h *ApiHandler) UpdateApi(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"更新API：绑定APIID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"更新API：绑定更新APIID参数失败") {
 		return
 	}
 
 	var req sysmodel.UpdateApiDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"更新API：绑定请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"更新API：绑定更新API请求参数失败") {
 		return
 	}
 
 	log.Info(
 		"更新API：开始执行",
 		zap.Uint32("api_id", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	log.Debug(
@@ -165,23 +138,24 @@ func (h *ApiHandler) UpdateApi(ctx *gin.Context) {
 	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
-			"更新API：更新API失败",
+			"更新API：执行失败",
 			zap.Error(err),
 			zap.Uint32("api_id", uri.ID),
 			zap.Object("update_api_dto", &req),
 			zap.Duration("update_step_duration", updateStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"更新API：更新API成功",
+		"更新API：更新后的API模型详情",
 		zap.Object("api_model", m),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	log.Info(
-		"更新API：更新API成功",
+		"更新API：执行成功",
 		zap.Uint32("api_id", uri.ID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -209,46 +183,34 @@ func (h *ApiHandler) DeleteApi(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"删除API：绑定APIID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"删除API：绑定删除APIID参数失败") {
 		return
 	}
 
 	log.Info(
 		"删除API：开始执行",
 		zap.Uint32("api_id", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	deleteStepStart := time.Now()
-	if err := h.apiSvc.DeleteApiByID(ctx, uri.ID); err != nil {
+	err := h.apiSvc.DeleteApiByID(ctx, uri.ID)
+	deleteStepDuration := time.Since(deleteStepStart)
+	if err != nil {
 		log.Error(
-			"删除API：删除API失败",
+			"删除API：执行失败",
 			zap.Error(err),
 			zap.Uint32("api_id", uri.ID),
-			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
+			zap.Duration("delete_step_duration", deleteStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	deleteStepDuration := time.Since(deleteStepStart)
-	log.Debug(
-		"删除API：删除API成功",
-		zap.Uint32("api_id", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
-	)
 
 	log.Info(
-		"删除API：删除API成功",
+		"删除API：执行成功",
 		zap.Uint32("api_id", uri.ID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -272,24 +234,15 @@ func (h *ApiHandler) GetApi(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"查询API：绑定APIID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"查询API：绑定查询APIID参数失败") {
 		return
 	}
 
 	log.Info(
 		"查询API：开始执行",
 		zap.Uint32("api_id", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	findStepStart := time.Now()
@@ -297,16 +250,23 @@ func (h *ApiHandler) GetApi(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询API：查询失败",
+			"查询API：执行失败",
 			zap.Error(err),
 			zap.Uint32("api_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"查询API：查询API成功",
+		"查询API：查询到的API详情",
+		zap.Object("api_model", m),
+		zap.Duration("find_step_duration", findStepDuration),
+	)
+
+	log.Info(
+		"查询API：执行成功",
 		zap.Uint32("api_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -334,27 +294,16 @@ func (h *ApiHandler) ListApi(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.ListApiDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"查询API列表：绑定查询参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询API列表：绑定查询API列表请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询API列表：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("查询API列表：开始执行")
 
 	log.Debug(
-		"查询API列表：参数详情",
+		"查询API列表：入参详情",
 		zap.Object("list_api_dto", &req),
 	)
 
@@ -364,19 +313,20 @@ func (h *ApiHandler) ListApi(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询API列表：查询API列表失败",
+			"查询API列表：执行失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_api_dto", &req),
 			zap.Duration("list_step_duration", listStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	log.Info(
-		"查询API列表：查询API列表成功",
+		"查询API列表：执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),

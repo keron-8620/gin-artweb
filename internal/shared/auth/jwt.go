@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap/zapcore"
 
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/errors"
 )
 
@@ -41,43 +42,7 @@ type JwtClaims struct {
 	Type TokenType `json:"typ"` // 令牌类型
 }
 
-type JWTConfig struct {
-	Issuer                 string            // 令牌签发者
-	AccessTokenExpiration  time.Duration     // 访问令牌过期时间
-	RefreshTokenExpiration time.Duration     // 刷新令牌过期时间
-	AccessSecret           []byte            // 访问令牌密钥
-	RefreshSecret          []byte            // 刷新令牌密钥
-	AccessMethod           jwt.SigningMethod // 访问令牌签名方法
-	RefreshMethod          jwt.SigningMethod // 刷新令牌签名方法
-}
-
-func NewJWTConfig(
-	accessExpiration, refreshExpiration time.Duration,
-	accessMethodstr, refreshMethodstr string,
-	accessSecret, refreshSecret []byte,
-) *JWTConfig {
-	accessMethod := jwt.GetSigningMethod(accessMethodstr)
-	if accessMethod == nil {
-		panic("invalid access method")
-	}
-	refreshMethod := jwt.GetSigningMethod(refreshMethodstr)
-	if refreshMethod == nil {
-		panic("invalid refresh method")
-	}
-	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
-		panic("JWT_ACCESS_SECRET or JWT_REFRESH_SECRET is empty")
-	}
-	return &JWTConfig{
-		AccessTokenExpiration:  accessExpiration,
-		RefreshTokenExpiration: refreshExpiration,
-		AccessSecret:           accessSecret,
-		RefreshSecret:          refreshSecret,
-		AccessMethod:           accessMethod,
-		RefreshMethod:          refreshMethod,
-	}
-}
-
-func NewUserClaims(c *JWTConfig, u UserInfo, tt TokenType) JwtClaims {
+func NewUserClaims(c *config.JWTConfig, u UserInfo, tt TokenType) JwtClaims {
 	now := time.Now()
 	return JwtClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -94,7 +59,7 @@ func NewUserClaims(c *JWTConfig, u UserInfo, tt TokenType) JwtClaims {
 }
 
 // NewJWT 创建JWT
-func NewAccessJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error) {
+func NewAccessJWT(ctx context.Context, c *config.JWTConfig, u UserInfo) (string, error) {
 	if ctx.Err() != nil {
 		return "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
 	}
@@ -108,7 +73,7 @@ func NewAccessJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error)
 }
 
 // NewRefreshJWT 创建刷新JWT
-func NewRefreshJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error) {
+func NewRefreshJWT(ctx context.Context, c *config.JWTConfig, u UserInfo) (string, error) {
 	if ctx.Err() != nil {
 		return "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
 	}
@@ -122,7 +87,7 @@ func NewRefreshJWT(ctx context.Context, c *JWTConfig, u UserInfo) (string, error
 }
 
 // ParseAccessToken 解析并验证JWT令牌
-func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
+func ParseAccessToken(ctx context.Context, c *config.JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -149,7 +114,7 @@ func ParseAccessToken(ctx context.Context, c *JWTConfig, tokenString string) (*J
 }
 
 // ParseRefreshToken 解析并验证刷新JWT令牌
-func ParseRefreshToken(ctx context.Context, c *JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
+func ParseRefreshToken(ctx context.Context, c *config.JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}

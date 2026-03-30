@@ -10,15 +10,15 @@ import (
 	handler "gin-artweb/internal/handler/sys"
 	sysrepo "gin-artweb/internal/repo/sys"
 	syssvc "gin-artweb/internal/service/sys"
-	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
 	"gin-artweb/pkg/crypto"
 )
 
 func newSysRouter(
 	router *gin.RouterGroup,
-	init *common.Initialize,
-	loggers *common.Loggers,
+	init *config.SystemInit,
+	loggers *config.Loggers,
 ) {
 	secSettings := syssvc.SecuritySettings{
 		MaxFailedAttempts: init.Conf.Security.Login.MaxFailedAttempts,

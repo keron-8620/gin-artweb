@@ -64,7 +64,7 @@ func (suite *RecordTestSuite) TestCreateModelWithCanceledContext() {
 	// 测试异常场景：上下文已取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	sm := CreateTestLoginRecordModel("192.168.1.1")
 	err := suite.recordRepo.CreateModel(ctx, sm)
 	suite.Error(err, "上下文已取消时创建登录记录应该返回错误")
@@ -208,158 +208,68 @@ func (suite *RecordTestSuite) TestCacheExpiration() {
 	suite.Equal(tempRepo.maxNum, num, "缓存过期后应该返回maxNum")
 }
 
-// 每个测试文件都需要这个入口函数
-func TestRecordTestSuite(t *testing.T) {
-	pts := &RecordTestSuite{}
-	suite.Run(t, pts)
-}
-
-// TestNewLoginRecordRepo 测试创建登录记录仓库实例
-func TestNewLoginRecordRepo(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-
-	repo := NewLoginRecordRepo(logger, db, dbTimeout, 5*time.Minute, 10*time.Minute, 5)
-	if repo == nil {
-		t.Fatal("NewLoginRecordRepo should return a non-nil repository")
-	}
-	if repo.log == nil {
-		t.Fatal("Repo log should not be nil")
-	}
-	if repo.gormDB == nil {
-		t.Fatal("Repo gormDB should not be nil")
-	}
-	if repo.timeouts == nil {
-		t.Fatal("Repo timeouts should not be nil")
-	}
-	if repo.cache == nil {
-		t.Fatal("Repo cache should not be nil")
-	}
-	if repo.maxNum != 5 {
-		t.Fatalf("Repo maxNum should be 5, got %d", repo.maxNum)
-	}
-}
-
-// TestCountModel 测试CountModel函数
-func TestCountModel(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.LoginRecordModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	repo := NewLoginRecordRepo(logger, db, dbTimeout, 5*time.Minute, 10*time.Minute, 5)
-
-	// 清理可能存在的数据并创建测试数据
+func (suite *RecordTestSuite) TestCountModel() {
 	for i := range 5 {
 		sm := CreateTestLoginRecordModel(fmt.Sprintf("192.168.1.%d", i+1))
-		err := repo.CreateModel(context.Background(), sm)
-		if err != nil {
-			t.Fatalf("创建登录记录失败: %v", err)
-		}
+		err := suite.recordRepo.CreateModel(context.Background(), sm)
+		suite.NoError(err, "创建登录记录应该成功")
 	}
 
-	// 测试CountModel
-	count, err := repo.CountModel(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("获取登录记录总数失败: %v", err)
-	}
-	if count < 5 {
-		t.Fatalf("登录记录总数应该至少有5条, got %d", count)
-	}
+	count, err := suite.recordRepo.CountModel(context.Background(), nil)
+	suite.NoError(err, "获取登录记录总数应该成功")
+	suite.GreaterOrEqual(count, int64(5), "登录记录总数应该至少有5条")
 
-	// 测试CountModel带过滤条件
 	filterIP := "192.168.1.1"
-	count, err = repo.CountModel(context.Background(), map[string]any{"ip_address": filterIP})
-	if err != nil {
-		t.Fatalf("带过滤条件的登录记录总数查询失败: %v", err)
-	}
-	if count < 1 {
-		t.Fatalf("带过滤条件的登录记录总数应该至少为1, got %d", count)
-	}
+	count, err = suite.recordRepo.CountModel(context.Background(), map[string]any{"ip_address": filterIP})
+	suite.NoError(err, "带过滤条件的登录记录总数查询应该成功")
+	suite.GreaterOrEqual(count, int64(1), "带过滤条件的登录记录总数应该至少为1")
 
-	// 测试CountModel带不存在的过滤条件
-	count, err = repo.CountModel(context.Background(), map[string]any{"ip_address": "192.168.1.999"})
-	if err != nil {
-		t.Fatalf("带不存在的过滤条件的登录记录总数查询失败: %v", err)
-	}
-	if count != 0 {
-		t.Fatalf("带不存在的过滤条件的登录记录总数应该为0, got %d", count)
-	}
+	count, err = suite.recordRepo.CountModel(context.Background(), map[string]any{"ip_address": "192.168.1.999"})
+	suite.NoError(err, "带不存在的过滤条件的登录记录总数查询应该成功")
+	suite.Equal(int64(0), count, "带不存在的过滤条件的登录记录总数应该为0")
 }
 
-// TestListModelWithFiltering 测试ListModel带过滤参数
-func TestListModelWithFiltering(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.LoginRecordModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	repo := NewLoginRecordRepo(logger, db, dbTimeout, 5*time.Minute, 10*time.Minute, 5)
-
-	// 清理可能存在的数据并创建测试数据
+func (suite *RecordTestSuite) TestListModelWithFiltering() {
 	testIP := "192.168.1.100"
 	sm := CreateTestLoginRecordModel(testIP)
-	err := repo.CreateModel(context.Background(), sm)
-	if err != nil {
-		t.Fatalf("创建登录记录失败: %v", err)
-	}
+	err := suite.recordRepo.CreateModel(context.Background(), sm)
+	suite.NoError(err, "创建登录记录应该成功")
 
-	// 测试按IP过滤
 	qp := database.QueryParams{
 		Query: map[string]any{
 			"ip_address": testIP,
 		},
 	}
-	ms, err := repo.ListModel(context.Background(), qp)
-	if err != nil {
-		t.Fatalf("按IP过滤查询失败: %v", err)
-	}
-	if ms == nil {
-		t.Fatal("登录记录列表不应该为nil")
-	}
-	// 验证过滤结果
+	ms, err := suite.recordRepo.ListModel(context.Background(), qp)
+	suite.NoError(err, "按IP过滤查询应该成功")
+	suite.NotNil(ms, "登录记录列表不应该为nil")
 	for _, record := range ms {
-		if record.IPAddress != testIP {
-			t.Fatalf("登录记录应该按IP过滤, expected %s, got %s", testIP, record.IPAddress)
-		}
+		suite.Equal(testIP, record.IPAddress, "登录记录应该按IP过滤")
 	}
 }
 
-// TestListModelWithCanceledContext 测试上下文已取消时列出登录记录
-func TestListModelWithCanceledContext(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.LoginRecordModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	repo := NewLoginRecordRepo(logger, db, dbTimeout, 5*time.Minute, 10*time.Minute, 5)
-
-	// 创建一个已取消的上下文
+func (suite *RecordTestSuite) TestListModelWithCanceledContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	qp := database.QueryParams{
 		Limit:  10,
 		Offset: 0,
 	}
-	_, err := repo.ListModel(ctx, qp)
-	if err == nil {
-		t.Fatal("上下文已取消时列出登录记录应该返回错误")
-	}
+	_, err := suite.recordRepo.ListModel(ctx, qp)
+	suite.Error(err, "上下文已取消时列出登录记录应该返回错误")
 }
 
-// TestCountModelWithCanceledContext 测试上下文已取消时获取登录记录总数
-func TestCountModelWithCanceledContext(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.LoginRecordModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	repo := NewLoginRecordRepo(logger, db, dbTimeout, 5*time.Minute, 10*time.Minute, 5)
-
-	// 创建一个已取消的上下文
+func (suite *RecordTestSuite) TestCountModelWithCanceledContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
-	_, err := repo.CountModel(ctx, nil)
-	if err == nil {
-		t.Fatal("上下文已取消时获取登录记录总数应该返回错误")
-	}
+
+	_, err := suite.recordRepo.CountModel(ctx, nil)
+	suite.Error(err, "上下文已取消时获取登录记录总数应该返回错误")
+}
+
+// 每个测试文件都需要这个入口函数
+func TestRecordTestSuite(t *testing.T) {
+	pts := &RecordTestSuite{}
+	suite.Run(t, pts)
 }

@@ -2,6 +2,7 @@ package job
 
 import (
 	"context"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/zap"
@@ -9,6 +10,7 @@ import (
 	jobmodel "gin-artweb/internal/model/job"
 	jobrepo "gin-artweb/internal/repo/job"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -93,7 +95,7 @@ func (s *ScriptService) CreateScript(
 
 	saveStepStart := time.Now()
 	log.Debug("创建脚本：开始保存脚本文件")
-	scriptPath := common.GetScriptStoragePath(dto.Project, dto.Label, dto.Filename, false)
+	scriptPath := GetScriptStoragePath(dto.Project, dto.Label, dto.Filename, false)
 	if err := s.scriptRepo.SaveScriptFile(ctx, dto.File, scriptPath, false); err != nil {
 		log.Error(
 			"创建脚本：脚本文件创建失败",
@@ -193,8 +195,8 @@ func (s *ScriptService) UpdateScriptByID(
 
 	saveStepStart := time.Now()
 	log.Debug("更新脚本：开始保存脚本文件")
-	oldScriptPath := common.GetScriptStoragePath(om.Project, om.Label, om.Name, false)
-	newScriptPath := common.GetScriptStoragePath(dto.Project, dto.Label, dto.Filename, false)
+	oldScriptPath := GetScriptStoragePath(om.Project, om.Label, om.Name, false)
+	newScriptPath := GetScriptStoragePath(dto.Project, dto.Label, dto.Filename, false)
 	if err := s.scriptRepo.SaveScriptFile(ctx, dto.File, newScriptPath, true); err != nil {
 		log.Error(
 			"更新脚本：新脚本写入失败",
@@ -283,7 +285,7 @@ func (s *ScriptService) DeleteScriptByID(
 		return errors.FromReason(errors.ReasonScriptIsBuiltin).WithField("script_id", scriptID)
 	}
 
-	scriptPath := common.GetScriptStoragePath(m.Project, m.Label, m.Name, false)
+	scriptPath := GetScriptStoragePath(m.Project, m.Label, m.Name, false)
 	deleteStepStart := time.Now()
 	log.Debug(
 		"删除脚本：开始删除数据库模型",
@@ -583,4 +585,11 @@ func (s *ScriptService) ListLabels(
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return labels, nil
+}
+
+func GetScriptStoragePath(project, label, name string, isBuiltin bool) string {
+	if isBuiltin {
+		return filepath.Join(config.ResourceDir, project, "script", label, name)
+	}
+	return filepath.Join(config.StorageDir, "script", project, label, name)
 }

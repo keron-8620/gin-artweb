@@ -2,6 +2,7 @@ package routers
 
 import (
 	"encoding/base64"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,21 +12,21 @@ import (
 	handler "gin-artweb/internal/handler/resource"
 	resorepo "gin-artweb/internal/repo/resource"
 	resosvc "gin-artweb/internal/service/resource"
-	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
 	"gin-artweb/internal/shared/shell"
 )
 
-type ResourceRouter struct {
+type ResourceServices struct {
 	Host *resosvc.HostService
 	Pkg  *resosvc.PackageService
 }
 
 func newResourceRouter(
 	router *gin.RouterGroup,
-	init *common.Initialize,
-	loggers *common.Loggers,
-) *ResourceRouter {
+	init *config.SystemInit,
+	loggers *config.Loggers,
+) *ResourceServices {
 	signers, err := shell.GetSignersFromDefaultKeys()
 	if err != nil {
 		loggers.Server.Error("初始化加载ssh密钥失败", zap.Error(err))
@@ -46,7 +47,7 @@ func newResourceRouter(
 	pkgRepo := resorepo.NewPackageRepo(loggers.Data, init.DB, init.DBTimeout)
 
 	hostService := resosvc.NewHostService(loggers.Service, hostRepo, sshTimeout, ssh.PublicKeys(signers...), pubKeys)
-	pkgService := resosvc.NewPackageService(loggers.Service, pkgRepo)
+	pkgService := resosvc.NewPackageService(loggers.Service, pkgRepo, filepath.Join(config.StorageDir, "packages"))
 
 	hostHandler := handler.NewHostHandler(loggers.Handler, hostService)
 	pkgHandler := handler.NewPackageHandler(loggers.Handler, pkgService, int64(init.Conf.Upload.MaxPkgSize)*1024*1024)
@@ -58,7 +59,7 @@ func newResourceRouter(
 	hostHandler.LoadRouter(appRouter)
 	pkgHandler.LoadRouter(appRouter)
 
-	return &ResourceRouter{
+	return &ResourceServices{
 		Host: hostService,
 		Pkg:  pkgService,
 	}

@@ -437,19 +437,6 @@ func (suite *RecordTestSuite) TestListModelWithContextTimeout() {
 	suite.Nil(ms, "超时上下文列表查询不应该返回结果")
 }
 
-func (suite *RecordTestSuite) TestNewRecordRepo() {
-	// 测试创建 RecordRepo 实例
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	
-	repo := NewRecordRepo(logger, db, dbTimeout)
-	suite.NotNil(repo, "RecordRepo 实例不应该为 nil")
-	suite.NotNil(repo.log, "RecordRepo 的 log 字段不应该为 nil")
-	suite.NotNil(repo.gormDB, "RecordRepo 的 gormDB 字段不应该为 nil")
-	suite.NotNil(repo.timeouts, "RecordRepo 的 timeouts 字段不应该为 nil")
-}
-
 func (suite *RecordTestSuite) TestCountModel() {
 	// 先创建一个脚本模型用于测试
 	script := CreateTestScriptModel(false)

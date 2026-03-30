@@ -10,7 +10,6 @@ import (
 	oesmodel "gin-artweb/internal/model/oes"
 	oesrepo "gin-artweb/internal/repo/oes"
 	oessvc "gin-artweb/internal/service/oes"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
 	"gin-artweb/pkg/serializer"
@@ -18,8 +17,8 @@ import (
 
 func newOesRouter(
 	router *gin.RouterGroup,
-	init *common.Initialize,
-	loggers *common.Loggers,
+	init *config.SystemInit,
+	loggers *config.Loggers,
 	jobsvc *JobServices,
 ) {
 	var (

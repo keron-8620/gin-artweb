@@ -150,6 +150,12 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
+		// 先查询出具体的记录
+		if err := tx.Where(conds[0], conds[1:]...).First(m).Error; err != nil {
+			tx.Rollback()
+			return errors.WrapIf(err, "查询记录失败")
+		}
+		// 再更新关联关系
 		if err := tx.Model(m).Association(k).Replace(v); err != nil {
 			tx.Rollback()
 			return errors.WrapIf(err, "更新关联关系失败")

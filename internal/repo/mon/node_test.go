@@ -193,6 +193,69 @@ func (suite *MonNodeTestSuite) TestContextTimeout() {
 	suite.Error(err, "上下文超时后查询MonNode应该返回错误")
 }
 
+func (suite *MonNodeTestSuite) TestCountModel() {
+	// 创建多个测试数据
+	for i := 0; i < 3; i++ {
+		nm := CreateTestMonNodeModel()
+		nm.Name = fmt.Sprintf("count-test-%d", i)
+		err := suite.nodeRepo.CreateModel(context.Background(), nm)
+		suite.NoError(err, "创建MonNode用于计数测试应该成功")
+	}
+
+	// 测试正常计数
+	count, err := suite.nodeRepo.CountModel(context.Background(), nil)
+	suite.NoError(err, "计数MonNode应该成功")
+	suite.Greater(count, int64(0), "MonNode计数应该大于0")
+
+	// 测试带条件计数
+	countWithQuery, err := suite.nodeRepo.CountModel(context.Background(), map[string]any{"name LIKE ?": "count-test-%"})
+	suite.NoError(err, "带条件计数MonNode应该成功")
+	suite.GreaterOrEqual(countWithQuery, int64(3), "带条件计数应该至少为3")
+
+	// 测试计数不存在的MonNode
+	countNonExistent, err := suite.nodeRepo.CountModel(context.Background(), map[string]any{"name": "non-existent-mon-node"})
+	suite.NoError(err, "计数不存在的MonNode应该成功")
+	suite.Equal(int64(0), countNonExistent, "不存在的MonNode计数应该为0")
+}
+
+func (suite *MonNodeTestSuite) TestDatabaseErrorScenarios() {
+	// 测试上下文超时导致的数据库操作失败
+	testTimeoutError := func() {
+		// 创建测试数据
+		nm := CreateTestMonNodeModel()
+		err := suite.nodeRepo.CreateModel(context.Background(), nm)
+		suite.NoError(err, "创建MonNode用于超时测试应该成功")
+
+		// 创建一个已经超时的上下文
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+		defer cancel()
+
+		// 等待上下文超时
+		time.Sleep(time.Millisecond)
+
+		// 测试各种操作在超时上下文下的行为
+		_, err = suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", nm.ID)
+		suite.Error(err, "超时上下文下查询MonNode应该返回错误")
+
+		err = suite.nodeRepo.UpdateModel(timeoutCtx, map[string]any{"name": "test"}, "id = ?", nm.ID)
+		suite.Error(err, "超时上下文下更新MonNode应该返回错误")
+
+		err = suite.nodeRepo.DeleteModel(timeoutCtx, "id = ?", nm.ID)
+		suite.Error(err, "超时上下文下删除MonNode应该返回错误")
+
+		_, err = suite.nodeRepo.ListModel(timeoutCtx, database.QueryParams{})
+		suite.Error(err, "超时上下文下列表查询应该返回错误")
+
+		_, err = suite.nodeRepo.CountModel(timeoutCtx, nil)
+		suite.Error(err, "超时上下文下计数应该返回错误")
+	}
+
+	testTimeoutError()
+
+	// 注意：空条件的删除和更新操作会失败，因为数据库操作需要WHERE条件
+	// 这里我们不测试空条件操作，因为它们不是预期的用例
+}
+
 func TestMonNodeTestSuite(t *testing.T) {
 	pts := &MonNodeTestSuite{}
 	suite.Run(t, pts)

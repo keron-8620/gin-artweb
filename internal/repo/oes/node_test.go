@@ -5,11 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/stretchr/testify/suite"
 
 	monmodel "gin-artweb/internal/model/mon"
 	oesmodel "gin-artweb/internal/model/oes"
 	resomodel "gin-artweb/internal/model/resource"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/test"
 )
@@ -26,6 +30,9 @@ func CreateTestOesNodeModel(oesColonyID, hostID uint32) *oesmodel.OesNodeModel {
 type OesNodeTestSuite struct {
 	suite.Suite
 	nodeRepo *OesNodeRepo
+	log      *zap.Logger
+	gormDB   *gorm.DB
+	timeouts *config.DBTimeout
 }
 
 func (suite *OesNodeTestSuite) SetupSuite() {
@@ -85,12 +92,13 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	}
 	db.Create(esColonyModel)
 
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
+	suite.timeouts = test.NewTestDBTimeouts()
+	suite.log = test.NewTestZapLogger()
+	suite.gormDB = db
 	suite.nodeRepo = &OesNodeRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:      suite.log,
+		gormDB:   suite.gormDB,
+		timeouts: suite.timeouts,
 	}
 }
 
@@ -226,6 +234,38 @@ func (suite *OesNodeTestSuite) TestContextTimeout() {
 	// 测试超时后的操作
 	_, err = suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
 	suite.Error(err, "上下文超时后查询OesNode应该返回错误")
+}
+
+func (suite *OesNodeTestSuite) TestCountModel() {
+	// 创建测试数据
+	for i := 0; i < 3; i++ {
+		cm := CreateTestOesNodeModel(1, 1)
+		err := suite.nodeRepo.CreateModel(context.Background(), cm)
+		suite.NoError(err, "创建OesNode用于计数测试应该成功")
+	}
+
+	// 测试正常计数
+	count, err := suite.nodeRepo.CountModel(context.Background(), nil)
+	suite.NoError(err, "查询OesNode总数应该成功")
+	suite.Greater(count, int64(0), "OesNode总数应该大于0")
+
+	// 测试带条件计数
+	count2, err := suite.nodeRepo.CountModel(context.Background(), map[string]any{"node_role": "master"})
+	suite.NoError(err, "带条件查询OesNode总数应该成功")
+	suite.GreaterOrEqual(count2, int64(3), "带条件的OesNode总数应该大于等于3")
+
+	// 测试边界情况：查询不存在的角色
+	count3, err := suite.nodeRepo.CountModel(context.Background(), map[string]any{"node_role": "non-existent"})
+	suite.NoError(err, "查询不存在角色的OesNode总数应该成功")
+	suite.Equal(int64(0), count3, "不存在角色的OesNode总数应该为0")
+}
+
+func (suite *OesNodeTestSuite) TestNewOesNodeRepo() {
+	repo := NewOesNodeRepo(suite.log, suite.gormDB, suite.timeouts)
+	suite.NotNil(repo, "NewOesNodeRepo 应该返回非空实例")
+	suite.Equal(suite.log, repo.log, "日志实例应该正确设置")
+	suite.Equal(suite.gormDB, repo.gormDB, "数据库实例应该正确设置")
+	suite.Equal(suite.timeouts, repo.timeouts, "超时设置应该正确设置")
 }
 
 func TestOesNodeTestSuite(t *testing.T) {

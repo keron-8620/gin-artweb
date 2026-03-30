@@ -15,11 +15,15 @@ import (
 	"golang.org/x/time/rate"
 
 	"gin-artweb/docs"
-	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
 )
 
-func NewRouter(loggers *common.Loggers, init *common.Initialize, version, htmlDir string) *gin.Engine {
+func NewRouter(
+	loggers *config.Loggers,
+	init *config.SystemInit,
+	version, htmlDir string,
+) *gin.Engine {
 	r := gin.New()
 
 	// 注册链路追踪处理中间件

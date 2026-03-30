@@ -93,10 +93,10 @@ func (t *TaskInfo) ToUpdateMap() map[string]any {
 	}
 }
 
-// CreateScriptRecordDTO 用于创建计划任务的请求结构体
+// ExecScriptDTO 用于创建计划任务的请求结构体
 //
-// swagger:model CreateScriptRecordDTO
-type CreateScriptRecordDTO struct {
+// swagger:model ExecScriptDTO
+type ExecScriptDTO struct {
 	// 脚本ID
 	ScriptID uint32 `json:"script_id" form:"script_id" binding:"required"`
 
@@ -111,6 +111,15 @@ type CreateScriptRecordDTO struct {
 
 	// 工作目录
 	WorkDir string `json:"work_dir" form:"work_dir" binding:"omitempty"`
+}
+
+func (dto ExecScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("script_id", dto.ScriptID)
+	enc.AddString("command_args", dto.CommandArgs)
+	enc.AddString("env_vars", dto.EnvVars)
+	enc.AddInt("timeout", dto.Timeout)
+	enc.AddString("work_dir", dto.WorkDir)
+	return nil
 }
 
 // ListScriptRecordDTO 用于获取计划任务列表的请求结构体

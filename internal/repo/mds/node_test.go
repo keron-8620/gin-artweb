@@ -195,6 +195,30 @@ func (suite *MdsNodeTestSuite) TestContextTimeout() {
 	suite.Error(err, "上下文超时后查询MdsNode应该返回错误")
 }
 
+func (suite *MdsNodeTestSuite) TestCountModel() {
+	// 创建测试数据
+	for i := 0; i < 3; i++ {
+		cm := CreateTestMdsNodeModel(1, 1)
+		err := suite.nodeRepo.CreateModel(context.Background(), cm)
+		suite.NoError(err, "创建MdsNode用于计数测试应该成功")
+	}
+
+	// 测试正常计数
+	count, err := suite.nodeRepo.CountModel(context.Background(), nil)
+	suite.NoError(err, "计数MdsNode应该成功")
+	suite.Greater(count, int64(0), "MdsNode计数应该大于0")
+
+	// 测试带条件计数
+	count, err = suite.nodeRepo.CountModel(context.Background(), map[string]any{"is_enable": true})
+	suite.NoError(err, "带条件计数MdsNode应该成功")
+	suite.GreaterOrEqual(count, int64(0), "MdsNode计数应该大于等于0")
+
+	// 测试计数不存在的条件
+	count, err = suite.nodeRepo.CountModel(context.Background(), map[string]any{"node_role": "non-existent"})
+	suite.NoError(err, "计数不存在的MdsNode应该成功")
+	suite.Equal(int64(0), count, "不存在的MdsNode计数应该为0")
+}
+
 func TestMdsNodeTestSuite(t *testing.T) {
 	pts := &MdsNodeTestSuite{}
 	suite.Run(t, pts)

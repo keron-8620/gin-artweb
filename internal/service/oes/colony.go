@@ -11,6 +11,7 @@ import (
 
 	oesmodel "gin-artweb/internal/model/oes"
 	oesrepo "gin-artweb/internal/repo/oes"
+	resosvc "gin-artweb/internal/service/resource"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
@@ -560,8 +561,8 @@ func (s *OesColonyService) OutportOesColonyData(
 		zap.Object("oes_colony", m),
 	)
 
-	colonyBinDir := common.GetOesColonyBinDir(m.ColonyNum)
-	colonyConfDir := common.GetOesColonyConfigDir(m.ColonyNum)
+	colonyBinDir := GetOesColonyBinDir(m.ColonyNum)
+	colonyConfDir := GetOesColonyConfigDir(m.ColonyNum)
 
 	// 清理原oes集群配置文件
 	cleanStepStart := time.Now()
@@ -609,7 +610,7 @@ func (s *OesColonyService) OutportOesColonyData(
 
 	// 处理oes程序包
 	oesStepStart := time.Now()
-	oesPkgPath := common.GetPackageStoragePath(m.Package.StorageFilename)
+	oesPkgPath := resosvc.GetPackageStoragePath(m.Package.StorageFilename)
 	log.Debug(
 		"解压oes程序包并初始化集群配置文件：开始处理oes程序包",
 		zap.String("pkg_path", oesPkgPath),
@@ -659,7 +660,7 @@ func (s *OesColonyService) OutportOesColonyData(
 
 	// 处理xcounter程序包
 	xcterStepStart := time.Now()
-	xcterPkgPath := common.GetPackageStoragePath(m.XCounter.StorageFilename)
+	xcterPkgPath := resosvc.GetPackageStoragePath(m.XCounter.StorageFilename)
 	log.Debug(
 		"解压oes程序包并初始化集群配置文件：开始处理xcounter程序包",
 		zap.String("pkg_path", xcterPkgPath),
@@ -780,4 +781,12 @@ func (s *OesColonyService) OutportOesColonyData(
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
+}
+
+func GetOesColonyBinDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "oes", "bin", colonyNum)
+}
+
+func GetOesColonyConfigDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "oes", "config", colonyNum)
 }

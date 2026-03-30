@@ -10,6 +10,7 @@ import (
 	commodel "gin-artweb/internal/model/common"
 	resomodel "gin-artweb/internal/model/resource"
 	resosvc "gin-artweb/internal/service/resource"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -46,24 +47,13 @@ func (h *HostHandler) CreateHost(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req resomodel.HostUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"新增主机：绑定创建主机请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"新增主机：绑定创建主机请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"创建主机：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("创建主机：开始执行")
 
 	log.Debug(
 		"创建主机：入参详情",
@@ -75,25 +65,24 @@ func (h *HostHandler) CreateHost(ctx *gin.Context) {
 	createStepDuration := time.Since(createStepStart)
 	if err != nil {
 		log.Error(
-			"创建主机：创建主机失败",
+			"创建主机：执行失败",
 			zap.Error(err),
 			zap.Object("host_upsert_dto", &req),
 			zap.Duration("create_step_duration", createStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"创建主机：创建主机成功",
+		"创建主机：创建主机模型详情",
 		zap.Object("host_model", m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"创建主机：创建主机成功",
+		"创建主机：执行成功",
 		zap.Uint32("host_id", m.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -122,36 +111,22 @@ func (h *HostHandler) UpdateHost(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"更新主机：绑定主机ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"更新主机：绑定更新主机ID参数失败") {
 		return
 	}
 
 	var req resomodel.HostUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"更新主机：绑定更新主机请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"更新主机：绑定更新主机请求参数失败") {
 		return
 	}
 
 	log.Info(
 		"更新主机：开始执行",
 		zap.Uint32("host_id", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	log.Debug(
@@ -165,23 +140,24 @@ func (h *HostHandler) UpdateHost(ctx *gin.Context) {
 	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
-			"更新主机：更新主机失败",
+			"更新主机：执行失败",
 			zap.Error(err),
 			zap.Uint32("host_id", uri.ID),
 			zap.Object("host_upsert_dto", &req),
 			zap.Duration("update_step_duration", updateStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"更新主机：更新主机成功",
+		"更新主机：更新后的主机模型详情",
 		zap.Object("host_model", m),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	log.Info(
-		"更新主机：更新主机成功",
+		"更新主机：执行成功",
 		zap.Uint32("host_id", uri.ID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -210,46 +186,34 @@ func (h *HostHandler) DeleteHost(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"删除主机：绑定主机ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"删除主机：绑定删除主机ID参数失败") {
 		return
 	}
 
 	log.Info(
 		"删除主机：开始执行",
 		zap.Uint32("host_id", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	deleteStepStart := time.Now()
-	if err := h.hostSvc.DeleteHostById(ctx, uri.ID); err != nil {
+	err := h.hostSvc.DeleteHostById(ctx, uri.ID)
+	deleteStepDuration := time.Since(deleteStepStart)
+	if err != nil {
 		log.Error(
-			"删除主机：删除主机失败",
+			"删除主机：执行失败",
 			zap.Error(err),
 			zap.Uint32("host_id", uri.ID),
-			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
+			zap.Duration("delete_step_duration", deleteStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	deleteStepDuration := time.Since(deleteStepStart)
-	log.Debug(
-		"删除主机：删除主机成功",
-		zap.Uint32("host_id", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
-	)
 
 	log.Info(
-		"删除主机：删除主机成功",
+		"删除主机：执行成功",
 		zap.Uint32("host_id", uri.ID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -274,24 +238,15 @@ func (h *HostHandler) GetHost(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"查询主机：绑定主机ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"查询主机：绑定查询主机ID参数失败") {
 		return
 	}
 
 	log.Info(
 		"查询主机：开始执行",
 		zap.Uint32("host_id", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	findStepStart := time.Now()
@@ -299,23 +254,23 @@ func (h *HostHandler) GetHost(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询主机：查询失败",
+			"查询主机：执行失败",
 			zap.Error(err),
 			zap.Uint32("host_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"查询主机：查询主机成功",
-		zap.Uint32("host_id", uri.ID),
+		"查询主机：查询到的主机模型详情",
+		zap.Object("host_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	log.Info(
-		"查询主机：查询主机成功",
+		"查询主机：执行成功",
 		zap.Uint32("host_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -343,24 +298,13 @@ func (h *HostHandler) ListHost(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req resomodel.ListHostDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"查询主机列表：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"查询主机列表：绑定查询主机列表参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询主机列表：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("查询主机列表：开始执行")
 
 	log.Debug(
 		"查询主机列表：参数详情",
@@ -373,19 +317,20 @@ func (h *HostHandler) ListHost(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询主机列表：查询主机列表失败",
+			"查询主机列表：执行失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_host_dto", &req),
 			zap.Duration("list_step_duration", listStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	log.Info(
-		"查询主机列表：查询主机列表成功",
+		"查询主机列表：执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),

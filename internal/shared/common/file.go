@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
 
@@ -19,7 +18,6 @@ import (
 // 			"上传的程序包文件过大",
 // 			zap.Int64("file_size", upFile.Size),
 // 			zap.Int64("max_size", maxSize),
-// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 // 		)
 // 		return errors.ErrUploadFileTooLarge.WithFields(
 // 			map[string]any{
@@ -42,7 +40,6 @@ import (
 // 		logger.Error(
 // 			"打开上传文件失败",
 // 			zap.Error(err),
-// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 // 		)
 // 		return errors.FromError(err)
 // 	}
@@ -53,7 +50,6 @@ import (
 // 			"创建上传文件目录失败",
 // 			zap.Error(err),
 // 			zap.String("save_path", savePath),
-// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 // 		)
 // 		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
 // 	}
@@ -64,7 +60,6 @@ import (
 // 			"创建上传文件失败",
 // 			zap.Error(err),
 // 			zap.String("save_path", savePath),
-// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 // 		)
 // 		return errors.FromError(err)
 // 	}
@@ -75,7 +70,6 @@ import (
 // 			"复制上传文件失败",
 // 			zap.Error(err),
 // 			zap.String("save_path", savePath),
-// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 // 		)
 // 		return errors.ErrSaveUploadFileFailed.WithCause(err).WithField("save_path", savePath)
 // 	}
@@ -86,7 +80,6 @@ import (
 // 			zap.Error(err),
 // 			zap.String("save_path", savePath),
 // 			zap.String("file_perm", mode.String()),
-// 			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 // 		)
 // 		return errors.ErrSetUploadFilePermissionFailed.WithCause(err)
 // 	}
@@ -106,7 +99,6 @@ func UploadFile(
 			"上传的程序包文件过大",
 			zap.Int64("file_size", upFile.Size),
 			zap.Int64("max_size", maxSize),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrUnknown.WithFields(
 			map[string]any{
@@ -121,7 +113,6 @@ func UploadFile(
 			"创建上传文件目录失败",
 			zap.Error(err),
 			zap.String("save_path", savePath),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrUnknown.WithCause(err)
 	}
@@ -131,7 +122,6 @@ func UploadFile(
 			"保存上传文件失败",
 			zap.Error(err),
 			zap.String("save_path", savePath),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrUnknown.WithCause(err)
 	}
@@ -142,7 +132,6 @@ func UploadFile(
 			zap.Error(err),
 			zap.String("save_path", savePath),
 			zap.String("file_perm", filePerm.String()),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrUnknown.WithCause(err)
 	}
@@ -155,14 +144,12 @@ func DownloadFile(ctx *gin.Context, logger *zap.Logger, filePath, rename string)
 		logger.Error(
 			"文件不存在",
 			zap.String("file_path", filePath),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 		)
 		return errors.ErrDownloadFileNotFound.WithField("file_path", filePath)
 	} else if statErr != nil {
 		logger.Error(
 			"文件状态检查失败",
 			zap.String("file_path", filePath),
-			zap.String(string(ctxutil.TraceIDKey), ctxutil.GetTraceID(ctx)),
 			zap.Error(statErr),
 		)
 		return errors.ErrDownloadFileFailed.WithCause(statErr)

@@ -9,6 +9,7 @@ import (
 
 	commodel "gin-artweb/internal/model/common"
 	mdsmodel "gin-artweb/internal/model/mds"
+	mdsvc "gin-artweb/internal/service/mds"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
@@ -48,33 +49,21 @@ func NewMdsConfHandler(
 func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var pathReq mdsmodel.GetMdsConfDTO
-	if err := ctx.ShouldBindUri(&pathReq); err != nil {
-		log.Error(
-			"绑定上传的mds配置文件路径参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &pathReq,
+		"上传mds配置文件：绑定上传的mds配置文件路径参数失败") {
 		return
 	}
 
-	// 2. 绑定表单数据（包含文件）
 	var formReq mdsmodel.UploadMdsConfDTO
-	if err := ctx.ShouldBind(&formReq); err != nil {
-		log.Error(
-			"绑定上传的mds配置文件表单参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &formReq,
+		"上传mds配置文件：绑定上传的mds配置文件表单参数失败") {
 		return
 	}
 
 	// 3. 将配置文件保存到指定的位置
-	dirName := common.GetMdsColonyConfigDir(pathReq.ColonyNum)
+	dirName := mdsvc.GetMdsColonyConfigDir(pathReq.ColonyNum)
 	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
 	if err := common.UploadFile(ctx, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
 		errors.RespondWithError(ctx, err)
@@ -101,19 +90,13 @@ func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
 func (s *MdsConfHandler) DownloadMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		log.Error(
-			"绑定删除的mds配置文件路径参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"下载mds配置文件：绑定下载的mds配置文件路径参数失败") {
 		return
 	}
 
-	dirName := common.GetMdsColonyConfigDir(req.ColonyNum)
+	dirName := mdsvc.GetMdsColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := common.DownloadFile(ctx, log, filePath, ""); err != nil {
 		errors.RespondWithError(ctx, err)
@@ -138,23 +121,17 @@ func (s *MdsConfHandler) DownloadMdsConf(ctx *gin.Context) {
 func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		log.Error(
-			"绑定删除的mds配置文件路径参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"删除mds配置文件：绑定删除的mds配置文件路径参数失败") {
 		return
 	}
 
-	dirName := common.GetMdsColonyConfigDir(req.ColonyNum)
+	dirName := mdsvc.GetMdsColonyConfigDir(req.ColonyNum)
 	savePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := fileutil.Remove(ctx, savePath); err != nil {
 		log.Error(
-			"删除mds配置文件失败",
+			"删除mds配置文件：执行失败",
 			zap.Error(err),
 			zap.String("request_uri", ctx.Request.RequestURI),
 		)
@@ -181,23 +158,17 @@ func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 func (s *MdsConfHandler) ListMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.ListMdsConfDTO
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		log.Error(
-			"绑定mds配置文件路径参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"获取mds配置文件列表：绑定mds配置文件路径参数失败") {
 		return
 	}
 
-	dirName := common.GetMdsColonyConfigDir(req.ColonyNum)
+	dirName := mdsvc.GetMdsColonyConfigDir(req.ColonyNum)
 	info, err := fileutil.ListFileInfo(ctx, dirName)
 	if err != nil {
 		log.Error(
-			"获取mds配置文件列表失败",
+			"获取mds配置文件列表：执行失败",
 			zap.Error(err),
 			zap.String("dirname", dirName),
 			zap.String("request_uri", ctx.Request.RequestURI),

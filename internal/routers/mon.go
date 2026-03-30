@@ -6,14 +6,14 @@ import (
 	handler "gin-artweb/internal/handler/mon"
 	monrepo "gin-artweb/internal/repo/mon"
 	monsvc "gin-artweb/internal/service/mon"
-	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
 )
 
 func newMonRouter(
 	router *gin.RouterGroup,
-	init *common.Initialize,
-	loggers *common.Loggers,
+	init *config.SystemInit,
+	loggers *config.Loggers,
 ) {
 	nodeRepo := monrepo.NewMonNodeRepo(loggers.Data, init.DB, init.DBTimeout)
 

@@ -31,24 +31,34 @@ func CreateTestButtonModel(menuID uint32) *sysmodel.ButtonModel {
 
 type ButtonTestSuite struct {
 	suite.Suite
+	apiRepo    *ApiRepo
 	buttonRepo *ButtonRepo
 	menuRepo   *MenuRepo
 }
 
 func (suite *ButtonTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ButtonModel{})
+	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ButtonModel{}, &sysmodel.ApiModel{})
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	suite.buttonRepo = &ButtonRepo{
+	enforcer, _ := auth.NewCasbinEnforcer()
+	suite.apiRepo = &ApiRepo{
 		log:      logger,
 		gormDB:   db,
 		timeouts: dbTimeout,
+		enforcer: enforcer,
 	}
 	suite.menuRepo = &MenuRepo{
 		log:      logger,
 		gormDB:   db,
 		timeouts: dbTimeout,
+		enforcer: enforcer,
+	}
+	suite.buttonRepo = &ButtonRepo{
+		log:      logger,
+		gormDB:   db,
+		timeouts: dbTimeout,
+		enforcer: enforcer,
 	}
 }
 
@@ -348,170 +358,95 @@ func (suite *ButtonTestSuite) TestCountButtonWithContextTimeout() {
 	suite.Error(err, "计数查询时上下文超时应该返回错误")
 }
 
-// 每个测试文件都需要这个入口函数
-func TestButtonTestSuite(t *testing.T) {
-	pts := &ButtonTestSuite{}
-	suite.Run(t, pts)
-}
-
 // TestNewButtonRepo 测试创建按钮仓库实例
-func TestNewButtonRepo(t *testing.T) {
+func (suite *ButtonTestSuite) TestNewButtonRepo() {
 	db := test.NewTestGormDBWithConfig(nil)
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
 	enforcer, _ := auth.NewCasbinEnforcer()
 
 	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-	if repo == nil {
-		t.Fatal("NewButtonRepo should return a non-nil repository")
-	}
-	if repo.log == nil {
-		t.Fatal("Repo log should not be nil")
-	}
-	if repo.gormDB == nil {
-		t.Fatal("Repo gormDB should not be nil")
-	}
-	if repo.timeouts == nil {
-		t.Fatal("Repo timeouts should not be nil")
-	}
-	if repo.enforcer == nil {
-		t.Fatal("Repo enforcer should not be nil")
-	}
+	suite.NotNil(repo, "NewButtonRepo should return a non-nil repository")
+	suite.NotNil(repo.log, "Repo log should not be nil")
+	suite.NotNil(repo.gormDB, "Repo gormDB should not be nil")
+	suite.NotNil(repo.timeouts, "Repo timeouts should not be nil")
+	suite.NotNil(repo.enforcer, "Repo enforcer should not be nil")
 }
 
 // TestAddGroupPolicy 测试添加按钮组策略
-func TestAddGroupPolicy(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ButtonModel{}, &sysmodel.ApiModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-	menuRepo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-	apiRepo := NewApiRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestAddGroupPolicy() {
 	// 创建菜单
 	menu := CreateTestMenuModel(nil)
-	err := menuRepo.CreateModel(context.Background(), menu, nil)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 创建API
 	api := CreateTestApiModel()
-	err = apiRepo.CreateModel(context.Background(), api)
-	if err != nil {
-		t.Fatalf("创建API失败: %v", err)
-	}
+	err = suite.apiRepo.CreateModel(context.Background(), api)
+	suite.NoError(err, "创建API应该成功")
 
 	// 创建按钮并关联API
 	button := CreateTestButtonModel(menu.ID)
 	button.Apis = []sysmodel.ApiModel{*api}
-	err = repo.CreateModel(context.Background(), button, button.Apis)
-	if err != nil {
-		t.Fatalf("创建按钮失败: %v", err)
-	}
+	err = suite.buttonRepo.CreateModel(context.Background(), button, button.Apis)
+	suite.NoError(err, "创建按钮应该成功")
 
 	// 测试添加组策略
-	err = repo.AddGroupPolicy(context.Background(), button)
-	if err != nil {
-		t.Fatalf("添加按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
 }
 
 // TestButtonAddGroupPolicy 测试添加按钮组策略
-func TestButtonAddGroupPolicy(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ButtonModel{}, &sysmodel.ApiModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-	menuRepo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonAddGroupPolicy() {
 	// 创建菜单
 	menu := CreateTestMenuModel(nil)
-	err := menuRepo.CreateModel(context.Background(), menu, nil)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 创建按钮
 	button := CreateTestButtonModel(menu.ID)
-	err = repo.CreateModel(context.Background(), button, nil)
-	if err != nil {
-		t.Fatalf("创建按钮失败: %v", err)
-	}
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
 
 	// 测试添加组策略
-	err = repo.AddGroupPolicy(context.Background(), button)
-	if err != nil {
-		t.Fatalf("添加按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
 }
 
 // TestButtonAddGroupPolicyWithInvalidAPI 测试添加包含无效API的按钮组策略
-func TestButtonAddGroupPolicyWithInvalidAPI(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ButtonModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-	menuRepo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonAddGroupPolicyWithInvalidAPI() {
 	// 创建菜单
 	menu := CreateTestMenuModel(nil)
-	err := menuRepo.CreateModel(context.Background(), menu, nil)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 创建按钮
 	button := CreateTestButtonModel(menu.ID)
-	err = repo.CreateModel(context.Background(), button, nil)
-	if err != nil {
-		t.Fatalf("创建按钮失败: %v", err)
-	}
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
 
 	// 手动设置无效API（ID为0）
 	button.Apis = []sysmodel.ApiModel{{URL: "/api/test", Method: "GET"}}
 
 	// 测试添加组策略（应该跳过无效API）
-	err = repo.AddGroupPolicy(context.Background(), button)
-	if err != nil {
-		t.Fatalf("添加包含无效API的按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加包含无效API的按钮组策略应该成功")
 }
 
 // TestButtonAddGroupPolicyWithZeroMenuID 测试菜单ID为0时添加按钮组策略
-func TestButtonAddGroupPolicyWithZeroMenuID(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonAddGroupPolicyWithZeroMenuID() {
 	// 创建按钮
 	button := &sysmodel.ButtonModel{}
 	button.ID = 1
 	button.MenuID = 0
 
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(context.Background(), button)
-	if err == nil {
-		t.Fatal("菜单ID为0时添加按钮组策略应该返回错误")
-	}
+	err := suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.Error(err, "菜单ID为0时添加按钮组策略应该返回错误")
 }
 
 // TestButtonAddGroupPolicyWithCanceledContext 测试上下文已取消时添加按钮组策略
-func TestButtonAddGroupPolicyWithCanceledContext(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonAddGroupPolicyWithCanceledContext() {
 	// 创建一个已取消的上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -522,103 +457,59 @@ func TestButtonAddGroupPolicyWithCanceledContext(t *testing.T) {
 	button.MenuID = 1
 
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(ctx, button)
-	if err == nil {
-		t.Fatal("上下文已取消时添加按钮组策略应该返回错误")
-	}
+	err := suite.buttonRepo.AddGroupPolicy(ctx, button)
+	suite.Error(err, "上下文已取消时添加按钮组策略应该返回错误")
 }
 
 // TestButtonAddGroupPolicyWithNilButton 测试按钮为nil时添加组策略
-func TestButtonAddGroupPolicyWithNilButton(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonAddGroupPolicyWithNilButton() {
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(context.Background(), nil)
-	if err == nil {
-		t.Fatal("按钮为nil时添加组策略应该返回错误")
-	}
+	err := suite.buttonRepo.AddGroupPolicy(context.Background(), nil)
+	suite.Error(err, "按钮为nil时添加组策略应该返回错误")
 }
 
 // TestButtonAddGroupPolicyWithZeroID 测试按钮ID为0时添加组策略
-func TestButtonAddGroupPolicyWithZeroID(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonAddGroupPolicyWithZeroID() {
 	// 创建按钮
 	button := &sysmodel.ButtonModel{}
 	button.ID = 0
 	button.MenuID = 1
 
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(context.Background(), button)
-	if err == nil {
-		t.Fatal("按钮ID为0时添加组策略应该返回错误")
-	}
+	err := suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.Error(err, "按钮ID为0时添加组策略应该返回错误")
 }
 
 // TestButtonRemoveGroupPolicy 测试删除按钮组策略
-func TestButtonRemoveGroupPolicy(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ButtonModel{}, &sysmodel.ApiModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-	menuRepo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonRemoveGroupPolicy() {
 	// 创建菜单
 	menu := CreateTestMenuModel(nil)
-	err := menuRepo.CreateModel(context.Background(), menu, nil)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 创建按钮
 	button := CreateTestButtonModel(menu.ID)
-	err = repo.CreateModel(context.Background(), button, nil)
-	if err != nil {
-		t.Fatalf("创建按钮失败: %v", err)
-	}
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
 
 	// 先添加组策略
-	err = repo.AddGroupPolicy(context.Background(), button)
-	if err != nil {
-		t.Fatalf("添加按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
 
 	// 测试删除组策略
-	err = repo.RemoveGroupPolicy(context.Background(), button, true)
-	if err != nil {
-		t.Fatalf("删除按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, true)
+	suite.NoError(err, "删除按钮组策略应该成功")
 
 	// 测试删除组策略（不删除继承）
-	err = repo.AddGroupPolicy(context.Background(), button)
-	if err != nil {
-		t.Fatalf("添加按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
 
-	err = repo.RemoveGroupPolicy(context.Background(), button, false)
-	if err != nil {
-		t.Fatalf("删除按钮组策略失败: %v", err)
-	}
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, false)
+	suite.NoError(err, "删除按钮组策略应该成功")
 }
 
 // TestButtonRemoveGroupPolicyWithCanceledContext 测试上下文已取消时删除按钮组策略
-func TestButtonRemoveGroupPolicyWithCanceledContext(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonRemoveGroupPolicyWithCanceledContext() {
 	// 创建一个已取消的上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -628,42 +519,116 @@ func TestButtonRemoveGroupPolicyWithCanceledContext(t *testing.T) {
 	button.ID = 1
 
 	// 测试删除组策略
-	err := repo.RemoveGroupPolicy(ctx, button, true)
-	if err == nil {
-		t.Fatal("上下文已取消时删除按钮组策略应该返回错误")
-	}
+	err := suite.buttonRepo.RemoveGroupPolicy(ctx, button, true)
+	suite.Error(err, "上下文已取消时删除按钮组策略应该返回错误")
 }
 
 // TestButtonRemoveGroupPolicyWithNilButton 测试按钮为nil时删除组策略
-func TestButtonRemoveGroupPolicyWithNilButton(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonRemoveGroupPolicyWithNilButton() {
 	// 测试删除组策略
-	err := repo.RemoveGroupPolicy(context.Background(), nil, true)
-	if err == nil {
-		t.Fatal("按钮为nil时删除组策略应该返回错误")
-	}
+	err := suite.buttonRepo.RemoveGroupPolicy(context.Background(), nil, true)
+	suite.Error(err, "按钮为nil时删除组策略应该返回错误")
 }
 
 // TestButtonRemoveGroupPolicyWithZeroID 测试按钮ID为0时删除组策略
-func TestButtonRemoveGroupPolicyWithZeroID(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewButtonRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *ButtonTestSuite) TestButtonRemoveGroupPolicyWithZeroID() {
 	// 创建按钮
 	button := &sysmodel.ButtonModel{}
 	button.ID = 0
 
 	// 测试删除组策略
-	err := repo.RemoveGroupPolicy(context.Background(), button, true)
-	if err == nil {
-		t.Fatal("按钮ID为0时删除组策略应该返回错误")
-	}
+	err := suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, true)
+	suite.Error(err, "按钮ID为0时删除组策略应该返回错误")
+}
+
+// TestButtonUpdateModelWithAPIs 测试更新按钮时关联API
+func (suite *ButtonTestSuite) TestButtonUpdateModelWithAPIs() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 创建API
+	api1 := CreateTestApiModel()
+	err = suite.apiRepo.CreateModel(context.Background(), api1)
+	suite.NoError(err, "创建API1应该成功")
+
+	api2 := CreateTestApiModel()
+	err = suite.apiRepo.CreateModel(context.Background(), api2)
+	suite.NoError(err, "创建API2应该成功")
+
+	// 创建按钮
+	button := CreateTestButtonModel(menu.ID)
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 更新按钮并关联API
+	updatedName := "updated_button_with_apis"
+	apis := []sysmodel.ApiModel{*api1, *api2}
+	err = suite.buttonRepo.UpdateModel(context.Background(), map[string]any{
+		"name": updatedName,
+	}, apis, "id = ?", button.ID)
+	suite.NoError(err, "更新按钮并关联API应该成功")
+
+	// 验证按钮是否更新成功
+	fm, err := suite.buttonRepo.GetModel(context.Background(), []string{"Apis"}, "id = ?", button.ID)
+	suite.NoError(err, "查询更新后的按钮应该成功")
+	suite.Equal(updatedName, fm.Name, "按钮名称更新失败")
+	suite.Equal(2, len(fm.Apis), "按钮关联的API数量错误")
+}
+
+// TestButtonUpdateModelWithoutAPIs 测试更新按钮时不关联API
+func (suite *ButtonTestSuite) TestButtonUpdateModelWithoutAPIs() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 创建按钮
+	button := CreateTestButtonModel(menu.ID)
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 更新按钮但不关联API
+	updatedName := "updated_button_without_apis"
+	err = suite.buttonRepo.UpdateModel(context.Background(), map[string]any{
+		"name": updatedName,
+	}, nil, "id = ?", button.ID)
+	suite.NoError(err, "更新按钮应该成功")
+
+	// 验证按钮是否更新成功
+	fm, err := suite.buttonRepo.GetModel(context.Background(), []string{}, "id = ?", button.ID)
+	suite.NoError(err, "查询更新后的按钮应该成功")
+	suite.Equal(updatedName, fm.Name, "按钮名称更新失败")
+}
+
+// TestButtonRemoveGroupPolicyWithCasbinError 测试删除组策略时Casbin操作失败的情况
+func (suite *ButtonTestSuite) TestButtonRemoveGroupPolicyWithCasbinError() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 创建按钮
+	button := CreateTestButtonModel(menu.ID)
+	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+	suite.NoError(err, "创建按钮应该成功")
+
+	// 先添加组策略
+	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
+	suite.NoError(err, "添加按钮组策略应该成功")
+
+	// 测试删除组策略（不删除继承）
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, false)
+	suite.NoError(err, "删除按钮组策略应该成功")
+
+	// 再次尝试删除相同的策略，应该不会报错（Casbin会处理不存在的策略）
+	err = suite.buttonRepo.RemoveGroupPolicy(context.Background(), button, false)
+	suite.NoError(err, "删除不存在的组策略应该成功")
+}
+
+// 每个测试文件都需要这个入口函数
+func TestButtonTestSuite(t *testing.T) {
+	pts := &ButtonTestSuite{}
+	suite.Run(t, pts)
 }

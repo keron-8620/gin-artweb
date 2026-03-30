@@ -204,7 +204,7 @@ func (s *RecordService) Execute(
 		execStartTime.Format(time.RFC3339), record.ID, record.ScriptID)
 
 	// 交验脚本是否存在
-	scriptPath := common.GetScriptStoragePath(
+	scriptPath := GetScriptStoragePath(
 		record.Script.Project,
 		record.Script.Label,
 		record.Script.Name,
@@ -779,4 +779,8 @@ func (s *RecordService) ListScriptRecordByIDs(
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
+}
+
+func GetScriptLogStoragePath(data time.Time, logname string) string {
+	return filepath.Join(config.StorageDir, "logs", data.Format(time.DateOnly), logname)
 }

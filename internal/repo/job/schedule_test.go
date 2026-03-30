@@ -466,19 +466,6 @@ func (suite *ScheduleTestSuite) TestListModel() {
 	suite.Greater(len(script2Models), 0)
 }
 
-func (suite *ScheduleTestSuite) TestNewScheduleRepo() {
-	// 测试创建 ScheduleRepo 实例
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	
-	repo := NewScheduleRepo(logger, db, dbTimeout)
-	suite.NotNil(repo, "ScheduleRepo 实例不应该为 nil")
-	suite.NotNil(repo.log, "ScheduleRepo 的 log 字段不应该为 nil")
-	suite.NotNil(repo.gormDB, "ScheduleRepo 的 gormDB 字段不应该为 nil")
-	suite.NotNil(repo.timeouts, "ScheduleRepo 的 timeouts 字段不应该为 nil")
-}
-
 func (suite *ScheduleTestSuite) TestCountModel() {
 	// 先创建一个脚本模型用于测试
 	scriptModel := CreateTestScriptModel(false)

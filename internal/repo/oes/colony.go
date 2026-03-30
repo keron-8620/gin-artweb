@@ -259,9 +259,9 @@ func (r *OesColonyRepo) SaveConfigFile(
 		}
 	}
 
-	mode := os.FileMode(0o644)
+	dirMode := os.FileMode(0o755)
 	dir := filepath.Dir(pkgPath)
-	if err := os.MkdirAll(dir, mode); err != nil {
+	if err := os.MkdirAll(dir, dirMode); err != nil {
 		log.Error(
 			"保存oes集群配置文件：创建配置文件目录失败",
 			zap.Error(err),
@@ -269,7 +269,7 @@ func (r *OesColonyRepo) SaveConfigFile(
 		)
 		return errors.WrapIf(err, "保存oes集群配置文件：创建配置文件目录失败")
 	}
-	if err := os.Chmod(dir, mode); err != nil {
+	if err := os.Chmod(dir, dirMode); err != nil {
 		log.Error(
 			"保存oes集群配置文件：设置配置文件目录权限失败",
 			zap.Error(err),
@@ -279,7 +279,7 @@ func (r *OesColonyRepo) SaveConfigFile(
 	}
 
 	// 创建文件并写入内容
-	file, err := os.OpenFile(pkgPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+	file, err := os.OpenFile(pkgPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(0o644))
 	if err != nil {
 		log.Error(
 			"保存oes集群配置文件：创建配置文件失败",

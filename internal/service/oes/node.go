@@ -460,7 +460,7 @@ func (s *OesNodeService) OutPortOesNodeData(
 		HostID:   m.HostID,
 		IsEnable: m.IsEnable,
 	}
-	confDir := common.GetOesColonyConfigDir(m.OesColony.ColonyNum)
+	confDir := GetOesColonyConfigDir(m.OesColony.ColonyNum)
 	oesColonyConf := filepath.Join(confDir, specdir, "node.yaml")
 
 	exportStepStart := time.Now()

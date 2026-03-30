@@ -10,7 +10,6 @@ import (
 	mdsmodel "gin-artweb/internal/model/mds"
 	mdsrepo "gin-artweb/internal/repo/mds"
 	mdssvc "gin-artweb/internal/service/mds"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/middleware"
 	"gin-artweb/pkg/serializer"
@@ -18,8 +17,8 @@ import (
 
 func newMdsRouter(
 	router *gin.RouterGroup,
-	init *common.Initialize,
-	loggers *common.Loggers,
+	init *config.SystemInit,
+	loggers *config.Loggers,
 	jobsvc *JobServices,
 ) {
 	var cronConf map[string]mdsmodel.MdsCronTask

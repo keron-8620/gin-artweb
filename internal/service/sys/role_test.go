@@ -221,10 +221,10 @@ func (suite *RoleTestSuite) TestGetRoleMenuTreeWithNestedMenus() {
 	suite.Nil(err, "创建按钮应该成功")
 
 	// 创建测试角色并关联所有菜单和按钮
-	createdRole, err := suite.roleservice.CreateRole(context.Background(), 
+	createdRole, err := suite.roleservice.CreateRole(context.Background(),
 		CreateTestRoleDTO(
-			[]uint32{}, 
-			[]uint32{parentMenu.ID, childMenu.ID}, 
+			[]uint32{},
+			[]uint32{parentMenu.ID, childMenu.ID},
 			[]uint32{childButton.ID},
 		),
 	)

@@ -2,7 +2,9 @@ package mon
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/zap"
@@ -10,6 +12,7 @@ import (
 	monmodel "gin-artweb/internal/model/mon"
 	monrepo "gin-artweb/internal/repo/mon"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -249,7 +252,7 @@ func (s *MonNodeService) DeleteMonNodeByID(
 	)
 
 	removeStepStart := time.Now()
-	path := common.GetMonNodeExportPath(nodeID)
+	path := GetMonNodeExportPath(nodeID)
 	log.Debug(
 		"删除mon节点：开始删除节点文件",
 		zap.Uint32("mon_node_id", nodeID),
@@ -444,7 +447,7 @@ func (s *MonNodeService) ExportMonNode(ctx context.Context, m monmodel.MonNodeMo
 	)
 
 	exportStepStart := time.Now()
-	path := common.GetMonNodeExportPath(m.ID)
+	path := GetMonNodeExportPath(m.ID)
 	log.Debug(
 		"导出mon节点文件：开始写入文件",
 		zap.String("path", path),
@@ -476,4 +479,8 @@ func (s *MonNodeService) ExportMonNode(ctx context.Context, m monmodel.MonNodeMo
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
+}
+
+func GetMonNodeExportPath(pk uint32) string {
+	return filepath.Join(config.StorageDir, "mon", "config", fmt.Sprintf("%d", pk), "mon.yaml")
 }

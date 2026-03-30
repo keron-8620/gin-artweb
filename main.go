@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/goccy/go-yaml"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -20,7 +21,6 @@ import (
 	"gin-artweb/internal/model"
 	"gin-artweb/internal/routers"
 	"gin-artweb/internal/shared/auth"
-	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/crontab"
 	"gin-artweb/internal/shared/database"
@@ -44,12 +44,12 @@ func main() {
 	var (
 		configPath  string
 		showVersion bool
-		migrator    bool
+		migrate     bool
 		execSqlPath string
 	)
 	flag.StringVar(&configPath, "config", "system.yaml", "系统配置文件的路径")
 	flag.BoolVar(&showVersion, "v", false, "展示版本信息")
-	flag.BoolVar(&migrator, "migrator", false, "迁移数据库")
+	flag.BoolVar(&migrate, "migrate", false, "迁移数据库")
 	flag.StringVar(&execSqlPath, "exec-sql", "", "执行SQL文件路径")
 	flag.Parse()
 
@@ -70,20 +70,20 @@ func main() {
 		golog.Fatalf("加载环境变量失败: %v", err)
 	}
 	// 加载系统配置
-	sysConf := config.NewSystemConf(filepath.Join(config.ConfigDir, configPath))
+	sysConf := newSystemConf(filepath.Join(config.ConfigDir, configPath))
 	// 初始化服务器日志记录器
 	serverWrite := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "server.log"))
 	serviceWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "service.log"))
 	bizWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "biz.log"))
 	dataWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "data.log"))
-	loggers := &common.Loggers{
+	loggers := &config.Loggers{
 		Server:  log.NewZapLoggerMust(sysConf.Log.Level, serverWrite),
 		Handler: log.NewZapLoggerMust(sysConf.Log.Level, serviceWrire),
 		Service: log.NewZapLoggerMust(sysConf.Log.Level, bizWrire),
 		Data:    log.NewZapLoggerMust(sysConf.Log.Level, dataWrire),
 	}
 
-	if migrator {
+	if migrate {
 		db, err := initGromDB(sysConf)
 		if err != nil {
 			golog.Fatalf("数据库初始化失败: %v", err)
@@ -124,7 +124,7 @@ func main() {
 	}
 
 	// 初始化系统资源（如配置、数据库等），获取清理函数和错误信息
-	i, clearFunc, err := newInitialize(sysConf, loggers)
+	i, clearFunc, err := newSystemInit(sysConf, loggers)
 	if err != nil {
 		panic(err)
 	}
@@ -221,13 +221,46 @@ func main() {
 	loggers.Server.Info("服务器已退出")
 }
 
-// newInitialize 初始化系统组件
+// newSystemConf 加载系统配置文件
+func newSystemConf(configPath string) *config.SystemConf {
+	if configPath == "" {
+		golog.Fatal("配置文件路径不能为空")
+	}
+	// 检查配置文件是否存在
+	if _, err := os.Stat(configPath); err != nil {
+		if os.IsNotExist(err) {
+			golog.Fatalf("FATAL: 配置文件不存在,请检查: %s", configPath)
+		}
+		golog.Fatalf("FATAL: 获取配置文件%s状态失败: %v", configPath, err)
+	}
+
+	// 读取配置文件
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		golog.Fatalf("FATAL: 读取配置文件失败: %v", err)
+	}
+
+	conf := &config.SystemConf{}
+
+	// 解析YAML配置
+	if err := yaml.Unmarshal(data, conf); err != nil {
+		golog.Fatalf("FATAL: 配置文件解析失败: %v", err)
+	}
+
+	if conf.Database.Type == "sqlite" && !filepath.IsAbs(conf.Database.Dns) {
+		conf.Database.Dns = filepath.Join(config.BaseDir, conf.Database.Dns)
+	}
+
+	return conf
+}
+
+// newSystemInit 初始化系统组件
 // path: 配置文件路径
 // 返回值1: 初始化结构体指针，包含配置、数据库、缓存和日志组件
 // 返回值2: 清理函数，用于关闭数据库连接
 // 返回值3: 初始化过程中发生的错误
-func newInitialize(conf *config.SystemConf, loggers *common.Loggers) (*common.Initialize, func(), error) {
-	jwtConf := auth.NewJWTConfig(
+func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.SystemInit, func(), error) {
+	jwtConf := config.NewJWTConfig(
 		time.Duration(conf.Security.Token.AccessMinutes)*time.Minute,
 		time.Duration(conf.Security.Token.RefreshMinutes)*time.Minute,
 		conf.Security.Token.AccessMethod,
@@ -263,7 +296,7 @@ func newInitialize(conf *config.SystemConf, loggers *common.Loggers) (*common.In
 	}
 
 	// 返回初始化结构体和清理函数
-	return &common.Initialize{
+	return &config.SystemInit{
 			Conf:      conf,
 			DB:        db,
 			DBTimeout: &dbTimeout,

@@ -15,10 +15,10 @@ server: # 服务配置
   swagger: true # 是否启用swagger
 
 database: # 数据库配置
-  type: "opengauss" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
-  # dns: "artweb.db" # sqlite3数据库配置
+  type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
+  dns: "/home/ansible/project/gin-artweb/bin/artweb.db" # sqlite3数据库配置
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
-  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable" # PostgreSql/OpenGauss配置
+  # dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_art_web sslmode=disable" # PostgreSql/OpenGauss配置
   # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
@@ -30,7 +30,7 @@ database: # 数据库配置
   list_timeout: 15 # 批量查询超时
 
 log: # 日志服务
-  level: "DEBUG" # 日志级别
+  level: "INFO" # 日志级别
   max_size: 10 # 日志文件大小限制(MB)
   max_age: 7 # 日志文件保存天数
   max_backups: 5 # 日志文件备份数量

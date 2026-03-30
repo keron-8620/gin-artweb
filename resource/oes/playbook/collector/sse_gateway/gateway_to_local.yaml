@@ -26,7 +26,7 @@
     with_items: "{{ sse_cp_files }}"
 
   - name: unzip sse files ready
-    command: "{{ local_python_interpreter }} unzip_sse_files.py {{ local_path_oes_home_sse_colodir }}"
+    command: "{{ local_python_interpreter }} unzip_files.py {{ local_path_oes_home_sse_colodir }}"
     args:
       chdir: "{{ local_path_script_home_python }}"
   ignore_errors: yes

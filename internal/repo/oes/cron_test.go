@@ -5,10 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/stretchr/testify/suite"
 
-	oesmodel "gin-artweb/internal/model/oes"
 	jobmodel "gin-artweb/internal/model/job"
+	oesmodel "gin-artweb/internal/model/oes"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/test"
 )
@@ -22,9 +26,12 @@ func CreateTestOesCronModel(oesColonyID, scheduleID uint32) *oesmodel.OesCronMod
 
 type OesCronTestSuite struct {
 	suite.Suite
-	cronRepo *OesCronRepo
+	cronRepo    *OesCronRepo
 	oesColonyID uint32
-	scheduleID uint32
+	scheduleID  uint32
+	log      *zap.Logger
+	gormDB   *gorm.DB
+	timeouts *config.DBTimeout
 }
 
 func (suite *OesCronTestSuite) SetupSuite() {
@@ -67,12 +74,13 @@ func (suite *OesCronTestSuite) SetupSuite() {
 	}
 	db.Create(esColonyModel)
 
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
+	suite.timeouts = test.NewTestDBTimeouts()
+	suite.log = test.NewTestZapLogger()
+	suite.gormDB = db
 	suite.cronRepo = &OesCronRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:      suite.log,
+		gormDB:   suite.gormDB,
+		timeouts: suite.timeouts,
 	}
 
 	suite.oesColonyID = esColonyModel.ID
@@ -230,6 +238,14 @@ func (suite *OesCronTestSuite) TestContextTimeout() {
 	// 测试超时后的操作
 	_, err = suite.cronRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
 	suite.Error(err, "上下文超时后查询OesCron应该返回错误")
+}
+
+func (suite *OesCronTestSuite) TestNewOesCronRepo() {
+	repo := NewOesCronRepo(suite.log, suite.gormDB, suite.timeouts)
+	suite.NotNil(repo, "NewOesCronRepo 应该返回非空实例")
+	suite.Equal(suite.log, repo.log, "日志实例应该正确设置")
+	suite.Equal(suite.gormDB, repo.gormDB, "数据库实例应该正确设置")
+	suite.Equal(suite.timeouts, repo.timeouts, "超时设置应该正确设置")
 }
 
 func TestOesCronTestSuite(t *testing.T) {

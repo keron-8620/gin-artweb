@@ -10,6 +10,7 @@ import (
 	commodel "gin-artweb/internal/model/common"
 	sysmodel "gin-artweb/internal/model/sys"
 	syssvc "gin-artweb/internal/service/sys"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -46,28 +47,16 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.CreateUserDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		bindDuration := time.Since(startTime)
-		log.Error(
-			"新增用户：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", bindDuration),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"新增用户：绑定创建用户请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"新增用户：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("创建用户：开始执行")
 
 	log.Debug(
-		"新增用户：入参详情",
+		"创建用户：入参详情",
 		zap.Object("create_user_dto", &req),
 	)
 
@@ -76,25 +65,24 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 	createStepDuration := time.Since(createStepStart)
 	if err != nil {
 		log.Error(
-			"新增用户：新增用户失败",
+			"创建用户：执行失败",
 			zap.Error(err),
 			zap.Object("create_user_dto", &req),
 			zap.Duration("create_step_duration", createStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"新增用户：新增用户成功",
+		"创建用户：创建的用户模型详情",
 		zap.Object("user_model", m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"新增用户：执行成功",
+		"创建用户：执行成功",
 		zap.Uint32("uid", m.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -122,38 +110,21 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"更新用户：绑定用户ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"更新用户：绑定用户ID参数失败") {
 		return
 	}
-
 	var req sysmodel.UpdateUserDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"更新用户：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"更新用户：绑定更新用户请求参数失败") {
 		return
 	}
 
 	log.Info(
 		"更新用户：开始执行",
 		zap.Uint32("uid", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	log.Debug(
@@ -163,8 +134,9 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	)
 
 	updateStepStart := time.Now()
-	if err := h.userSvc.UpdateUserByID(ctx, uri.ID, req); err != nil {
-		updateStepDuration := time.Since(updateStepStart)
+	err := h.userSvc.UpdateUserByID(ctx, uri.ID, req)
+	updateStepDuration := time.Since(updateStepStart)
+	if err != nil {
 		log.Error(
 			"更新用户：更新用户失败",
 			zap.Error(err),
@@ -175,26 +147,24 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	updateStepDuration := time.Since(updateStepStart)
-	log.Debug(
-		"更新用户：更新用户成功",
-		zap.Uint32("uid", uri.ID),
-		zap.Duration("update_step_duration", updateStepDuration),
-	)
 
-	log.Info(
-		"更新用户：执行成功",
+	log.Debug(
+		"更新用户：更新用户数据成功",
 		zap.Uint32("uid", uri.ID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	findStepStart := time.Now()
+	log.Debug(
+		"更新用户：查询更新后的用户模型详情",
+		zap.Uint32("uid", uri.ID),
+	)
 	m, err := h.userSvc.FindUserByID(ctx, []string{"Role"}, uri.ID)
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"更新用户：查询更新后的用户信息失败",
+			"更新用户：查询更新后的用户模型详情失败",
 			zap.Error(err),
 			zap.Uint32("uid", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -203,10 +173,18 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"更新用户：查询更新后的用户信息成功",
+		"更新用户：查询更新后的用户模型详情成功",
 		zap.Uint32("uid", uri.ID),
 		zap.Object("user_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
+	)
+
+	log.Info(
+		"更新用户：执行成功",
+		zap.Uint32("uid", uri.ID),
+		zap.Duration("update_step_duration", updateStepDuration),
+		zap.Duration("find_step_duration", findStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	ctx.JSON(http.StatusOK, &sysmodel.UserResp{
@@ -231,44 +209,31 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"删除用户：绑定用户ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"删除用户：绑定用户ID参数失败") {
 		return
 	}
 
 	log.Info(
 		"删除用户：开始执行",
 		zap.Uint32("uid", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	deleteStepStart := time.Now()
-	if err := h.userSvc.DeleteUserByID(ctx, uri.ID); err != nil {
-		deleteStepDuration := time.Since(deleteStepStart)
+	err := h.userSvc.DeleteUserByID(ctx, uri.ID)
+	deleteStepDuration := time.Since(deleteStepStart)
+	if err != nil {
 		log.Error(
-			"删除用户：删除用户失败",
+			"删除用户：执行失败",
 			zap.Error(err),
 			zap.Uint32("uid", uri.ID),
 			zap.Duration("delete_step_duration", deleteStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	deleteStepDuration := time.Since(deleteStepStart)
-	log.Debug(
-		"删除用户：删除用户成功",
-		zap.Uint32("uid", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
-	)
 
 	log.Info(
 		"删除用户：执行成功",
@@ -296,24 +261,15 @@ func (h *UserHandler) GetUser(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"查询用户详情：绑定用户ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"查询用户详情：绑定用户ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"查询用户详情：开始执行",
+		"查询用户：开始执行",
 		zap.Uint32("uid", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	findStepStart := time.Now()
@@ -321,23 +277,23 @@ func (h *UserHandler) GetUser(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询用户详情：查询用户详情失败",
+			"查询用户：执行失败",
 			zap.Error(err),
 			zap.Uint32("uid", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 	log.Debug(
-		"查询用户详情：查询用户详情成功",
-		zap.Uint32("uid", uri.ID),
+		"查询用户：查询到的用户模型详情",
 		zap.Object("user_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
 
 	log.Info(
-		"查询用户详情：执行成功",
+		"查询用户：执行成功",
 		zap.Uint32("uid", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -364,24 +320,13 @@ func (h *UserHandler) ListUser(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.ListUserDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"查询用户列表：绑定查询用户列表请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询用户列表：绑定查询用户列表请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询用户列表：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("查询用户列表：开始执行")
 
 	log.Debug(
 		"查询用户列表：参数详情",
@@ -394,12 +339,13 @@ func (h *UserHandler) ListUser(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询用户列表：查询用户列表失败",
+			"查询用户列表：执行失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_user_dto", &req),
 			zap.Duration("list_step_duration", listStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -438,37 +384,22 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"重置用户密码：绑定用户ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"重置用户密码：绑定用户ID参数失败") {
 		return
 	}
+
 	var req sysmodel.ResetPasswordDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"重置用户密码：绑定重置用户密码请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"重置用户密码：绑定重置用户密码请求参数失败") {
 		return
 	}
 
 	log.Info(
 		"重置用户密码：开始执行",
 		zap.Uint32("uid", uri.ID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	log.Debug(
@@ -477,23 +408,19 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	)
 
 	resetStepStart := time.Now()
-	if err := h.userSvc.ResetPassword(ctx, uri.ID, req.NewPassword); err != nil {
-		resetStepDuration := time.Since(resetStepStart)
+	err := h.userSvc.ResetPassword(ctx, uri.ID, req.NewPassword)
+	resetStepDuration := time.Since(resetStepStart)
+	if err != nil {
 		log.Error(
 			"重置用户密码：重置用户密码失败",
 			zap.Error(err),
 			zap.Uint32("uid", uri.ID),
 			zap.Duration("reset_step_duration", resetStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	resetStepDuration := time.Since(resetStepStart)
-	log.Debug(
-		"重置用户密码：重置用户密码成功",
-		zap.Uint32("uid", uri.ID),
-		zap.Duration("reset_step_duration", resetStepDuration),
-	)
 
 	log.Info(
 		"重置用户密码：执行成功",
@@ -520,16 +447,9 @@ func (h *UserHandler) PatchPassword(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.PatchPasswordDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"修改个人密码：绑定修改个人密码请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"修改个人密码：绑定修改个人密码请求参数失败") {
 		return
 	}
 
@@ -537,8 +457,6 @@ func (h *UserHandler) PatchPassword(ctx *gin.Context) {
 	log.Info(
 		"修改个人密码：开始执行",
 		zap.Uint32("uid", claims.UserID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
 	)
 
 	log.Debug(
@@ -547,23 +465,19 @@ func (h *UserHandler) PatchPassword(ctx *gin.Context) {
 	)
 
 	patchStepStart := time.Now()
-	if rErr := h.userSvc.PatchPassword(ctx, claims.UserID, req.OldPassword, req.NewPassword); rErr != nil {
-		patchStepDuration := time.Since(patchStepStart)
+	err := h.userSvc.PatchPassword(ctx, claims.UserID, req.OldPassword, req.NewPassword)
+	patchStepDuration := time.Since(patchStepStart)
+	if err != nil {
 		log.Error(
-			"修改个人密码：操作失败",
-			zap.Error(rErr),
+			"修改个人密码：执行失败",
+			zap.Error(err),
 			zap.Uint32("uid", claims.UserID),
 			zap.Duration("patch_step_duration", patchStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
-	patchStepDuration := time.Since(patchStepStart)
-	log.Debug(
-		"修改个人密码：操作成功",
-		zap.Uint32("uid", claims.UserID),
-		zap.Duration("patch_step_duration", patchStepDuration),
-	)
 
 	log.Info(
 		"修改个人密码：执行成功",
@@ -589,23 +503,15 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.LoginDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"用户登录验证：绑定用户登录请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"用户登录：绑定用户登录请求参数失败") {
 		return
 	}
 
 	log.Info(
-		"用户登录验证：开始执行",
+		"用户登录：开始执行",
 		zap.String("username", req.Username),
-		zap.String("request_uri", ctx.Request.RequestURI),
 	)
 
 	reqCtx := sysmodel.RequestContext{
@@ -613,22 +519,26 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		UserAgent: ctx.Request.UserAgent(),
 	}
 
-	accessToken, refreshToken, rErr := h.userSvc.Login(ctx, req, reqCtx)
-	if rErr != nil {
+	loginStart := time.Now()
+	accessToken, refreshToken, err := h.userSvc.Login(ctx, req, reqCtx)
+	loginStepDuration := time.Since(loginStart)
+	if err != nil {
 		log.Error(
-			"用户登录验证：登录失败",
-			zap.Error(rErr),
+			"用户登录：执行失败",
+			zap.Error(err),
 			zap.String("username", req.Username),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.Duration("login_step_duration", loginStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	log.Info(
-		"用户登录验证：执行成功",
+		"用户登录：执行成功",
 		zap.String("username", req.Username),
-		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.Duration("login_step_duration", loginStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	ctx.JSON(http.StatusOK, &sysmodel.LoginResp{
@@ -655,28 +565,32 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.RefreshTokenDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"刷新令牌：绑定刷新令牌请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"刷新令牌：绑定刷新令牌请求参数失败") {
 		return
 	}
+
+	refreshStart := time.Now()
 	accessToken, refreshToken, rErr := h.userSvc.RefreshTokens(ctx, req.RefreshToken)
+	refreshStepDuration := time.Since(refreshStart)
 	if rErr != nil {
 		log.Error(
 			"刷新令牌：刷新令牌失败",
 			zap.Error(rErr),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.Duration("refresh_step_duration", refreshStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+
+	log.Info(
+		"刷新令牌：刷新令牌成功",
+		zap.Duration("refresh_step_duration", refreshStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
 	ctx.JSON(http.StatusOK, &sysmodel.LoginResp{
 		Code: http.StatusOK,
 		Data: sysmodel.LoginOut{
@@ -701,44 +615,33 @@ func (h *UserHandler) ListLoginRecord(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.ListLoginRecordDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"查询用户登录记录列表：绑定查询用户登录记录列表请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询用户登录记录列表：绑定查询用户登录记录列表请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询用户登录记录列表：开始执行",
-		zap.String("request_uri", ctx.Request.RequestURI),
-		zap.String("request_method", ctx.Request.Method),
-	)
+	log.Info("查询用户登录记录列表：开始执行")
 
 	log.Debug(
-		"查询用户登录记录列表：参数详情",
+		"查询用户登录记录列表：入参详情",
 		zap.Object("list_login_record_dto", &req),
 	)
 
 	listStepStart := time.Now()
 	page, size := req.BaseModelQuery.GetPageParam()
-	total, ms, rErr := h.userSvc.ListLoginRecord(ctx, page, size, req)
+	total, ms, err := h.userSvc.ListLoginRecord(ctx, page, size, req)
 	listStepDuration := time.Since(listStepStart)
-	if rErr != nil {
+	if err != nil {
 		log.Error(
 			"查询用户登录记录列表：查询用户登录记录列表失败",
-			zap.Error(rErr),
+			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_login_record_dto", &req),
 			zap.Duration("list_step_duration", listStepDuration),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -774,27 +677,16 @@ func (h *UserHandler) ListMeLoginRecord(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req sysmodel.ListLoginRecordDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"查询个人登录记录列表：绑定请求参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询个人登录记录列表：绑定查询个人登录记录列表请求参数失败") {
 		return
 	}
 
+	log.Info("查询个人登录记录列表：开始执行")
+
 	claims := ctxutil.MustGetJwtClaims(ctx)
 	req.Username = claims.Subject
-
-	log.Info(
-		"查询个人登录记录列表：开始执行",
-		zap.Uint32(ctxutil.UserIDKey, claims.UserID),
-		zap.String("request_uri", ctx.Request.RequestURI),
-	)
 
 	page, size := req.BaseModelQuery.GetPageParam()
 	total, ms, err := h.userSvc.ListLoginRecord(ctx, page, size, req)
@@ -802,11 +694,10 @@ func (h *UserHandler) ListMeLoginRecord(ctx *gin.Context) {
 		log.Error(
 			"查询个人登录记录列表：查询个人登录记录列表失败",
 			zap.Error(err),
-			zap.Uint32(ctxutil.UserIDKey, claims.UserID),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_login_record_dto", &req),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -814,8 +705,10 @@ func (h *UserHandler) ListMeLoginRecord(ctx *gin.Context) {
 
 	log.Info(
 		"查询个人登录记录列表：执行成功",
-		zap.Uint32(ctxutil.UserIDKey, claims.UserID),
-		zap.String("request_uri", ctx.Request.RequestURI),
+		zap.Int("page", page),
+		zap.Int("size", size),
+		zap.Int64("total", total),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mbs := sysmodel.ListLoginRecordModelToStandardOut(ms)

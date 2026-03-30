@@ -10,6 +10,7 @@ import (
 	commodel "gin-artweb/internal/model/common"
 	mdsmodel "gin-artweb/internal/model/mds"
 	mdssvc "gin-artweb/internal/service/mds"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -45,38 +46,43 @@ func (s *MdsNodeHandler) CreateMdsNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req mdsmodel.MdsNodeUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"创建mds节点：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"创建mds节点：绑定参数失败") {
 		return
 	}
+
+	log.Info("创建mds节点：开始执行")
 
 	log.Debug(
 		"创建mds节点：入参详情",
 		zap.Object("mds_node_dto", &req),
 	)
 
-	m, rErr := s.nodeSvc.CreateMdsNode(ctx, req)
-	if rErr != nil {
+	createStepStart := time.Now()
+	m, err := s.nodeSvc.CreateMdsNode(ctx, req)
+	createStepDuration := time.Since(createStepStart)
+	if err != nil {
 		log.Error(
-			"创建mds节点：创建失败",
-			zap.Error(rErr),
+			"创建mds节点：执行失败",
+			zap.Error(err),
 			zap.Object("mds_node_dto", &req),
+			zap.Duration("create_step_duration", createStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"创建mds节点：创建后的mds节点模型详情",
+		zap.Object("mds_node_model", m),
+		zap.Duration("create_step_duration", createStepDuration),
+	)
 
 	log.Info(
-		"创建mds节点：成功执行",
+		"创建mds节点：执行成功",
 		zap.Uint32("mds_node_id", m.ID),
+		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -104,42 +110,36 @@ func (s *MdsNodeHandler) UpdateMdsNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定更新mds节点ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"更新mds节点：绑定更新mds节点ID参数失败") {
 		return
 	}
 
 	var req mdsmodel.MdsNodeUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"绑定更新mds节点参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"更新mds节点：绑定更新mds节点参数失败") {
 		return
 	}
+
+	log.Info("更新mds节点：开始执行")
 
 	log.Debug(
 		"更新mds节点：入参详情",
 		zap.Object("mds_node_dto", &req),
 	)
 
+	updateStepStart := time.Now()
 	m, rErr := s.nodeSvc.UpdateMdsNodeByID(ctx, uri.ID, req)
+	updateStepDuration := time.Since(updateStepStart)
 	if rErr != nil {
 		log.Error(
-			"更新mds节点：更新失败",
+			"更新mds节点：执行失败",
 			zap.Error(rErr),
 			zap.Uint32("mds_node_id", uri.ID),
 			zap.Object("mds_node_dto", &req),
+			zap.Duration("update_step_duration", updateStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
@@ -147,8 +147,9 @@ func (s *MdsNodeHandler) UpdateMdsNode(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"更新mds节点：成功执行",
+		"更新mds节点：执行成功",
 		zap.Uint32("mds_node_id", uri.ID),
+		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -175,37 +176,36 @@ func (s *MdsNodeHandler) DeleteMdsNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"删除mds节点：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"删除mds节点：绑定删除mds节点ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"开始删除mds节点",
+		"删除mds节点：开始执行",
 		zap.Uint32("mds_node_id", uri.ID),
 	)
 
-	if rErr := s.nodeSvc.DeleteMdsNodeByID(ctx, uri.ID); rErr != nil {
+	deleteStepStart := time.Now()
+	err := s.nodeSvc.DeleteMdsNodeByID(ctx, uri.ID)
+	deleteStepDuration := time.Since(deleteStepStart)
+	if err != nil {
 		log.Error(
-			"删除mds节点：删除失败",
-			zap.Error(rErr),
+			"删除mds节点：执行失败",
+			zap.Error(err),
 			zap.Uint32("mds_node_id", uri.ID),
+			zap.Duration("delete_step_duration", deleteStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	log.Info(
-		"删除mds节点成功",
+		"删除mds节点：执行成功",
 		zap.Uint32("mds_node_id", uri.ID),
+		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -227,17 +227,10 @@ func (s *MdsNodeHandler) DeleteMdsNode(ctx *gin.Context) {
 func (s *MdsNodeHandler) GetMdsNode(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
-
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"查询mds节点：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"查询mds节点：绑定查询mds节点ID参数失败") {
 		return
 	}
 
@@ -246,21 +239,30 @@ func (s *MdsNodeHandler) GetMdsNode(ctx *gin.Context) {
 		zap.Uint32("mds_node_id", uri.ID),
 	)
 
-	m, rErr := s.nodeSvc.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, uri.ID)
-	if rErr != nil {
+	findStepStart := time.Now()
+	m, err := s.nodeSvc.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, uri.ID)
+	findStepDuration := time.Since(findStepStart)
+	if err != nil {
 		log.Error(
 			"查询mds节点：详情查询失败",
-			zap.Error(rErr),
+			zap.Error(err),
 			zap.Uint32("mds_node_id", uri.ID),
+			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"查询mds节点：查询到的mds节点模型详情",
+		zap.Object("mds_node_model", m),
+		zap.Duration("find_step_duration", findStepDuration),
+	)
 
 	log.Info(
 		"查询mds节点详情成功",
 		zap.Uint32("mds_node_id", uri.ID),
+		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -287,15 +289,9 @@ func (s *MdsNodeHandler) ListMdsNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req mdsmodel.ListMdsNodeDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"查询mds节点：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"查询mds节点列表：绑定查询参数失败") {
 		return
 	}
 
@@ -306,18 +302,21 @@ func (s *MdsNodeHandler) ListMdsNode(ctx *gin.Context) {
 		zap.Object("mds_node_dot", &req),
 	)
 
+	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, rErr := s.nodeSvc.ListMdsNode(ctx, page, size, &req)
-	if rErr != nil {
+	total, ms, err := s.nodeSvc.ListMdsNode(ctx, page, size, &req)
+	listStepDuration := time.Since(listStepStart)
+	if err != nil {
 		log.Error(
 			"查询mds节点列表失败",
-			zap.Error(rErr),
+			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("mds_node_dot", &req),
+			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(ctx, err)
 		return
 	}
 
@@ -326,6 +325,7 @@ func (s *MdsNodeHandler) ListMdsNode(ctx *gin.Context) {
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
+		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 

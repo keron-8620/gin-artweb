@@ -10,6 +10,7 @@ import (
 	sysrepo "gin-artweb/internal/repo/sys"
 	"gin-artweb/internal/shared/auth"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -28,7 +29,7 @@ type UserService struct {
 	userRepo   *sysrepo.UserRepo
 	recordRepo *sysrepo.LoginRecordRepo
 	hasher     crypto.Hasher
-	jwt        *auth.JWTConfig
+	jwt        *config.JWTConfig
 	sec        SecuritySettings
 }
 
@@ -38,7 +39,7 @@ func NewUserService(
 	userRepo *sysrepo.UserRepo,
 	recordRepo *sysrepo.LoginRecordRepo,
 	hasher crypto.Hasher,
-	jwt *auth.JWTConfig,
+	jwt *config.JWTConfig,
 	sec SecuritySettings,
 ) *UserService {
 	return &UserService{
@@ -696,7 +697,10 @@ func (s *UserService) Login(
 	return accessToken, refreshToken, nil
 }
 
-func (s *UserService) verifyPassword(ctx context.Context, pwd, hash string) *errors.Error {
+func (s *UserService) verifyPassword(
+	ctx context.Context,
+	pwd, hash string,
+) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}
@@ -728,7 +732,10 @@ func (s *UserService) verifyPassword(ctx context.Context, pwd, hash string) *err
 	return nil
 }
 
-func (s *UserService) hashPassword(ctx context.Context, pwd string) (string, *errors.Error) {
+func (s *UserService) hashPassword(
+	ctx context.Context,
+	pwd string,
+) (string, *errors.Error) {
 	if ctx.Err() != nil {
 		return "", errors.FromError(ctx.Err())
 	}
@@ -753,7 +760,10 @@ func (s *UserService) hashPassword(ctx context.Context, pwd string) (string, *er
 	return hashedPassword, nil
 }
 
-func (s *UserService) validatePasswordStrength(ctx context.Context, pwd string) *errors.Error {
+func (s *UserService) validatePasswordStrength(
+	ctx context.Context,
+	pwd string,
+) *errors.Error {
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}

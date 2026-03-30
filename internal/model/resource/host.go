@@ -131,7 +131,11 @@ func (req *ListHostDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", req.Name)
 	enc.AddString("label", req.Label)
 	enc.AddString("ssh_ip", req.SSHIP)
-	enc.AddUint16("ssh_port", *req.SSHPort)
+	if req.SSHPort != nil {
+		enc.AddUint16("ssh_port", *req.SSHPort)
+	} else {
+		enc.AddUint16("ssh_port", 0)
+	}
 	enc.AddString("ssh_user", req.SSHUser)
 	enc.AddString("py_path", req.PyPath)
 	enc.AddString("remark", req.Remark)

@@ -463,7 +463,7 @@ func (s *MdsNodeService) OutPortMdsNodeData(ctx context.Context, m *mdsmodel.Mds
 		IsEnable: m.IsEnable,
 	}
 
-	confDir := common.GetMdsColonyConfigDir(m.MdsColony.ColonyNum)
+	confDir := GetMdsColonyConfigDir(m.MdsColony.ColonyNum)
 	mdsColonyConf := filepath.Join(confDir, specdir, "node.yaml")
 
 	exportStepStart := time.Now()

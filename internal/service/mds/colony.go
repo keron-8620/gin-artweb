@@ -10,6 +10,7 @@ import (
 
 	mdsmodel "gin-artweb/internal/model/mds"
 	mdsrepo "gin-artweb/internal/repo/mds"
+	resocvs "gin-artweb/internal/service/resource"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
@@ -555,8 +556,8 @@ func (s *MdsColonyService) OutportMdsColonyData(
 		zap.Object("mds_colony_model", m),
 	)
 
-	colonyBinDir := common.GetMdsColonyBinDir(m.ColonyNum)
-	colonyConfDir := common.GetMdsColonyConfigDir(m.ColonyNum)
+	colonyBinDir := GetMdsColonyBinDir(m.ColonyNum)
+	colonyConfDir := GetMdsColonyConfigDir(m.ColonyNum)
 
 	cleanStepStart := time.Now()
 	log.Debug(
@@ -611,7 +612,7 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}()
 
 	validateStepStart := time.Now()
-	mdsPkgPath := common.GetPackageStoragePath(m.Package.StorageFilename)
+	mdsPkgPath := resocvs.GetPackageStoragePath(m.Package.StorageFilename)
 	log.Debug(
 		"导出mds集群数据：开始校验mds程序包",
 		zap.String("path", mdsPkgPath),
@@ -772,4 +773,12 @@ func (s *MdsColonyService) OutportMdsColonyData(
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
+}
+
+func GetMdsColonyBinDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "mds", "bin", colonyNum)
+}
+
+func GetMdsColonyConfigDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "mds", "config", colonyNum)
 }

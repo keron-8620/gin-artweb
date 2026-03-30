@@ -9,6 +9,7 @@ import (
 
 	commodel "gin-artweb/internal/model/common"
 	oesmodel "gin-artweb/internal/model/oes"
+	oessvc "gin-artweb/internal/service/oes"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
@@ -73,7 +74,7 @@ func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
 	}
 
 	// 3. 将配置文件保存到指定的位置
-	dirName := common.GetOesColonyConfigDir(pathReq.ColonyNum)
+	dirName := oessvc.GetOesColonyConfigDir(pathReq.ColonyNum)
 	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
 	if err := common.UploadFile(ctx, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
 		errors.RespondWithError(ctx, err)
@@ -111,7 +112,7 @@ func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
 		return
 	}
 
-	dirName := common.GetOesColonyConfigDir(req.ColonyNum)
+	dirName := oessvc.GetOesColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := common.DownloadFile(ctx, log, filePath, ""); err != nil {
 		errors.RespondWithError(ctx, err)
@@ -146,7 +147,7 @@ func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
 		return
 	}
 
-	dirName := common.GetOesColonyConfigDir(req.ColonyNum)
+	dirName := oessvc.GetOesColonyConfigDir(req.ColonyNum)
 	savePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := fileutil.Remove(ctx, savePath); err != nil {
 		log.Error(
@@ -188,7 +189,7 @@ func (s *OesConfHandler) ListOesConf(ctx *gin.Context) {
 		return
 	}
 
-	dirName := common.GetOesColonyConfigDir(req.ColonyNum)
+	dirName := oessvc.GetOesColonyConfigDir(req.ColonyNum)
 	info, err := fileutil.ListFileInfo(ctx, dirName)
 	if err != nil {
 		log.Error(

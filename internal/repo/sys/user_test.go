@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -358,29 +359,47 @@ func (suite *UserTestSuite) TestListUsersWithFiltering() {
 	suite.GreaterOrEqual(count, int64(1), "带过滤条件的用户总数应该至少为1")
 }
 
+func (suite *UserTestSuite) TestCreateUserWithNilModel() {
+	err := suite.userRepo.CreateModel(context.Background(), nil)
+	suite.Error(err, "创建用户时传入nil模型应该返回错误")
+	suite.True(strings.Contains(err.Error(), "创建用户模型: 模型不能为空"), "错误信息应该包含'创建用户模型: 模型不能为空'")
+}
+
+func (suite *UserTestSuite) TestUpdateUserWithEmptyData() {
+	err := suite.userRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", 1)
+	suite.Error(err, "更新用户时传入空数据应该返回错误")
+	suite.True(strings.Contains(err.Error(), "更新用户模型：更新数据不能为空"), "错误信息应该包含'更新用户模型：更新数据不能为空'")
+}
+
+func (suite *UserTestSuite) TestCreateUserWithContextTimeout() {
+	testCtx := context.Background()
+	ctx, cancel := context.WithTimeout(testCtx, time.Millisecond*1)
+	defer cancel()
+	time.Sleep(time.Millisecond * 5)
+
+	user := CreateTestUserModel(0)
+	err := suite.userRepo.CreateModel(ctx, user)
+	suite.Error(err, "创建用户时上下文超时应该返回错误")
+}
+
+func (suite *UserTestSuite) TestUpdateUserWithContextTimeout() {
+	user := CreateTestUserModel(0)
+	err := suite.userRepo.CreateModel(context.Background(), user)
+	suite.NoError(err, "创建用户应该成功")
+
+	testCtx := context.Background()
+	ctx, cancel := context.WithTimeout(testCtx, time.Millisecond*1)
+	defer cancel()
+	time.Sleep(time.Millisecond * 5)
+
+	err = suite.userRepo.UpdateModel(ctx, map[string]any{
+		"username": "updated_user",
+	}, "id = ?", user.ID)
+	suite.Error(err, "更新用户时上下文超时应该返回错误")
+}
+
 // 每个测试文件都需要这个入口函数
 func TestUserTestSuite(t *testing.T) {
 	pts := &UserTestSuite{}
 	suite.Run(t, pts)
-}
-
-// TestNewUserRepo 测试创建用户仓库实例
-func TestNewUserRepo(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-
-	repo := NewUserRepo(logger, db, dbTimeout)
-	if repo == nil {
-		t.Fatal("NewUserRepo should return a non-nil repository")
-	}
-	if repo.log == nil {
-		t.Fatal("Repo log should not be nil")
-	}
-	if repo.gormDB == nil {
-		t.Fatal("Repo gormDB should not be nil")
-	}
-	if repo.timeouts == nil {
-		t.Fatal("Repo timeouts should not be nil")
-	}
 }

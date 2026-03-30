@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -29,7 +30,7 @@ func extractToken(c *gin.Context) string {
 	return c.GetHeader("Authorization")
 }
 
-func JWTAuthMiddleware(c *auth.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
+func JWTAuthMiddleware(c *config.JWTConfig, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 从请求头获取token
 		token := extractToken(ctx)

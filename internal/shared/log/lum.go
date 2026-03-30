@@ -6,7 +6,6 @@ import (
 	"gin-artweb/internal/shared/config"
 )
 
-
 // NewlumLogger 根据配置初始化日志底层IO
 func NewLumLogger(
 	c *config.LogConfig,

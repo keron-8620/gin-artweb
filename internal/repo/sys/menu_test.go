@@ -51,6 +51,7 @@ func CreateTestMenuModel(apis []sysmodel.ApiModel) *sysmodel.MenuModel {
 // MenuTestSuite 菜单测试套件
 type MenuTestSuite struct {
 	suite.Suite
+	apiRepo  *ApiRepo
 	menuRepo *MenuRepo
 }
 
@@ -60,10 +61,19 @@ func (suite *MenuTestSuite) SetupSuite() {
 	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ApiModel{})
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
+	enforcer, _ := auth.NewCasbinEnforcer()
+	suite.apiRepo = &ApiRepo{
+		log:      logger,
+		gormDB:   db,
+		timeouts: dbTimeout,
+		enforcer: enforcer,
+	}
+
 	suite.menuRepo = &MenuRepo{
 		log:      logger,
 		gormDB:   db,
 		timeouts: dbTimeout,
+		enforcer: enforcer,
 	}
 }
 
@@ -376,115 +386,63 @@ func (suite *MenuTestSuite) TestCountMenusWithContextTimeout() {
 	suite.Error(err, "计数查询时上下文超时应该返回错误")
 }
 
-// 每个测试文件都需要这个入口函数
-func TestMenuTestSuite(t *testing.T) {
-	pts := &MenuTestSuite{}
-	suite.Run(t, pts)
-}
-
 // TestNewMenuRepo 测试创建菜单仓库实例
-func TestNewMenuRepo(t *testing.T) {
+func (suite *MenuTestSuite) TestNewMenuRepo() {
 	db := test.NewTestGormDBWithConfig(nil)
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
 	enforcer, _ := auth.NewCasbinEnforcer()
 
 	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-	if repo == nil {
-		t.Fatal("NewMenuRepo should return a non-nil repository")
-	}
-	if repo.log == nil {
-		t.Fatal("Repo log should not be nil")
-	}
-	if repo.gormDB == nil {
-		t.Fatal("Repo gormDB should not be nil")
-	}
-	if repo.timeouts == nil {
-		t.Fatal("Repo timeouts should not be nil")
-	}
-	if repo.enforcer == nil {
-		t.Fatal("Repo enforcer should not be nil")
-	}
+	suite.NotNil(repo, "NewMenuRepo should return a non-nil repository")
+	suite.NotNil(repo.log, "Repo log should not be nil")
+	suite.NotNil(repo.gormDB, "Repo gormDB should not be nil")
+	suite.NotNil(repo.timeouts, "Repo timeouts should not be nil")
+	suite.NotNil(repo.enforcer, "Repo enforcer should not be nil")
 }
 
 // TestMenuAddGroupPolicy 测试添加菜单组策略
-func TestMenuAddGroupPolicy(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{}, &sysmodel.ApiModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-	apiRepo := NewApiRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuAddGroupPolicy() {
 	// 创建API
 	api := CreateTestApiModel()
-	err := apiRepo.CreateModel(context.Background(), api)
-	if err != nil {
-		t.Fatalf("创建API失败: %v", err)
-	}
+	err := suite.apiRepo.CreateModel(context.Background(), api)
+	suite.NoError(err, "创建API应该成功")
 
 	// 创建菜单并关联API
 	menu := CreateTestMenuModel(nil)
 	menu.Apis = []sysmodel.ApiModel{*api}
-	err = repo.CreateModel(context.Background(), menu, menu.Apis)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err = suite.menuRepo.CreateModel(context.Background(), menu, menu.Apis)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 测试添加组策略
-	err = repo.AddGroupPolicy(context.Background(), menu)
-	if err != nil {
-		t.Fatalf("添加菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
 }
 
 // TestMenuAddGroupPolicyWithParent 测试添加带有父菜单的菜单组策略
-func TestMenuAddGroupPolicyWithParent(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithParent() {
 	// 创建父菜单
 	parentMenu := CreateTestMenuModel(nil)
-	err := repo.CreateModel(context.Background(), parentMenu, nil)
-	if err != nil {
-		t.Fatalf("创建父菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), parentMenu, nil)
+	suite.NoError(err, "创建父菜单应该成功")
 
 	// 创建子菜单并设置父菜单ID
 	childMenu := CreateTestMenuModel(nil)
 	childMenu.ParentID = &parentMenu.ID
-	err = repo.CreateModel(context.Background(), childMenu, nil)
-	if err != nil {
-		t.Fatalf("创建子菜单失败: %v", err)
-	}
+	err = suite.menuRepo.CreateModel(context.Background(), childMenu, nil)
+	suite.NoError(err, "创建子菜单应该成功")
 
 	// 测试添加组策略
-	err = repo.AddGroupPolicy(context.Background(), childMenu)
-	if err != nil {
-		t.Fatalf("添加带有父菜单的菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), childMenu)
+	suite.NoError(err, "添加带有父菜单的菜单组策略应该成功")
 }
 
 // TestMenuAddGroupPolicyWithInvalidAPI 测试添加包含无效API的菜单组策略
-func TestMenuAddGroupPolicyWithInvalidAPI(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithInvalidAPI() {
 	// 创建菜单
 	menu := CreateTestMenuModel(nil)
-	err := repo.CreateModel(context.Background(), menu, nil)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 手动设置无效API（ID为0）
 	// 注意：这里我们直接修改menu对象，因为CreateModel会忽略Apis参数
@@ -493,60 +451,35 @@ func TestMenuAddGroupPolicyWithInvalidAPI(t *testing.T) {
 	// 注意：我们不设置ID字段，让它保持默认值0
 
 	// 测试添加组策略（应该跳过无效API）
-	err = repo.AddGroupPolicy(context.Background(), menu)
-	if err != nil {
-		t.Fatalf("添加包含无效API的菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加包含无效API的菜单组策略应该成功")
 }
 
 // TestMenuRemoveGroupPolicy 测试删除菜单组策略
-func TestMenuRemoveGroupPolicy(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.MenuModel{})
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuRemoveGroupPolicy() {
 	// 创建菜单
 	menu := CreateTestMenuModel(nil)
-	err := repo.CreateModel(context.Background(), menu, nil)
-	if err != nil {
-		t.Fatalf("创建菜单失败: %v", err)
-	}
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
 
 	// 先添加组策略
-	err = repo.AddGroupPolicy(context.Background(), menu)
-	if err != nil {
-		t.Fatalf("添加菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
 
 	// 测试删除组策略
-	err = repo.RemoveGroupPolicy(context.Background(), menu, true)
-	if err != nil {
-		t.Fatalf("删除菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.NoError(err, "删除菜单组策略应该成功")
 
 	// 测试删除组策略（不删除继承）
-	err = repo.AddGroupPolicy(context.Background(), menu)
-	if err != nil {
-		t.Fatalf("添加菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
 
-	err = repo.RemoveGroupPolicy(context.Background(), menu, false)
-	if err != nil {
-		t.Fatalf("删除菜单组策略失败: %v", err)
-	}
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, false)
+	suite.NoError(err, "删除菜单组策略应该成功")
 }
 
 // TestMenuRemoveGroupPolicyWithCanceledContext 测试上下文已取消时删除菜单组策略
-func TestMenuRemoveGroupPolicyWithCanceledContext(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuRemoveGroupPolicyWithCanceledContext() {
 	// 创建一个已取消的上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -556,54 +489,30 @@ func TestMenuRemoveGroupPolicyWithCanceledContext(t *testing.T) {
 	menu.ID = 1
 
 	// 测试删除组策略
-	err := repo.RemoveGroupPolicy(ctx, menu, true)
-	if err == nil {
-		t.Fatal("上下文已取消时删除菜单组策略应该返回错误")
-	}
+	err := suite.menuRepo.RemoveGroupPolicy(ctx, menu, true)
+	suite.Error(err, "上下文已取消时删除菜单组策略应该返回错误")
 }
 
 // TestMenuRemoveGroupPolicyWithNilMenu 测试菜单为nil时删除组策略
-func TestMenuRemoveGroupPolicyWithNilMenu(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuRemoveGroupPolicyWithNilMenu() {
 	// 测试删除组策略
-	err := repo.RemoveGroupPolicy(context.Background(), nil, true)
-	if err == nil {
-		t.Fatal("菜单为nil时删除组策略应该返回错误")
-	}
+	err := suite.menuRepo.RemoveGroupPolicy(context.Background(), nil, true)
+	suite.Error(err, "菜单为nil时删除组策略应该返回错误")
 }
 
 // TestMenuRemoveGroupPolicyWithZeroID 测试菜单ID为0时删除组策略
-func TestMenuRemoveGroupPolicyWithZeroID(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuRemoveGroupPolicyWithZeroID() {
 	// 创建菜单
 	menu := &sysmodel.MenuModel{}
 	menu.ID = 0
 
 	// 测试删除组策略
-	err := repo.RemoveGroupPolicy(context.Background(), menu, true)
-	if err == nil {
-		t.Fatal("菜单ID为0时删除组策略应该返回错误")
-	}
+	err := suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.Error(err, "菜单ID为0时删除组策略应该返回错误")
 }
 
 // TestMenuAddGroupPolicyWithCanceledContext 测试上下文已取消时添加组策略
-func TestMenuAddGroupPolicyWithCanceledContext(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithCanceledContext() {
 	// 创建一个已取消的上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -613,42 +522,143 @@ func TestMenuAddGroupPolicyWithCanceledContext(t *testing.T) {
 	menu.ID = 1
 
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(ctx, menu)
-	if err == nil {
-		t.Fatal("上下文已取消时添加组策略应该返回错误")
-	}
+	err := suite.menuRepo.AddGroupPolicy(ctx, menu)
+	suite.Error(err, "上下文已取消时添加组策略应该返回错误")
 }
 
 // TestMenuAddGroupPolicyWithNilMenu 测试菜单为nil时添加组策略
-func TestMenuAddGroupPolicyWithNilMenu(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithNilMenu() {
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(context.Background(), nil)
-	if err == nil {
-		t.Fatal("菜单为nil时添加组策略应该返回错误")
-	}
+	err := suite.menuRepo.AddGroupPolicy(context.Background(), nil)
+	suite.Error(err, "菜单为nil时添加组策略应该返回错误")
 }
 
 // TestMenuAddGroupPolicyWithZeroID 测试菜单ID为0时添加组策略
-func TestMenuAddGroupPolicyWithZeroID(t *testing.T) {
-	db := test.NewTestGormDBWithConfig(nil)
-	dbTimeout := test.NewTestDBTimeouts()
-	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	repo := NewMenuRepo(logger, db, dbTimeout, enforcer)
-
+func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithZeroID() {
 	// 创建菜单
 	menu := &sysmodel.MenuModel{}
 	menu.ID = 0
 
 	// 测试添加组策略
-	err := repo.AddGroupPolicy(context.Background(), menu)
-	if err == nil {
-		t.Fatal("菜单ID为0时添加组策略应该返回错误")
-	}
+	err := suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.Error(err, "菜单ID为0时添加组策略应该返回错误")
+}
+
+// TestMenuUpdateModelWithAPIs 测试更新菜单时关联API
+func (suite *MenuTestSuite) TestMenuUpdateModelWithAPIs() {
+	// 创建API
+	api1 := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), api1)
+	suite.NoError(err, "创建API1应该成功")
+
+	api2 := CreateTestApiModel()
+	err = suite.apiRepo.CreateModel(context.Background(), api2)
+	suite.NoError(err, "创建API2应该成功")
+
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err = suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 更新菜单并关联API
+	updatedName := "updated_menu_with_apis"
+	apis := []sysmodel.ApiModel{*api1, *api2}
+	err = suite.menuRepo.UpdateModel(context.Background(), map[string]any{
+		"name": updatedName,
+	}, apis, "id = ?", menu.ID)
+	suite.NoError(err, "更新菜单并关联API应该成功")
+
+	// 验证菜单是否更新成功
+	fm, err := suite.menuRepo.GetModel(context.Background(), []string{"Apis"}, "id = ?", menu.ID)
+	suite.NoError(err, "查询更新后的菜单应该成功")
+	suite.Equal(updatedName, fm.Name, "菜单名称应该更新成功")
+	suite.Equal(2, len(fm.Apis), "菜单应该关联2个API")
+}
+
+// TestMenuUpdateModelWithoutAPIs 测试更新菜单时不关联API
+func (suite *MenuTestSuite) TestMenuUpdateModelWithoutAPIs() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 更新菜单但不关联API
+	updatedName := "updated_menu_without_apis"
+	err = suite.menuRepo.UpdateModel(context.Background(), map[string]any{
+		"name": updatedName,
+	}, nil, "id = ?", menu.ID)
+	suite.NoError(err, "更新菜单应该成功")
+
+	// 验证菜单是否更新成功
+	fm, err := suite.menuRepo.GetModel(context.Background(), []string{}, "id = ?", menu.ID)
+	suite.NoError(err, "查询更新后的菜单应该成功")
+	suite.Equal(updatedName, fm.Name, "菜单名称应该更新成功")
+}
+
+// TestMenuDeleteModelWithEmptyConditions 测试删除菜单时传入空条件
+func (suite *MenuTestSuite) TestMenuDeleteModelWithEmptyConditions() {
+	// 测试删除菜单时传入空条件
+	err := suite.menuRepo.DeleteModel(context.Background())
+	suite.Error(err, "删除菜单时传入空条件应该返回错误")
+}
+
+// TestMenuDeleteModelWithContextTimeout 测试删除菜单时上下文超时
+func (suite *MenuTestSuite) TestMenuDeleteModelWithContextTimeout() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 创建一个非常短的超时上下文
+	testCtx := context.Background()
+	ctx, cancel := context.WithTimeout(testCtx, time.Millisecond*1)
+	defer cancel()
+	// 等待超时
+	time.Sleep(time.Millisecond * 5)
+
+	// 尝试删除菜单
+	err = suite.menuRepo.DeleteModel(ctx, "id = ?", menu.ID)
+	suite.Error(err, "删除菜单时上下文超时应该返回错误")
+}
+
+// TestMenuAddGroupPolicyWithCasbinError 测试添加组策略时Casbin操作失败的情况
+func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithCasbinError() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 验证策略可以正常添加
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
+
+	// 再次尝试添加相同的策略，应该不会报错（Casbin会处理重复策略）
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "重复添加菜单组策略应该成功")
+}
+
+// TestMenuRemoveGroupPolicyWithCasbinError 测试删除组策略时Casbin操作失败的情况
+func (suite *MenuTestSuite) TestMenuRemoveGroupPolicyWithCasbinError() {
+	// 创建菜单
+	menu := CreateTestMenuModel(nil)
+	err := suite.menuRepo.CreateModel(context.Background(), menu, nil)
+	suite.NoError(err, "创建菜单应该成功")
+
+	// 先添加组策略
+	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
+	suite.NoError(err, "添加菜单组策略应该成功")
+
+	// 测试删除组策略
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.NoError(err, "删除菜单组策略应该成功")
+
+	// 再次尝试删除相同的策略，应该不会报错（Casbin会处理不存在的策略）
+	err = suite.menuRepo.RemoveGroupPolicy(context.Background(), menu, true)
+	suite.NoError(err, "删除不存在的菜单组策略应该成功")
+}
+
+// 每个测试文件都需要这个入口函数
+func TestMenuTestSuite(t *testing.T) {
+	pts := &MenuTestSuite{}
+	suite.Run(t, pts)
 }

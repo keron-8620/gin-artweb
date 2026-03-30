@@ -2,7 +2,9 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/zap"
@@ -11,6 +13,7 @@ import (
 	resomodel "gin-artweb/internal/model/resource"
 	resorepo "gin-artweb/internal/repo/resource"
 	"gin-artweb/internal/shared/common"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
@@ -299,7 +302,7 @@ func (s *HostService) DeleteHostById(
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
-	path := common.GetHostVarsExportPath(hostId)
+	path := GetHostVarsExportPath(hostId)
 	log.Debug(
 		"删除主机：准备删除ansible主机变量文件",
 		zap.String("path", path),
@@ -498,8 +501,7 @@ func (s *HostService) TestSSHConnection(
 	)
 
 	log.Debug("测试SSH连接：尝试使用已部署的密钥连接")
-	cli, err := s.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, []ssh.AuthMethod{s.authMethod}, s.sshTimeout)
-	if err == nil {
+	if cli, err := s.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, []ssh.AuthMethod{s.authMethod}, s.sshTimeout); err == nil {
 		log.Info(
 			"测试SSH连接：使用已部署的密钥连接成功",
 			zap.String("ssh_ip", sshIP),
@@ -617,7 +619,7 @@ func (s *HostService) ExportHost(ctx context.Context, m resomodel.HostModel) *er
 		zap.Object("ansible_host", &ansibleHost),
 	)
 
-	path := common.GetHostVarsExportPath(m.ID)
+	path := GetHostVarsExportPath(m.ID)
 	log.Debug(
 		"导出主机变量：准备写入文件",
 		zap.String("path", path),
@@ -656,4 +658,9 @@ func (s *HostService) ExportHost(ctx context.Context, m resomodel.HostModel) *er
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
+}
+
+func GetHostVarsExportPath(pk uint32) string {
+	filename := fmt.Sprintf("host_%d.yaml", pk)
+	return filepath.Join(config.StorageDir, "host_vars", filename)
 }

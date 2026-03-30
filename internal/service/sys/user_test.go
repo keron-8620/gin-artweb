@@ -11,6 +11,7 @@ import (
 	sysmodel "gin-artweb/internal/model/sys"
 	syssvc "gin-artweb/internal/repo/sys"
 	"gin-artweb/internal/shared/auth"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/test"
 	"gin-artweb/pkg/crypto"
 )
@@ -88,7 +89,7 @@ func (suite *UserTestSuite) SetupSuite() {
 			2,
 		),
 		crypto.NewBcryptHasher(12),
-		auth.NewJWTConfig(
+		config.NewJWTConfig(
 			time.Duration(10)*time.Second,
 			time.Duration(10)*time.Minute,
 			"HS256",

@@ -12,6 +12,7 @@ import (
 	mdsmodel "gin-artweb/internal/model/mds"
 	jobsvc "gin-artweb/internal/service/job"
 	mdssvc "gin-artweb/internal/service/mds"
+	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
@@ -49,32 +50,36 @@ func (s *MdsColonyHandler) CreateMdsColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.MdsColonyUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"创建mds集群：绑定参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"创建mds集群：绑定创建mds集群参数失败") {
 		return
 	}
 
+	createStepStart := time.Now()
 	m, rErr := s.colonySvc.CreateMdsColony(ctx, &req)
+	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
-			"创建mds集群：创建失败",
+			"创建mds集群：执行失败",
 			zap.Error(rErr),
 			zap.Object("mds_colony_dto", &req),
+			zap.Duration("create_step_duration", createStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+	log.Debug(
+		"创建mds集群：创建后的mds集群模型详情",
+		zap.Object("mds_colony_model", m),
+		zap.Duration("create_step_duration", createStepDuration),
+	)
 
 	log.Info(
-		"创建mds集群：创建成功",
+		"创建mds集群：执行成功",
 		zap.Uint32("mds_colony_id", m.ID),
+		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -101,42 +106,46 @@ func (s *MdsColonyHandler) UpdateMdsColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定更新mds集群ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"更新mds集群：绑定更新mds集群ID参数失败") {
 		return
 	}
 
 	var req mdsmodel.MdsColonyUpsertDTO
-	if err := ctx.ShouldBind(&req); err != nil {
-		log.Error(
-			"绑定更新mds集群参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &req,
+		"更新mds集群：绑定更新mds集群参数失败") {
 		return
 	}
 
+	updateStepStart := time.Now()
 	m, err := s.colonySvc.UpdateMdsColonyByID(ctx, uri.ID, req)
+	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
-			"更新mds集群失败",
+			"更新mds集群：执行失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", uri.ID),
 			zap.Object("mds_colony_dto", &req),
+			zap.Duration("update_step_duration", updateStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"更新mds集群：更新后的mds集群模型详情",
+		zap.Object("mds_colony_model", m),
+		zap.Duration("update_step_duration", updateStepDuration),
+	)
+
+	log.Info(
+		"更新mds集群：执行成功",
+		zap.Uint32("mds_colony_id", uri.ID),
+		zap.Duration("update_step_duration", updateStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 
 	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
@@ -160,37 +169,37 @@ func (s *MdsColonyHandler) DeleteMdsColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定删除mds集群ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"删除mds集群：绑定删除mds集群ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"开始删除mds集群",
+		"删除mds集群：开始执行",
 		zap.Uint32("mds_colony_id", uri.ID),
 	)
 
-	if err := s.colonySvc.DeleteMdsColonyByID(ctx, uri.ID); err != nil {
+	deleteStepStart := time.Now()
+	err := s.colonySvc.DeleteMdsColonyByID(ctx, uri.ID)
+	deleteStepDuration := time.Since(deleteStepStart)
+	if err != nil {
 		log.Error(
-			"删除mds集群失败",
+			"删除mds集群：执行失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", uri.ID),
+			zap.Duration("delete_step_duration", deleteStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
 	log.Info(
-		"删除mds集群成功",
+		"删除mds集群：执行成功",
 		zap.Uint32("mds_colony_id", uri.ID),
+		zap.Duration("delete_step_duration", deleteStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
@@ -212,38 +221,42 @@ func (s *MdsColonyHandler) GetMdsColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
-	if err := ctx.ShouldBindUri(&uri); err != nil {
-		log.Error(
-			"绑定查询mds集群ID参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBind(
+		ctx, log, &uri,
+		"查询mds集群详情：绑定查询mds集群ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"开始查询mds集群详情",
+		"查询mds集群：开始执行",
 		zap.Uint32("mds_colony_id", uri.ID),
 	)
 
+	findStepStart := time.Now()
 	m, err := s.colonySvc.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, uri.ID)
+	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询mds集群详情失败",
+			"查询mds集群：执行失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", uri.ID),
+			zap.Duration("find_step_duration", findStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+	log.Debug(
+		"查询mds集群：查询到的mds集群模型详情",
+		zap.Object("mds_colony_model", m),
+		zap.Duration("find_step_duration", findStepDuration),
+	)
 
 	log.Info(
-		"查询mds集群详情成功",
+		"查询mds集群：执行成功",
 		zap.Uint32("mds_colony_id", uri.ID),
+		zap.Duration("find_step_duration", findStepDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mo := mdsmodel.MdsColonyToDetailOut(*m)
@@ -272,26 +285,23 @@ func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.ListMdsColonyDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"绑定查询mds集群列表参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询mds集群列表：绑定查询mds集群列表参数失败") {
 		return
 	}
 
-	log.Info(
-		"开始查询mds集群列表",
+	log.Info("开始查询mds集群列表")
+
+	log.Debug(
+		"查询mds集群列表：查询参数",
 		zap.Object("mds_colony_dto", &req),
 	)
 
+	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, err := s.colonySvc.ListMdsColony(ctx, page, size, req)
+	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
 			"查询mds集群列表失败",
@@ -299,6 +309,8 @@ func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("mds_colony_dto", &req),
+			zap.Duration("list_step_duration", listStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -309,6 +321,7 @@ func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
 		zap.Int64("total", total),
 		zap.Int("page", page),
 		zap.Int("size", size),
+		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -334,24 +347,29 @@ func (s *MdsColonyHandler) ListMdsTaskStatus(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.ListMdsColonyDTO
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Error(
-			"绑定查询mds集群列表参数失败",
-			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
-			zap.String("request_method", ctx.Request.Method),
-		)
-		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+	if !common.ShouldBindQuery(
+		ctx, log, &req,
+		"查询mds集群任务状态：绑定查询mds集群任务状态参数失败") {
 		return
 	}
 
+	log.Info("查询mds集群任务状态：开始执行")
+
+	log.Debug(
+		"查询mds集群任务状态：入参详情",
+		zap.Object("mds_colony_dto", &req),
+	)
+
+	buildStepStart := time.Now()
 	tasks, rErr := s.mdsTaskSvc.BuildTaskExecutionInfos(ctx, req)
+	buildStepDuration := time.Since(buildStepStart)
 	if rErr != nil {
 		log.Error(
 			"构建mds集群任务信息失败",
 			zap.Error(rErr),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.Object("mds_colony_dto", &req),
+			zap.Duration("build_step_duration", buildStepDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
@@ -378,7 +396,8 @@ func (s *MdsColonyHandler) ListMdsTaskStatus(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询mds集群任务状态成功",
+		"查询mds集群任务状态：执行成功",
+		zap.Duration("build_step_duration", buildStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 

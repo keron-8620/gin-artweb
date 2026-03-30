@@ -3,6 +3,9 @@ package mds
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -213,6 +216,88 @@ func (suite *MdsColonyTestSuite) TestContextTimeout() {
 	// 测试超时后的操作
 	_, err = suite.colonyRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
 	suite.Error(err, "上下文超时后查询MdsColony应该返回错误")
+}
+
+func (suite *MdsColonyTestSuite) TestCountModel() {
+	// 创建测试数据
+	for i := 0; i < 3; i++ {
+		cm := CreateTestMdsColonyModel()
+		err := suite.colonyRepo.CreateModel(context.Background(), cm)
+		suite.NoError(err, "创建MdsColony用于计数测试应该成功")
+	}
+
+	// 测试正常计数
+	count, err := suite.colonyRepo.CountModel(context.Background(), nil)
+	suite.NoError(err, "计数MdsColony应该成功")
+	suite.Greater(count, int64(0), "MdsColony计数应该大于0")
+
+	// 测试带条件计数
+	count, err = suite.colonyRepo.CountModel(context.Background(), map[string]any{"is_enable": true})
+	suite.NoError(err, "带条件计数MdsColony应该成功")
+	suite.GreaterOrEqual(count, int64(0), "MdsColony计数应该大于等于0")
+
+	// 测试计数不存在的条件
+	count, err = suite.colonyRepo.CountModel(context.Background(), map[string]any{"colony_num": "9999"})
+	suite.NoError(err, "计数不存在的MdsColony应该成功")
+	suite.Equal(int64(0), count, "不存在的MdsColony计数应该为0")
+}
+
+func (suite *MdsColonyTestSuite) TestSaveConfigFile() {
+	// 测试SaveConfigFile函数
+	testContent := "test config content"
+	testReader := strings.NewReader(testContent)
+	testPath := "/tmp/test-mds-config.txt"
+
+	// 清理测试文件
+	defer func() {
+		os.Remove(testPath)
+	}()
+
+	// 测试正常保存
+	err := suite.colonyRepo.SaveConfigFile(context.Background(), testReader, testPath, true)
+	suite.NoError(err, "保存配置文件应该成功")
+
+	// 验证文件内容
+	content, err := ioutil.ReadFile(testPath)
+	suite.NoError(err, "读取保存的配置文件应该成功")
+	suite.Equal(testContent, string(content), "配置文件内容应该正确")
+
+	// 测试覆盖保存
+	testContent2 := "updated config content"
+	testReader2 := strings.NewReader(testContent2)
+	err = suite.colonyRepo.SaveConfigFile(context.Background(), testReader2, testPath, true)
+	suite.NoError(err, "覆盖保存配置文件应该成功")
+
+	// 验证更新后的内容
+	content, err = ioutil.ReadFile(testPath)
+	suite.NoError(err, "读取更新后的配置文件应该成功")
+	suite.Equal(testContent2, string(content), "更新后的配置文件内容应该正确")
+
+	// 测试不允许覆盖已存在的文件
+	testReader3 := strings.NewReader("new content")
+	err = suite.colonyRepo.SaveConfigFile(context.Background(), testReader3, testPath, false)
+	suite.Error(err, "不允许覆盖时应该返回错误")
+}
+
+func (suite *MdsColonyTestSuite) TestRemoveConfigFile() {
+	// 测试RemoveConfigFile函数
+	testPath := "/tmp/test-mds-config-remove.txt"
+
+	// 创建测试文件
+	err := ioutil.WriteFile(testPath, []byte("test content"), 0644)
+	suite.NoError(err, "创建测试文件应该成功")
+
+	// 测试正常删除
+	err = suite.colonyRepo.RemoveConfigFile(context.Background(), testPath)
+	suite.NoError(err, "删除配置文件应该成功")
+
+	// 验证文件已删除
+	_, err = os.Stat(testPath)
+	suite.True(os.IsNotExist(err), "文件应该被成功删除")
+
+	// 测试删除不存在的文件
+	err = suite.colonyRepo.RemoveConfigFile(context.Background(), testPath)
+	suite.NoError(err, "删除不存在的配置文件应该成功")
 }
 
 func TestMdsColonyTestSuite(t *testing.T) {
