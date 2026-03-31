@@ -649,7 +649,7 @@ func (s *UserService) Login(
 	}
 
 	// 登录认证成功
-	log.Info(
+	log.Debug(
 		"用户登录: 验证登录信息成功",
 		zap.String("username", dto.Username),
 	)
@@ -708,7 +708,7 @@ func (s *UserService) verifyPassword(
 		zap.String("trace_id", ctxutil.GetTraceID(ctx)),
 	)
 
-	log.Info("开始密码验证")
+	log.Debug("开始密码验证")
 
 	verified, err := s.hasher.Verify(ctx, pwd, hash)
 	if err != nil {
@@ -726,7 +726,7 @@ func (s *UserService) verifyPassword(
 		return errors.ErrAuthFailed
 	}
 
-	log.Info(
+	log.Debug(
 		"密码验证通过",
 	)
 	return nil
@@ -743,7 +743,7 @@ func (s *UserService) hashPassword(
 		zap.String("trace_id", ctxutil.GetTraceID(ctx)),
 	)
 
-	log.Info("开始密码哈希处理")
+	log.Debug("开始密码哈希处理")
 
 	hashedPassword, err := s.hasher.Hash(ctx, pwd)
 	if err != nil {
@@ -754,7 +754,7 @@ func (s *UserService) hashPassword(
 		return "", errors.FromError(err)
 	}
 
-	log.Info(
+	log.Debug(
 		"密码哈希处理完成",
 	)
 	return hashedPassword, nil
@@ -771,7 +771,7 @@ func (s *UserService) validatePasswordStrength(
 		zap.String("trace_id", ctxutil.GetTraceID(ctx)),
 	)
 
-	log.Info("开始检查密码强度")
+	log.Debug("开始检查密码强度")
 
 	strength := GetPasswordStrength(pwd)
 	if strength < s.sec.PasswordStrength {
@@ -782,7 +782,7 @@ func (s *UserService) validatePasswordStrength(
 		return errors.ErrPasswordStrengthFailed
 	}
 
-	log.Info(
+	log.Debug(
 		"密码强度检查通过",
 		zap.Int("password_strength", strength),
 	)

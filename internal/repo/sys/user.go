@@ -62,7 +62,11 @@ func NewUserRepo(
 //  2. 设置创建时间和更新时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *UserRepo) CreateModel(ctx context.Context, m *sysmodel.UserModel) error {
+func (r *UserRepo) CreateModel(
+	ctx context.Context,
+	m *sysmodel.UserModel,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -79,24 +83,30 @@ func (r *UserRepo) CreateModel(ctx context.Context, m *sysmodel.UserModel) error
 		"创建用户模型：开始执行",
 		zap.Object("user_model", m),
 	)
-	now := time.Now()
-	m.CreatedAt = now
-	m.UpdatedAt = now
+
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.UserModel{}, m, nil); err != nil {
+	createUserStartTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.UserModel{}, m, nil)
+	createUserDuration := time.Since(createUserStartTime)
+	if err != nil {
 		log.Error(
 			"创建用户模型：数据库创建失败",
 			zap.Error(err),
 			zap.Object("user_model", m),
-			zap.Duration("create_user_duration", time.Since(now)),
+			zap.Duration("create_user_duration", createUserDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建用户模型：数据库创建失败")
 	}
 	log.Debug(
 		"创建用户模型：执行成功",
 		zap.Object("user_model", m),
-		zap.Duration("create_user_duration", time.Since(now)),
+		zap.Duration("create_user_duration", createUserDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -117,7 +127,12 @@ func (r *UserRepo) CreateModel(ctx context.Context, m *sysmodel.UserModel) error
 //  1. 检查更新数据是否为空
 //  2. 执行数据库更新操作
 //  3. 记录操作日志
-func (r *UserRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *UserRepo) UpdateModel(
+	ctx context.Context,
+	data map[string]any,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	if len(data) == 0 {
@@ -134,16 +149,20 @@ func (r *UserRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.UserModel{}, data, nil, conds...); err != nil {
+	updateUserStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.UserModel{}, data, nil, conds...)
+	updateUserDuration := time.Since(updateUserStartTime)
+	if err != nil {
 		log.Error(
 			"更新用户模型：数据库更新失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
-			zap.Duration("update_user_duration", time.Since(now)),
+			zap.Duration("update_user_duration", updateUserDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新用户模型：数据库更新失败")
 	}
@@ -151,7 +170,8 @@ func (r *UserRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 		"更新用户模型：执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
-		zap.Duration("update_user_duration", time.Since(now)),
+		zap.Duration("update_user_duration", updateUserDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -170,29 +190,38 @@ func (r *UserRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *UserRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *UserRepo) DeleteModel(
+	ctx context.Context,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"删除用户模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.UserModel{}, conds...); err != nil {
+	deleteUserStartTime := time.Now()
+	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.UserModel{}, conds...)
+	deleteUserDuration := time.Since(deleteUserStartTime)
+	if err != nil {
 		log.Error(
 			"删除用户模型：数据库删除失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_user_duration", time.Since(now)),
+			zap.Duration("delete_user_duration", deleteUserDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除用户模型：数据库删除失败")
 	}
 	log.Debug(
 		"删除用户模型：执行成功",
 		zap.Any("conds", conds),
-		zap.Duration("delete_user_duration", time.Since(now)),
+		zap.Duration("delete_user_duration", deleteUserDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -220,6 +249,7 @@ func (r *UserRepo) GetModel(
 	preloads []string,
 	conds ...any,
 ) (*sysmodel.UserModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
@@ -227,17 +257,21 @@ func (r *UserRepo) GetModel(
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
+
 	var m sysmodel.UserModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
+	getUserStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
+	getUserDuration := time.Since(getUserStartTime)
+	if err != nil {
 		log.Error(
 			"查询用户模型：数据库查询失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Any("conds", conds),
-			zap.Duration("get_user_duration", time.Since(now)),
+			zap.Duration("get_user_duration", getUserDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询用户模型：数据库查询失败")
 	}
@@ -246,7 +280,8 @@ func (r *UserRepo) GetModel(
 		zap.Object("user_model", &m),
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
-		zap.Duration("get_user_duration", time.Since(now)),
+		zap.Duration("get_user_duration", getUserDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &m, nil
 }
@@ -273,29 +308,35 @@ func (r *UserRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]sysmodel.UserModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询用户模型列表：开始执行",
 		zap.Object("query_params", &qp),
 	)
-	now := time.Now()
+
 	var ms []sysmodel.UserModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &sysmodel.UserModel{}, &ms, qp); err != nil {
+	listUserStartTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &sysmodel.UserModel{}, &ms, qp)
+	listUserDuration := time.Since(listUserStartTime)
+	if err != nil {
 		log.Error(
 			"查询用户模型列表：数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_user_duration", time.Since(now)),
+			zap.Duration("list_user_duration", listUserDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询用户模型列表：数据库查询失败")
 	}
 	log.Debug(
 		"查询用户模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_user_duration", time.Since(now)),
+		zap.Duration("list_user_duration", listUserDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -304,22 +345,25 @@ func (r *UserRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询用户模型总数：开始执行",
 		zap.Any("query", query),
 	)
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countUserStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.UserModel{}, query)
+	countUserDuration := time.Since(countUserStartTime)
 	if err != nil {
 		log.Error(
 			"查询用户模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_user_duration", time.Since(now)),
+			zap.Duration("count_user_duration", countUserDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询用户模型总数：数据库查询失败")
 	}
@@ -327,7 +371,8 @@ func (r *UserRepo) CountModel(
 		"查询用户模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
-		zap.Duration("count_user_duration", time.Since(now)),
+		zap.Duration("count_user_duration", countUserDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }

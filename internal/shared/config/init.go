@@ -31,7 +31,7 @@ type Loggers struct {
 	Server  *zap.Logger
 	Handler *zap.Logger
 	Service *zap.Logger
-	Data    *zap.Logger
+	Repo    *zap.Logger
 }
 
 type JWTConfig struct {

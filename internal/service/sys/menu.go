@@ -598,7 +598,7 @@ func (s *MenuService) LoadMenuPolicy(ctx context.Context) *errors.Error {
 		zap.String("trace_id", ctxutil.GetTraceID(ctx)),
 	)
 
-	log.Info("加载菜单策略：开始执行")
+	log.Debug("加载菜单策略：开始执行")
 
 	qp := database.QueryParams{
 		Preloads: []string{"Apis"},
@@ -651,7 +651,7 @@ func (s *MenuService) LoadMenuPolicy(ctx context.Context) *errors.Error {
 			zap.Duration("policy_step_duration", policyStepDuration),
 		)
 	}
-	log.Info(
+	log.Debug(
 		"加载菜单策略：执行成功",
 		zap.Int("policy_count", policyCount),
 		zap.Duration("total_duration", time.Since(startTime)),

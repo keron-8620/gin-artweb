@@ -64,7 +64,11 @@ func NewHostRepo(
 //  2. 设置创建时间和更新时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *HostRepo) CreateModel(ctx context.Context, m *resomodel.HostModel) error {
+func (r *HostRepo) CreateModel(
+	ctx context.Context,
+	m *resomodel.HostModel,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -80,24 +84,29 @@ func (r *HostRepo) CreateModel(ctx context.Context, m *resomodel.HostModel) erro
 		"创建主机模型：开始执行",
 		zap.Object("host_model", m),
 	)
-	now := time.Now()
-	m.CreatedAt = now
-	m.UpdatedAt = now
+
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &resomodel.HostModel{}, m, nil); err != nil {
+	createHostStartTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.HostModel{}, m, nil)
+	createHostDuration := time.Since(createHostStartTime)
+	if err != nil {
 		log.Error(
 			"创建主机模型：数据库操作失败",
 			zap.Error(err),
 			zap.Object("host_model", m),
-			zap.Duration("create_duration", time.Since(now)),
+			zap.Duration("create_host_duration", createHostDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建主机模型：数据库操作失败")
 	}
 	log.Debug(
 		"创建主机模型：执行成功",
 		zap.Object("host_model", m),
-		zap.Duration("create_duration", time.Since(now)),
+		zap.Duration("create_host_duration", createHostDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -118,7 +127,12 @@ func (r *HostRepo) CreateModel(ctx context.Context, m *resomodel.HostModel) erro
 //  1. 检查更新数据是否为空
 //  2. 执行数据库更新操作
 //  3. 记录操作日志
-func (r *HostRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *HostRepo) UpdateModel(
+	ctx context.Context,
+	data map[string]any,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -137,16 +151,20 @@ func (r *HostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &resomodel.HostModel{}, data, nil, conds...); err != nil {
+	updateHostStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &resomodel.HostModel{}, data, nil, conds...)
+	updateHostDuration := time.Since(updateHostStartTime)
+	if err != nil {
 		log.Error(
 			"更新主机模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
-			zap.Duration("update_duration", time.Since(now)),
+			zap.Duration("update_host_duration", updateHostDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新主机模型：数据库操作失败")
 	}
@@ -154,7 +172,8 @@ func (r *HostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 		"更新主机模型：执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
-		zap.Duration("update_duration", time.Since(now)),
+		zap.Duration("update_host_duration", updateHostDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -173,29 +192,37 @@ func (r *HostRepo) UpdateModel(ctx context.Context, data map[string]any, conds .
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *HostRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *HostRepo) DeleteModel(
+	ctx context.Context,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"删除主机模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &resomodel.HostModel{}, conds...); err != nil {
+	deleteHostStartTime := time.Now()
+	err := database.DBDelete(dbCtx, r.gormDB, &resomodel.HostModel{}, conds...)
+	deleteHostDuration := time.Since(deleteHostStartTime)
+	if err != nil {
 		log.Error(
 			"删除主机模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_duration", time.Since(now)),
+			zap.Duration("delete_host_duration", deleteHostDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除主机模型：数据库操作失败")
 	}
 	log.Debug(
 		"删除主机模型：执行成功",
 		zap.Any("conds", conds),
-		zap.Duration("delete_duration", time.Since(now)),
+		zap.Duration("delete_host_duration", deleteHostDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -223,22 +250,26 @@ func (r *HostRepo) GetModel(
 	preloads []string,
 	conds ...any,
 ) (*resomodel.HostModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询主机模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
 	var m resomodel.HostModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
+	getHostStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
+	getHostDuration := time.Since(getHostStartTime)
+	if err != nil {
 		log.Error(
 			"查询主机模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_duration", time.Since(now)),
+			zap.Duration("get_host_duration", getHostDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询主机模型：数据库操作失败")
 	}
@@ -246,7 +277,8 @@ func (r *HostRepo) GetModel(
 		"查询主机模型：执行成功",
 		zap.Object("host_model", &m),
 		zap.Any("conds", conds),
-		zap.Duration("get_duration", time.Since(now)),
+		zap.Duration("get_host_duration", getHostDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &m, nil
 }
@@ -273,29 +305,34 @@ func (r *HostRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]resomodel.HostModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询主机模型列表：开始执行",
 		zap.Object("query_params", &qp),
 	)
-	now := time.Now()
 	var ms []resomodel.HostModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &resomodel.HostModel{}, &ms, qp); err != nil {
+	listHostStartTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &resomodel.HostModel{}, &ms, qp)
+	listHostDuration := time.Since(listHostStartTime)
+	if err != nil {
 		log.Error(
 			"查询主机模型列表：数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_duration", time.Since(now)),
+			zap.Duration("list_host_duration", listHostDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询主机模型列表：数据库操作失败")
 	}
 	log.Debug(
 		"查询主机模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_duration", time.Since(now)),
+		zap.Duration("list_host_duration", listHostDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -304,23 +341,26 @@ func (r *HostRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询主机模型总数：开始执行",
 		zap.Any("query", query),
 	)
-	now := time.Now()
 	// 开启数据库事务
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countHostStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &resomodel.HostModel{}, query)
+	countHostDuration := time.Since(countHostStartTime)
 	if err != nil {
 		log.Error(
 			"查询主机模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_host_duration", time.Since(now)),
+			zap.Duration("count_host_duration", countHostDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询主机模型总数：数据库查询失败")
 	}
@@ -328,7 +368,8 @@ func (r *HostRepo) CountModel(
 		"查询主机模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
-		zap.Duration("count_host_duration", time.Since(now)),
+		zap.Duration("count_host_duration", countHostDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }
@@ -361,6 +402,7 @@ func (r *HostRepo) NewSSHClient(
 	sshAuths []ssh.AuthMethod,
 	timeout time.Duration,
 ) (*ssh.Client, error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
@@ -373,8 +415,9 @@ func (r *HostRepo) NewSSHClient(
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
 	)
-	now := time.Now()
+	connectsshStartTime := time.Now()
 	client, err := shell.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, false, timeout)
+	connectsshDuration := time.Since(connectsshStartTime)
 	if err != nil {
 		log.Error(
 			"创建ssh连接：ssh连接失败",
@@ -382,7 +425,8 @@ func (r *HostRepo) NewSSHClient(
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
 			zap.String("ssh_user", sshUser),
-			zap.Duration("ssh_connect_duration", time.Since(now)),
+			zap.Duration("ssh_connect_duration", connectsshDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "创建ssh连接：ssh连接失败")
 	}
@@ -391,7 +435,8 @@ func (r *HostRepo) NewSSHClient(
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
-		zap.Duration("ssh_connect_duration", time.Since(now)),
+		zap.Duration("ssh_connect_duration", connectsshDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return client, nil
 }
@@ -417,6 +462,8 @@ func (r *HostRepo) ExecuteCommand(
 	session *ssh.Session,
 	command string,
 ) error {
+	startTime := time.Now()
+
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "上下文已取消")
 	}
@@ -432,13 +479,16 @@ func (r *HostRepo) ExecuteCommand(
 		zap.String("command", command),
 	)
 
-	now := time.Now()
-	if err := session.Run(command); err != nil {
+	executeCommandStartTime := time.Now()
+	err := session.Run(command)
+	executeCommandDuration := time.Since(executeCommandStartTime)
+	if err != nil {
 		log.Error(
 			"执行命令：命令执行失败",
 			zap.Error(err),
 			zap.String("command", command),
-			zap.Duration("execute_duration", time.Since(now)),
+			zap.Duration("execute_duration", executeCommandDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "执行命令：命令执行失败")
 	}
@@ -446,7 +496,8 @@ func (r *HostRepo) ExecuteCommand(
 	log.Debug(
 		"执行命令：执行成功",
 		zap.String("command", command),
-		zap.Duration("execute_duration", time.Since(now)),
+		zap.Duration("execute_duration", executeCommandDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	return nil

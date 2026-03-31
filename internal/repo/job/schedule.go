@@ -61,7 +61,11 @@ func NewScheduleRepo(
 //  1. 检查计划任务模型是否为空
 //  2. 执行数据库创建操作
 //  3. 记录操作日志
-func (r *ScheduleRepo) CreateModel(ctx context.Context, m *jobmodel.ScheduleModel) error {
+func (r *ScheduleRepo) CreateModel(
+	ctx context.Context,
+	m *jobmodel.ScheduleModel,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -77,22 +81,27 @@ func (r *ScheduleRepo) CreateModel(ctx context.Context, m *jobmodel.ScheduleMode
 		"创建计划任务模型：开始执行",
 		zap.Object("schedule_model", m),
 	)
-	now := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, m, nil); err != nil {
+	createScheduleStartTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, m, nil)
+	createScheduleDuration := time.Since(createScheduleStartTime)
+	if err != nil {
 		log.Error(
 			"创建计划任务模型：数据库操作失败",
 			zap.Error(err),
 			zap.Object("schedule_model", m),
-			zap.Duration("create_duration", time.Since(now)),
+			zap.Duration("create_schedule_duration", createScheduleDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建计划任务模型：数据库操作失败")
 	}
 	log.Debug(
 		"创建计划任务模型：执行成功",
 		zap.Object("schedule_model", m),
-		zap.Duration("create_duration", time.Since(now)),
+		zap.Duration("create_schedule_duration", createScheduleDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -113,7 +122,12 @@ func (r *ScheduleRepo) CreateModel(ctx context.Context, m *jobmodel.ScheduleMode
 //  1. 检查更新数据是否为空
 //  2. 执行数据库更新操作
 //  3. 记录操作日志
-func (r *ScheduleRepo) UpdateModel(ctx context.Context, data map[string]any, conds ...any) error {
+func (r *ScheduleRepo) UpdateModel(
+	ctx context.Context,
+	data map[string]any,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -132,16 +146,20 @@ func (r *ScheduleRepo) UpdateModel(ctx context.Context, data map[string]any, con
 		zap.Any("update_data", data),
 		zap.Any("conditions", conds),
 	)
-	startTime := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, data, nil, conds...); err != nil {
+	updateScheduleStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, data, nil, conds...)
+	updateScheduleDuration := time.Since(updateScheduleStartTime)
+	if err != nil {
 		log.Error(
 			"更新计划任务模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conditions", conds),
-			zap.Duration("update_duration", time.Since(startTime)),
+			zap.Duration("update_schedule_duration", updateScheduleDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新计划任务模型：数据库操作失败")
 	}
@@ -149,7 +167,8 @@ func (r *ScheduleRepo) UpdateModel(ctx context.Context, data map[string]any, con
 		"更新计划任务模型：执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conditions", conds),
-		zap.Duration("update_duration", time.Since(startTime)),
+		zap.Duration("update_schedule_duration", updateScheduleDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -168,29 +187,38 @@ func (r *ScheduleRepo) UpdateModel(ctx context.Context, data map[string]any, con
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *ScheduleRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *ScheduleRepo) DeleteModel(
+	ctx context.Context,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"删除计划任务模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	startTime := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, conds...); err != nil {
+	deleteScheduleStartTime := time.Now()
+	err := database.DBDelete(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, conds...)
+	deleteScheduleDuration := time.Since(deleteScheduleStartTime)
+	if err != nil {
 		log.Error(
 			"删除计划任务模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_duration", time.Since(startTime)),
+			zap.Duration("delete_schedule_duration", deleteScheduleDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除计划任务模型：数据库操作失败")
 	}
 	log.Debug(
 		"删除计划任务模型：执行成功",
 		zap.Any("conds", conds),
-		zap.Duration("delete_duration", time.Since(startTime)),
+		zap.Duration("delete_schedule_duration", deleteScheduleDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -218,22 +246,27 @@ func (r *ScheduleRepo) GetModel(
 	preloads []string,
 	conds ...any,
 ) (*jobmodel.ScheduleModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询计划任务模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	startTime := time.Now()
+
 	var m jobmodel.ScheduleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
+	getScheduleStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
+	getScheduleDuration := time.Since(getScheduleStartTime)
+	if err != nil {
 		log.Error(
 			"查询计划任务模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_duration", time.Since(startTime)),
+			zap.Duration("get_schedule_duration", getScheduleDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询计划任务模型：数据库操作失败")
 	}
@@ -241,7 +274,8 @@ func (r *ScheduleRepo) GetModel(
 		"查询计划任务模型：执行成功",
 		zap.Object("schedule_model", &m),
 		zap.Any("conds", conds),
-		zap.Duration("get_duration", time.Since(startTime)),
+		zap.Duration("get_schedule_duration", getScheduleDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &m, nil
 }
@@ -268,29 +302,35 @@ func (r *ScheduleRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]jobmodel.ScheduleModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询计划任务模型列表：开始执行",
 		zap.Object("query_params", &qp),
 	)
-	startTime := time.Now()
+
 	var ms []jobmodel.ScheduleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, &ms, qp); err != nil {
+	listScheduleStartTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, &ms, qp)
+	listScheduleDuration := time.Since(listScheduleStartTime)
+	if err != nil {
 		log.Error(
 			"查询计划任务模型列表：数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_duration", time.Since(startTime)),
+			zap.Duration("list_schedule_duration", listScheduleDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询计划任务模型列表：数据库操作失败")
 	}
 	log.Debug(
 		"查询计划任务模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_duration", time.Since(startTime)),
+		zap.Duration("list_schedule_duration", listScheduleDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -299,23 +339,27 @@ func (r *ScheduleRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询计划任务模型总数：开始执行",
 		zap.Any("query", query),
 	)
-	now := time.Now()
+
 	// 开启数据库事务
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countScheduleStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, query)
+	countScheduleDuration := time.Since(countScheduleStartTime)
 	if err != nil {
 		log.Error(
 			"查询计划任务模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_schedule_duration", time.Since(now)),
+			zap.Duration("count_schedule_duration", countScheduleDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询计划任务模型总数：数据库查询失败")
 	}
@@ -323,7 +367,8 @@ func (r *ScheduleRepo) CountModel(
 		"查询计划任务模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
-		zap.Duration("count_schedule_duration", time.Since(now)),
+		zap.Duration("count_schedule_duration", countScheduleDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }

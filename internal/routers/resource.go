@@ -43,8 +43,8 @@ func newResourceRouter(
 	}
 
 	sshTimeout := time.Duration(init.Conf.SSH.Timeout) * time.Second
-	hostRepo := resorepo.NewHostRepo(loggers.Data, init.DB, init.DBTimeout)
-	pkgRepo := resorepo.NewPackageRepo(loggers.Data, init.DB, init.DBTimeout)
+	hostRepo := resorepo.NewHostRepo(loggers.Repo, init.DB, init.DBTimeout)
+	pkgRepo := resorepo.NewPackageRepo(loggers.Repo, init.DB, init.DBTimeout)
 
 	hostService := resosvc.NewHostService(loggers.Service, hostRepo, sshTimeout, ssh.PublicKeys(signers...), pubKeys)
 	pkgService := resosvc.NewPackageService(loggers.Service, pkgRepo, filepath.Join(config.StorageDir, "packages"))

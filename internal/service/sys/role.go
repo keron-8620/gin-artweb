@@ -654,7 +654,7 @@ func (s *RoleService) LoadRolePolicy(ctx context.Context) *errors.Error {
 	startTime := time.Now()
 	log := s.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
 
-	log.Info(
+	log.Debug(
 		"加载角色策略：开始执行",
 	)
 
@@ -699,7 +699,7 @@ func (s *RoleService) LoadRolePolicy(ctx context.Context) *errors.Error {
 		)
 	}
 
-	log.Info(
+	log.Debug(
 		"加载角色策略：执行成功",
 		zap.Int("policy_count", policyCount),
 		zap.Duration("list_step_duration", listStepDuration),

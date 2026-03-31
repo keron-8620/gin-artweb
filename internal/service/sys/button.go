@@ -565,7 +565,7 @@ func (s *ButtonService) LoadButtonPolicy(ctx context.Context) *errors.Error {
 	traceID := ctxutil.GetTraceID(ctx)
 	log := s.log.With(zap.String("trace_id", traceID))
 
-	log.Info(
+	log.Debug(
 		"加载按钮策略：开始执行",
 	)
 
@@ -621,7 +621,7 @@ func (s *ButtonService) LoadButtonPolicy(ctx context.Context) *errors.Error {
 		)
 	}
 
-	log.Info(
+	log.Debug(
 		"加载按钮策略：执行成功",
 		zap.Int("policy_count", policyCount),
 		zap.Duration("total_duration", time.Since(startTime)),

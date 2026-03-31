@@ -112,7 +112,7 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 			cancel() // 确保上下文取消，释放资源
 			parentCancel()
 			// 记录请求耗时（可观测性）
-			log.Info("请求处理完成",
+			log.Debug("请求处理完成",
 				zap.String("request_uri", c.Request.RequestURI),
 				zap.String("request_method", c.Request.Method),
 				zap.Duration("elapsed", time.Since(startTime)),

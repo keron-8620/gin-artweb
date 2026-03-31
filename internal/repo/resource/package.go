@@ -65,7 +65,11 @@ func NewPackageRepo(
 //  2. 设置上传时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *PackageRepo) CreateModel(ctx context.Context, m *resomodel.PackageModel) error {
+func (r *PackageRepo) CreateModel(
+	ctx context.Context,
+	m *resomodel.PackageModel,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -81,23 +85,28 @@ func (r *PackageRepo) CreateModel(ctx context.Context, m *resomodel.PackageModel
 		"创建程序包模型：开始执行",
 		zap.Object("package_model", m),
 	)
-	now := time.Now()
-	m.UploadedAt = now
+
+	m.UploadedAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &resomodel.PackageModel{}, m, nil); err != nil {
+	createPackageStartTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.PackageModel{}, m, nil)
+	createPackageDuration := time.Since(createPackageStartTime)
+	if err != nil {
 		log.Error(
 			"创建程序包模型：数据库操作失败",
 			zap.Error(err),
 			zap.Object("package_model", m),
-			zap.Duration("create_duration", time.Since(now)),
+			zap.Duration("create_duration", createPackageDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建程序包模型：数据库操作失败")
 	}
 	log.Debug(
 		"创建程序包模型：执行成功",
 		zap.Object("package_model", m),
-		zap.Duration("create_duration", time.Since(now)),
+		zap.Duration("create_duration", createPackageDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -116,29 +125,37 @@ func (r *PackageRepo) CreateModel(ctx context.Context, m *resomodel.PackageModel
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *PackageRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *PackageRepo) DeleteModel(
+	ctx context.Context,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"删除程序包模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &resomodel.PackageModel{}, conds...); err != nil {
+	deletePackageStartTime := time.Now()
+	err := database.DBDelete(dbCtx, r.gormDB, &resomodel.PackageModel{}, conds...)
+	deletePackageDuration := time.Since(deletePackageStartTime)
+	if err != nil {
 		log.Error(
 			"删除程序包模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_duration", time.Since(now)),
+			zap.Duration("delete_duration", deletePackageDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除程序包模型：数据库操作失败")
 	}
 	log.Debug(
 		"删除程序包模型：执行成功",
 		zap.Any("conds", conds),
-		zap.Duration("delete_duration", time.Since(now)),
+		zap.Duration("delete_duration", deletePackageDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -166,22 +183,27 @@ func (r *PackageRepo) GetModel(
 	preloads []string,
 	conds ...any,
 ) (*resomodel.PackageModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询程序包模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
+
 	var m resomodel.PackageModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
+	getPackageStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
+	getPackageDuration := time.Since(getPackageStartTime)
+	if err != nil {
 		log.Error(
 			"查询程序包模型：数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_duration", time.Since(now)),
+			zap.Duration("get_duration", getPackageDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询程序包模型：数据库操作失败")
 	}
@@ -189,7 +211,8 @@ func (r *PackageRepo) GetModel(
 		"查询程序包模型：执行成功",
 		zap.Object("package_model", &m),
 		zap.Any("conds", conds),
-		zap.Duration("get_duration", time.Since(now)),
+		zap.Duration("get_duration", getPackageDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &m, nil
 }
@@ -216,29 +239,35 @@ func (r *PackageRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]resomodel.PackageModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询程序包模型列表：开始执行",
 		zap.Object("query_params", &qp),
 	)
-	now := time.Now()
+
 	var ms []resomodel.PackageModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &resomodel.PackageModel{}, &ms, qp); err != nil {
+	listPackageStartTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &resomodel.PackageModel{}, &ms, qp)
+	listPackageDuration := time.Since(listPackageStartTime)
+	if err != nil {
 		log.Error(
 			"查询程序包模型列表：数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_duration", time.Since(now)),
+			zap.Duration("list_package_duration", listPackageDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询程序包模型列表：数据库操作失败")
 	}
 	log.Debug(
 		"查询程序包模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_duration", time.Since(now)),
+		zap.Duration("list_package_duration", listPackageDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -247,23 +276,26 @@ func (r *PackageRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询程序包模型总数：开始执行",
 		zap.Any("query", query),
 	)
-	now := time.Now()
 	// 开启数据库事务
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countPackageStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &resomodel.PackageModel{}, query)
+	countPackageDuration := time.Since(countPackageStartTime)
 	if err != nil {
 		log.Error(
 			"查询程序包模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_duration", time.Since(now)),
+			zap.Duration("count_package_duration", countPackageDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询程序包模型总数：数据库查询失败")
 	}
@@ -271,7 +303,8 @@ func (r *PackageRepo) CountModel(
 		"查询程序包模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("total_count", count),
-		zap.Duration("count_duration", time.Since(now)),
+		zap.Duration("count_package_duration", countPackageDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }
@@ -285,52 +318,65 @@ func (r *PackageRepo) SavePackageFile(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	log.Info(
+	log.Debug(
 		"保存程序包：开始执行",
 		zap.String("pkg_path", pkgPath),
 		zap.Bool("overwrite", overwrite),
 	)
 
-	if err := fileutil.WriteReaderToFile(ctx, fileReader, pkgPath, os.FileMode(0o644), overwrite); err != nil {
+	savePackageStartTime := time.Now()
+	err := fileutil.WriteReaderToFile(ctx, fileReader, pkgPath, os.FileMode(0o644), overwrite)
+	savePackageDuration := time.Since(savePackageStartTime)
+	if err != nil {
 		log.Error(
 			"保存程序包：文件流写入失败",
 			zap.Error(err),
 			zap.String("pkg_path", pkgPath),
 			zap.Bool("overwrite", overwrite),
+			zap.Duration("save_package_duration", savePackageDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "保存程序包：文件流写入失败")
 	}
-	log.Info(
+	log.Debug(
 		"保存程序包：执行成功",
 		zap.String("pkg_path", pkgPath),
 		zap.Bool("overwrite", overwrite),
+		zap.Duration("save_package_duration", savePackageDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
 
-func (r *PackageRepo) RemovePackageFile(ctx context.Context, pkgPath string) error {
+func (r *PackageRepo) RemovePackageFile(
+	ctx context.Context,
+	pkgPath string,
+) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	log.Info(
+	log.Debug(
 		"删除程序包文件：开始执行",
 		zap.String("pkg_path", pkgPath),
 	)
 
-	if err := fileutil.Remove(ctx, pkgPath); err != nil {
+	removePackageStartTime := time.Now()
+	err := fileutil.Remove(ctx, pkgPath)
+	removePackageDuration := time.Since(removePackageStartTime)
+	if err != nil {
 		log.Error(
 			"删除程序包文件：文件删除失败",
 			zap.Error(err),
 			zap.String("pkg_path", pkgPath),
+			zap.Duration("remove_package_duration", removePackageDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除程序包文件：文件删除失败")
 	}
-	log.Info(
+	log.Debug(
 		"删除程序包文件：执行成功",
 		zap.String("pkg_path", pkgPath),
+		zap.Duration("remove_package_duration", removePackageDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil

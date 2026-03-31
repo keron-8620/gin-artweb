@@ -37,9 +37,9 @@ func newOesRouter(
 		golog.Fatalf("加载opt_cron.yaml失败: %v", err)
 	}
 
-	colonyRepo := oesrepo.NewOesColonyRepo(loggers.Data, init.DB, init.DBTimeout)
-	nodeRepo := oesrepo.NewOesNodeRepo(loggers.Data, init.DB, init.DBTimeout)
-	cronRepo := oesrepo.NewOesCronRepo(loggers.Data, init.DB, init.DBTimeout)
+	colonyRepo := oesrepo.NewOesColonyRepo(loggers.Repo, init.DB, init.DBTimeout)
+	nodeRepo := oesrepo.NewOesNodeRepo(loggers.Repo, init.DB, init.DBTimeout)
+	cronRepo := oesrepo.NewOesCronRepo(loggers.Repo, init.DB, init.DBTimeout)
 
 	cronService := oessvc.NewOesCronService(loggers.Service, jobsvc.Schedule, cronRepo, stkCronConf, crdCronConf, optCronConf)
 	colonyService := oessvc.NewOesColonyService(loggers.Service, colonyRepo, cronService)

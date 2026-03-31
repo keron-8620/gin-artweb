@@ -79,6 +79,7 @@ func (r *RoleRepo) CreateModel(
 	menus []sysmodel.MenuModel,
 	buttons []sysmodel.ButtonModel,
 ) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -96,9 +97,8 @@ func (r *RoleRepo) CreateModel(
 		zap.Object("role_model", m),
 	)
 
-	now := time.Now()
-	m.CreatedAt = now
-	m.UpdatedAt = now
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
 
 	upmap := map[string]any{
 		"Apis":    apis,
@@ -108,13 +108,16 @@ func (r *RoleRepo) CreateModel(
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.RoleModel{}, m, upmap); err != nil {
+	createTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.RoleModel{}, m, upmap)
+	createDuration := time.Since(createTime)
+	if err != nil {
 		log.Error(
 			"创建角色模型：数据库创建失败",
 			zap.Error(err),
 			zap.Object("role_model", m),
-
-			zap.Duration("create_role_duration", time.Since(now)),
+			zap.Duration("create_role_duration", createDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建角色模型：数据库创建失败")
 	}
@@ -122,8 +125,8 @@ func (r *RoleRepo) CreateModel(
 	log.Debug(
 		"创建角色模型：执行成功",
 		zap.Object("role_model", m),
-
-		zap.Duration("create_role_duration", time.Since(now)),
+		zap.Duration("create_role_duration", createDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -156,6 +159,7 @@ func (r *RoleRepo) UpdateModel(
 	buttons []sysmodel.ButtonModel,
 	conds ...any,
 ) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	if len(data) == 0 {
@@ -179,7 +183,7 @@ func (r *RoleRepo) UpdateModel(
 		zap.Uint32s("menus", menuIDs),
 		zap.Uint32s("buttons", buttonIDs),
 	)
-	now := time.Now()
+
 	upmap := make(map[string]any, 3)
 	if len(apis) > 0 {
 		upmap["Apis"] = apis
@@ -192,7 +196,11 @@ func (r *RoleRepo) UpdateModel(
 	}
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.RoleModel{}, data, upmap, conds...); err != nil {
+
+	updateTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.RoleModel{}, data, upmap, conds...)
+	updateDuration := time.Since(updateTime)
+	if err != nil {
 		log.Error(
 			"更新角色模型：数据库更新失败",
 			zap.Error(err),
@@ -201,8 +209,8 @@ func (r *RoleRepo) UpdateModel(
 			zap.Uint32s("menus", menuIDs),
 			zap.Uint32s("buttons", buttonIDs),
 			zap.Any("conds", conds),
-
-			zap.Duration("update_role_duration", time.Since(now)),
+			zap.Duration("update_role_duration", updateDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新角色模型：数据库更新失败")
 	}
@@ -213,8 +221,8 @@ func (r *RoleRepo) UpdateModel(
 		zap.Uint32s("menus", menuIDs),
 		zap.Uint32s("buttons", buttonIDs),
 		zap.Any("conds", conds),
-
-		zap.Duration("update_role_duration", time.Since(now)),
+		zap.Duration("update_role_duration", updateDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -233,31 +241,37 @@ func (r *RoleRepo) UpdateModel(
 // 功能：
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
-func (r *RoleRepo) DeleteModel(ctx context.Context, conds ...any) error {
+func (r *RoleRepo) DeleteModel(
+	ctx context.Context,
+	conds ...any,
+) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"删除角色模型：开始执行",
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.RoleModel{}, conds...); err != nil {
+	deleteTime := time.Now()
+	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.RoleModel{}, conds...)
+	deleteDuration := time.Since(deleteTime)
+	if err != nil {
 		log.Error(
 			"删除角色模型：数据库删除失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-
-			zap.Duration("delete_role_duration", time.Since(now)),
+			zap.Duration("delete_role_duration", deleteDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除角色模型：数据库删除失败")
 	}
 	log.Debug(
 		"删除角色模型：执行成功",
 		zap.Any("conds", conds),
-
-		zap.Duration("delete_role_duration", time.Since(now)),
+		zap.Duration("delete_role_duration", deleteDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -285,6 +299,7 @@ func (r *RoleRepo) GetModel(
 	preloads []string,
 	conds ...any,
 ) (*sysmodel.RoleModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
@@ -292,18 +307,20 @@ func (r *RoleRepo) GetModel(
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
 	)
-	now := time.Now()
 	var m sysmodel.RoleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...); err != nil {
+	getTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
+	getDuration := time.Since(getTime)
+	if err != nil {
 		log.Error(
 			"查询角色模型：数据库查询失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Any("conds", conds),
-
-			zap.Duration("get_role_duration", time.Since(now)),
+			zap.Duration("get_role_duration", getDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询角色模型：数据库查询失败")
 	}
@@ -312,8 +329,8 @@ func (r *RoleRepo) GetModel(
 		zap.Object("role_model", &m),
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
-
-		zap.Duration("get_role_duration", time.Since(now)),
+		zap.Duration("get_role_duration", getDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &m, nil
 }
@@ -340,29 +357,34 @@ func (r *RoleRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]sysmodel.RoleModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询角色模型列表：开始执行",
 		zap.Object("query_params", &qp),
 	)
-	now := time.Now()
 	var ms []sysmodel.RoleModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &sysmodel.RoleModel{}, &ms, qp); err != nil {
+	listTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &sysmodel.RoleModel{}, &ms, qp)
+	listDuration := time.Since(listTime)
+	if err != nil {
 		log.Error(
 			"查询角色模型列表：数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_role_duration", time.Since(now)),
+			zap.Duration("list_role_duration", listDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询角色模型列表：数据库查询失败")
 	}
 	log.Debug(
 		"查询角色模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_role_duration", time.Since(now)),
+		zap.Duration("list_role_duration", listDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -371,22 +393,25 @@ func (r *RoleRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询角色模型总数：开始执行",
 		zap.Any("query", query),
 	)
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.RoleModel{}, query)
+	countDuration := time.Since(countTime)
 	if err != nil {
 		log.Error(
 			"查询角色模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_role_duration", time.Since(now)),
+			zap.Duration("count_role_duration", countDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询角色模型总数：数据库查询失败")
 	}
@@ -394,7 +419,8 @@ func (r *RoleRepo) CountModel(
 		"查询角色模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
-		zap.Duration("count_role_duration", time.Since(now)),
+		zap.Duration("count_role_duration", countDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }
@@ -422,6 +448,8 @@ func (r *RoleRepo) AddGroupPolicy(
 	ctx context.Context,
 	role *sysmodel.RoleModel,
 ) error {
+	startTime := time.Now()
+
 	// 检查参数
 	if role == nil {
 		return errors.New("添加角色关联策略：角色模型不能为空")
@@ -441,7 +469,6 @@ func (r *RoleRepo) AddGroupPolicy(
 		zap.Object("role_model", role),
 	)
 
-	now := time.Now()
 	sub := auth.RoleToSubject(m.ID)
 	rules := [][]string{}
 	// 批量处理权限
@@ -488,22 +515,26 @@ func (r *RoleRepo) AddGroupPolicy(
 		obj := auth.ButtonToSubject(o.ID)
 		rules = append(rules, []string{sub, obj})
 	}
-	if err := auth.AddGroupPolicies(ctx, r.enforcer, rules); err != nil {
+
+	addGroupPolicyStartTime := time.Now()
+	err := auth.AddGroupPolicies(ctx, r.enforcer, rules)
+	addGroupPolicyDuration := time.Since(addGroupPolicyStartTime)
+	if err != nil {
 		log.Error(
 			"添加角色关联策略：数据库操作失败",
 			zap.Error(err),
 			zap.Object("role_model", role),
 			zap.Any("rules", rules),
-
-			zap.Duration("add_group_policy_duration", time.Since(now)),
+			zap.Duration("add_group_policy_duration", addGroupPolicyDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "添加角色关联策略：数据库操作失败")
 	}
 	log.Debug(
 		"添加角色关联策略：执行成功",
 		zap.Object("role_model", role),
-
-		zap.Duration("add_group_policy_duration", time.Since(now)),
+		zap.Duration("add_group_policy_duration", addGroupPolicyDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -528,6 +559,8 @@ func (r *RoleRepo) RemoveGroupPolicy(
 	ctx context.Context,
 	role *sysmodel.RoleModel,
 ) error {
+	startTime := time.Now()
+
 	// 检查参数
 	if role == nil {
 		return errors.New("删除角色关联策略：角色模型不能为空")
@@ -546,19 +579,21 @@ func (r *RoleRepo) RemoveGroupPolicy(
 		zap.Object("role_model", role),
 	)
 
-	rmSubStartTime := time.Now()
 	sub := auth.RoleToSubject(m.ID)
 
 	// 删除该角色作为子级的策略（被其他策略继承）
-	if err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 0, sub); err != nil {
+	removeGroupPolicyStartTime := time.Now()
+	err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 0, sub)
+	removeGroupPolicyDuration := time.Since(removeGroupPolicyStartTime)
+	if err != nil {
 		log.Error(
 			"删除角色关联策略：删除角色作为子级策略失败(该策略继承自其他策略)",
 			zap.Error(err),
 			zap.Object("role_model", role),
 			zap.Int("index", 0),
 			zap.String("value", sub),
-
-			zap.Duration("remove_group_policy_duration", time.Since(rmSubStartTime)),
+			zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除角色关联策略：删除角色作为子级策略失败(该策略继承自其他策略)")
 	}
@@ -567,8 +602,8 @@ func (r *RoleRepo) RemoveGroupPolicy(
 		zap.Object("role_model", role),
 		zap.Int("index", 0),
 		zap.String("value", sub),
-
-		zap.Duration("remove_group_policy_duration", time.Since(rmSubStartTime)),
+		zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }

@@ -26,6 +26,18 @@ func NewRouter(
 ) *gin.Engine {
 	r := gin.New()
 
+	// 配置静态文件处理
+	htmlPath := filepath.Join(htmlDir, "index.html")
+	r.GET("/", func(c *gin.Context) {
+		c.File(htmlPath)
+	})
+	faviconPath := filepath.Join(htmlDir, "favicon.ico")
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File(faviconPath)
+	})
+	staticPath := filepath.Join(htmlDir, "static")
+	r.Static("/static", staticPath)
+
 	// 注册链路追踪处理中间件
 	r.Use(middleware.TracingMiddleware(loggers.Handler))
 
@@ -39,6 +51,24 @@ func NewRouter(
 	if init.Conf.Security.HostGuard.Enable {
 		r.Use(middleware.HostGuard(loggers.Handler, init.Conf.Security.HostGuard.TrustedHosts...))
 	}
+
+	// 健康检查接口
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"msg":  time.Now().Format(time.DateTime),
+			"data": nil,
+		})
+	})
+
+	// 版本信息接口
+	r.GET("/version", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"msg":  version,
+			"data": nil,
+		})
+	})
 
 	// 注册时间戳处理中间件,用于防御重放攻击
 	if init.Conf.Security.Timestamp.CheckTimestamp {
@@ -71,36 +101,6 @@ func NewRouter(
 
 	// 注册超时处理中间件
 	r.Use(middleware.TimeoutMiddleware(loggers.Handler, time.Duration(init.Conf.Server.Timeout.Request)*time.Second))
-
-	// 配置静态文件处理
-	htmlPath := filepath.Join(htmlDir, "index.html")
-	r.GET("/", func(c *gin.Context) {
-		c.File(htmlPath)
-	})
-	faviconPath := filepath.Join(htmlDir, "favicon.ico")
-	r.GET("/favicon.ico", func(c *gin.Context) {
-		c.File(faviconPath)
-	})
-	staticPath := filepath.Join(htmlDir, "static")
-	r.Static("/static", staticPath)
-
-	// 健康检查接口
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"code": http.StatusOK,
-			"msg":  time.Now().Format(time.DateTime),
-			"data": nil,
-		})
-	})
-
-	// 版本信息接口
-	r.GET("/version", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"code": http.StatusOK,
-			"msg":  version,
-			"data": nil,
-		})
-	})
 
 	// 配置 Swagger 文档
 	if init.Conf.Server.Swagger {

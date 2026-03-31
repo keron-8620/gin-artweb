@@ -69,6 +69,7 @@ func NewApiRepo(
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
 func (r *ApiRepo) CreateModel(ctx context.Context, m *sysmodel.ApiModel) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
@@ -77,6 +78,7 @@ func (r *ApiRepo) CreateModel(ctx context.Context, m *sysmodel.ApiModel) error {
 		log.Error(
 			"创建API模型：模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
@@ -85,26 +87,29 @@ func (r *ApiRepo) CreateModel(ctx context.Context, m *sysmodel.ApiModel) error {
 		zap.Object("api_model", m),
 	)
 
-	now := time.Now()
-	m.CreatedAt = now
-	m.UpdatedAt = now
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, m, nil); err != nil {
+	createStartTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, m, nil)
+	createDuration := time.Since(createStartTime)
+	if err != nil {
 		log.Error(
 			"创建API模型：数据库创建失败",
 			zap.Error(err),
 			zap.Object("api_model", m),
-			zap.Duration("create_duration", time.Since(now)),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建API模型：数据库创建失败")
 	}
-
 	log.Debug(
 		"创建API模型：执行成功",
 		zap.Object("api_model", m),
-		zap.Duration("create_duration", time.Since(now)),
+		zap.Duration("create_duration", createDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -127,6 +132,7 @@ func (r *ApiRepo) CreateModel(ctx context.Context, m *sysmodel.ApiModel) error {
 //  3. 执行数据库更新操作
 //  4. 记录操作日志
 func (r *ApiRepo) UpdateModel(ctx context.Context, updateData map[string]any, conds ...any) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	if len(updateData) == 0 {
@@ -135,6 +141,7 @@ func (r *ApiRepo) UpdateModel(ctx context.Context, updateData map[string]any, co
 			"更新API模型：更新数据为空",
 			zap.Error(err),
 			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
@@ -145,17 +152,21 @@ func (r *ApiRepo) UpdateModel(ctx context.Context, updateData map[string]any, co
 		zap.Any("conds", conds),
 	)
 
-	now := time.Now()
-	updateData["updated_at"] = now
+	updateData["updated_at"] = startTime
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, updateData, nil, conds...); err != nil {
+	updateStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, updateData, nil, conds...)
+	updateDuration := time.Since(updateStartTime)
+	if err != nil {
 		log.Error(
 			"更新API模型：数据库更新失败",
 			zap.Error(err),
 			zap.Any("update_data", updateData),
 			zap.Any("conds", conds),
-			zap.Duration("update_duration", time.Since(now)),
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新API模型：数据库更新失败")
 	}
@@ -164,7 +175,8 @@ func (r *ApiRepo) UpdateModel(ctx context.Context, updateData map[string]any, co
 		"更新API模型：执行成功",
 		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
-		zap.Duration("update_duration", time.Since(now)),
+		zap.Duration("update_duration", updateDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -184,22 +196,27 @@ func (r *ApiRepo) UpdateModel(ctx context.Context, updateData map[string]any, co
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
 func (r *ApiRepo) DeleteModel(ctx context.Context, conds ...any) error {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"删除API模型：开始执行",
 		zap.Any("conds", conds),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.ApiModel{}, conds...); err != nil {
+	deleteStartTime := time.Now()
+	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.ApiModel{}, conds...)
+	deleteDuration := time.Since(deleteStartTime)
+	if err != nil {
 		log.Error(
 			"删除API模型：数据库删除失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_duration", time.Since(now)),
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除API模型：数据库删除失败")
 	}
@@ -207,7 +224,8 @@ func (r *ApiRepo) DeleteModel(ctx context.Context, conds ...any) error {
 	log.Debug(
 		"删除API模型：执行成功",
 		zap.Any("conds", conds),
-		zap.Duration("delete_duration", time.Since(now)),
+		zap.Duration("delete_duration", deleteDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -232,6 +250,7 @@ func (r *ApiRepo) GetModel(
 	ctx context.Context,
 	conds ...any,
 ) (*sysmodel.ApiModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
@@ -239,16 +258,19 @@ func (r *ApiRepo) GetModel(
 		zap.Any("conds", conds),
 	)
 
-	now := time.Now()
 	var m sysmodel.ApiModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...); err != nil {
+	getStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...)
+	getDuration := time.Since(getStartTime)
+	if err != nil {
 		log.Error(
 			"获取API模型：数据库查询失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_duration", time.Since(now)),
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "获取API模型：数据库查询失败")
 	}
@@ -257,7 +279,8 @@ func (r *ApiRepo) GetModel(
 		"获取API模型：执行成功",
 		zap.Object("api_model", &m),
 		zap.Any("conds", conds),
-		zap.Duration("get_duration", time.Since(now)),
+		zap.Duration("get_duration", getDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return &m, nil
 }
@@ -284,6 +307,7 @@ func (r *ApiRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]sysmodel.ApiModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
@@ -291,16 +315,19 @@ func (r *ApiRepo) ListModel(
 		zap.Object("query_params", &qp),
 	)
 
-	now := time.Now()
 	var ms []sysmodel.ApiModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &sysmodel.ApiModel{}, &ms, qp); err != nil {
+	listStartTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &sysmodel.ApiModel{}, &ms, qp)
+	listDuration := time.Since(listStartTime)
+	if err != nil {
 		log.Error(
 			"查询API模型列表：执行失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_duration", time.Since(now)),
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询API模型列表：数据库查询失败")
 	}
@@ -308,7 +335,8 @@ func (r *ApiRepo) ListModel(
 	log.Debug(
 		"查询API模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_duration", time.Since(now)),
+		zap.Duration("list_duration", listDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -317,6 +345,7 @@ func (r *ApiRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
@@ -324,16 +353,18 @@ func (r *ApiRepo) CountModel(
 		zap.Any("query", query),
 	)
 
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.ApiModel{}, query)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询API模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_duration", time.Since(now)),
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询API模型总数：数据库查询失败")
 	}
@@ -341,7 +372,8 @@ func (r *ApiRepo) CountModel(
 		"查询API模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
-		zap.Duration("count_duration", time.Since(now)),
+		zap.Duration("count_duration", countDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }
@@ -367,6 +399,8 @@ func (r *ApiRepo) AddPolicy(
 	ctx context.Context,
 	m sysmodel.ApiModel,
 ) error {
+	startTime := time.Now()
+
 	// 检查上下文
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "添加API策略: 上下文错误")
@@ -390,29 +424,28 @@ func (r *ApiRepo) AddPolicy(
 		zap.Object("api_model", &m),
 	)
 
-	log.Info(
-		"添加API策略：开始执行",
-		zap.Uint32("api_id", m.ID),
-	)
-
-	now := time.Now()
 	sub := auth.ApiToSubject(m.ID)
 	rules := [][]string{{sub, m.URL, m.Method}}
-	if err := auth.AddPolicies(ctx, r.enforcer, rules); err != nil {
+	addPolicyStartTime := time.Now()
+	err := auth.AddPolicies(ctx, r.enforcer, rules)
+	addPolicyDuration := time.Since(addPolicyStartTime)
+	if err != nil {
 		log.Error(
 			"添加API策略：添加策略缓存失败",
 			zap.Error(err),
 			zap.Object("api_model", &m),
-			zap.Duration("add_policy_duration", time.Since(now)),
+			zap.Duration("add_policy_duration", addPolicyDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "添加API策略: 添加策略缓存失败")
 	}
-	log.Info(
+	log.Debug(
 		"添加API策略：执行成功",
 		zap.String("sub", sub),
 		zap.String("obj", m.URL),
 		zap.String("act", m.Method),
-		zap.Duration("add_policy_duration", time.Since(now)),
+		zap.Duration("add_policy_duration", addPolicyDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -441,6 +474,8 @@ func (r *ApiRepo) RemovePolicy(
 	m sysmodel.ApiModel,
 	removeInherited bool,
 ) error {
+	startTime := time.Now()
+
 	// 检查上下文
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "删除API策略: 上下文错误")
@@ -460,65 +495,67 @@ func (r *ApiRepo) RemovePolicy(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除API策略：传入参数",
+		"删除API策略：开始执行",
 		zap.Object("api_model", &m),
 		zap.Bool("removeInherited", removeInherited),
 	)
 
-	log.Info(
-		"删除API策略：开始执行",
-		zap.Uint32("api_id", m.ID),
-	)
-
-	now := time.Now()
 	sub := auth.ApiToSubject(m.ID)
+
+	// 如果需要删除继承该API的组策略
+	if removeInherited {
+		log.Debug(
+			"删除API策略：开始删除继承该API的组策略",
+			zap.Object("api_model", &m),
+			zap.String("sub", sub),
+		)
+		removeGroupPolicyStartTime := time.Now()
+		err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 1, sub)
+		removeGroupPolicyDuration := time.Since(removeGroupPolicyStartTime)
+		if err != nil {
+			log.Error(
+				"删除API策略：删除继承该API的组策略缓存失败",
+				zap.Error(err),
+				zap.Int("index", 1),
+				zap.String("value", sub),
+				zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.WrapIf(err, "删除API策略: 删除继承该API的组策略缓存失败")
+		}
+		log.Debug(
+			"删除API策略：缓存的组策略删除成功",
+			zap.Int("index", 1),
+			zap.String("value", sub),
+			zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+	}
+
 	rules := [][]string{{sub, m.URL, m.Method}}
-	if err := auth.RemovePolicies(ctx, r.enforcer, rules); err != nil {
+	removePolicyStartTime := time.Now()
+	err := auth.RemovePolicies(ctx, r.enforcer, rules)
+	removePolicyDuration := time.Since(removePolicyStartTime)
+	if err != nil {
 		log.Error(
 			"删除API策略：删除策略缓存失败",
 			zap.Error(err),
 			zap.String("sub", sub),
 			zap.String("obj", m.URL),
 			zap.String("act", m.Method),
-			zap.Duration("remove_policy_duration", time.Since(now)),
+			zap.Duration("remove_policy_duration", removePolicyDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除API策略: 删除策略缓存失败")
 	}
-	log.Info(
+	log.Debug(
 		"删除API策略：执行成功",
 		zap.String("sub", sub),
 		zap.String("obj", m.URL),
 		zap.String("act", m.Method),
-		zap.Duration("remove_policy_duration", time.Since(now)),
+		zap.Duration("remove_policy_duration", removePolicyDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
-
-	// 如果需要删除继承该API的组策略
-	if removeInherited {
-		now = time.Now()
-		log.Info(
-			"删除API策略：开始删除继承该API的组策略",
-			zap.Object("api_model", &m),
-			zap.String("sub", sub),
-
-			zap.Duration("remove_group_policy_duration", time.Since(now)),
-		)
-		if err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 1, sub); err != nil {
-			log.Error(
-				"删除API策略：删除继承该API的组策略缓存失败",
-				zap.Error(err),
-				zap.Int("index", 1),
-				zap.String("value", sub),
-				zap.Duration("remove_group_policy_duration", time.Since(now)),
-			)
-			return errors.WrapIf(err, "删除API策略: 删除继承该API的组策略缓存失败")
-		}
-		log.Info(
-			"删除API策略：执行成功",
-			zap.Int("index", 1),
-			zap.String("value", sub),
-			zap.Duration("remove_group_policy_duration", time.Since(now)),
-		)
-	}
 
 	return nil
 }

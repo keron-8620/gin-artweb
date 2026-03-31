@@ -23,16 +23,16 @@ func NewJobRouter(
 	init *config.SystemInit,
 	loggers *config.Loggers,
 ) *JobServices {
-	scriptRepo := jobrepo.NewScriptRepo(loggers.Data, init.DB, init.DBTimeout)
-	recordRepo := jobrepo.NewRecordRepo(loggers.Data, init.DB, init.DBTimeout)
-	scheduleRepo := jobrepo.NewScheduleRepo(loggers.Data, init.DB, init.DBTimeout)
+	scriptRepo := jobrepo.NewScriptRepo(loggers.Repo, init.DB, init.DBTimeout)
+	recordRepo := jobrepo.NewRecordRepo(loggers.Repo, init.DB, init.DBTimeout)
+	scheduleRepo := jobrepo.NewScheduleRepo(loggers.Repo, init.DB, init.DBTimeout)
 
 	scriptService := jobsvc.NewScriptService(loggers.Service, scriptRepo)
 	recordService := jobsvc.NewScriptRecordService(loggers.Service, scriptRepo, recordRepo)
 	scheduleService := jobsvc.NewScheduleService(loggers.Service, scriptRepo, scheduleRepo, recordService, init.Crontab)
 
 	// 加载计划任务
-	scheduleService.ReLoadSchedule(context.Background(), map[string]any{"IsEnabled": true})
+	scheduleService.ReLoadSchedule(context.Background(), map[string]any{"is_enabled": true})
 
 	scriptHandler := handler.NewScriptHandler(loggers.Handler, scriptService, int64(init.Conf.Upload.MaxScriptSize)*1024*1024)
 	recordHandler := handler.NewScriptRecordHandler(loggers.Handler, recordService)

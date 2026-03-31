@@ -27,9 +27,9 @@ func newMdsRouter(
 		golog.Fatalf("加载mds_cron.yaml失败: %v", err)
 	}
 
-	colonyRepo := mdsrepo.NewMdsColonyRepo(loggers.Data, init.DB, init.DBTimeout)
-	nodeRepo := mdsrepo.NewMdsNodeRepo(loggers.Data, init.DB, init.DBTimeout)
-	cronRepo := mdsrepo.NewMdsCronRepo(loggers.Data, init.DB, init.DBTimeout)
+	colonyRepo := mdsrepo.NewMdsColonyRepo(loggers.Repo, init.DB, init.DBTimeout)
+	nodeRepo := mdsrepo.NewMdsNodeRepo(loggers.Repo, init.DB, init.DBTimeout)
+	cronRepo := mdsrepo.NewMdsCronRepo(loggers.Repo, init.DB, init.DBTimeout)
 
 	cronService := mdssvc.NewMdsCronService(loggers.Service, jobsvc.Schedule, cronRepo, cronConf)
 	colonyService := mdssvc.NewMdsColonyService(loggers.Service, colonyRepo, cronService)

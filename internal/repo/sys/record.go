@@ -76,8 +76,12 @@ func NewLoginRecordRepo(
 //  2. 设置登录时间
 //  3. 执行数据库创建操作
 //  4. 记录操作日志
-func (r *LoginRecordRepo) CreateModel(ctx context.Context, m *sysmodel.LoginRecordModel) error {
-	log := r.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
+func (r *LoginRecordRepo) CreateModel(
+	ctx context.Context,
+	m *sysmodel.LoginRecordModel,
+) error {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(r.log, ctx)
 
 	// 检查参数
 	if m == nil {
@@ -93,23 +97,28 @@ func (r *LoginRecordRepo) CreateModel(ctx context.Context, m *sysmodel.LoginReco
 		"创建登录记录模型：开始执行",
 		zap.Object("login_record_model", m),
 	)
-	now := time.Now()
-	m.LoginAt = now
+
+	m.LoginAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	if err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, m, nil); err != nil {
+	createLoginRecordStartTime := time.Now()
+	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, m, nil)
+	createLoginRecordDuration := time.Since(createLoginRecordStartTime)
+	if err != nil {
 		log.Error(
 			"创建登录记录模型：数据库创建失败",
 			zap.Object("login_record_model", m),
 			zap.Error(err),
-			zap.Duration("create_login_record_duration", time.Since(now)),
+			zap.Duration("create_login_record_duration", createLoginRecordDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建登录记录模型：数据库创建失败")
 	}
 	log.Debug(
 		"创建登录记录模型：执行成功",
 		zap.Object("login_record_model", m),
-		zap.Duration("create_login_record_duration", time.Since(now)),
+		zap.Duration("create_login_record_duration", createLoginRecordDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }
@@ -136,29 +145,35 @@ func (r *LoginRecordRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
 ) ([]sysmodel.LoginRecordModel, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询登录记录模型列表：开始执行",
 		zap.Object("query_params", &qp),
 	)
-	now := time.Now()
+
 	var ms []sysmodel.LoginRecordModel
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	if err := database.DBList(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, &ms, qp); err != nil {
+	listLoginRecordStartTime := time.Now()
+	err := database.DBList(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, &ms, qp)
+	listLoginRecordDuration := time.Since(listLoginRecordStartTime)
+	if err != nil {
 		log.Error(
 			"查询登录记录模型列表：数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_login_record_duration", time.Since(now)),
+			zap.Duration("list_login_record_duration", listLoginRecordDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询登录记录模型列表：数据库查询失败")
 	}
 	log.Debug(
 		"查询登录记录模型列表：执行成功",
 		zap.Object("query_params", &qp),
-		zap.Duration("list_login_record_duration", time.Since(now)),
+		zap.Duration("list_login_record_duration", listLoginRecordDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
 }
@@ -167,22 +182,25 @@ func (r *LoginRecordRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"查询登录记录模型总数：开始执行",
 		zap.Any("query", query),
 	)
-	now := time.Now()
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+	countLoginRecordStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, query)
+	countLoginRecordDuration := time.Since(countLoginRecordStartTime)
 	if err != nil {
 		log.Error(
 			"查询登录记录模型总数：数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_login_record_duration", time.Since(now)),
+			zap.Duration("count_login_record_duration", countLoginRecordDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询登录记录模型总数：数据库查询失败")
 	}
@@ -190,7 +208,8 @@ func (r *LoginRecordRepo) CountModel(
 		"查询登录记录模型总数：执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
-		zap.Duration("count_login_record_duration", time.Since(now)),
+		zap.Duration("count_login_record_duration", countLoginRecordDuration),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, nil
 }
@@ -213,7 +232,12 @@ func (r *LoginRecordRepo) CountModel(
 //  3. 从缓存中获取登录失败次数
 //  4. 未找到记录时返回最大允许失败次数
 //  5. 记录操作日志
-func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, error) {
+func (r *LoginRecordRepo) GetLoginFailNum(
+	ctx context.Context,
+	ip string,
+) (int, error) {
+	startTime := time.Now()
+
 	// 检查上下文
 	if ctx.Err() != nil {
 		return 0, errors.WrapIf(ctx.Err(), "获取登录失败次数：上下文错误")
@@ -224,7 +248,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 		return 0, errors.New("获取登录失败次数: IP地址不能为空")
 	}
 
-	log := r.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
+	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"获取登录失败次数：开始执行",
@@ -238,6 +262,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 			"获取登录失败次数：未找到IP的登录失败记录, 返回最大允许失败次数",
 			zap.String("ip", ip),
 			zap.Int("max_fail_num", r.maxNum),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return r.maxNum, nil
 	}
@@ -247,6 +272,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 		"获取登录失败次数：获取到IP的登录失败次数",
 		zap.String("ip", ip),
 		zap.Int("fail_num", n),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return n, nil
 }
@@ -268,7 +294,13 @@ func (r *LoginRecordRepo) GetLoginFailNum(ctx context.Context, ip string) (int, 
 //  2. 检查IP地址是否为空
 //  3. 将登录失败次数设置到缓存中
 //  4. 记录操作日志
-func (r *LoginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num int) error {
+func (r *LoginRecordRepo) SetLoginFailNum(
+	ctx context.Context,
+	ip string,
+	num int,
+) error {
+	startTime := time.Now()
+
 	// 检查上下文
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "设置登录失败次数：上下文错误")
@@ -279,7 +311,7 @@ func (r *LoginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num in
 		return errors.New("设置登录失败次数: IP地址不能为空")
 	}
 
-	log := r.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
+	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
 		"设置登录失败次数：开始执行",
@@ -295,6 +327,7 @@ func (r *LoginRecordRepo) SetLoginFailNum(ctx context.Context, ip string, num in
 		"设置登录失败次数：执行成功",
 		zap.String("ip", ip),
 		zap.Int("fail_num", num),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
 }

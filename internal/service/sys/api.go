@@ -438,7 +438,7 @@ func (s *ApiService) LoadApiPolicy(ctx context.Context) *errors.Error {
 		zap.String("trace_id", ctxutil.GetTraceID(ctx)),
 	)
 
-	log.Info("加载API策略：开始执行")
+	log.Debug("加载API策略：开始执行")
 
 	qp := database.QueryParams{
 		Columns: []string{"id", "url", "method"},
@@ -491,7 +491,7 @@ func (s *ApiService) LoadApiPolicy(ctx context.Context) *errors.Error {
 		)
 	}
 
-	log.Info(
+	log.Debug(
 		"加载API策略：执行成功",
 		zap.Int("policy_count", policyCount),
 		zap.Duration("total_duration", time.Since(startTime)),

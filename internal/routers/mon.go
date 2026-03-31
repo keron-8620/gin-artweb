@@ -15,7 +15,7 @@ func newMonRouter(
 	init *config.SystemInit,
 	loggers *config.Loggers,
 ) {
-	nodeRepo := monrepo.NewMonNodeRepo(loggers.Data, init.DB, init.DBTimeout)
+	nodeRepo := monrepo.NewMonNodeRepo(loggers.Repo, init.DB, init.DBTimeout)
 
 	nodeService := monsvc.NewMonNodeService(loggers.Service, nodeRepo)
 

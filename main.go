@@ -73,14 +73,14 @@ func main() {
 	sysConf := newSystemConf(filepath.Join(config.ConfigDir, configPath))
 	// 初始化服务器日志记录器
 	serverWrite := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "server.log"))
+	handlerWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "handler.log"))
 	serviceWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "service.log"))
-	bizWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "biz.log"))
-	dataWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "data.log"))
+	repoWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "repo.log"))
 	loggers := &config.Loggers{
 		Server:  log.NewZapLoggerMust(sysConf.Log.Level, serverWrite),
-		Handler: log.NewZapLoggerMust(sysConf.Log.Level, serviceWrire),
-		Service: log.NewZapLoggerMust(sysConf.Log.Level, bizWrire),
-		Data:    log.NewZapLoggerMust(sysConf.Log.Level, dataWrire),
+		Handler: log.NewZapLoggerMust(sysConf.Log.Level, handlerWrire),
+		Service: log.NewZapLoggerMust(sysConf.Log.Level, serviceWrire),
+		Repo:    log.NewZapLoggerMust(sysConf.Log.Level, repoWrire),
 	}
 
 	if migrate {

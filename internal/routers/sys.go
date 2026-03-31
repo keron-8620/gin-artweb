@@ -26,12 +26,12 @@ func newSysRouter(
 		PasswordStrength:  init.Conf.Security.Password.StrengthLevel,
 	}
 
-	apiRepo := sysrepo.NewApiRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
-	menuRepo := sysrepo.NewMenuRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
-	buttonRepo := sysrepo.NewButtonRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
-	roleRepo := sysrepo.NewRoleRepo(loggers.Data, init.DB, init.DBTimeout, init.Enforcer)
-	userRepo := sysrepo.NewUserRepo(loggers.Data, init.DB, init.DBTimeout)
-	recordRepo := sysrepo.NewLoginRecordRepo(loggers.Data, init.DB, init.DBTimeout,
+	apiRepo := sysrepo.NewApiRepo(loggers.Repo, init.DB, init.DBTimeout, init.Enforcer)
+	menuRepo := sysrepo.NewMenuRepo(loggers.Repo, init.DB, init.DBTimeout, init.Enforcer)
+	buttonRepo := sysrepo.NewButtonRepo(loggers.Repo, init.DB, init.DBTimeout, init.Enforcer)
+	roleRepo := sysrepo.NewRoleRepo(loggers.Repo, init.DB, init.DBTimeout, init.Enforcer)
+	userRepo := sysrepo.NewUserRepo(loggers.Repo, init.DB, init.DBTimeout)
+	recordRepo := sysrepo.NewLoginRecordRepo(loggers.Repo, init.DB, init.DBTimeout,
 		time.Duration(init.Conf.Security.Login.LockMinutes)*time.Minute,
 		time.Duration(init.Conf.Security.Token.AccessMinutes*2)*time.Minute,
 		init.Conf.Security.Login.MaxFailedAttempts,
