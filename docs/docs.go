@@ -7694,13 +7694,15 @@ const docTemplate = `{
                 "SCRIPT_REMOVE_FAILED",
                 "PACKAGE_NOT_FOUND",
                 "PACKAGE_SAVE_FAILED",
-                "PACKAGE_REMOVE_FAILED"
+                "PACKAGE_REMOVE_FAILED",
+                "CRON_SPECIFICATION_INVALID"
             ],
             "x-enum-comments": {
                 "ReasonAccountLocked": "账号已被锁定",
                 "ReasonAuthFailed": "身份认证失败",
                 "ReasonCanceled": "ctx取消",
                 "ReasonCheckConstraintViolated": "检查约束冲突",
+                "ReasonCronSpecificationInvalid": "计划任务表达式格式错误",
                 "ReasonDeadlineExceeded": "ctx超时",
                 "ReasonDeleteCacheFileFailed": "删除缓存文件失败",
                 "ReasonDownloadFileFailed": "下载文件失败",
@@ -7828,7 +7830,8 @@ const docTemplate = `{
                 "脚本删除失败",
                 "程序包未找到",
                 "程序包保存失败",
-                "程序包删除失败"
+                "程序包删除失败",
+                "计划任务表达式格式错误"
             ],
             "x-enum-varnames": [
                 "ReasonUnknown",
@@ -7895,7 +7898,8 @@ const docTemplate = `{
                 "ReasonScriptRemoveFailed",
                 "ReasonPackageNotFound",
                 "ReasonPackageSaveFailed",
-                "ReasonPackageRemoveFailed"
+                "ReasonPackageRemoveFailed",
+                "ReasonCronSpecificationInvalid"
             ]
         },
         "fileutil.FileInfo": {
