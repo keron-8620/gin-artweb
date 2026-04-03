@@ -11,13 +11,19 @@ import shutil
 
 import ansible_runner
 
-ANSIBLE_LOG_PATH = os.getenv("JOB_LOG_PATH")
-if not ANSIBLE_LOG_PATH:
-    raise AssertionError("环境变量没有设置JOB_LOG_PATH")
+JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
+if not JOB_RECORD_ID:
+    JOB_RECORD_ID = 0
 
-ANSIBLE_BASE_DIR = os.getenv("JOB_BASE_DIR")
-if not ANSIBLE_BASE_DIR:
-    raise AssertionError("环境变量没有设置JOB_BASE_DIR")
+JOB_LOG_PATH = os.getenv("JOB_LOG_PATH")
+if not JOB_LOG_PATH:
+    JOB_LOG_PATH = "/var/log/gin-artweb"
+    # raise AssertionError("环境变量没有设置JOB_LOG_PATH")
+
+JOB_BASE_DIR = os.getenv("JOB_BASE_DIR")
+if not JOB_BASE_DIR:
+    JOB_BASE_DIR = "/var/lib/gin-artweb"
+    # raise AssertionError("环境变量没有设置JOB_BASE_DIR")
 
 BASE_DIR = Path(ANSIBLE_BASE_DIR)
 STORAGE_DIR = BASE_DIR.joinpath("storage")

@@ -35,12 +35,12 @@ func ValidateCronExpression(expr string, withSeconds bool) (bool, error) {
 	// 创建解析器，根据是否支持秒级选择不同的解析规则
 	var parser cron.Parser
 	if withSeconds {
-		// 支持秒级（6位：秒 分 时 日 月 周），兼容标准cron和秒级cron
+		// 支持秒级（6位:秒 分 时 日 月 周），兼容标准cron和秒级cron
 		parser = cron.NewParser(
 			cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow,
 		)
 	} else {
-		// 标准cron（5位：分 时 日 月 周）
+		// 标准cron（5位:分 时 日 月 周）
 		parser = cron.NewParser(
 			cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow,
 		)

@@ -100,13 +100,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -420,13 +421,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -830,13 +832,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -961,6 +964,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -980,7 +984,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -1299,13 +1303,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -1622,6 +1627,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -1634,7 +1640,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -1842,13 +1848,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -2116,6 +2123,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -2128,7 +2136,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -2496,6 +2504,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -2508,7 +2517,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -2851,6 +2860,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -2863,7 +2873,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -3079,6 +3089,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -3091,7 +3102,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -3221,6 +3232,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -3233,7 +3245,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -3799,13 +3811,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -4004,6 +4017,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/mds/colony/{id}/schedule": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的mds集群计划任务列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mds集群管理"
+                ],
+                "summary": "查询mds集群计划任务列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mds集群编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回mds计划任务列表",
+                        "schema": {
+                            "$ref": "#/definitions/job.PagScheduleResp"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "mds集群未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/mds/node": {
             "get": {
                 "security": [
@@ -4085,13 +4153,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -4641,13 +4710,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -4982,13 +5052,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -5165,13 +5236,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -5299,13 +5371,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -5433,13 +5506,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -5650,6 +5724,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/oes/colony/{id}/schedule": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "本接口用于查询指定ID的oes集群计划任务列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oes集群管理"
+                ],
+                "summary": "查询oes集群计划任务列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "oes集群编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回oes计划任务列表",
+                        "schema": {
+                            "$ref": "#/definitions/job.PagScheduleResp"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "oes集群未找到",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/oes/node": {
             "get": {
                 "security": [
@@ -5731,13 +5860,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -6341,6 +6471,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
@@ -6361,7 +6492,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -6692,13 +6823,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "minimum": 0,
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分页大小",
                         "name": "size",
@@ -6752,14 +6884,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "程序包标签，长度限制：1-50个字符",
+                        "description": "程序包标签，长度限制:1-50个字符",
                         "name": "label",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "程序包版本，长度限制：1-50个字符",
+                        "description": "程序包版本，长度限制:1-50个字符",
                         "name": "version",
                         "in": "formData",
                         "required": true
@@ -8254,6 +8386,11 @@ const docTemplate = `{
                     "description": "名称",
                     "type": "string",
                     "example": "test.sh"
+                },
+                "param_desc": {
+                    "description": "参数描述",
+                    "type": "string",
+                    "example": "--param1=value1 --param2=value2"
                 },
                 "project": {
                     "description": "项目",

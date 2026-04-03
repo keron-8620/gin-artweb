@@ -28,14 +28,14 @@ type RoleRepo struct {
 
 // NewRoleRepo 创建角色仓库实例
 //
-// 参数：
+// 参数:
 //
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
 //	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
 //	enforcer: Casbin权限管理器，用于管理权限策略
 //
-// 返回值：
+// 返回值:
 //
 //	sysmodel.RoleRepo: 角色仓库接口实现
 func NewRoleRepo(
@@ -54,7 +54,7 @@ func NewRoleRepo(
 
 // CreateModel 创建角色模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	m: 角色模型，包含角色的详细信息
@@ -62,11 +62,11 @@ func NewRoleRepo(
 //	menus: 菜单模型列表，包含与角色关联的菜单
 //	buttons: 按钮模型列表，包含与角色关联的按钮
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查角色模型是否为空
 //  2. 设置创建时间和更新时间
 //  3. 处理关联的权限、菜单和按钮信息
@@ -93,7 +93,7 @@ func (r *RoleRepo) CreateModel(
 	}
 
 	log.Debug(
-		"创建角色模型：开始执行",
+		"创建角色模型:开始执行",
 		zap.Object("role_model", m),
 	)
 
@@ -113,17 +113,17 @@ func (r *RoleRepo) CreateModel(
 	createDuration := time.Since(createTime)
 	if err != nil {
 		log.Error(
-			"创建角色模型：数据库创建失败",
+			"创建角色模型:数据库创建失败",
 			zap.Error(err),
 			zap.Object("role_model", m),
 			zap.Duration("create_role_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "创建角色模型：数据库创建失败")
+		return errors.WrapIf(err, "创建角色模型:数据库创建失败")
 	}
 
 	log.Debug(
-		"创建角色模型：执行成功",
+		"创建角色模型:执行成功",
 		zap.Object("role_model", m),
 		zap.Duration("create_role_duration", createDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -133,7 +133,7 @@ func (r *RoleRepo) CreateModel(
 
 // UpdateModel 更新角色模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	data: 更新数据，包含要更新的字段和值
@@ -142,11 +142,11 @@ func (r *RoleRepo) CreateModel(
 //	buttons: 按钮模型列表，包含与角色关联的按钮
 //	conds: 查询条件，用于指定要更新的记录
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查更新数据是否为空
 //  2. 处理关联的权限、菜单和按钮信息
 //  3. 执行数据库更新操作
@@ -176,7 +176,7 @@ func (r *RoleRepo) UpdateModel(
 	menuIDs := sysmodel.ListMenuModelToUint32s(menus)
 	buttonIDs := sysmodel.ListButtonModelToUint32s(buttons)
 	log.Debug(
-		"更新角色模型：开始执行",
+		"更新角色模型:开始执行",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 		zap.Uint32s("apis", apiIDs),
@@ -202,7 +202,7 @@ func (r *RoleRepo) UpdateModel(
 	updateDuration := time.Since(updateTime)
 	if err != nil {
 		log.Error(
-			"更新角色模型：数据库更新失败",
+			"更新角色模型:数据库更新失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Uint32s("apis", apiIDs),
@@ -212,10 +212,10 @@ func (r *RoleRepo) UpdateModel(
 			zap.Duration("update_role_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "更新角色模型：数据库更新失败")
+		return errors.WrapIf(err, "更新角色模型:数据库更新失败")
 	}
 	log.Debug(
-		"更新角色模型：执行成功",
+		"更新角色模型:执行成功",
 		zap.Any("update_data", data),
 		zap.Uint32s("apis", apiIDs),
 		zap.Uint32s("menus", menuIDs),
@@ -229,16 +229,16 @@ func (r *RoleRepo) UpdateModel(
 
 // DeleteModel 删除角色模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	conds: 查询条件，用于指定要删除的记录
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 执行数据库删除操作
 //  2. 记录操作日志
 func (r *RoleRepo) DeleteModel(
@@ -249,7 +249,7 @@ func (r *RoleRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除角色模型：开始执行",
+		"删除角色模型:开始执行",
 		zap.Any("conds", conds),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -259,16 +259,16 @@ func (r *RoleRepo) DeleteModel(
 	deleteDuration := time.Since(deleteTime)
 	if err != nil {
 		log.Error(
-			"删除角色模型：数据库删除失败",
+			"删除角色模型:数据库删除失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("delete_role_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除角色模型：数据库删除失败")
+		return errors.WrapIf(err, "删除角色模型:数据库删除失败")
 	}
 	log.Debug(
-		"删除角色模型：执行成功",
+		"删除角色模型:执行成功",
 		zap.Any("conds", conds),
 		zap.Duration("delete_role_duration", deleteDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -278,18 +278,18 @@ func (r *RoleRepo) DeleteModel(
 
 // GetModel 获取单个角色模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	preloads: 预加载的关联字段列表
 //	conds: 查询条件，用于指定要获取的记录
 //
-// 返回值：
+// 返回值:
 //
 //	*sysmodel.RoleModel: 角色模型指针，包含角色的详细信息
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 执行数据库查询操作
 //  2. 预加载关联字段
 //  3. 获取单个角色模型
@@ -303,7 +303,7 @@ func (r *RoleRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询角色模型：开始执行",
+		"查询角色模型:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
 	)
@@ -315,17 +315,17 @@ func (r *RoleRepo) GetModel(
 	getDuration := time.Since(getTime)
 	if err != nil {
 		log.Error(
-			"查询角色模型：数据库查询失败",
+			"查询角色模型:数据库查询失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Any("conds", conds),
 			zap.Duration("get_role_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询角色模型：数据库查询失败")
+		return nil, errors.WrapIf(err, "查询角色模型:数据库查询失败")
 	}
 	log.Debug(
-		"查询角色模型：执行成功",
+		"查询角色模型:执行成功",
 		zap.Object("role_model", &m),
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
@@ -337,18 +337,18 @@ func (r *RoleRepo) GetModel(
 
 // ListModel 获取角色模型列表
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	qp: 查询参数，包含分页、排序等查询条件
 //
-// 返回值：
+// 返回值:
 //
 //	int64: 总记录数
 //	[]sysmodel.RoleModel: 角色模型列表指针，包含符合条件的角色模型
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 执行数据库查询操作
 //  2. 获取角色模型列表
 //  3. 返回总记录数和模型列表
@@ -361,7 +361,7 @@ func (r *RoleRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询角色模型列表：开始执行",
+		"查询角色模型列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 	var ms []sysmodel.RoleModel
@@ -372,16 +372,16 @@ func (r *RoleRepo) ListModel(
 	listDuration := time.Since(listTime)
 	if err != nil {
 		log.Error(
-			"查询角色模型列表：数据库查询失败",
+			"查询角色模型列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_role_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询角色模型列表：数据库查询失败")
+		return nil, errors.WrapIf(err, "查询角色模型列表:数据库查询失败")
 	}
 	log.Debug(
-		"查询角色模型列表：执行成功",
+		"查询角色模型列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_role_duration", listDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -397,7 +397,7 @@ func (r *RoleRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询角色模型总数：开始执行",
+		"查询角色模型总数:开始执行",
 		zap.Any("query", query),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
@@ -407,16 +407,16 @@ func (r *RoleRepo) CountModel(
 	countDuration := time.Since(countTime)
 	if err != nil {
 		log.Error(
-			"查询角色模型总数：数据库查询失败",
+			"查询角色模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_role_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, errors.WrapIf(err, "查询角色模型总数：数据库查询失败")
+		return 0, errors.WrapIf(err, "查询角色模型总数:数据库查询失败")
 	}
 	log.Debug(
-		"查询角色模型总数：执行成功",
+		"查询角色模型总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_role_duration", countDuration),
@@ -427,16 +427,16 @@ func (r *RoleRepo) CountModel(
 
 // AddGroupPolicy 添加角色组策略
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	role: 角色模型，包含角色的详细信息
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查角色模型是否为空
 //  2. 检查角色ID是否有效
 //  3. 将权限转换为Casbin策略
@@ -452,20 +452,20 @@ func (r *RoleRepo) AddGroupPolicy(
 
 	// 检查参数
 	if role == nil {
-		return errors.New("添加角色关联策略：角色模型不能为空")
+		return errors.New("添加角色关联策略:角色模型不能为空")
 	}
 
 	m := *role
 
 	// 检查必要字段
 	if m.ID == 0 {
-		return errors.New("添加角色关联策略：角色ID不能为0")
+		return errors.New("添加角色关联策略:角色ID不能为0")
 	}
 
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"添加角色关联策略：开始执行",
+		"添加角色关联策略:开始执行",
 		zap.Object("role_model", role),
 	)
 
@@ -476,7 +476,7 @@ func (r *RoleRepo) AddGroupPolicy(
 		// 检查API模型的有效性
 		if o.ID == 0 {
 			log.Warn(
-				"添加角色关联策略：跳过无效权限",
+				"添加角色关联策略:跳过无效权限",
 				zap.Object("role_model", role),
 				zap.Int("api_index", i),
 			)
@@ -491,7 +491,7 @@ func (r *RoleRepo) AddGroupPolicy(
 		// 检查菜单模型的有效性
 		if o.ID == 0 {
 			log.Warn(
-				"添加角色关联策略：跳过无效菜单",
+				"添加角色关联策略:跳过无效菜单",
 				zap.Object("role_model", role),
 				zap.Int("menu_index", i),
 			)
@@ -506,7 +506,7 @@ func (r *RoleRepo) AddGroupPolicy(
 		// 检查按钮模型的有效性
 		if o.ID == 0 {
 			log.Warn(
-				"添加角色关联策略：跳过无效按钮",
+				"添加角色关联策略:跳过无效按钮",
 				zap.Object("role_model", role),
 				zap.Int("button_index", i),
 			)
@@ -521,17 +521,17 @@ func (r *RoleRepo) AddGroupPolicy(
 	addGroupPolicyDuration := time.Since(addGroupPolicyStartTime)
 	if err != nil {
 		log.Error(
-			"添加角色关联策略：数据库操作失败",
+			"添加角色关联策略:数据库操作失败",
 			zap.Error(err),
 			zap.Object("role_model", role),
 			zap.Any("rules", rules),
 			zap.Duration("add_group_policy_duration", addGroupPolicyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "添加角色关联策略：数据库操作失败")
+		return errors.WrapIf(err, "添加角色关联策略:数据库操作失败")
 	}
 	log.Debug(
-		"添加角色关联策略：执行成功",
+		"添加角色关联策略:执行成功",
 		zap.Object("role_model", role),
 		zap.Duration("add_group_policy_duration", addGroupPolicyDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -541,16 +541,16 @@ func (r *RoleRepo) AddGroupPolicy(
 
 // RemoveGroupPolicy 删除角色组策略
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	role: 角色模型，包含角色的详细信息
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查角色模型是否为空
 //  2. 检查角色ID是否有效
 //  3. 删除该角色作为子级的组策略（被其他策略继承）
@@ -563,19 +563,19 @@ func (r *RoleRepo) RemoveGroupPolicy(
 
 	// 检查参数
 	if role == nil {
-		return errors.New("删除角色关联策略：角色模型不能为空")
+		return errors.New("删除角色关联策略:角色模型不能为空")
 	}
 
 	m := *role
 	// 检查必要字段
 	if m.ID == 0 {
-		return errors.New("删除角色关联策略：角色ID不能为0")
+		return errors.New("删除角色关联策略:角色ID不能为0")
 	}
 
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除角色关联策略：开始执行",
+		"删除角色关联策略:开始执行",
 		zap.Object("role_model", role),
 	)
 
@@ -587,7 +587,7 @@ func (r *RoleRepo) RemoveGroupPolicy(
 	removeGroupPolicyDuration := time.Since(removeGroupPolicyStartTime)
 	if err != nil {
 		log.Error(
-			"删除角色关联策略：删除角色作为子级策略失败(该策略继承自其他策略)",
+			"删除角色关联策略:删除角色作为子级策略失败(该策略继承自其他策略)",
 			zap.Error(err),
 			zap.Object("role_model", role),
 			zap.Int("index", 0),
@@ -595,10 +595,10 @@ func (r *RoleRepo) RemoveGroupPolicy(
 			zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除角色关联策略：删除角色作为子级策略失败(该策略继承自其他策略)")
+		return errors.WrapIf(err, "删除角色关联策略:删除角色作为子级策略失败(该策略继承自其他策略)")
 	}
 	log.Debug(
-		"删除角色关联策略：删除角色作为子级策略成功",
+		"删除角色关联策略:删除角色作为子级策略成功",
 		zap.Object("role_model", role),
 		zap.Int("index", 0),
 		zap.String("value", sub),

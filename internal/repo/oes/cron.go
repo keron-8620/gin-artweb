@@ -41,15 +41,15 @@ func (r *OesCronRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建oes计划任务：模型不能为空")
+		err := errors.New("创建oes计划任务:模型不能为空")
 		log.Error(
-			"创建oes计划任务：模型不能为空",
+			"创建oes计划任务:模型不能为空",
 			zap.Error(err),
 		)
 		return err
 	}
 	log.Debug(
-		"创建oes计划任务：开始执行",
+		"创建oes计划任务:开始执行",
 		zap.Object("node_model", m),
 	)
 
@@ -60,7 +60,7 @@ func (r *OesCronRepo) CreateModel(
 	createOesCronDuration := time.Since(createOesCronStartTime)
 	if err != nil {
 		log.Error(
-			"创建oes计划任务：数据库操作失败",
+			"创建oes计划任务:数据库操作失败",
 			zap.Error(err),
 			zap.Object("node_model", m),
 			zap.Duration("create_oes_cron_duration", createOesCronDuration),
@@ -69,7 +69,7 @@ func (r *OesCronRepo) CreateModel(
 		return errors.WrapIf(err, "创建oes计划任务失败")
 	}
 	log.Debug(
-		"创建oes计划任务：执行成功",
+		"创建oes计划任务:执行成功",
 		zap.Object("node_model", m),
 		zap.Duration("create_oes_cron_duration", createOesCronDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -87,16 +87,16 @@ func (r *OesCronRepo) UpdateModel(
 
 	// 检查参数
 	if len(data) == 0 {
-		err := errors.New("更新oes计划任务：更新数据为空")
+		err := errors.New("更新oes计划任务:更新数据为空")
 		log.Error(
-			"更新oes计划任务：更新数据为空",
+			"更新oes计划任务:更新数据为空",
 			zap.Error(err),
 			zap.Any("conds", conds),
 		)
 		return err
 	}
 	log.Debug(
-		"更新oes计划任务：开始执行",
+		"更新oes计划任务:开始执行",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 	)
@@ -107,7 +107,7 @@ func (r *OesCronRepo) UpdateModel(
 	updateOesCronDuration := time.Since(updateOesCronStartTime)
 	if err != nil {
 		log.Error(
-			"更新oes计划任务：数据库操作失败",
+			"更新oes计划任务:数据库操作失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
@@ -117,7 +117,7 @@ func (r *OesCronRepo) UpdateModel(
 		return errors.WrapIf(err, "更新oes计划任务失败")
 	}
 	log.Debug(
-		"更新oes计划任务：执行成功",
+		"更新oes计划任务:执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 		zap.Duration("update_oes_cron_duration", updateOesCronDuration),
@@ -134,7 +134,7 @@ func (r *OesCronRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除oes计划任务：开始执行",
+		"删除oes计划任务:开始执行",
 		zap.Any("conds", conds),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -144,7 +144,7 @@ func (r *OesCronRepo) DeleteModel(
 	deleteOesCronDuration := time.Since(deleteOesCronStartTime)
 	if err != nil {
 		log.Error(
-			"删除oes计划任务：数据库操作失败",
+			"删除oes计划任务:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("delete_oes_cron_duration", deleteOesCronDuration),
@@ -153,7 +153,7 @@ func (r *OesCronRepo) DeleteModel(
 		return errors.WrapIf(err, "删除oes计划任务失败")
 	}
 	log.Debug(
-		"删除oes计划任务：执行成功",
+		"删除oes计划任务:执行成功",
 		zap.Any("conds", conds),
 		zap.Duration("delete_oes_cron_duration", deleteOesCronDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -170,7 +170,7 @@ func (r *OesCronRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询oes计划任务：开始执行",
+		"查询oes计划任务:开始执行",
 		zap.Any("conds", conds),
 	)
 	var m oesmodel.OesCronModel
@@ -181,7 +181,7 @@ func (r *OesCronRepo) GetModel(
 	getOesCronDuration := time.Since(getOesCronStartTime)
 	if err != nil {
 		log.Error(
-			"查询oes计划任务：数据库操作失败",
+			"查询oes计划任务:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("get_oes_cron_duration", getOesCronDuration),
@@ -190,7 +190,7 @@ func (r *OesCronRepo) GetModel(
 		return nil, errors.WrapIf(err, "查询oes计划任务失败")
 	}
 	log.Debug(
-		"查询oes计划任务：执行成功",
+		"查询oes计划任务:执行成功",
 		zap.Object("node_model", &m),
 		zap.Any("conds", conds),
 		zap.Duration("get_oes_cron_duration", getOesCronDuration),
@@ -207,7 +207,7 @@ func (r *OesCronRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询oes计划任务列表：开始执行",
+		"查询oes计划任务列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 	var ms []oesmodel.OesCronModel
@@ -218,7 +218,7 @@ func (r *OesCronRepo) ListModel(
 	listOesCronDuration := time.Since(listOesCronStartTime)
 	if err != nil {
 		log.Error(
-			"查询oes计划任务列表：数据库操作失败",
+			"查询oes计划任务列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_oes_cron_duration", listOesCronDuration),
@@ -227,7 +227,7 @@ func (r *OesCronRepo) ListModel(
 		return nil, errors.WrapIf(err, "查询oes计划任务列表失败")
 	}
 	log.Debug(
-		"查询oes计划任务列表：执行成功",
+		"查询oes计划任务列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_oes_cron_duration", listOesCronDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -243,7 +243,7 @@ func (r *OesCronRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询oes计划任务总数：开始执行",
+		"查询oes计划任务总数:开始执行",
 		zap.Any("query", query),
 	)
 	var count int64
@@ -254,7 +254,7 @@ func (r *OesCronRepo) CountModel(
 	countOesCronDuration := time.Since(countOesCronStartTime)
 	if err != nil {
 		log.Error(
-			"查询oes计划任务总数：数据库操作失败",
+			"查询oes计划任务总数:数据库操作失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_oes_cron_duration", countOesCronDuration),
@@ -263,7 +263,7 @@ func (r *OesCronRepo) CountModel(
 		return 0, errors.WrapIf(err, "查询oes计划任务总数失败")
 	}
 	log.Debug(
-		"查询oes计划任务总数：执行成功",
+		"查询oes计划任务总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_oes_cron_duration", countOesCronDuration),

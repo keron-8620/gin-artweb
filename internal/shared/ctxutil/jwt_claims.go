@@ -9,21 +9,21 @@ import (
 )
 
 const (
-	UserIDKey    = "user_id"
-	JwtClaimsKey = "jwt_claims"
+	UserIDKey    string = "user_id"
+	JwtClaimsKey string = "jwt_claims"
 )
 
 func GetJwtClaims(ctx context.Context) (*auth.JwtClaims, error) {
 	if ctx == nil {
-		return nil, errors.New("获取用户信息失败：context 不能为空")
+		return nil, errors.New("获取用户信息失败:context 不能为空")
 	}
 	value := ctx.Value(JwtClaimsKey)
 	if value == nil {
-		return nil, errors.New("获取用户信息失败：认证信息缺失")
+		return nil, errors.New("获取用户信息失败:认证信息缺失")
 	}
 	jwtClaims, ok := value.(*auth.JwtClaims)
 	if !ok {
-		return nil, errors.New("获取用户信息失败：认证信息格式错误")
+		return nil, errors.New("获取用户信息失败:认证信息格式错误")
 	}
 	return jwtClaims, nil
 }

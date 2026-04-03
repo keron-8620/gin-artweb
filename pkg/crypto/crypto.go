@@ -55,12 +55,12 @@ func pkcs7Padding(data []byte, blockSize int) []byte {
 func pkcs7Unpadding(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
-		return nil, errors.New("无效的填充大小：数据为空")
+		return nil, errors.New("无效的填充大小:数据为空")
 	}
 
 	unpadding := int(data[length-1])
 	if unpadding > length {
-		return nil, errors.Errorf("无效的填充大小：%d 大于数据长度 %d", unpadding, length)
+		return nil, errors.Errorf("无效的填充大小:%d 大于数据长度 %d", unpadding, length)
 	}
 
 	return data[:(length - unpadding)], nil

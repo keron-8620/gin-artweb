@@ -29,16 +29,16 @@ type OesCronTestSuite struct {
 	cronRepo    *OesCronRepo
 	oesColonyID uint32
 	scheduleID  uint32
-	log      *zap.Logger
-	gormDB   *gorm.DB
-	timeouts *config.DBTimeout
+	log         *zap.Logger
+	gormDB      *gorm.DB
+	timeouts    *config.DBTimeout
 }
 
 func (suite *OesCronTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
 	db.AutoMigrate(&jobmodel.ScriptModel{}, &jobmodel.ScheduleModel{}, &oesmodel.OesColonyModel{}, &oesmodel.OesCronModel{})
 
-	// 创建测试数据：Script
+	// 创建测试数据:Script
 	scriptModel := &jobmodel.ScriptModel{
 		Name:     "test-script.sh",
 		Descr:    "test script",
@@ -50,7 +50,7 @@ func (suite *OesCronTestSuite) SetupSuite() {
 	}
 	db.Create(scriptModel)
 
-	// 创建测试数据：Schedule
+	// 创建测试数据:Schedule
 	scheduleModel := &jobmodel.ScheduleModel{
 		Name:          "test-schedule",
 		Specification: "0 * * * *",
@@ -62,7 +62,7 @@ func (suite *OesCronTestSuite) SetupSuite() {
 	}
 	db.Create(scheduleModel)
 
-	// 创建测试数据：OesColony
+	// 创建测试数据:OesColony
 	esColonyModel := &oesmodel.OesColonyModel{
 		SystemType:    "STK",
 		ColonyNum:     "01",
@@ -94,7 +94,7 @@ func (suite *OesCronTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建OesCron应该成功")
 	suite.NotZero(cm.ID, "OesCron ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.cronRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空OesCron模型应该返回错误")
 }
@@ -119,11 +119,11 @@ func (suite *OesCronTestSuite) TestUpdateModel() {
 	suite.Equal(uint32(2), fm.OesColonyID)
 	suite.Equal(uint32(2), fm.ScheduleID)
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.cronRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的OesCron
+	// 测试边界情况:更新不存在的OesCron
 	err = suite.cronRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的OesCron应该成功（无操作）")
 }
@@ -143,7 +143,7 @@ func (suite *OesCronTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的OesCron应该返回错误")
 	suite.Nil(fm, "已删除的OesCron应该为nil")
 
-	// 测试边界情况：删除不存在的OesCron
+	// 测试边界情况:删除不存在的OesCron
 	err = suite.cronRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的OesCron应该成功（无操作）")
 }
@@ -161,7 +161,7 @@ func (suite *OesCronTestSuite) TestGetModel() {
 	suite.Equal(cm.OesColonyID, fm.OesColonyID)
 	suite.Equal(cm.ScheduleID, fm.ScheduleID)
 
-	// 测试边界情况：查询不存在的OesCron
+	// 测试边界情况:查询不存在的OesCron
 	fm, err = suite.cronRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的OesCron应该返回错误")
 	suite.Nil(fm, "查询不存在的OesCron应该返回nil")
@@ -187,7 +187,7 @@ func (suite *OesCronTestSuite) TestListModel() {
 	suite.NotNil(models, "OesCron列表应该不为nil")
 	suite.Greater(len(models), 0, "OesCron列表长度应该大于0")
 
-	// 测试边界情况：空列表
+	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"oes_colony_id": 999999},
 	}
@@ -216,7 +216,7 @@ func (suite *OesCronTestSuite) TestCountModel() {
 	suite.NoError(err, "带条件查询OesCron总数应该成功")
 	suite.GreaterOrEqual(count2, int64(3), "带条件的OesCron总数应该大于等于3")
 
-	// 测试边界情况：查询不存在的类型
+	// 测试边界情况:查询不存在的类型
 	count3, err := suite.cronRepo.CountModel(context.Background(), map[string]any{"oes_colony_id": 999999})
 	suite.NoError(err, "查询不存在类型的OesCron总数应该成功")
 	suite.Equal(int64(0), count3, "不存在类型的OesCron总数应该为0")

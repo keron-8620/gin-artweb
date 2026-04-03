@@ -88,4 +88,7 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonPackageNotFound:     "程序包未找到",
 	ReasonPackageSaveFailed:   "程序包保存失败",
 	ReasonPackageRemoveFailed: "程序包删除失败",
+
+	// 计划任务相关
+	ReasonCronSpecificationInvalid: "计划任务表达式格式错误",
 }

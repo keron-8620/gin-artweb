@@ -84,4 +84,7 @@ var (
 	ErrPackageNotFound     = FromReason(ReasonPackageNotFound)     // 程序包不存在
 	ErrPackageSaveFailed   = FromReason(ReasonPackageSaveFailed)   // 程序包保存失败
 	ErrPackageRemoveFailed = FromReason(ReasonPackageRemoveFailed) // 程序包删除失败
+
+	// 计划任务相关
+	ErrCronSpecificationInvalid = FromReason(ReasonCronSpecificationInvalid) // 计划任务表达式格式错误
 )

@@ -50,7 +50,7 @@ func (suite *PackageTestSuite) TestCreateModel() {
 	suite.NotZero(pm.ID, "Package ID应该不为零")
 	suite.NotZero(pm.UploadedAt, "Package UploadedAt应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.packageRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空Package模型应该返回错误")
 }
@@ -70,7 +70,7 @@ func (suite *PackageTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的Package应该返回错误")
 	suite.Nil(fm, "已删除的Package应该为nil")
 
-	// 测试边界情况：删除不存在的Package
+	// 测试边界情况:删除不存在的Package
 	err = suite.packageRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的Package应该成功（无操作）")
 }
@@ -88,12 +88,12 @@ func (suite *PackageTestSuite) TestGetModel() {
 	suite.Equal(pm.StorageFilename, fm.StorageFilename)
 	suite.Equal(pm.Version, fm.Version)
 
-	// 测试边界情况：查询不存在的Package
+	// 测试边界情况:查询不存在的Package
 	fm, err = suite.packageRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的Package应该返回错误")
 	suite.Nil(fm, "查询不存在的Package应该返回nil")
 
-	// 测试边界情况：使用预加载（虽然PackageModel可能没有关联关系，但测试方法调用）
+	// 测试边界情况:使用预加载（虽然PackageModel可能没有关联关系，但测试方法调用）
 	fm, err = suite.packageRepo.GetModel(context.Background(), []string{}, "id = ?", pm.ID)
 	suite.NoError(err, "使用空预加载查询Package应该成功")
 	suite.Equal(pm.ID, fm.ID)
@@ -121,8 +121,8 @@ func (suite *PackageTestSuite) TestListModel() {
 	suite.NotNil(models, "Package列表应该不为nil")
 	suite.Greater(int64(len(models)), int64(0), "Package列表长度应该大于0")
 
-	// 测试边界情况：空列表（如果之前没有数据）
-	// 注意：由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
+	// 测试边界情况:空列表（如果之前没有数据）
+	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
 	qp2 := database.QueryParams{
 		Query: map[string]any{"label": "non-existent-label"},
 	}
@@ -336,7 +336,7 @@ func (suite *PackageTestSuite) TestRemovePackageFileWithTimeout() {
 }
 
 func (suite *PackageTestSuite) TestCreateModelNilModel() {
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err := suite.packageRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空Package模型应该返回错误")
 }

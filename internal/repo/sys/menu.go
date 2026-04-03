@@ -27,14 +27,14 @@ type MenuRepo struct {
 
 // NewMenuRepo 创建菜单仓库实例
 //
-// 参数：
+// 参数:
 //
 //	log: 日志记录器
 //	gormDB: GORM数据库实例
 //	timeouts: 数据库操作超时配置
 //	enforcer: Casbin权限管理器
 //
-// 返回值：
+// 返回值:
 //
 //	sysmodel.MenuRepo: 菜单仓库接口实现
 func NewMenuRepo(
@@ -53,13 +53,13 @@ func NewMenuRepo(
 
 // CreateModel 创建菜单模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	m: 菜单模型指针
 //	apis: 关联的API模型列表指针
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作过程中的错误
 func (r *MenuRepo) CreateModel(
@@ -72,16 +72,16 @@ func (r *MenuRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建菜单模型：模型不能为空")
+		err := errors.New("创建菜单模型:模型不能为空")
 		log.Error(
-			"创建菜单模型：模型不能为空",
+			"创建菜单模型:模型不能为空",
 			zap.Error(err),
 		)
 		return err
 	}
 
 	log.Debug(
-		"创建菜单模型：开始执行",
+		"创建菜单模型:开始执行",
 		zap.Object("menu_model", m),
 	)
 	m.CreatedAt = startTime
@@ -100,17 +100,17 @@ func (r *MenuRepo) CreateModel(
 	createMenuDuration := time.Since(createMenuStartTime)
 	if err != nil {
 		log.Error(
-			"创建菜单模型：数据库创建失败",
+			"创建菜单模型:数据库创建失败",
 			zap.Error(err),
 			zap.Object("menu_model", m),
 			zap.Duration("create_menu_duration", createMenuDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "创建菜单模型：数据库创建失败")
+		return errors.WrapIf(err, "创建菜单模型:数据库创建失败")
 	}
 
 	log.Debug(
-		"创建菜单模型：执行成功",
+		"创建菜单模型:执行成功",
 		zap.Object("menu_model", m),
 		zap.Duration("create_menu_duration", createMenuDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -120,14 +120,14 @@ func (r *MenuRepo) CreateModel(
 
 // UpdateModel 更新菜单模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	data: 更新数据映射
 //	apis: 关联的API模型列表指针
 //	conds: 查询条件
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作过程中的错误
 func (r *MenuRepo) UpdateModel(
@@ -141,7 +141,7 @@ func (r *MenuRepo) UpdateModel(
 
 	apiIDs := sysmodel.ListApiModelToUint32s(apis)
 	log.Debug(
-		"更新菜单模型：开始执行",
+		"更新菜单模型:开始执行",
 		zap.Any("update_data", updateData),
 		zap.Uint32s("apis", apiIDs),
 		zap.Any("conds", conds),
@@ -159,7 +159,7 @@ func (r *MenuRepo) UpdateModel(
 	updateMenuDuration := time.Since(updateMenuStartTime)
 	if err != nil {
 		log.Error(
-			"更新菜单模型：数据库更新失败",
+			"更新菜单模型:数据库更新失败",
 			zap.Error(err),
 			zap.Any("update_data", updateData),
 			zap.Uint32s("apis", apiIDs),
@@ -167,11 +167,11 @@ func (r *MenuRepo) UpdateModel(
 			zap.Duration("update_menu_duration", updateMenuDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "更新菜单模型：数据库更新失败")
+		return errors.WrapIf(err, "更新菜单模型:数据库更新失败")
 	}
 
 	log.Debug(
-		"更新菜单模型：执行成功",
+		"更新菜单模型:执行成功",
 		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 		zap.Uint32s("apis", apiIDs),
@@ -183,12 +183,12 @@ func (r *MenuRepo) UpdateModel(
 
 // DeleteModel 删除菜单模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	conds: 查询条件
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作过程中的错误
 func (r *MenuRepo) DeleteModel(
@@ -199,7 +199,7 @@ func (r *MenuRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除菜单模型：开始执行",
+		"删除菜单模型:开始执行",
 		zap.Any("conds", conds),
 	)
 
@@ -210,17 +210,17 @@ func (r *MenuRepo) DeleteModel(
 	deleteMenuDuration := time.Since(deleteMenuStartTime)
 	if err != nil {
 		log.Error(
-			"删除菜单模型：数据库删除失败",
+			"删除菜单模型:数据库删除失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("delete_menu_duration", deleteMenuDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除菜单模型：数据库删除失败")
+		return errors.WrapIf(err, "删除菜单模型:数据库删除失败")
 	}
 
 	log.Debug(
-		"删除菜单模型：执行成功",
+		"删除菜单模型:执行成功",
 		zap.Any("conds", conds),
 		zap.Duration("delete_menu_duration", deleteMenuDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -230,13 +230,13 @@ func (r *MenuRepo) DeleteModel(
 
 // GetModel 查询单个菜单模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	preloads: 需要预加载的关联关系
 //	conds: 查询条件
 //
-// 返回值：
+// 返回值:
 //
 //	*sysmodel.MenuModel: 查询到的菜单模型指针
 //	error: 操作过程中的错误
@@ -249,7 +249,7 @@ func (r *MenuRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询菜单模型：开始执行",
+		"查询菜单模型:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
 	)
@@ -262,18 +262,18 @@ func (r *MenuRepo) GetModel(
 	getMenuDuration := time.Since(getMenuStartTime)
 	if err != nil {
 		log.Error(
-			"查询菜单模型：数据库查询失败",
+			"查询菜单模型:数据库查询失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Any("conds", conds),
 			zap.Duration("get_menu_duration", getMenuDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询菜单模型：数据库查询失败")
+		return nil, errors.WrapIf(err, "查询菜单模型:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询菜单模型：执行成功",
+		"查询菜单模型:执行成功",
 		zap.Object("menu_model", &m),
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
@@ -285,12 +285,12 @@ func (r *MenuRepo) GetModel(
 
 // ListModel 查询菜单模型列表
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	qp: 查询参数，包含分页、排序等信息
 //
-// 返回值：
+// 返回值:
 //
 //	int64: 总记录数
 //	[]sysmodel.MenuModel: 菜单模型列表指针
@@ -303,7 +303,7 @@ func (r *MenuRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询菜单模型列表：开始执行",
+		"查询菜单模型列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 
@@ -315,17 +315,17 @@ func (r *MenuRepo) ListModel(
 	listMenuDuration := time.Since(listMenuStartTime)
 	if err != nil {
 		log.Error(
-			"查询菜单模型列表：数据库查询失败",
+			"查询菜单模型列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_menu_duration", listMenuDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询菜单模型列表：数据库查询失败")
+		return nil, errors.WrapIf(err, "查询菜单模型列表:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询菜单模型列表：执行成功",
+		"查询菜单模型列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_menu_duration", listMenuDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -341,7 +341,7 @@ func (r *MenuRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询菜单模型总数：开始执行",
+		"查询菜单模型总数:开始执行",
 		zap.Any("query", query),
 	)
 
@@ -352,16 +352,16 @@ func (r *MenuRepo) CountModel(
 	countMenuDuration := time.Since(countMenuStartTime)
 	if err != nil {
 		log.Error(
-			"查询菜单模型总数：数据库查询失败",
+			"查询菜单模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_menu_duration", countMenuDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, errors.WrapIf(err, "查询菜单模型总数：数据库查询失败")
+		return 0, errors.WrapIf(err, "查询菜单模型总数:数据库查询失败")
 	}
 	log.Debug(
-		"查询菜单模型总数：执行成功",
+		"查询菜单模型总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_menu_duration", countMenuDuration),
@@ -372,16 +372,16 @@ func (r *MenuRepo) CountModel(
 
 // AddGroupPolicy 添加菜单的权限策略
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	menu: 菜单模型指针
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作过程中的错误
 //
-// 功能：
+// 功能:
 //  1. 检查上下文是否有效
 //  2. 检查菜单模型是否为空
 //  3. 检查菜单ID是否有效
@@ -396,25 +396,25 @@ func (r *MenuRepo) AddGroupPolicy(
 
 	// 检查上下文
 	if ctx.Err() != nil {
-		return errors.WrapIf(ctx.Err(), "添加菜单关联策略：上下文已取消或超时")
+		return errors.WrapIf(ctx.Err(), "添加菜单关联策略:上下文已取消或超时")
 	}
 
 	// 检查参数
 	if menu == nil {
-		return errors.New("添加菜单关联策略：菜单模型不能为空")
+		return errors.New("添加菜单关联策略:菜单模型不能为空")
 	}
 
 	m := *menu
 	// 检查必要字段
 	if m.ID == 0 {
-		return errors.New("添加菜单关联策略：菜单ID不能为0")
+		return errors.New("添加菜单关联策略:菜单ID不能为0")
 	}
 
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	apiIDs := sysmodel.ListApiModelToUint32s(m.Apis)
 	log.Debug(
-		"添加菜单关联策略：开始执行",
+		"添加菜单关联策略:开始执行",
 		zap.Object("menu_model", menu),
 		zap.Uint32s("apis", apiIDs),
 	)
@@ -433,7 +433,7 @@ func (r *MenuRepo) AddGroupPolicy(
 		// 检查API模型的有效性
 		if o.ID == 0 {
 			log.Warn(
-				"添加菜单关联策略：跳过API模型ID为0的关联策略",
+				"添加菜单关联策略:跳过API模型ID为0的关联策略",
 				zap.Object("menu_model", menu),
 			)
 			continue
@@ -448,18 +448,18 @@ func (r *MenuRepo) AddGroupPolicy(
 	addMenuPolicyDuration := time.Since(addMenuPolicyStartTime)
 	if err != nil {
 		log.Error(
-			"添加菜单关联策略：Casbin添加策略失败",
+			"添加菜单关联策略:Casbin添加策略失败",
 			zap.Error(err),
 			zap.Object("menu_model", menu),
 			zap.Any("rules", rules),
 			zap.Duration("add_menu_policy_duration", addMenuPolicyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "添加菜单关联策略：Casbin添加策略失败")
+		return errors.WrapIf(err, "添加菜单关联策略:Casbin添加策略失败")
 	}
 
 	log.Debug(
-		"添加菜单关联策略：执行成功",
+		"添加菜单关联策略:执行成功",
 		zap.Object("menu_model", menu),
 		zap.Uint32s("apis", apiIDs),
 		zap.Duration("add_menu_policy_duration", addMenuPolicyDuration),
@@ -470,22 +470,22 @@ func (r *MenuRepo) AddGroupPolicy(
 
 // RemoveGroupPolicy 删除菜单的权限策略
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递追踪信息和控制超时
 //	menu: 菜单模型指针
 //	removeInherited: 是否删除继承该菜单的组策略
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作过程中的错误
 //
-// 功能：
+// 功能:
 //  1. 检查上下文是否有效
 //  2. 检查菜单模型是否为空
 //  3. 检查菜单ID是否有效
 //  4. 删除该菜单作为子级的组策略（被其他策略继承）
-//  5. 可选：删除该菜单作为父级的组策略（被其他菜单或API继承）
+//  5. 可选:删除该菜单作为父级的组策略（被其他菜单或API继承）
 //  6. 记录操作日志
 func (r *MenuRepo) RemoveGroupPolicy(
 	ctx context.Context,
@@ -496,24 +496,24 @@ func (r *MenuRepo) RemoveGroupPolicy(
 
 	// 检查上下文
 	if ctx.Err() != nil {
-		return errors.WrapIf(ctx.Err(), "删除菜单关联策略：上下文已取消或超时")
+		return errors.WrapIf(ctx.Err(), "删除菜单关联策略:上下文已取消或超时")
 	}
 
 	// 检查参数
 	if menu == nil {
-		return errors.New("删除菜单关联策略：菜单模型不能为空")
+		return errors.New("删除菜单关联策略:菜单模型不能为空")
 	}
 
 	m := *menu
 	// 检查必要字段
 	if m.ID == 0 {
-		return errors.New("删除菜单关联策略：菜单ID不能为0")
+		return errors.New("删除菜单关联策略:菜单ID不能为0")
 	}
 
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除菜单关联策略：开始执行",
+		"删除菜单关联策略:开始执行",
 		zap.Object("menu_model", &m),
 		zap.Bool("removeInherited", removeInherited),
 	)
@@ -527,18 +527,18 @@ func (r *MenuRepo) RemoveGroupPolicy(
 
 		if err != nil {
 			log.Error(
-				"删除菜单关联策略：Casbin删除策略失败",
+				"删除菜单关联策略:Casbin删除策略失败",
 				zap.Error(err),
 				zap.Object("menu_model", &m),
 				zap.String("sub", sub),
 				zap.Duration("remove_group_policy_duration", rmObjDuration),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
-			return errors.WrapIf(err, "删除菜单关联策略：Casbin删除策略失败")
+			return errors.WrapIf(err, "删除菜单关联策略:Casbin删除策略失败")
 		}
 
 		log.Debug(
-			"删除菜单关联策略：执行成功",
+			"删除菜单关联策略:执行成功",
 			zap.Object("menu_model", &m),
 			zap.String("obj", sub),
 			zap.Duration("remove_group_policy_duration", rmObjDuration),
@@ -551,17 +551,17 @@ func (r *MenuRepo) RemoveGroupPolicy(
 	rmSubDuration := time.Since(rmSubStartTime)
 	if err != nil {
 		log.Error(
-			"删除菜单关联策略：Casbin删除策略失败",
+			"删除菜单关联策略:Casbin删除策略失败",
 			zap.Error(err),
 			zap.Object("menu_model", &m),
 			zap.String("sub", sub),
 			zap.Duration("remove_policy_duration", rmSubDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除菜单关联策略：Casbin删除策略失败")
+		return errors.WrapIf(err, "删除菜单关联策略:Casbin删除策略失败")
 	}
 	log.Debug(
-		"删除菜单关联策略：执行成功",
+		"删除菜单关联策略:执行成功",
 		zap.Object("menu_model", &m),
 		zap.String("sub", sub),
 		zap.Duration("remove_policy_duration", rmSubDuration),

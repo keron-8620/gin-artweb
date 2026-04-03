@@ -7,8 +7,8 @@ import (
 )
 
 type OesCronTask struct {
-	ScriptID      uint32
-	Specification string
+	ScriptID      uint32 `yaml:"script_id"`
+	Specification string `yaml:"specification"`
 }
 
 func (oes OesCronTask) MarshalLogObject(enc zapcore.ObjectEncoder) error {

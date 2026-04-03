@@ -48,7 +48,7 @@ func NewPag[T any](page, size int, total int64, items []T) *Pag[T] {
 		pages = (total + s - 1) / s
 	}
 	return &Pag[T]{
-		Page:  page + 1,
+		Page:  page,
 		Size:  size,
 		Total: total,
 		Pages: pages,

@@ -103,7 +103,7 @@ func loadCrdTaskRecordCacheFromFiles(
 	startTime := time.Now()
 
 	log.Info(
-		"读取crd任务状态对应的执行记录id：开始执行",
+		"读取crd任务状态对应的执行记录id:开始执行",
 		zap.String("colony_num", colonyNum),
 	)
 
@@ -129,7 +129,7 @@ func loadCrdTaskRecordCacheFromFiles(
 		flagPath := filepath.Join(flagDir, "."+taskName)
 		if value, err := common.ReadUint32FromFile(flagPath); err != nil {
 			log.Error(
-				"读取crd任务状态对应的执行记录id：获取"+taskName+"任务状态失败",
+				"读取crd任务状态对应的执行记录id:获取"+taskName+"任务状态失败",
 				zap.Error(err),
 				zap.String("colony_num", colonyNum),
 				zap.String("task_name", taskName),
@@ -142,7 +142,7 @@ func loadCrdTaskRecordCacheFromFiles(
 	}
 
 	log.Debug(
-		"读取crd任务状态对应的执行记录id：任务状态读取成功",
+		"读取crd任务状态对应的执行记录id:任务状态读取成功",
 		zap.Object("crd_task_record_ids", &mc),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)

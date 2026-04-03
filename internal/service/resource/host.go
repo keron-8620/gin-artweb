@@ -55,18 +55,18 @@ func (s *HostService) CreateHost(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建主机：开始执行")
+	log.Info("创建主机:开始执行")
 
 	log.Debug(
-		"创建主机：输入参数",
+		"创建主机:输入参数",
 		zap.Object("create_host_dto", &dto),
 	)
 
 	testSSHStepStart := time.Now()
-	log.Debug("创建主机：开始测试SSH连接")
+	log.Debug("创建主机:开始测试SSH连接")
 	if err := s.TestSSHConnection(ctx, dto.SSHIP, dto.SSHPort, dto.SSHUser, dto.SSHPassword); err != nil {
 		log.Error(
-			"创建主机：测试SSH连接失败",
+			"创建主机:测试SSH连接失败",
 			zap.Error(err),
 			zap.Duration("test_ssh_step_duration", time.Since(testSSHStepStart)),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -75,7 +75,7 @@ func (s *HostService) CreateHost(
 	}
 	testSSHStepDuration := time.Since(testSSHStepStart)
 	log.Debug(
-		"创建主机：测试SSH连接成功",
+		"创建主机:测试SSH连接成功",
 		zap.Duration("test_ssh_step_duration", testSSHStepDuration),
 	)
 
@@ -90,12 +90,12 @@ func (s *HostService) CreateHost(
 	}
 	createStepStart := time.Now()
 	log.Debug(
-		"创建主机：开始创建数据库模型",
+		"创建主机:开始创建数据库模型",
 		zap.Object("host_model", &m),
 	)
 	if err := s.hostRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建主机：创建数据库模型失败",
+			"创建主机:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("host_model", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -105,19 +105,19 @@ func (s *HostService) CreateHost(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建主机：创建数据库模型成功",
+		"创建主机:创建数据库模型成功",
 		zap.Object("host_model", &m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	exportStepStart := time.Now()
 	log.Debug(
-		"创建主机：开始导出主机变量",
+		"创建主机:开始导出主机变量",
 		zap.Uint32("host_id", m.ID),
 	)
 	if err := s.ExportHost(ctx, m); err != nil {
 		log.Error(
-			"创建主机：导出主机变量失败",
+			"创建主机:导出主机变量失败",
 			zap.Error(err),
 			zap.Uint32("host_id", m.ID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -127,13 +127,13 @@ func (s *HostService) CreateHost(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"创建主机：导出主机变量成功",
+		"创建主机:导出主机变量成功",
 		zap.Uint32("host_id", m.ID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"创建主机：执行成功",
+		"创建主机:执行成功",
 		zap.Uint32("host_id", m.ID),
 		zap.Duration("test_ssh_step_duration", testSSHStepDuration),
 		zap.Duration("create_step_duration", createStepDuration),
@@ -156,21 +156,21 @@ func (s *HostService) UpdateHostById(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新主机：开始执行",
+		"更新主机:开始执行",
 		zap.Uint32("host_id", hostID),
 	)
 
 	log.Debug(
-		"更新主机：输入参数",
+		"更新主机:输入参数",
 		zap.Uint32("host_id", hostID),
 		zap.Object("update_host_dto", &dto),
 	)
 
 	testSSHStepStart := time.Now()
-	log.Debug("更新主机：开始测试SSH连接")
+	log.Debug("更新主机:开始测试SSH连接")
 	if err := s.TestSSHConnection(ctx, dto.SSHIP, dto.SSHPort, dto.SSHUser, dto.SSHPassword); err != nil {
 		log.Error(
-			"更新主机：测试SSH连接失败",
+			"更新主机:测试SSH连接失败",
 			zap.Error(err),
 			zap.Uint32("host_id", hostID),
 			zap.Duration("test_ssh_step_duration", time.Since(testSSHStepStart)),
@@ -180,7 +180,7 @@ func (s *HostService) UpdateHostById(
 	}
 	testSSHStepDuration := time.Since(testSSHStepStart)
 	log.Debug(
-		"更新主机：测试SSH连接成功",
+		"更新主机:测试SSH连接成功",
 		zap.Uint32("host_id", hostID),
 		zap.Duration("test_ssh_step_duration", testSSHStepDuration),
 	)
@@ -197,13 +197,13 @@ func (s *HostService) UpdateHostById(
 
 	updateStepStart := time.Now()
 	log.Debug(
-		"更新主机：开始更新数据库模型",
+		"更新主机:开始更新数据库模型",
 		zap.Any("update_data", data),
 		zap.Uint32("host_id", hostID),
 	)
 	if err := s.hostRepo.UpdateModel(ctx, data, "id = ?", hostID); err != nil {
 		log.Error(
-			"更新主机：更新数据库模型失败",
+			"更新主机:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("host_id", hostID),
 			zap.Any("update_data", data),
@@ -214,7 +214,7 @@ func (s *HostService) UpdateHostById(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新主机：更新数据库模型成功",
+		"更新主机:更新数据库模型成功",
 		zap.Uint32("host_id", hostID),
 		zap.Any("update_data", data),
 		zap.Duration("update_step_duration", updateStepDuration),
@@ -223,7 +223,7 @@ func (s *HostService) UpdateHostById(
 	m, err := s.FindHostById(ctx, hostID)
 	if err != nil {
 		log.Error(
-			"更新主机：查询更新后的主机详情失败",
+			"更新主机:查询更新后的主机详情失败",
 			zap.Error(err),
 			zap.Uint32("host_id", hostID),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -233,12 +233,12 @@ func (s *HostService) UpdateHostById(
 
 	exportStepStart := time.Now()
 	log.Debug(
-		"更新主机：开始导出主机变量",
+		"更新主机:开始导出主机变量",
 		zap.Uint32("host_id", m.ID),
 	)
 	if err := s.ExportHost(ctx, *m); err != nil {
 		log.Error(
-			"更新主机：导出主机变量失败",
+			"更新主机:导出主机变量失败",
 			zap.Error(err),
 			zap.Object("host_model", m),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -248,13 +248,13 @@ func (s *HostService) UpdateHostById(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"更新主机：导出主机变量成功",
+		"更新主机:导出主机变量成功",
 		zap.Uint32("host_id", m.ID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"更新主机：执行成功",
+		"更新主机:执行成功",
 		zap.Uint32("host_id", m.ID),
 		zap.Duration("test_ssh_step_duration", testSSHStepDuration),
 		zap.Duration("update_step_duration", updateStepDuration),
@@ -276,18 +276,18 @@ func (s *HostService) DeleteHostById(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除主机：开始执行",
+		"删除主机:开始执行",
 		zap.Uint32("host_id", hostId),
 	)
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除主机：开始删除数据库模型",
+		"删除主机:开始删除数据库模型",
 		zap.Uint32("host_id", hostId),
 	)
 	if err := s.hostRepo.DeleteModel(ctx, hostId); err != nil {
 		log.Error(
-			"删除主机：删除数据库模型失败",
+			"删除主机:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("host_id", hostId),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -297,27 +297,27 @@ func (s *HostService) DeleteHostById(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除主机：删除数据库模型成功",
+		"删除主机:删除数据库模型成功",
 		zap.Uint32("host_id", hostId),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	path := GetHostVarsExportPath(hostId)
 	log.Debug(
-		"删除主机：准备删除ansible主机变量文件",
+		"删除主机:准备删除ansible主机变量文件",
 		zap.String("path", path),
 		zap.Uint32("host_id", hostId),
 	)
 
 	removeStepStart := time.Now()
 	log.Debug(
-		"删除主机：开始删除ansible主机变量文件",
+		"删除主机:开始删除ansible主机变量文件",
 		zap.String("path", path),
 		zap.Uint32("host_id", hostId),
 	)
 	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
 		log.Error(
-			"删除主机：删除ansible主机变量文件失败",
+			"删除主机:删除ansible主机变量文件失败",
 			zap.Error(err),
 			zap.String("path", path),
 			zap.Uint32("host_id", hostId),
@@ -328,14 +328,14 @@ func (s *HostService) DeleteHostById(
 	}
 	removeStepDuration := time.Since(removeStepStart)
 	log.Debug(
-		"删除主机：删除ansible主机变量文件成功",
+		"删除主机:删除ansible主机变量文件成功",
 		zap.String("path", path),
 		zap.Uint32("host_id", hostId),
 		zap.Duration("remove_step_duration", removeStepDuration),
 	)
 
 	log.Info(
-		"删除主机：执行成功",
+		"删除主机:执行成功",
 		zap.Uint32("host_id", hostId),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("remove_step_duration", removeStepDuration),
@@ -356,14 +356,14 @@ func (s *HostService) FindHostById(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询主机：开始执行",
+		"查询主机:开始执行",
 		zap.Uint32("host_id", hostId),
 	)
 
 	m, err := s.hostRepo.GetModel(ctx, nil, hostId)
 	if err != nil {
 		log.Error(
-			"查询主机：查询数据库模型失败",
+			"查询主机:查询数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("host_id", hostId),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -371,12 +371,12 @@ func (s *HostService) FindHostById(
 		return nil, errors.NewGormError(err, map[string]any{"id": hostId})
 	}
 	log.Debug(
-		"查询主机：查询到的数据库模型详情",
+		"查询主机:查询到的数据库模型详情",
 		zap.Object("host_model", m),
 	)
 
 	log.Info(
-		"查询主机：执行成功",
+		"查询主机:执行成功",
 		zap.Uint32("host_id", hostId),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -395,10 +395,10 @@ func (s *HostService) ListHost(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询主机列表：开始执行")
+	log.Info("查询主机列表:开始执行")
 
 	log.Debug(
-		"查询主机列表：参数详情",
+		"查询主机列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_host_dto", &dto),
@@ -413,20 +413,20 @@ func (s *HostService) ListHost(
 	}
 
 	log.Debug(
-		"查询主机列表：查询数据库模型参数",
+		"查询主机列表:查询数据库模型参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询主机列表：开始查询数据库模型总数",
+		"查询主机列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.hostRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询主机列表：查询数据库模型总数失败",
+			"查询主机列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -435,13 +435,13 @@ func (s *HostService) ListHost(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询主机列表：查询数据库模型总数成功",
+		"查询主机列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询主机列表：数据库模型总数为0",
+			"查询主机列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -449,14 +449,14 @@ func (s *HostService) ListHost(
 
 	listStepStart := time.Now()
 	log.Debug(
-		"查询主机列表：开始查询数据库模型列表",
+		"查询主机列表:开始查询数据库模型列表",
 		zap.Object("query_params", &qp),
 	)
 	ms, err := s.hostRepo.ListModel(ctx, qp)
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询主机列表：查询数据库模型失败",
+			"查询主机列表:查询数据库模型失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -465,13 +465,13 @@ func (s *HostService) ListHost(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询主机列表：查询数据库模型列表成功",
+		"查询主机列表:查询数据库模型列表成功",
 		zap.Int("total_count", len(ms)),
 		zap.Duration("list_step_duration", listStepDuration),
 	)
 
 	log.Info(
-		"查询主机列表：执行成功",
+		"查询主机列表:执行成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 		zap.Duration("list_step_duration", listStepDuration),
@@ -494,16 +494,16 @@ func (s *HostService) TestSSHConnection(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"测试SSH连接：开始执行",
+		"测试SSH连接:开始执行",
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
 	)
 
-	log.Debug("测试SSH连接：尝试使用已部署的密钥连接")
+	log.Debug("测试SSH连接:尝试使用已部署的密钥连接")
 	if cli, err := s.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, []ssh.AuthMethod{s.authMethod}, s.sshTimeout); err == nil {
 		log.Info(
-			"测试SSH连接：使用已部署的密钥连接成功",
+			"测试SSH连接:使用已部署的密钥连接成功",
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
 			zap.String("ssh_user", sshUser),
@@ -513,7 +513,7 @@ func (s *HostService) TestSSHConnection(
 		return nil
 	}
 
-	log.Debug("测试SSH连接：使用密码连接")
+	log.Debug("测试SSH连接:使用密码连接")
 	sshAuths := []ssh.AuthMethod{
 		ssh.Password(sshPassword),
 	}
@@ -521,7 +521,7 @@ func (s *HostService) TestSSHConnection(
 	client, err := s.hostRepo.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, s.sshTimeout)
 	if err != nil {
 		log.Error(
-			"测试SSH连接：创建SSH连接失败",
+			"测试SSH连接:创建SSH连接失败",
 			zap.Error(err),
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
@@ -535,7 +535,7 @@ func (s *HostService) TestSSHConnection(
 	session, err := client.NewSession()
 	if err != nil {
 		log.Error(
-			"测试SSH连接：创建SSH session失败",
+			"测试SSH连接:创建SSH session失败",
 			zap.Error(err),
 			zap.String("ssh_ip", sshIP),
 			zap.Uint16("ssh_port", sshPort),
@@ -547,7 +547,7 @@ func (s *HostService) TestSSHConnection(
 	defer session.Close()
 
 	deployKeyStepStart := time.Now()
-	log.Debug("测试SSH连接：开始部署SSH公钥")
+	log.Debug("测试SSH连接:开始部署SSH公钥")
 	for _, pubKeyB64 := range s.pubKeyB64s {
 		script := `
 			mkdir -p ~/.ssh
@@ -562,7 +562,7 @@ func (s *HostService) TestSSHConnection(
 		`
 		if err := s.hostRepo.ExecuteCommand(ctx, session, script); err != nil {
 			log.Error(
-				"测试SSH连接：部署SSH公钥失败",
+				"测试SSH连接:部署SSH公钥失败",
 				zap.Error(err),
 				zap.String("ssh_ip", sshIP),
 				zap.Uint16("ssh_port", sshPort),
@@ -575,7 +575,7 @@ func (s *HostService) TestSSHConnection(
 	}
 	deployKeyStepDuration := time.Since(deployKeyStepStart)
 	log.Debug(
-		"测试SSH连接：部署SSH公钥成功",
+		"测试SSH连接:部署SSH公钥成功",
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
@@ -583,7 +583,7 @@ func (s *HostService) TestSSHConnection(
 	)
 
 	log.Info(
-		"测试SSH连接：执行成功",
+		"测试SSH连接:执行成功",
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
@@ -602,7 +602,7 @@ func (s *HostService) ExportHost(ctx context.Context, m resomodel.HostModel) *er
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"导出主机变量：开始执行",
+		"导出主机变量:开始执行",
 		zap.Uint32("host_id", m.ID),
 	)
 
@@ -615,25 +615,25 @@ func (s *HostService) ExportHost(ctx context.Context, m resomodel.HostModel) *er
 	}
 
 	log.Debug(
-		"导出主机变量：参数详情",
+		"导出主机变量:参数详情",
 		zap.Object("ansible_host", &ansibleHost),
 	)
 
 	path := GetHostVarsExportPath(m.ID)
 	log.Debug(
-		"导出主机变量：准备写入文件",
+		"导出主机变量:准备写入文件",
 		zap.String("path", path),
 	)
 
 	exportStepStart := time.Now()
 	log.Debug(
-		"导出主机变量：开始写入文件",
+		"导出主机变量:开始写入文件",
 		zap.String("path", path),
 		zap.Uint32("host_id", m.ID),
 	)
 	if _, err := serializer.WriteYAML(path, ansibleHost); err != nil {
 		log.Error(
-			"导出主机变量：写入文件失败",
+			"导出主机变量:写入文件失败",
 			zap.Error(err),
 			zap.String("path", path),
 			zap.Object("ansible_host", &ansibleHost),
@@ -644,14 +644,14 @@ func (s *HostService) ExportHost(ctx context.Context, m resomodel.HostModel) *er
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"导出主机变量：写入文件成功",
+		"导出主机变量:写入文件成功",
 		zap.String("path", path),
 		zap.Uint32("host_id", m.ID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"导出主机变量：执行成功",
+		"导出主机变量:执行成功",
 		zap.Uint32("host_id", m.ID),
 		zap.String("path", path),
 		zap.Duration("export_step_duration", exportStepDuration),

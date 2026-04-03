@@ -62,6 +62,14 @@ type ScheduleJobInfo struct {
 	PrevRun    time.Time    `json:"prev_run"`
 }
 
+func (info ScheduleJobInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddInt("entry_id", int(info.EntryID))
+	enc.AddUint32("schedule_id", info.ScheduleID)
+	enc.AddTime("next_run", info.NextRun)
+	enc.AddTime("prev_run", info.PrevRun)
+	return nil
+}
+
 // ScheduleUpsertDTO 用于创建计划任务的请求结构体
 //
 // swagger:model ScheduleUpsertDTO
@@ -122,6 +130,24 @@ func (dto *ScheduleUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	return nil
 }
 
+func (dto *ScheduleUpsertDTO) ToUpdateMap(username string) map[string]any {
+	return map[string]any{
+		"name":           dto.Name,
+		"specification":  dto.Specification,
+		"is_enabled":     dto.IsEnabled,
+		"env_vars":       dto.EnvVars,
+		"command_args":   dto.CommandArgs,
+		"work_dir":       dto.WorkDir,
+		"timeout":        dto.Timeout,
+		"is_retry":       dto.IsRetry,
+		"retry_interval": dto.RetryInterval,
+		"max_retries":    dto.MaxRetries,
+		"create_type":    dto.CreateType,
+		"username":       username,
+		"script_id":      dto.ScriptID,
+	}
+}
+
 // ListScheduleDTO 用于获取计划任务列表的请求结构体
 // 支持分页查询和多种筛选条件
 //
@@ -143,6 +169,25 @@ type ListScheduleDTO struct {
 
 	// 脚本ID
 	ScriptID uint32 `form:"script_id"`
+}
+
+func (dto *ListScheduleDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if dto == nil {
+		return nil
+	}
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
+	}
+	enc.AddString("name", dto.Name)
+	if dto.IsEnabled != nil {
+		enc.AddBool("is_enabled", *dto.IsEnabled)
+	}
+	if dto.CreateType != nil {
+		enc.AddInt8("create_type", *dto.CreateType)
+	}
+	enc.AddString("username", dto.Username)
+	enc.AddUint32("script_id", dto.ScriptID)
+	return nil
 }
 
 func (dto *ListScheduleDTO) ToQueryMap() map[string]any {

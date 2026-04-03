@@ -49,16 +49,16 @@ func NewMdsConfHandler(
 func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var pathReq mdsmodel.GetMdsConfDTO
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &pathReq,
-		"上传mds配置文件：绑定上传的mds配置文件路径参数失败") {
+		"上传mds配置文件:绑定上传的mds配置文件路径参数失败") {
 		return
 	}
 
 	var formReq mdsmodel.UploadMdsConfDTO
 	if !common.ShouldBind(
 		ctx, log, &formReq,
-		"上传mds配置文件：绑定上传的mds配置文件表单参数失败") {
+		"上传mds配置文件:绑定上传的mds配置文件表单参数失败") {
 		return
 	}
 
@@ -90,9 +90,9 @@ func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
 func (s *MdsConfHandler) DownloadMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &req,
-		"下载mds配置文件：绑定下载的mds配置文件路径参数失败") {
+		"下载mds配置文件:绑定下载的mds配置文件路径参数失败") {
 		return
 	}
 
@@ -121,9 +121,9 @@ func (s *MdsConfHandler) DownloadMdsConf(ctx *gin.Context) {
 func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &req,
-		"删除mds配置文件：绑定删除的mds配置文件路径参数失败") {
+		"删除mds配置文件:绑定删除的mds配置文件路径参数失败") {
 		return
 	}
 
@@ -131,7 +131,7 @@ func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 	savePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := fileutil.Remove(ctx, savePath); err != nil {
 		log.Error(
-			"删除mds配置文件：执行失败",
+			"删除mds配置文件:执行失败",
 			zap.Error(err),
 			zap.String("request_uri", ctx.Request.RequestURI),
 		)
@@ -158,9 +158,9 @@ func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 func (s *MdsConfHandler) ListMdsConf(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req mdsmodel.ListMdsConfDTO
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &req,
-		"获取mds配置文件列表：绑定mds配置文件路径参数失败") {
+		"获取mds配置文件列表:绑定mds配置文件路径参数失败") {
 		return
 	}
 
@@ -168,7 +168,7 @@ func (s *MdsConfHandler) ListMdsConf(ctx *gin.Context) {
 	info, err := fileutil.ListFileInfo(ctx, dirName)
 	if err != nil {
 		log.Error(
-			"获取mds配置文件列表：执行失败",
+			"获取mds配置文件列表:执行失败",
 			zap.Error(err),
 			zap.String("dirname", dirName),
 			zap.String("request_uri", ctx.Request.RequestURI),

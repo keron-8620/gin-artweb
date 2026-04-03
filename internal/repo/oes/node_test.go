@@ -39,7 +39,7 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
 	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &oesmodel.OesColonyModel{}, &oesmodel.OesNodeModel{})
 
-	// 创建测试数据：主机
+	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
 		Name:    "test-host",
 		Label:   "test",
@@ -51,7 +51,7 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	}
 	db.Create(hostModel)
 
-	// 创建测试数据：Mon节点
+	// 创建测试数据:Mon节点
 	monNodeModel := &monmodel.MonNodeModel{
 		Name:        "test-mon-node",
 		DeployPath:  "/opt/mon",
@@ -62,7 +62,7 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	}
 	db.Create(monNodeModel)
 
-	// 创建测试数据：程序包1
+	// 创建测试数据:程序包1
 	packageModel1 := &resomodel.PackageModel{
 		Label:           "test-oes",
 		StorageFilename: "test-oes.tar.gz",
@@ -71,7 +71,7 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	}
 	db.Create(packageModel1)
 
-	// 创建测试数据：程序包2 (xcounter)
+	// 创建测试数据:程序包2 (xcounter)
 	packageModel2 := &resomodel.PackageModel{
 		Label:           "test-xcounter",
 		StorageFilename: "test-xcounter.tar.gz",
@@ -80,7 +80,7 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	}
 	db.Create(packageModel2)
 
-	// 创建测试数据：Oes集群
+	// 创建测试数据:Oes集群
 	esColonyModel := &oesmodel.OesColonyModel{
 		SystemType:    "STK",
 		ColonyNum:     "01",
@@ -109,7 +109,7 @@ func (suite *OesNodeTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建OesNode应该成功")
 	suite.NotZero(cm.ID, "OesNode ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.nodeRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空OesNode模型应该返回错误")
 }
@@ -134,11 +134,11 @@ func (suite *OesNodeTestSuite) TestUpdateModel() {
 	suite.Equal("follow", fm.NodeRole)
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.nodeRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的OesNode
+	// 测试边界情况:更新不存在的OesNode
 	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的OesNode应该成功（无操作）")
 }
@@ -158,7 +158,7 @@ func (suite *OesNodeTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的OesNode应该返回错误")
 	suite.Nil(fm, "已删除的OesNode应该为nil")
 
-	// 测试边界情况：删除不存在的OesNode
+	// 测试边界情况:删除不存在的OesNode
 	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的OesNode应该成功（无操作）")
 }
@@ -176,12 +176,12 @@ func (suite *OesNodeTestSuite) TestGetModel() {
 	suite.Equal(cm.NodeRole, fm.NodeRole)
 	suite.Equal(cm.IsEnable, fm.IsEnable)
 
-	// 测试边界情况：查询不存在的OesNode
+	// 测试边界情况:查询不存在的OesNode
 	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的OesNode应该返回错误")
 	suite.Nil(fm, "查询不存在的OesNode应该返回nil")
 
-	// 测试边界情况：使用预加载
+	// 测试边界情况:使用预加载
 	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"OesColony", "Host"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询OesNode应该成功")
 	suite.Equal(cm.ID, fm.ID)
@@ -207,7 +207,7 @@ func (suite *OesNodeTestSuite) TestListModel() {
 	suite.NotNil(models, "OesNode列表应该不为nil")
 	suite.Greater(len(models), 0, "OesNode列表长度应该大于0")
 
-	// 测试边界情况：空列表
+	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"node_role": "non-existent"},
 	}
@@ -254,7 +254,7 @@ func (suite *OesNodeTestSuite) TestCountModel() {
 	suite.NoError(err, "带条件查询OesNode总数应该成功")
 	suite.GreaterOrEqual(count2, int64(3), "带条件的OesNode总数应该大于等于3")
 
-	// 测试边界情况：查询不存在的角色
+	// 测试边界情况:查询不存在的角色
 	count3, err := suite.nodeRepo.CountModel(context.Background(), map[string]any{"node_role": "non-existent"})
 	suite.NoError(err, "查询不存在角色的OesNode总数应该成功")
 	suite.Equal(int64(0), count3, "不存在角色的OesNode总数应该为0")

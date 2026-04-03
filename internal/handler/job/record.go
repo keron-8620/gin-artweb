@@ -51,14 +51,14 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 	var req jobmodel.ExecScriptDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"执行脚本：绑定请求参数失败") {
+		"执行脚本:绑定请求参数失败") {
 		return
 	}
 
-	log.Info("执行脚本：开始执行")
+	log.Info("执行脚本:开始执行")
 
 	log.Debug(
-		"执行脚本：入参详情",
+		"执行脚本:入参详情",
 		zap.Object("exec_script_dto", &req),
 	)
 
@@ -76,7 +76,7 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 	execStepDuration := time.Since(execStepStart)
 	if rErr != nil {
 		log.Error(
-			"执行脚本：执行失败",
+			"执行脚本:执行失败",
 			zap.Error(rErr),
 			zap.Uint32("script_id", req.ScriptID),
 			zap.Duration("exec_step_duration", execStepDuration),
@@ -87,13 +87,13 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 	}
 
 	log.Debug(
-		"执行脚本：执行记录模型详情",
+		"执行脚本:执行记录模型详情",
 		zap.Object("record_model", m),
 		zap.Duration("exec_step_duration", execStepDuration),
 	)
 
 	log.Info(
-		"执行脚本：执行成功",
+		"执行脚本:执行成功",
 		zap.Uint32("record_id", m.ID),
 		zap.Uint32("script_id", req.ScriptID),
 		zap.Duration("exec_step_duration", execStepDuration),
@@ -122,14 +122,14 @@ func (h *ScriptRecordHandler) GetScriptRecord(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"查询脚本执行记录：绑定记录ID参数失败") {
+		"查询脚本执行记录:绑定记录ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"查询脚本执行记录：开始执行",
+		"查询脚本执行记录:开始执行",
 		zap.Uint32("record_id", uri.ID),
 	)
 
@@ -138,7 +138,7 @@ func (h *ScriptRecordHandler) GetScriptRecord(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询脚本执行记录：执行失败",
+			"查询脚本执行记录:执行失败",
 			zap.Error(err),
 			zap.Uint32("record_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -149,13 +149,13 @@ func (h *ScriptRecordHandler) GetScriptRecord(ctx *gin.Context) {
 	}
 
 	log.Debug(
-		"查询脚本执行记录：执行记录模型详情",
+		"查询脚本执行记录:执行记录模型详情",
 		zap.Object("record_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
 
 	log.Info(
-		"查询脚本执行记录：执行成功",
+		"查询脚本执行记录:执行成功",
 		zap.Uint32("record_id", uri.ID),
 		zap.Uint32("script_id", m.ScriptID),
 		zap.Duration("find_step_duration", findStepDuration),
@@ -184,16 +184,16 @@ func (h *ScriptRecordHandler) ListScriptRecord(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req jobmodel.ListScriptRecordDTO
-	if !common.ShouldBind(
+	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询脚本执行记录列表：绑定查询参数失败") {
+		"查询脚本执行记录列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询脚本执行记录列表：开始执行")
+	log.Info("查询脚本执行记录列表:开始执行")
 
 	log.Debug(
-		"查询脚本执行记录列表：入参详情",
+		"查询脚本执行记录列表:入参详情",
 		zap.Object("list_script_record_dto", &req),
 	)
 
@@ -203,7 +203,7 @@ func (h *ScriptRecordHandler) ListScriptRecord(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询脚本执行记录列表：执行失败",
+			"查询脚本执行记录列表:执行失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
@@ -216,7 +216,7 @@ func (h *ScriptRecordHandler) ListScriptRecord(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询脚本执行记录列表：执行成功",
+		"查询脚本执行记录列表:执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
@@ -247,14 +247,14 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"下载脚本执行日志：绑定记录ID参数失败") {
+		"下载脚本执行日志:绑定记录ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"下载脚本执行日志：开始执行",
+		"下载脚本执行日志:开始执行",
 		zap.Uint32("record_id", uri.ID),
 	)
 
@@ -263,7 +263,7 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"下载脚本执行日志：查询记录详情失败",
+			"下载脚本执行日志:查询记录详情失败",
 			zap.Error(err),
 			zap.Uint32("record_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -273,7 +273,7 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"下载脚本执行日志：执行记录模型详情",
+		"下载脚本执行日志:执行记录模型详情",
 		zap.Object("record_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
@@ -284,7 +284,7 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 	downloadStepDuration := time.Since(downloadStepStart)
 	if err != nil {
 		log.Error(
-			"下载脚本执行日志：下载日志失败",
+			"下载脚本执行日志:下载日志失败",
 			zap.Error(err),
 			zap.String("log_path", logPath),
 			zap.String("rename", m.LogName),
@@ -296,7 +296,7 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"下载脚本执行日志：下载日志成功",
+		"下载脚本执行日志:下载日志成功",
 		zap.Uint32("record_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("download_step_duration", downloadStepDuration),
@@ -319,27 +319,27 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"实时获取脚本执行日志：绑定记录ID参数失败") {
+		"实时获取脚本执行日志:绑定记录ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"实时获取脚本执行日志：开始执行",
+		"实时获取脚本执行日志:开始执行",
 		zap.Uint32("record_id", uri.ID),
 	)
 
 	findStepStart := time.Now()
 	log.Debug(
-		"实时获取脚本执行日志：开始查询记录详情",
+		"实时获取脚本执行日志:开始查询记录详情",
 		zap.Uint32("record_id", uri.ID),
 	)
 	m, rErr := h.recordSvc.FindScriptRecordByID(ctx, []string{}, uri.ID)
 	findStepDuration := time.Since(findStepStart)
 	if rErr != nil {
 		log.Error(
-			"实时获取脚本执行日志：查询记录详情失败",
+			"实时获取脚本执行日志:查询记录详情失败",
 			zap.Error(rErr),
 			zap.Uint32("record_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -349,7 +349,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"实时获取脚本执行日志：查询到的记录模型详情",
+		"实时获取脚本执行日志:查询到的记录模型详情",
 		zap.Object("record_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
@@ -358,7 +358,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	logPath := h.recordSvc.GenerateScriptLogPath(m.CreatedAt, m.LogName)
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		log.Error(
-			"实时获取脚本执行日志：日志文件不存在",
+			"实时获取脚本执行日志:日志文件不存在",
 			zap.String("log_path", logPath),
 			zap.Uint32("record_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -372,7 +372,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	file, err := os.Open(logPath)
 	if err != nil {
 		log.Error(
-			"实时获取脚本执行日志：打开日志文件失败",
+			"实时获取脚本执行日志:打开日志文件失败",
 			zap.Error(err),
 			zap.String("log_path", logPath),
 			zap.Uint32("record_id", uri.ID),
@@ -391,7 +391,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	fileInfo, err := file.Stat()
 	if err != nil {
 		log.Error(
-			"实时获取脚本执行日志：获取日志文件状态失败",
+			"实时获取脚本执行日志:获取日志文件状态失败",
 			zap.Error(err),
 			zap.String("log_path", logPath),
 			zap.Uint32("record_id", uri.ID),
@@ -409,7 +409,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	n, err := file.Read(initialBytes)
 	if err != nil && err != io.EOF {
 		log.Error(
-			"实时获取脚本执行日志：读取日志文件失败",
+			"实时获取脚本执行日志:读取日志文件失败",
 			zap.Error(err),
 			zap.String("log_path", logPath),
 			zap.Uint32("record_id", uri.ID),
@@ -435,7 +435,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	if cancel := h.recordSvc.GetCancel(uri.ID); cancel == nil {
 		// 任务已完成，结束流
 		log.Info(
-			"实时获取脚本执行日志：任务已完成，结束流",
+			"实时获取脚本执行日志:任务已完成，结束流",
 			zap.Uint32("record_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -443,7 +443,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"实时获取脚本执行日志：开始监控日志文件",
+		"实时获取脚本执行日志:开始监控日志文件",
 		zap.Uint32("record_id", uri.ID),
 		zap.String("log_path", logPath),
 	)
@@ -456,14 +456,14 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 		select {
 		case <-clientGone: // 客户端已断开连接
 			log.Info(
-				"实时获取脚本执行日志：客户端已断开连接",
+				"实时获取脚本执行日志:客户端已断开连接",
 				zap.Uint32("record_id", uri.ID),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
 			return
 		case <-ctx.Done(): // ctx 取消
 			log.Info(
-				"实时获取脚本执行日志：上下文已取消",
+				"实时获取脚本执行日志:上下文已取消",
 				zap.Uint32("record_id", uri.ID),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
@@ -473,7 +473,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			fileInfo, err := os.Stat(logPath)
 			if err != nil {
 				log.Error(
-					"实时获取脚本执行日志：获取日志文件状态失败",
+					"实时获取脚本执行日志:获取日志文件状态失败",
 					zap.Error(err),
 					zap.String("log_path", logPath),
 					zap.Uint32("record_id", uri.ID),
@@ -489,7 +489,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 				_, err := file.Seek(currentSize, 0)
 				if err != nil {
 					log.Error(
-						"实时获取脚本执行日志：移动文件指针失败",
+						"实时获取脚本执行日志:移动文件指针失败",
 						zap.Error(err),
 						zap.String("log_path", logPath),
 						zap.Uint32("record_id", uri.ID),
@@ -502,7 +502,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 				n, err := file.Read(buf)
 				if err != nil && err != io.EOF {
 					log.Error(
-						"实时获取脚本执行日志：读取日志文件失败",
+						"实时获取脚本执行日志:读取日志文件失败",
 						zap.Error(err),
 						zap.String("log_path", logPath),
 						zap.Uint32("record_id", uri.ID),
@@ -528,7 +528,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 				_, err := file.Seek(currentSize, 0)
 				if err != nil {
 					log.Error(
-						"实时获取脚本执行日志：移动文件指针失败",
+						"实时获取脚本执行日志:移动文件指针失败",
 						zap.Error(err),
 						zap.String("log_path", logPath),
 						zap.Uint32("record_id", uri.ID),
@@ -540,7 +540,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 					n, err := file.Read(buf)
 					if err != nil && err != io.EOF {
 						log.Error(
-							"实时获取脚本执行日志：读取日志文件失败",
+							"实时获取脚本执行日志:读取日志文件失败",
 							zap.Error(err),
 							zap.String("log_path", logPath),
 							zap.Uint32("record_id", uri.ID),
@@ -574,7 +574,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			if cancel := h.recordSvc.GetCancel(uri.ID); cancel == nil {
 				// 检测到取消信号，结束流
 				log.Info(
-					"实时获取脚本执行日志：任务已完成，结束流",
+					"实时获取脚本执行日志:任务已完成，结束流",
 					zap.Uint32("record_id", uri.ID),
 					zap.Duration("total_duration", time.Since(startTime)),
 				)
@@ -597,14 +597,14 @@ func (h *ScriptRecordHandler) CancelScriptRecord(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"取消脚本执行：绑定记录ID参数失败") {
+		"取消脚本执行:绑定记录ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"取消脚本执行：开始执行",
+		"取消脚本执行:开始执行",
 		zap.Uint32("record_id", uri.ID),
 	)
 
@@ -612,7 +612,7 @@ func (h *ScriptRecordHandler) CancelScriptRecord(ctx *gin.Context) {
 	h.recordSvc.Cancel(ctx, uri.ID)
 	cancelStepDuration := time.Since(cancelStepStart)
 	log.Info(
-		"取消脚本执行：发送终止信号成功",
+		"取消脚本执行:发送终止信号成功",
 		zap.Uint32("record_id", uri.ID),
 		zap.Duration("cancel_step_duration", cancelStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),

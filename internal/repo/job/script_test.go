@@ -581,7 +581,7 @@ func (suite *ScriptTestSuite) TestSaveScriptFile() {
 	suite.Equal([]byte("#!/bin/bash\necho 'Updated'"), content, "脚本文件内容应该已更新")
 
 	// 测试保存脚本文件时创建目录失败（权限不足）
-	// 注意：这里我们使用一个不存在的路径，模拟权限不足的情况
+	// 注意:这里我们使用一个不存在的路径，模拟权限不足的情况
 	invalidPath := filepath.Join("/root", "test_script.sh")
 	err = suite.scriptRepo.SaveScriptFile(context.Background(), bytes.NewReader(scriptContent), invalidPath, false)
 	suite.Error(err, "保存脚本文件时创建目录失败应该返回错误")
@@ -616,7 +616,7 @@ func (suite *ScriptTestSuite) TestRemoveScriptFile() {
 	suite.NoError(err, "删除不存在的脚本文件应该成功")
 
 	// 测试删除脚本文件时检查文件失败（权限不足）
-	// 注意：这里我们使用一个不存在的路径，模拟权限不足的情况
+	// 注意:这里我们使用一个不存在的路径，模拟权限不足的情况
 	invalidPath := filepath.Join("/root", "test_script.sh")
 	err = suite.scriptRepo.RemoveScriptFile(context.Background(), invalidPath)
 	suite.Error(err, "删除脚本文件时检查文件失败应该返回错误")
@@ -639,14 +639,14 @@ func (suite *ScriptTestSuite) TestRemoveScriptFileWithRemoveError() {
 	suite.NoError(err, "保存脚本文件应该成功")
 
 	// 测试删除脚本文件时删除操作失败
-	// 方法：尝试删除一个没有写权限的文件
-	// 注意：在不同操作系统上，删除只读文件的行为可能不同
+	// 方法:尝试删除一个没有写权限的文件
+	// 注意:在不同操作系统上，删除只读文件的行为可能不同
 	// 但我们仍然添加这个测试以提高覆盖率
 	err = os.Chmod(scriptPath, 0o444) // 只读权限
 	suite.NoError(err, "设置文件只读权限应该成功")
 
 	// 尝试删除只读文件
-	// 注意：在某些操作系统上，即使文件是只读的，也可以删除
+	// 注意:在某些操作系统上，即使文件是只读的，也可以删除
 	// 所以这个测试可能不会总是失败，但我们仍然添加它以确保代码路径被执行
 	err = suite.scriptRepo.RemoveScriptFile(context.Background(), scriptPath)
 	// 这里我们不断言错误，因为行为取决于操作系统

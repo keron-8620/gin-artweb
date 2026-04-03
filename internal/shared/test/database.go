@@ -13,10 +13,17 @@ func NewTestGormDBWithConfig(config *gorm.Config) *gorm.DB {
 		}
 	}
 
-	db, err := gorm.Open(sqlite.Open("file::memory:"), config)
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), config)
 	if err != nil {
 		panic(err)
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
 	return db
 }
 

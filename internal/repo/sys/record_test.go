@@ -45,7 +45,7 @@ func (suite *RecordTestSuite) SetupSuite() {
 }
 
 func (suite *RecordTestSuite) TestCreateModel() {
-	// 测试正常场景：创建登录记录模型
+	// 测试正常场景:创建登录记录模型
 	sm := CreateTestLoginRecordModel("192.168.1.1")
 	err := suite.recordRepo.CreateModel(context.Background(), sm)
 	suite.NoError(err, "创建登录记录应该成功")
@@ -55,13 +55,13 @@ func (suite *RecordTestSuite) TestCreateModel() {
 }
 
 func (suite *RecordTestSuite) TestCreateModelWithNil() {
-	// 测试异常场景：传入nil模型参数
+	// 测试异常场景:传入nil模型参数
 	err := suite.recordRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建登录记录时传入nil应该返回错误")
 }
 
 func (suite *RecordTestSuite) TestCreateModelWithCanceledContext() {
-	// 测试异常场景：上下文已取消
+	// 测试异常场景:上下文已取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
@@ -79,7 +79,7 @@ func (suite *RecordTestSuite) TestListModel() {
 		suite.NoError(err, "创建登录记录应该成功")
 	}
 
-	// 测试正常场景：查询登录记录列表
+	// 测试正常场景:查询登录记录列表
 	qp := database.QueryParams{
 		Limit:  10,
 		Offset: 0,
@@ -124,21 +124,21 @@ func (suite *RecordTestSuite) TestListModel() {
 }
 
 func (suite *RecordTestSuite) TestGetLoginFailNum() {
-	// 测试正常场景：获取不存在IP的登录失败次数，应该返回maxNum
+	// 测试正常场景:获取不存在IP的登录失败次数，应该返回maxNum
 	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), "192.168.1.100")
 	suite.NoError(err, "获取登录失败次数应该成功")
 	suite.Equal(5, num, "获取不存在IP的登录失败次数应该返回maxNum")
 }
 
 func (suite *RecordTestSuite) TestGetLoginFailNumWithEmptyIP() {
-	// 测试异常场景：传入空IP地址
+	// 测试异常场景:传入空IP地址
 	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), "")
 	suite.Error(err, "获取登录失败次数时传入空IP应该返回错误")
 	suite.Equal(0, num, "传入空IP时应该返回0")
 }
 
 func (suite *RecordTestSuite) TestSetLoginFailNum() {
-	// 测试正常场景：设置登录失败次数
+	// 测试正常场景:设置登录失败次数
 	ip := "192.168.1.100"
 	failNum := 3
 	err := suite.recordRepo.SetLoginFailNum(context.Background(), ip, failNum)
@@ -151,13 +151,13 @@ func (suite *RecordTestSuite) TestSetLoginFailNum() {
 }
 
 func (suite *RecordTestSuite) TestSetLoginFailNumWithEmptyIP() {
-	// 测试异常场景：传入空IP地址
+	// 测试异常场景:传入空IP地址
 	err := suite.recordRepo.SetLoginFailNum(context.Background(), "", 3)
 	suite.Error(err, "设置登录失败次数时传入空IP应该返回错误")
 }
 
 func (suite *RecordTestSuite) TestGetLoginFailNumWithCanceledContext() {
-	// 测试异常场景：上下文被取消
+	// 测试异常场景:上下文被取消
 	testCtx := context.Background()
 	ctx, cancel := context.WithCancel(testCtx)
 	cancel()
@@ -168,7 +168,7 @@ func (suite *RecordTestSuite) TestGetLoginFailNumWithCanceledContext() {
 }
 
 func (suite *RecordTestSuite) TestSetLoginFailNumWithCanceledContext() {
-	// 测试异常场景：上下文被取消
+	// 测试异常场景:上下文被取消
 	testCtx := context.Background()
 	ctx, cancel := context.WithCancel(testCtx)
 	cancel()

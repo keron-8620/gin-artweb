@@ -11,19 +11,19 @@ import argparse
 import yaml
 import ansible_runner
 
-JOBS_RECORD_ID = os.getenv("JOBS_RECORD_ID")
-if not JOBS_RECORD_ID:
-    JOBS_RECORD_ID = 0
+JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
+if not JOB_RECORD_ID:
+    JOB_RECORD_ID = 0
 
-JOBS_LOG_PATH = os.getenv("JOBS_LOG_PATH")
-if not JOBS_LOG_PATH:
+JOB_LOG_PATH = os.getenv("JOB_LOG_PATH")
+if not JOB_LOG_PATH:
     raise AssertionError("环境变量没有设置JOB_LOG_PATH")
 
-JOBS_BASE_DIR = os.getenv("JOBS_BASE_DIR")
-if not JOBS_BASE_DIR:
+JOB_BASE_DIR = os.getenv("JOB_BASE_DIR")
+if not JOB_BASE_DIR:
     raise AssertionError("环境变量没有设置JOB_BASE_DIR")
 
-BASE_DIR = Path(JOBS_BASE_DIR)
+BASE_DIR = Path(JOB_BASE_DIR)
 STORAGE_DIR = BASE_DIR.joinpath("storage")
 HOST_CONF_DIR = STORAGE_DIR.joinpath("host_vars")
 MON_DIR = STORAGE_DIR.joinpath("mon")
@@ -167,8 +167,8 @@ def init_vars(config_dir: Path, extravars: str = ""):
         vars["next_trd_date"] = "00000000"
         vars["pre_trd_date"] = "00000000"
         vars["is_trading_day"] = False
-    vars["JOBS_RECORD_ID"] = JOBS_RECORD_ID
-    vars["JOBS_LOG_PATH"] = JOBS_LOG_PATH
+    vars["JOB_RECORD_ID"] = JOB_RECORD_ID
+    vars["JOB_LOG_PATH"] = JOB_LOG_PATH
     vars["local_path_script_home"] = str(SCRIPT_DIR)
     vars["local_path_playbook_home"] = str(PLAYBOOK_DIR)
     vars["local_path_oes_home"] = str(OES_DIR)
@@ -215,7 +215,7 @@ def main(options):
     hosts = init_hosts(colony_num, config_dir)
     envvars = {}
     if options.enable_ansible_log:
-        envvars["ANSIBLE_LOG_PATH"] = JOBS_LOG_PATH
+        envvars["ANSIBLE_LOG_PATH"] = JOB_LOG_PATH
     if not options.enable_ansible_color:
         envvars["ANSIBLE_NOCOLOR"] = "1"
     tmpdir = tempfile.mkdtemp()

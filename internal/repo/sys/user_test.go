@@ -368,7 +368,7 @@ func (suite *UserTestSuite) TestCreateUserWithNilModel() {
 func (suite *UserTestSuite) TestUpdateUserWithEmptyData() {
 	err := suite.userRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", 1)
 	suite.Error(err, "更新用户时传入空数据应该返回错误")
-	suite.True(strings.Contains(err.Error(), "更新用户模型：更新数据不能为空"), "错误信息应该包含'更新用户模型：更新数据不能为空'")
+	suite.True(strings.Contains(err.Error(), "更新用户模型:更新数据不能为空"), "错误信息应该包含'更新用户模型:更新数据不能为空'")
 }
 
 func (suite *UserTestSuite) TestCreateUserWithContextTimeout() {

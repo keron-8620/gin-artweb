@@ -391,7 +391,7 @@ func (suite *ButtonTestSuite) TestButtonCasbinInheritance() {
 	apiSubject := auth.ApiToSubject(testApi.ID)
 
 	// 检查按钮是否继承了API的权限
-	// 在Casbin中，组策略的格式是：g(sub, obj)
+	// 在Casbin中，组策略的格式是:g(sub, obj)
 	// 所以我们需要检查是否存在 g(buttonSubject, apiSubject) 这样的策略
 	// 由于我们无法直接查询Casbin的策略，我们可以通过测试按钮是否能够通过API的主题来访问API
 	// 但更简单的方法是检查按钮是否成功创建并且策略是否成功加载

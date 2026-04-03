@@ -41,7 +41,7 @@ func (suite *MdsColonyTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
 	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &mdsmodel.MdsColonyModel{})
 
-	// 创建测试数据：主机
+	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
 		Name:    "test-host",
 		Label:   "test",
@@ -53,7 +53,7 @@ func (suite *MdsColonyTestSuite) SetupSuite() {
 	}
 	db.Create(hostModel)
 
-	// 创建测试数据：Mon节点
+	// 创建测试数据:Mon节点
 	monNodeModel := &monmodel.MonNodeModel{
 		Name:        "test-mon-node",
 		DeployPath:  "/opt/mon",
@@ -64,7 +64,7 @@ func (suite *MdsColonyTestSuite) SetupSuite() {
 	}
 	db.Create(monNodeModel)
 
-	// 创建测试数据：程序包
+	// 创建测试数据:程序包
 	packageModel := &resomodel.PackageModel{
 		Label:           "test",
 		StorageFilename: "test-package.tar.gz",
@@ -89,7 +89,7 @@ func (suite *MdsColonyTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建MdsColony应该成功")
 	suite.NotZero(cm.ID, "MdsColony ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.colonyRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空MdsColony模型应该返回错误")
 }
@@ -115,11 +115,11 @@ func (suite *MdsColonyTestSuite) TestUpdateModel() {
 	suite.Equal("updated-mds", fm.ExtractedName)
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.colonyRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的MdsColony
+	// 测试边界情况:更新不存在的MdsColony
 	err = suite.colonyRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的MdsColony应该成功（无操作）")
 }
@@ -139,7 +139,7 @@ func (suite *MdsColonyTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的MdsColony应该返回错误")
 	suite.Nil(fm, "已删除的MdsColony应该为nil")
 
-	// 测试边界情况：删除不存在的MdsColony
+	// 测试边界情况:删除不存在的MdsColony
 	err = suite.colonyRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的MdsColony应该成功（无操作）")
 }
@@ -157,12 +157,12 @@ func (suite *MdsColonyTestSuite) TestGetModel() {
 	suite.Equal(cm.ColonyNum, fm.ColonyNum)
 	suite.Equal(cm.IsEnable, fm.IsEnable)
 
-	// 测试边界情况：查询不存在的MdsColony
+	// 测试边界情况:查询不存在的MdsColony
 	fm, err = suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的MdsColony应该返回错误")
 	suite.Nil(fm, "查询不存在的MdsColony应该返回nil")
 
-	// 测试边界情况：使用预加载
+	// 测试边界情况:使用预加载
 	fm, err = suite.colonyRepo.GetModel(context.Background(), []string{"Package", "MonNode"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询MdsColony应该成功")
 	suite.Equal(cm.ID, fm.ID)
@@ -188,8 +188,8 @@ func (suite *MdsColonyTestSuite) TestListModel() {
 	suite.Greater(int64(len(models)), int64(0), "MdsColony列表数量应该大于0")
 	suite.NotNil(models, "MdsColony列表应该不为nil")
 
-	// 测试边界情况：空列表（如果之前没有数据）
-	// 注意：由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
+	// 测试边界情况:空列表（如果之前没有数据）
+	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
 	qp2 := database.QueryParams{
 		Query: map[string]any{"colony_num": "99"},
 	}

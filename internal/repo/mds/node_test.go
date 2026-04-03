@@ -31,7 +31,7 @@ func (suite *MdsNodeTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
 	db.AutoMigrate(&resomodel.HostModel{}, &mdsmodel.MdsColonyModel{}, &mdsmodel.MdsNodeModel{})
 
-	// 创建测试数据：主机
+	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
 		Name:    "test-host",
 		Label:   "test",
@@ -43,7 +43,7 @@ func (suite *MdsNodeTestSuite) SetupSuite() {
 	}
 	db.Create(hostModel)
 
-	// 创建测试数据：Mds集群
+	// 创建测试数据:Mds集群
 	colonyModel := &mdsmodel.MdsColonyModel{
 		ColonyNum:     "01",
 		ExtractedName: "test-mds-colony",
@@ -69,7 +69,7 @@ func (suite *MdsNodeTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建MdsNode应该成功")
 	suite.NotZero(cm.ID, "MdsNode ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.nodeRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空MdsNode模型应该返回错误")
 }
@@ -94,11 +94,11 @@ func (suite *MdsNodeTestSuite) TestUpdateModel() {
 	suite.Equal("follow", fm.NodeRole)
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.nodeRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的MdsNode
+	// 测试边界情况:更新不存在的MdsNode
 	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的MdsNode应该成功（无操作）")
 }
@@ -118,7 +118,7 @@ func (suite *MdsNodeTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的MdsNode应该返回错误")
 	suite.Nil(fm, "已删除的MdsNode应该为nil")
 
-	// 测试边界情况：删除不存在的MdsNode
+	// 测试边界情况:删除不存在的MdsNode
 	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的MdsNode应该成功（无操作）")
 }
@@ -136,12 +136,12 @@ func (suite *MdsNodeTestSuite) TestGetModel() {
 	suite.Equal(cm.NodeRole, fm.NodeRole)
 	suite.Equal(cm.IsEnable, fm.IsEnable)
 
-	// 测试边界情况：查询不存在的MdsNode
+	// 测试边界情况:查询不存在的MdsNode
 	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的MdsNode应该返回错误")
 	suite.Nil(fm, "查询不存在的MdsNode应该返回nil")
 
-	// 测试边界情况：使用预加载
+	// 测试边界情况:使用预加载
 	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"MdsColony", "Host"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询MdsNode应该成功")
 	suite.Equal(cm.ID, fm.ID)
@@ -166,7 +166,7 @@ func (suite *MdsNodeTestSuite) TestListModel() {
 	suite.Greater(int64(len(models)), int64(0), "MdsNode列表数量应该大于0")
 	suite.NotNil(models, "MdsNode列表应该不为nil")
 
-	// 测试边界情况：空列表
+	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"node_role": "non-existent"},
 	}

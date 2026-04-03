@@ -65,14 +65,14 @@ func (s *UserService) GetRole(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
-		"查询用户关联的角色：开始执行",
+		"查询用户关联的角色:开始执行",
 		zap.Uint32("role_id", roleID),
 	)
 
 	m, err := s.roleRepo.GetModel(ctx, nil, roleID)
 	if err != nil {
 		log.Error(
-			"查询用户关联的角色：查询数据库模型失败",
+			"查询用户关联的角色:查询数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("role_id", roleID),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -81,7 +81,7 @@ func (s *UserService) GetRole(
 	}
 
 	log.Info(
-		"查询用户关联的角色：执行成功",
+		"查询用户关联的角色:执行成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -99,17 +99,17 @@ func (s *UserService) CreateUser(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建用户：执行开始")
+	log.Info("创建用户:执行开始")
 
 	log.Debug(
-		"创建用户：输入参数",
+		"创建用户:输入参数",
 		zap.Object("user_create_dto", &dto),
 	)
 
 	// 检查密码强度
 	if err := s.validatePasswordStrength(ctx, dto.Password); err != nil {
 		log.Error(
-			"创建用户：密码强度校验失败",
+			"创建用户:密码强度校验失败",
 			zap.Error(err),
 		)
 		return nil, err
@@ -125,7 +125,7 @@ func (s *UserService) CreateUser(
 	// 密码哈希
 	if password, err := s.hashPassword(ctx, dto.Password); err != nil {
 		log.Error(
-			"创建用户：密码哈希失败",
+			"创建用户:密码哈希失败",
 			zap.Error(err),
 		)
 		return nil, err
@@ -137,14 +137,14 @@ func (s *UserService) CreateUser(
 	role, rErr := s.GetRole(ctx, m.RoleID)
 	if rErr != nil {
 		log.Error(
-			"创建用户：查询关联角色的数据库模型失败",
+			"创建用户:查询关联角色的数据库模型失败",
 			zap.Error(rErr),
 			zap.Uint32("role_id", m.RoleID),
 		)
 		return nil, rErr
 	}
 	log.Debug(
-		"创建用户：查询关联角色的数据库模型成功",
+		"创建用户:查询关联角色的数据库模型成功",
 		zap.Uint32("role_id", role.ID),
 	)
 	m.Role = *role
@@ -152,12 +152,12 @@ func (s *UserService) CreateUser(
 	// 创建用户
 	createStepStart := time.Now()
 	log.Debug(
-		"创建用户：开始创建数据库模型",
+		"创建用户:开始创建数据库模型",
 		zap.String("username", m.Username),
 	)
 	if err := s.userRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建用户：创建数据库模型失败",
+			"创建用户:创建数据库模型失败",
 			zap.Error(err),
 			zap.String("username", m.Username),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -166,13 +166,13 @@ func (s *UserService) CreateUser(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建用户：创建数据库模型成功",
+		"创建用户:创建数据库模型成功",
 		zap.Uint32("user_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"创建用户：执行成功",
+		"创建用户:执行成功",
 		zap.Uint32("uid", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -193,19 +193,19 @@ func (s *UserService) UpdateUserByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新用户：开始执行",
+		"更新用户:开始执行",
 		zap.Uint32("uid", uid),
 	)
 
 	log.Debug(
-		"更新用户：输入参数",
+		"更新用户:输入参数",
 		zap.Object("update_user_dto", &dto),
 	)
 
 	updateData := dto.ToUpdateMap()
 	if err := s.userRepo.UpdateModel(ctx, updateData, "id = ?", uid); err != nil {
 		log.Error(
-			"更新用户：更新数据库模型失败",
+			"更新用户:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("uid", uid),
 			zap.Any("update_data", updateData),
@@ -233,13 +233,13 @@ func (s *UserService) DeleteUserByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除用户：执行开始",
+		"删除用户:执行开始",
 		zap.Uint32("uid", uid),
 	)
 
 	if err := s.userRepo.DeleteModel(ctx, uid); err != nil {
 		log.Error(
-			"删除用户：数据库删除失败",
+			"删除用户:数据库删除失败",
 			zap.Error(err),
 			zap.Uint32("uid", uid),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -248,7 +248,7 @@ func (s *UserService) DeleteUserByID(
 	}
 
 	log.Info(
-		"删除用户：执行成功",
+		"删除用户:执行成功",
 		zap.Uint32("uid", uid),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -268,7 +268,7 @@ func (s *UserService) FindUserByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询用户：开始执行",
+		"查询用户:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Uint32("uid", uid),
 	)
@@ -276,7 +276,7 @@ func (s *UserService) FindUserByID(
 	m, err := s.userRepo.GetModel(ctx, preloads, uid)
 	if err != nil {
 		log.Error(
-			"查询用户：数据库查询失败",
+			"查询用户:数据库查询失败",
 			zap.Error(err),
 			zap.Uint32("uid", uid),
 			zap.Strings("preloads", preloads),
@@ -285,12 +285,12 @@ func (s *UserService) FindUserByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": uid})
 	}
 	log.Debug(
-		"查询用户：查询到的用户详情",
+		"查询用户:查询到的用户详情",
 		zap.Object("user_model", m),
 	)
 
 	log.Info(
-		"查询用户：执行成功",
+		"查询用户:执行成功",
 		zap.Uint32("uid", uid),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -310,7 +310,7 @@ func (s *UserService) FindUserByName(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询用户名：开始执行",
+		"查询用户名:开始执行",
 		zap.String("username", username),
 		zap.Strings("preloads", preloads),
 	)
@@ -318,7 +318,7 @@ func (s *UserService) FindUserByName(
 	m, err := s.userRepo.GetModel(ctx, preloads, "username = ?", username)
 	if err != nil {
 		log.Error(
-			"查询用户名：数据库查询失败",
+			"查询用户名:数据库查询失败",
 			zap.Error(err),
 			zap.String("username", username),
 		)
@@ -326,12 +326,12 @@ func (s *UserService) FindUserByName(
 	}
 
 	log.Debug(
-		"查询用户：查询到的用户详情",
+		"查询用户:查询到的用户详情",
 		zap.Object("user_model", m),
 	)
 
 	log.Info(
-		"查询用户：执行成功",
+		"查询用户:执行成功",
 		zap.String("username", username),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -350,10 +350,10 @@ func (s *UserService) ListUser(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询用户列表：开始执行")
+	log.Info("查询用户列表:开始执行")
 
 	log.Debug(
-		"查询用户列表：参数详情",
+		"查询用户列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_user_dto", &dto),
@@ -369,20 +369,20 @@ func (s *UserService) ListUser(
 	}
 
 	log.Debug(
-		"查询用户列表：数据库查询参数",
+		"查询用户列表:数据库查询参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询用户列表：开始查询数据库模型总数",
+		"查询用户列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.userRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询用户列表：查询数据库模型总数失败",
+			"查询用户列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -390,13 +390,13 @@ func (s *UserService) ListUser(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询用户列表：查询数据库模型总数成功",
+		"查询用户列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询用户列表：数据库模型总数为0",
+			"查询用户列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -405,7 +405,7 @@ func (s *UserService) ListUser(
 	ms, err := s.userRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询用户列表：数据库查询失败",
+			"查询用户列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -414,7 +414,7 @@ func (s *UserService) ListUser(
 	}
 
 	log.Info(
-		"查询用户列表：执行成功",
+		"查询用户列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
@@ -432,10 +432,10 @@ func (s *UserService) ListLoginRecord(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询用户登录记录列表：开始执行")
+	log.Info("查询用户登录记录列表:开始执行")
 
 	log.Debug(
-		"查询用户登录记录列表：参数详情",
+		"查询用户登录记录列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_login_record_dto", &dto),
@@ -450,24 +450,24 @@ func (s *UserService) ListLoginRecord(
 		Preloads: []string{},
 	}
 	log.Debug(
-		"查询用户登录记录列表：数据库查询参数",
+		"查询用户登录记录列表:数据库查询参数",
 		zap.Object("query_params", &qp),
 	)
 	countStepStart := time.Now()
 	log.Debug(
-		"查询用户列表：开始查询数据库模型总数",
+		"查询用户列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	countStepStart = time.Now()
 	log.Debug(
-		"查询用户登录记录列表：开始查询数据库模型总数",
+		"查询用户登录记录列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.recordRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询用户登录记录列表：查询数据库模型总数失败",
+			"查询用户登录记录列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -475,13 +475,13 @@ func (s *UserService) ListLoginRecord(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询用户登录记录列表：查询数据库模型总数成功",
+		"查询用户登录记录列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询用户登录记录列表：数据库模型总数为0",
+			"查询用户登录记录列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -490,7 +490,7 @@ func (s *UserService) ListLoginRecord(
 	ms, err := s.recordRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询用户登录记录列表：数据库查询失败",
+			"查询用户登录记录列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 		)
@@ -498,7 +498,7 @@ func (s *UserService) ListLoginRecord(
 	}
 
 	log.Info(
-		"查询用户登录记录列表：执行成功",
+		"查询用户登录记录列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
@@ -519,12 +519,12 @@ func (s *UserService) Login(
 	)
 
 	log.Info(
-		"用户登录：开始执行",
+		"用户登录:开始执行",
 		zap.String("username", dto.Username),
 	)
 
 	log.Debug(
-		"用户登录：请求参数详情",
+		"用户登录:请求参数详情",
 		zap.String("username", dto.Username),
 		zap.String("ip_address", reqCtx.IP),
 		zap.String("user_agent", reqCtx.UserAgent),
@@ -535,7 +535,7 @@ func (s *UserService) Login(
 	getLoginFailNumDuration := time.Since(getLoginFailNumStartTime)
 	if err != nil {
 		log.Error(
-			"用户登录：获取登录失败次数失败",
+			"用户登录:获取登录失败次数失败",
 			zap.Error(err),
 			zap.String("username", dto.Username),
 			zap.String("ip_address", reqCtx.IP),
@@ -544,7 +544,7 @@ func (s *UserService) Login(
 		return "", "", errors.FromError(err)
 	}
 	log.Debug(
-		"用户登录：获取登录失败次数成功",
+		"用户登录:获取登录失败次数成功",
 		zap.String("username", dto.Username),
 		zap.String("ip_address", reqCtx.IP),
 		zap.Int("remaining_attempts", num),
@@ -570,7 +570,7 @@ func (s *UserService) Login(
 
 	defer func() {
 		log.Debug(
-			"创建用户登录记录：参数详情",
+			"创建用户登录记录:参数详情",
 			zap.Object("login_record_model", &lrm),
 		)
 
@@ -599,13 +599,13 @@ func (s *UserService) Login(
 		setLoginFailNumStartTime := time.Now()
 		if fErr := s.recordRepo.SetLoginFailNum(ctx, reqCtx.IP, num); fErr != nil {
 			log.Error(
-				"用户登录：设置登录失败次数失败",
+				"用户登录:设置登录失败次数失败",
 				zap.Error(fErr),
 				zap.String("ip_address", reqCtx.IP),
 			)
 		}
 		log.Debug(
-			"用户登录：设置登录失败次数成功",
+			"用户登录:设置登录失败次数成功",
 			zap.String("ip_address", reqCtx.IP),
 			zap.Int("remaining_attempts", num),
 			zap.Duration("duration", time.Since(setLoginFailNumStartTime)),

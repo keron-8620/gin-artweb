@@ -55,7 +55,7 @@ func (s *ScheduleService) AddJob(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
-		"添加计划任务：开始执行",
+		"添加计划任务:开始执行",
 		zap.Uint32("schedule_id", m.ID),
 		zap.String("specification", m.Specification),
 	)
@@ -126,7 +126,7 @@ func (s *ScheduleService) AddJob(
 	s.entryMap[m.ID] = entryID
 
 	log.Debug(
-		"添加计划任务：执行成功",
+		"添加计划任务:执行成功",
 		zap.Uint32("schedule_id", m.ID),
 		zap.Int64("entry_id", int64(entryID)),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -143,7 +143,7 @@ func (s *ScheduleService) RemoveJob(ctx context.Context, scheduleID uint32) *err
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"移除计划任务：开始执行",
+		"移除计划任务:开始执行",
 		zap.Uint32("schedule_id", scheduleID),
 	)
 
@@ -155,14 +155,14 @@ func (s *ScheduleService) RemoveJob(ctx context.Context, scheduleID uint32) *err
 		delete(s.entryMap, scheduleID)
 
 		log.Info(
-			"移除计划任务：执行成功",
+			"移除计划任务:执行成功",
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Int64("entry_id", int64(entryID)),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 	} else {
 		log.Info(
-			"移除计划任务：计划任务在调度器中不存在, 无需移除",
+			"移除计划任务:计划任务在调度器中不存在, 无需移除",
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -181,10 +181,10 @@ func (s *ScheduleService) CreateSchedule(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建计划任务：开始执行")
+	log.Info("创建计划任务:开始执行")
 
 	log.Debug(
-		"创建计划任务：输入参数",
+		"创建计划任务:输入参数",
 		zap.Object("create_schedule_dto", &dto),
 	)
 
@@ -200,6 +200,7 @@ func (s *ScheduleService) CreateSchedule(
 		IsRetry:       dto.IsRetry,
 		RetryInterval: dto.RetryInterval,
 		MaxRetries:    dto.MaxRetries,
+		CreateType:    dto.CreateType,
 		Username:      claims.Subject,
 		ScriptID:      dto.ScriptID,
 	}
@@ -207,7 +208,7 @@ func (s *ScheduleService) CreateSchedule(
 	script, err := s.scriptRepo.GetModel(ctx, "id = ?", dto.ScriptID)
 	if err != nil {
 		log.Error(
-			"创建计划任务：查询脚本失败",
+			"创建计划任务:查询脚本失败",
 			zap.Error(err),
 			zap.Uint32("script_id", m.ScriptID),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -218,12 +219,12 @@ func (s *ScheduleService) CreateSchedule(
 
 	createStepStart := time.Now()
 	log.Debug(
-		"创建计划任务：开始创建数据库模型",
+		"创建计划任务:开始创建数据库模型",
 		zap.Object("schedule_model", &m),
 	)
 	if err := s.scheduleRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建计划任务：创建数据库模型失败",
+			"创建计划任务:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("schedule_model", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -232,7 +233,7 @@ func (s *ScheduleService) CreateSchedule(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建计划任务：创建数据库模型成功",
+		"创建计划任务:创建数据库模型成功",
 		zap.Object("schedule_model", &m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
@@ -240,13 +241,13 @@ func (s *ScheduleService) CreateSchedule(
 	if m.IsEnabled {
 		addJobStepStart := time.Now()
 		log.Debug(
-			"创建计划任务：开始添加计划任务到调度器",
+			"创建计划任务:开始添加计划任务到调度器",
 			zap.Uint32("schedule_id", m.ID),
 		)
 		if err := s.AddJob(ctx, &m); err != nil {
 			s.RemoveJob(ctx, m.ID)
 			log.Error(
-				"创建计划任务：添加计划任务到调度器失败",
+				"创建计划任务:添加计划任务到调度器失败",
 				zap.Error(err),
 				zap.Uint32("schedule_id", m.ID),
 				zap.Duration("add_job_step_duration", time.Since(addJobStepStart)),
@@ -255,14 +256,14 @@ func (s *ScheduleService) CreateSchedule(
 		}
 		addJobStepDuration := time.Since(addJobStepStart)
 		log.Debug(
-			"创建计划任务：添加计划任务到调度器成功",
+			"创建计划任务:添加计划任务到调度器成功",
 			zap.Uint32("schedule_id", m.ID),
 			zap.Duration("add_job_step_duration", addJobStepDuration),
 		)
 	}
 
 	log.Info(
-		"创建计划任务：执行成功",
+		"创建计划任务:执行成功",
 		zap.Uint32("schedule_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -283,41 +284,28 @@ func (s *ScheduleService) UpdateScheduleByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新计划任务：开始执行",
+		"更新计划任务:开始执行",
 		zap.Uint32("schedule_id", scheduleID),
 	)
 
 	log.Debug(
-		"更新计划任务：输入参数",
+		"更新计划任务:输入参数",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Object("update_schedule_dto", &dto),
 	)
 
 	claims := ctxutil.MustGetJwtClaims(ctx)
-	updateData := map[string]any{
-		"name":           dto.Name,
-		"specification":  dto.Specification,
-		"is_enabled":     dto.IsEnabled,
-		"env_vars":       dto.EnvVars,
-		"command_args":   dto.CommandArgs,
-		"work_dir":       dto.WorkDir,
-		"timeout":        dto.Timeout,
-		"is_retry":       dto.IsRetry,
-		"retry_interval": dto.RetryInterval,
-		"max_retries":    dto.MaxRetries,
-		"username":       claims.Subject,
-		"script_id":      dto.ScriptID,
-	}
+	updateData := dto.ToUpdateMap(claims.Subject)
 
 	updateStepStart := time.Now()
 	log.Debug(
-		"更新计划任务：开始更新数据库模型",
+		"更新计划任务:开始更新数据库模型",
 		zap.Any("update_data", updateData),
 		zap.Uint32("schedule_id", scheduleID),
 	)
 	if err := s.scheduleRepo.UpdateModel(ctx, updateData, "id = ?", scheduleID); err != nil {
 		log.Error(
-			"更新计划任务：更新数据库模型失败",
+			"更新计划任务:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Any("update_data", updateData),
@@ -327,7 +315,7 @@ func (s *ScheduleService) UpdateScheduleByID(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新计划任务：更新数据库模型成功",
+		"更新计划任务:更新数据库模型成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
@@ -335,7 +323,7 @@ func (s *ScheduleService) UpdateScheduleByID(
 	m, rErr := s.FindScheduleByID(ctx, []string{"Script"}, scheduleID)
 	if rErr != nil {
 		log.Error(
-			"更新计划任务：查询更新后的计划任务详情失败",
+			"更新计划任务:查询更新后的计划任务详情失败",
 			zap.Error(rErr),
 			zap.Uint32("schedule_id", scheduleID),
 		)
@@ -344,12 +332,12 @@ func (s *ScheduleService) UpdateScheduleByID(
 
 	removeJobStepStart := time.Now()
 	log.Debug(
-		"更新计划任务：开始移除旧计划任务",
+		"更新计划任务:开始移除旧计划任务",
 		zap.Uint32("schedule_id", scheduleID),
 	)
 	if err := s.RemoveJob(ctx, scheduleID); err != nil {
 		log.Error(
-			"更新计划任务：移除旧计划任务失败",
+			"更新计划任务:移除旧计划任务失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Duration("remove_job_step_duration", time.Since(removeJobStepStart)),
@@ -358,7 +346,7 @@ func (s *ScheduleService) UpdateScheduleByID(
 	}
 	removeJobStepDuration := time.Since(removeJobStepStart)
 	log.Debug(
-		"更新计划任务：移除旧计划任务成功",
+		"更新计划任务:移除旧计划任务成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("remove_job_step_duration", removeJobStepDuration),
 	)
@@ -367,12 +355,12 @@ func (s *ScheduleService) UpdateScheduleByID(
 	if m.IsEnabled {
 		addJobStepStart := time.Now()
 		log.Debug(
-			"更新计划任务：开始添加新计划任务",
+			"更新计划任务:开始添加新计划任务",
 			zap.Uint32("schedule_id", scheduleID),
 		)
 		if err := s.AddJob(ctx, m); err != nil {
 			log.Error(
-				"更新计划任务：添加新计划任务失败",
+				"更新计划任务:添加新计划任务失败",
 				zap.Error(err),
 				zap.Uint32("schedule_id", scheduleID),
 				zap.Duration("add_job_step_duration", time.Since(addJobStepStart)),
@@ -381,14 +369,14 @@ func (s *ScheduleService) UpdateScheduleByID(
 		}
 		addJobStepDuration := time.Since(addJobStepStart)
 		log.Debug(
-			"更新计划任务：添加新计划任务成功",
+			"更新计划任务:添加新计划任务成功",
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Duration("add_job_step_duration", addJobStepDuration),
 		)
 	}
 
 	log.Info(
-		"更新计划任务：执行成功",
+		"更新计划任务:执行成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("remove_job_step_duration", removeJobStepDuration),
@@ -410,7 +398,7 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"批量更新计划任务：开始执行",
+		"批量更新计划任务:开始执行",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 
@@ -419,13 +407,13 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 
 	updateStepStart := time.Now()
 	log.Debug(
-		"批量更新计划任务：开始更新数据库模型",
+		"批量更新计划任务:开始更新数据库模型",
 		zap.Any("update_data", updateData),
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 	if err := s.scheduleRepo.UpdateModel(ctx, updateData, "id IN ?", scheduleIDs); err != nil {
 		log.Error(
-			"批量更新计划任务：更新数据库模型失败",
+			"批量更新计划任务:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32s("schedule_ids", scheduleIDs),
 			zap.Any("update_data", updateData),
@@ -435,14 +423,14 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"批量更新计划任务：更新数据库模型成功",
+		"批量更新计划任务:更新数据库模型成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	listStepStart := time.Now()
 	log.Debug(
-		"批量更新计划任务：开始查询更新后的计划任务详情",
+		"批量更新计划任务:开始查询更新后的计划任务详情",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 	ms, err := s.scheduleRepo.ListModel(ctx, database.QueryParams{
@@ -450,28 +438,28 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 	})
 	if err != nil {
 		log.Error(
-			"批量更新计划任务：查询更新后的计划任务详情失败",
+			"批量更新计划任务:查询更新后的计划任务详情失败",
 			zap.Error(err),
 			zap.Uint32s("schedule_ids", scheduleIDs),
 		)
 		return errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"批量更新计划任务：查询更新后的计划任务详情成功",
+		"批量更新计划任务:查询更新后的计划任务详情成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("list_step_duration", time.Since(listStepStart)),
 	)
 
 	resetJobStepStart := time.Now()
 	log.Debug(
-		"批量更新计划任务：开始重置计划任务",
+		"批量更新计划任务:开始重置计划任务",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 	for _, m := range ms {
 		removeJobStepStart := time.Now()
 		if err := s.RemoveJob(ctx, m.ID); err != nil {
 			log.Error(
-				"批量更新计划任务：移除旧计划任务失败",
+				"批量更新计划任务:移除旧计划任务失败",
 				zap.Error(err),
 				zap.Uint32("schedule_id", m.ID),
 				zap.Duration("remove_job_step_duration", time.Since(removeJobStepStart)),
@@ -480,7 +468,7 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 		}
 		removeJobStepDuration := time.Since(removeJobStepStart)
 		log.Debug(
-			"批量更新计划任务：移除旧计划任务成功",
+			"批量更新计划任务:移除旧计划任务成功",
 			zap.Uint32("schedule_id", m.ID),
 			zap.Duration("remove_job_step_duration", removeJobStepDuration),
 		)
@@ -489,12 +477,12 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 		if m.IsEnabled {
 			addJobStepStart := time.Now()
 			log.Debug(
-				"批量更新计划任务：开始添加新计划任务",
+				"批量更新计划任务:开始添加新计划任务",
 				zap.Uint32("schedule_id", m.ID),
 			)
 			if err := s.AddJob(ctx, &m); err != nil {
 				log.Error(
-					"批量更新计划任务：添加新计划任务失败",
+					"批量更新计划任务:添加新计划任务失败",
 					zap.Error(err),
 					zap.Uint32("schedule_id", m.ID),
 					zap.Duration("add_job_step_duration", time.Since(addJobStepStart)),
@@ -503,7 +491,7 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 			}
 			addJobStepDuration := time.Since(addJobStepStart)
 			log.Debug(
-				"批量更新计划任务：添加新计划任务成功",
+				"批量更新计划任务:添加新计划任务成功",
 				zap.Uint32("schedule_id", m.ID),
 				zap.Duration("add_job_step_duration", addJobStepDuration),
 			)
@@ -511,13 +499,13 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 	}
 	resetJobStepDuration := time.Since(resetJobStepStart)
 	log.Debug(
-		"批量更新计划任务：重置计划任务成功",
+		"批量更新计划任务:重置计划任务成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("reset_job_step_duration", resetJobStepDuration),
 	)
 
 	log.Info(
-		"批量更新计划任务：执行成功",
+		"批量更新计划任务:执行成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("reset_job_step_duration", resetJobStepDuration),
@@ -538,18 +526,18 @@ func (s *ScheduleService) DeleteScheduleByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除计划任务：开始执行",
+		"删除计划任务:开始执行",
 		zap.Uint32("schedule_id", scheduleID),
 	)
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除计划任务：开始删除数据库模型",
+		"删除计划任务:开始删除数据库模型",
 		zap.Uint32("schedule_id", scheduleID),
 	)
 	if err := s.scheduleRepo.DeleteModel(ctx, scheduleID); err != nil {
 		log.Error(
-			"删除计划任务：删除数据库模型失败",
+			"删除计划任务:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -558,19 +546,19 @@ func (s *ScheduleService) DeleteScheduleByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除计划任务：删除数据库模型成功",
+		"删除计划任务:删除数据库模型成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	removeJobStepStart := time.Now()
 	log.Debug(
-		"删除计划任务：开始从调度器中移除计划任务",
+		"删除计划任务:开始从调度器中移除计划任务",
 		zap.Uint32("schedule_id", scheduleID),
 	)
 	if err := s.RemoveJob(ctx, scheduleID); err != nil {
 		log.Error(
-			"删除计划任务：从调度器中移除计划任务失败",
+			"删除计划任务:从调度器中移除计划任务失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", scheduleID),
 			zap.Duration("remove_job_step_duration", time.Since(removeJobStepStart)),
@@ -579,13 +567,13 @@ func (s *ScheduleService) DeleteScheduleByID(
 	}
 	removeJobStepDuration := time.Since(removeJobStepStart)
 	log.Debug(
-		"删除计划任务：从调度器中移除计划任务成功",
+		"删除计划任务:从调度器中移除计划任务成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("remove_job_step_duration", removeJobStepDuration),
 	)
 
 	log.Info(
-		"删除计划任务：执行成功",
+		"删除计划任务:执行成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("remove_job_step_duration", removeJobStepDuration),
@@ -604,18 +592,18 @@ func (s *ScheduleService) DeleteScheduleByIDs(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info(
-		"批量删除计划任务：开始执行",
+		"批量删除计划任务:开始执行",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"批量删除计划任务：开始删除数据库模型",
+		"批量删除计划任务:开始删除数据库模型",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 	if err := s.scheduleRepo.DeleteModel(ctx, scheduleIDs); err != nil {
 		log.Error(
-			"批量删除计划任务：删除数据库模型失败",
+			"批量删除计划任务:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32s("schedule_ids", scheduleIDs),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -624,7 +612,7 @@ func (s *ScheduleService) DeleteScheduleByIDs(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"批量删除计划任务：删除数据库模型成功",
+		"批量删除计划任务:删除数据库模型成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
@@ -632,13 +620,13 @@ func (s *ScheduleService) DeleteScheduleByIDs(
 	// 移除计划任务
 	removeStepStart := time.Now()
 	log.Debug(
-		"批量删除计划任务：开始移除计划任务",
+		"批量删除计划任务:开始移除计划任务",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 	for _, id := range scheduleIDs {
 		if err := s.RemoveJob(ctx, id); err != nil {
 			log.Error(
-				"批量删除计划任务：移除计划任务失败",
+				"批量删除计划任务:移除计划任务失败",
 				zap.Error(err),
 				zap.Uint32("schedule_id", id),
 			)
@@ -647,13 +635,13 @@ func (s *ScheduleService) DeleteScheduleByIDs(
 	}
 	removeStepDuration := time.Since(removeStepStart)
 	log.Debug(
-		"批量删除计划任务：移除计划任务成功",
+		"批量删除计划任务:移除计划任务成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("remove_step_duration", removeStepDuration),
 	)
 
 	log.Info(
-		"批量删除计划任务：执行成功",
+		"批量删除计划任务:执行成功",
 		zap.Uint32s("schedule_ids", scheduleIDs),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("remove_step_duration", removeStepDuration),
@@ -675,7 +663,7 @@ func (s *ScheduleService) FindScheduleByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询计划任务：开始执行",
+		"查询计划任务:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Uint32("schedule_id", scheduleID),
 	)
@@ -683,7 +671,7 @@ func (s *ScheduleService) FindScheduleByID(
 	m, err := s.scheduleRepo.GetModel(ctx, preloads, scheduleID)
 	if err != nil {
 		log.Error(
-			"查询计划任务：查询数据库模型失败",
+			"查询计划任务:查询数据库模型失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Uint32("schedule_id", scheduleID),
@@ -692,12 +680,12 @@ func (s *ScheduleService) FindScheduleByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": scheduleID})
 	}
 	log.Debug(
-		"查询计划任务：查询到的数据库模型详情",
+		"查询计划任务:查询到的数据库模型详情",
 		zap.Object("schedule_model", m),
 	)
 
 	log.Info(
-		"查询计划任务：执行成功",
+		"查询计划任务:执行成功",
 		zap.Uint32("schedule_id", scheduleID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -716,10 +704,10 @@ func (s *ScheduleService) ListSchedule(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询计划任务列表：开始执行")
+	log.Info("查询计划任务列表:开始执行")
 
 	log.Debug(
-		"查询计划任务列表：参数详情",
+		"查询计划任务列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_schedule_dto", &dto),
@@ -735,20 +723,20 @@ func (s *ScheduleService) ListSchedule(
 	}
 
 	log.Debug(
-		"查询计划任务列表：查询数据库模型参数",
+		"查询计划任务列表:查询数据库模型参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询计划任务列表：开始查询数据库模型总数",
+		"查询计划任务列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.scheduleRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询计划任务列表：查询数据库模型总数失败",
+			"查询计划任务列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -757,13 +745,13 @@ func (s *ScheduleService) ListSchedule(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询计划任务列表：查询数据库模型总数成功",
+		"查询计划任务列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询计划任务列表：数据库模型总数为0",
+			"查询计划任务列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -772,7 +760,7 @@ func (s *ScheduleService) ListSchedule(
 	ms, err := s.scheduleRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询计划任务列表：查询数据库模型失败",
+			"查询计划任务列表:查询数据库模型失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -781,7 +769,7 @@ func (s *ScheduleService) ListSchedule(
 	}
 
 	log.Info(
-		"查询计划任务列表：执行成功",
+		"查询计划任务列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
@@ -797,7 +785,7 @@ func (s *ScheduleService) ListScheduleJob(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("获取调度器任务列表：开始执行")
+	log.Info("获取调度器任务列表:开始执行")
 
 	// 获取 cron 调度器中的所有条目
 	entries := s.crontab.Entries()
@@ -832,7 +820,7 @@ func (s *ScheduleService) ListScheduleJob(
 	}
 
 	log.Info(
-		"获取调度器任务列表：执行成功",
+		"获取调度器任务列表:执行成功",
 		zap.Int("job_count", len(job)),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -851,10 +839,10 @@ func (s *ScheduleService) ReLoadSchedule(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("重新加载计划任务：开始执行")
+	log.Info("重新加载计划任务:开始执行")
 
 	log.Debug(
-		"重新加载计划任务：参数详情",
+		"重新加载计划任务:参数详情",
 		zap.Any("query", query),
 	)
 
@@ -864,14 +852,14 @@ func (s *ScheduleService) ReLoadSchedule(
 
 	listStepStart := time.Now()
 	log.Debug(
-		"重新加载计划任务：开始查询数据库模型列表",
+		"重新加载计划任务:开始查询数据库模型列表",
 		zap.Object("query_params", &qp),
 	)
 	ms, err := s.scheduleRepo.ListModel(ctx, qp)
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"重新加载计划任务：查询计划任务失败",
+			"重新加载计划任务:查询计划任务失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -881,7 +869,7 @@ func (s *ScheduleService) ReLoadSchedule(
 	}
 
 	log.Debug(
-		"重新加载计划任务：查询到计划任务数量",
+		"重新加载计划任务:查询到计划任务数量",
 		zap.Int("schedule_count", len(ms)),
 		zap.Duration("list_step_duration", listStepDuration),
 	)
@@ -889,19 +877,19 @@ func (s *ScheduleService) ReLoadSchedule(
 	if len(ms) > 0 {
 		processStepStart := time.Now()
 		log.Debug(
-			"重新加载计划任务：开始处理计划任务",
+			"重新加载计划任务:开始处理计划任务",
 			zap.Int("schedule_count", len(ms)),
 		)
 		for _, m := range ms {
 			log.Debug(
-				"重新加载计划任务：处理计划任务",
+				"重新加载计划任务:处理计划任务",
 				zap.Uint32("schedule_id", m.ID),
 				zap.Bool("is_enabled", m.IsEnabled),
 			)
 
 			if err := s.RemoveJob(ctx, m.ID); err != nil {
 				log.Error(
-					"重新加载计划任务：移除计划任务失败",
+					"重新加载计划任务:移除计划任务失败",
 					zap.Error(err),
 					zap.Uint32("schedule_id", m.ID),
 					zap.Duration("total_duration", time.Since(startTime)),
@@ -912,7 +900,7 @@ func (s *ScheduleService) ReLoadSchedule(
 			if m.IsEnabled {
 				if err := s.AddJob(ctx, &m); err != nil {
 					log.Error(
-						"重新加载计划任务：添加计划任务失败",
+						"重新加载计划任务:添加计划任务失败",
 						zap.Error(err),
 						zap.Uint32("schedule_id", m.ID),
 						zap.Duration("total_duration", time.Since(startTime)),
@@ -923,14 +911,14 @@ func (s *ScheduleService) ReLoadSchedule(
 		}
 		processStepDuration := time.Since(processStepStart)
 		log.Debug(
-			"重新加载计划任务：处理计划任务成功",
+			"重新加载计划任务:处理计划任务成功",
 			zap.Int("schedule_count", len(ms)),
 			zap.Duration("process_step_duration", processStepDuration),
 		)
 	}
 
 	log.Info(
-		"重新加载计划任务：执行成功",
+		"重新加载计划任务:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil

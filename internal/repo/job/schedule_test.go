@@ -391,7 +391,7 @@ func (suite *ScheduleTestSuite) TestListModel() {
 	suite.NoError(err)
 
 	// 创建仅针对该脚本的查询条件
-	// 注意：实际的QueryParams结构可能需要根据实际实现调整
+	// 注意:实际的QueryParams结构可能需要根据实际实现调整
 	emptyQp := database.QueryParams{}
 	models, err = suite.scheduleRepo.ListModel(context.Background(), emptyQp)
 	suite.NoError(err)
@@ -433,7 +433,7 @@ func (suite *ScheduleTestSuite) TestListModel() {
 	}
 
 	// 测试查询禁用的计划任务
-	// 注意：实际的QueryParams结构可能需要根据实际实现调整
+	// 注意:实际的QueryParams结构可能需要根据实际实现调整
 	disabledQp := database.QueryParams{}
 	disabledModels, err := suite.scheduleRepo.ListModel(context.Background(), disabledQp)
 	suite.NoError(err)
@@ -458,7 +458,7 @@ func (suite *ScheduleTestSuite) TestListModel() {
 	}
 
 	// 测试查询第二个脚本的计划任务
-	// 注意：实际的QueryParams结构可能需要根据实际实现调整
+	// 注意:实际的QueryParams结构可能需要根据实际实现调整
 	script2Qp := database.QueryParams{}
 	script2Models, err := suite.scheduleRepo.ListModel(context.Background(), script2Qp)
 	suite.NoError(err)

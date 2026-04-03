@@ -41,16 +41,16 @@ func (r *MonNodeRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建mon模型：模型不能为空")
+		err := errors.New("创建mon模型:模型不能为空")
 		log.Error(
-			"创建mon模型：模型不能为空",
+			"创建mon模型:模型不能为空",
 			zap.Error(err),
 		)
 		return err
 	}
 
 	log.Debug(
-		"创建mon模型：开始执行",
+		"创建mon模型:开始执行",
 		zap.Object("mon_model", m),
 	)
 
@@ -61,16 +61,16 @@ func (r *MonNodeRepo) CreateModel(
 	createMonNodeDuration := time.Since(createMonNodeStartTime)
 	if err != nil {
 		log.Error(
-			"创建mon模型：数据库操作失败",
+			"创建mon模型:数据库操作失败",
 			zap.Error(err),
 			zap.Object("mon_model", m),
 			zap.Duration("create_duration", createMonNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "创建mon模型：数据库操作失败")
+		return errors.WrapIf(err, "创建mon模型:数据库操作失败")
 	}
 	log.Debug(
-		"创建mon模型：执行成功",
+		"创建mon模型:执行成功",
 		zap.Object("mon_model", m),
 		zap.Duration("create_duration", createMonNodeDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -88,9 +88,9 @@ func (r *MonNodeRepo) UpdateModel(
 
 	// 检查参数
 	if len(data) == 0 {
-		err := errors.New("更新mon模型：更新数据为空")
+		err := errors.New("更新mon模型:更新数据为空")
 		log.Error(
-			"更新mon模型：更新数据为空",
+			"更新mon模型:更新数据为空",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
@@ -99,7 +99,7 @@ func (r *MonNodeRepo) UpdateModel(
 	}
 
 	log.Debug(
-		"更新mon模型：开始执行",
+		"更新mon模型:开始执行",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 	)
@@ -110,17 +110,17 @@ func (r *MonNodeRepo) UpdateModel(
 	updateMonNodeDuration := time.Since(updateMonNodeStartTime)
 	if err != nil {
 		log.Error(
-			"更新mon模型：数据库操作失败",
+			"更新mon模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
 			zap.Duration("update_duration", updateMonNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "更新mon模型：数据库操作失败")
+		return errors.WrapIf(err, "更新mon模型:数据库操作失败")
 	}
 	log.Debug(
-		"更新mon模型：执行成功",
+		"更新mon模型:执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 		zap.Duration("update_duration", updateMonNodeDuration),
@@ -137,7 +137,7 @@ func (r *MonNodeRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除mon模型：开始执行",
+		"删除mon模型:开始执行",
 		zap.Any("conds", conds),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -147,16 +147,16 @@ func (r *MonNodeRepo) DeleteModel(
 	deleteMonNodeDuration := time.Since(deleteMonNodeStartTime)
 	if err != nil {
 		log.Error(
-			"删除mon模型：数据库操作失败",
+			"删除mon模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("delete_duration", deleteMonNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除mon模型：数据库操作失败")
+		return errors.WrapIf(err, "删除mon模型:数据库操作失败")
 	}
 	log.Debug(
-		"删除mon模型：执行成功",
+		"删除mon模型:执行成功",
 		zap.Any("conds", conds),
 		zap.Duration("delete_duration", deleteMonNodeDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -173,7 +173,7 @@ func (r *MonNodeRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mon模型：开始执行",
+		"查询mon模型:开始执行",
 		zap.Any("conds", conds),
 	)
 	var m monmodel.MonNodeModel
@@ -184,16 +184,16 @@ func (r *MonNodeRepo) GetModel(
 	getMonNodeDuration := time.Since(getMonNodeStartTime)
 	if err != nil {
 		log.Error(
-			"查询mon模型：数据库操作失败",
+			"查询mon模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("get_duration", getMonNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询mon模型：数据库操作失败")
+		return nil, errors.WrapIf(err, "查询mon模型:数据库操作失败")
 	}
 	log.Debug(
-		"查询mon模型：执行成功",
+		"查询mon模型:执行成功",
 		zap.Object("mon_model", &m),
 		zap.Any("conds", conds),
 		zap.Duration("get_duration", getMonNodeDuration),
@@ -210,7 +210,7 @@ func (r *MonNodeRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mon模型列表：开始执行",
+		"查询mon模型列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 	var ms []monmodel.MonNodeModel
@@ -221,16 +221,16 @@ func (r *MonNodeRepo) ListModel(
 	listMonNodeDuration := time.Since(listMonNodeStartTime)
 	if err != nil {
 		log.Error(
-			"查询mon模型列表：数据库操作失败",
+			"查询mon模型列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_duration", listMonNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询mon模型列表：数据库操作失败")
+		return nil, errors.WrapIf(err, "查询mon模型列表:数据库操作失败")
 	}
 	log.Debug(
-		"查询mon模型列表：执行成功",
+		"查询mon模型列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_duration", listMonNodeDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -246,7 +246,7 @@ func (r *MonNodeRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mon模型总数：开始执行",
+		"查询mon模型总数:开始执行",
 		zap.Any("query", query),
 	)
 
@@ -258,16 +258,16 @@ func (r *MonNodeRepo) CountModel(
 	countMonNodeDuration := time.Since(countMonNodeStartTime)
 	if err != nil {
 		log.Error(
-			"查询mon模型总数：数据库查询失败",
+			"查询mon模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_duration", countMonNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, errors.WrapIf(err, "查询mon模型总数：数据库查询失败")
+		return 0, errors.WrapIf(err, "查询mon模型总数:数据库查询失败")
 	}
 	log.Debug(
-		"查询mon模型总数：执行成功",
+		"查询mon模型总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_duration", countMonNodeDuration),

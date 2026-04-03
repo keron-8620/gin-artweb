@@ -165,7 +165,7 @@ func (suite *MenuTestSuite) TestCreateMenuWithNilModel() {
 	// 测试创建菜单时传入 nil 模型
 	err := suite.menuRepo.CreateModel(context.Background(), nil, nil)
 	suite.Error(err, "传入 nil 模型应该返回错误")
-	suite.Contains(err.Error(), "创建菜单模型：模型不能为空")
+	suite.Contains(err.Error(), "创建菜单模型:模型不能为空")
 }
 
 // TestCreateMenuWithEmptyApis 测试创建菜单时传入空的 APIs 列表
@@ -445,10 +445,10 @@ func (suite *MenuTestSuite) TestMenuAddGroupPolicyWithInvalidAPI() {
 	suite.NoError(err, "创建菜单应该成功")
 
 	// 手动设置无效API（ID为0）
-	// 注意：这里我们直接修改menu对象，因为CreateModel会忽略Apis参数
+	// 注意:这里我们直接修改menu对象，因为CreateModel会忽略Apis参数
 	// 这样可以测试AddGroupPolicy中处理无效API的逻辑
 	menu.Apis = []sysmodel.ApiModel{{URL: "/api/test", Method: "GET"}}
-	// 注意：我们不设置ID字段，让它保持默认值0
+	// 注意:我们不设置ID字段，让它保持默认值0
 
 	// 测试添加组策略（应该跳过无效API）
 	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)

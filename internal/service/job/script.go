@@ -53,10 +53,10 @@ func (s *ScriptService) CreateScript(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建脚本：开始执行")
+	log.Info("创建脚本:开始执行")
 
 	log.Debug(
-		"创建脚本：输入参数",
+		"创建脚本:输入参数",
 		zap.Object("upload_script_biz", &dto),
 	)
 
@@ -74,12 +74,12 @@ func (s *ScriptService) CreateScript(
 
 	createStepStart := time.Now()
 	log.Debug(
-		"创建脚本：开始创建数据库模型",
+		"创建脚本:开始创建数据库模型",
 		zap.Object("script_model", &m),
 	)
 	if err := s.scriptRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建脚本：创建数据库模型失败",
+			"创建脚本:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("script_model", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -88,17 +88,17 @@ func (s *ScriptService) CreateScript(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建脚本：创建数据库模型成功",
+		"创建脚本:创建数据库模型成功",
 		zap.Object("script_model", &m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	saveStepStart := time.Now()
-	log.Debug("创建脚本：开始保存脚本文件")
+	log.Debug("创建脚本:开始保存脚本文件")
 	scriptPath := GetScriptStoragePath(dto.Project, dto.Label, dto.Filename, false)
 	if err := s.scriptRepo.SaveScriptFile(ctx, dto.File, scriptPath, false); err != nil {
 		log.Error(
-			"创建脚本：脚本文件创建失败",
+			"创建脚本:脚本文件创建失败",
 			zap.Error(err),
 			zap.String("script_path", scriptPath),
 			zap.Duration("save_step_duration", time.Since(saveStepStart)),
@@ -107,13 +107,13 @@ func (s *ScriptService) CreateScript(
 	}
 	saveStepDuration := time.Since(saveStepStart)
 	log.Debug(
-		"创建脚本：脚本文件创建成功",
+		"创建脚本:脚本文件创建成功",
 		zap.String("script_path", scriptPath),
 		zap.Duration("save_step_duration", saveStepDuration),
 	)
 
 	log.Info(
-		"创建脚本：执行成功",
+		"创建脚本:执行成功",
 		zap.Uint32("script_id", m.ID),
 		zap.String("script_path", scriptPath),
 		zap.Duration("create_step_duration", createStepDuration),
@@ -137,12 +137,12 @@ func (s *ScriptService) UpdateScriptByID(
 	claims := ctxutil.MustGetJwtClaims(ctx)
 
 	log.Info(
-		"更新脚本：开始执行",
+		"更新脚本:开始执行",
 		zap.Uint32("script_id", scriptID),
 	)
 
 	log.Debug(
-		"更新脚本：输入参数",
+		"更新脚本:输入参数",
 		zap.Uint32("script_id", scriptID),
 		zap.Object("upload_script_biz", &dto),
 	)
@@ -150,19 +150,19 @@ func (s *ScriptService) UpdateScriptByID(
 	om, rErr := s.FindScriptByID(ctx, scriptID)
 	if rErr != nil {
 		log.Error(
-			"更新脚本：查询脚本失败",
+			"更新脚本:查询脚本失败",
 			zap.Uint32("script_id", scriptID),
 			zap.Error(rErr),
 		)
 		return nil, rErr
 	}
 	log.Debug(
-		"更新脚本：查询到的脚本详情",
+		"更新脚本:查询到的脚本详情",
 		zap.Object("script_model", om),
 	)
 	if om.IsBuiltin {
 		log.Error(
-			"更新脚本：内置脚本不能修改",
+			"更新脚本:内置脚本不能修改",
 			zap.Uint32("script_id", scriptID),
 		)
 		return nil, errors.FromReason(errors.ReasonScriptIsBuiltin).WithField("script_id", scriptID)
@@ -172,13 +172,13 @@ func (s *ScriptService) UpdateScriptByID(
 	updateData["username"] = claims.Username
 	updateStepStart := time.Now()
 	log.Debug(
-		"更新脚本：开始更新数据库模型",
+		"更新脚本:开始更新数据库模型",
 		zap.Any("update_data", updateData),
 		zap.Uint32("script_id", scriptID),
 	)
 	if err := s.scriptRepo.UpdateModel(ctx, updateData, "id = ?", scriptID); err != nil {
 		log.Error(
-			"更新脚本：更新数据库模型失败",
+			"更新脚本:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("script_id", scriptID),
 			zap.Any("update_data", updateData),
@@ -188,18 +188,18 @@ func (s *ScriptService) UpdateScriptByID(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新脚本：更新数据库模型成功",
+		"更新脚本:更新数据库模型成功",
 		zap.Uint32("script_id", scriptID),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	saveStepStart := time.Now()
-	log.Debug("更新脚本：开始保存脚本文件")
+	log.Debug("更新脚本:开始保存脚本文件")
 	oldScriptPath := GetScriptStoragePath(om.Project, om.Label, om.Name, false)
 	newScriptPath := GetScriptStoragePath(dto.Project, dto.Label, dto.Filename, false)
 	if err := s.scriptRepo.SaveScriptFile(ctx, dto.File, newScriptPath, true); err != nil {
 		log.Error(
-			"更新脚本：新脚本写入失败",
+			"更新脚本:新脚本写入失败",
 			zap.Error(err),
 			zap.String("script_path", newScriptPath),
 			zap.Duration("save_step_duration", time.Since(saveStepStart)),
@@ -210,13 +210,13 @@ func (s *ScriptService) UpdateScriptByID(
 	if oldScriptPath != newScriptPath {
 		removeStepStart := time.Now()
 		log.Debug(
-			"更新脚本：开始删除旧脚本文件",
+			"更新脚本:开始删除旧脚本文件",
 			zap.Uint32("script_id", scriptID),
 			zap.String("old_script_path", oldScriptPath),
 		)
 		if err := s.scriptRepo.RemoveScriptFile(ctx, oldScriptPath); err != nil {
 			log.Error(
-				"更新脚本：删除旧脚本文件失败",
+				"更新脚本:删除旧脚本文件失败",
 				zap.Error(err),
 				zap.Uint32("script_id", scriptID),
 				zap.String("script_path", oldScriptPath),
@@ -226,7 +226,7 @@ func (s *ScriptService) UpdateScriptByID(
 		}
 		removeStepDuration := time.Since(removeStepStart)
 		log.Debug(
-			"更新脚本：删除旧脚本文件成功",
+			"更新脚本:删除旧脚本文件成功",
 			zap.Uint32("script_id", scriptID),
 			zap.String("script_path", oldScriptPath),
 			zap.Duration("remove_step_duration", removeStepDuration),
@@ -236,7 +236,7 @@ func (s *ScriptService) UpdateScriptByID(
 	m, rErr := s.FindScriptByID(ctx, scriptID)
 	if rErr != nil {
 		log.Error(
-			"更新脚本：查询更新后的脚本详情失败",
+			"更新脚本:查询更新后的脚本详情失败",
 			zap.Error(rErr),
 			zap.Uint32("script_id", scriptID),
 		)
@@ -244,7 +244,7 @@ func (s *ScriptService) UpdateScriptByID(
 	}
 
 	log.Info(
-		"更新脚本：执行成功",
+		"更新脚本:执行成功",
 		zap.Uint32("script_id", scriptID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("save_step_duration", saveStepDuration),
@@ -264,14 +264,14 @@ func (s *ScriptService) DeleteScriptByID(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info(
-		"删除脚本：开始执行",
+		"删除脚本:开始执行",
 		zap.Uint32("script_id", scriptID),
 	)
 
 	m, rErr := s.FindScriptByID(ctx, scriptID)
 	if rErr != nil {
 		log.Error(
-			"删除脚本：查询脚本详情失败",
+			"删除脚本:查询脚本详情失败",
 			zap.Uint32("script_id", scriptID),
 			zap.Error(rErr),
 		)
@@ -279,7 +279,7 @@ func (s *ScriptService) DeleteScriptByID(
 	}
 	if m.IsBuiltin {
 		log.Error(
-			"删除脚本：内置脚本不能删除",
+			"删除脚本:内置脚本不能删除",
 			zap.Uint32("script_id", scriptID),
 		)
 		return errors.FromReason(errors.ReasonScriptIsBuiltin).WithField("script_id", scriptID)
@@ -288,12 +288,12 @@ func (s *ScriptService) DeleteScriptByID(
 	scriptPath := GetScriptStoragePath(m.Project, m.Label, m.Name, false)
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除脚本：开始删除数据库模型",
+		"删除脚本:开始删除数据库模型",
 		zap.Uint32("script_id", scriptID),
 	)
 	if err := s.scriptRepo.DeleteModel(ctx, scriptID); err != nil {
 		log.Error(
-			"删除脚本：删除数据库模型失败",
+			"删除脚本:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("script_id", scriptID),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -302,20 +302,20 @@ func (s *ScriptService) DeleteScriptByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除脚本：删除数据库模型成功",
+		"删除脚本:删除数据库模型成功",
 		zap.Uint32("script_id", scriptID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	removeStepStart := time.Now()
 	log.Debug(
-		"删除脚本：开始删除脚本文件",
+		"删除脚本:开始删除脚本文件",
 		zap.Uint32("script_id", scriptID),
 		zap.String("script_path", scriptPath),
 	)
 	if err := s.scriptRepo.RemoveScriptFile(ctx, scriptPath); err != nil {
 		log.Error(
-			"删除脚本：脚本文件删除失败",
+			"删除脚本:脚本文件删除失败",
 			zap.Error(err),
 			zap.Uint32("script_id", scriptID),
 			zap.String("script_path", scriptPath),
@@ -325,14 +325,14 @@ func (s *ScriptService) DeleteScriptByID(
 	}
 	removeStepDuration := time.Since(removeStepStart)
 	log.Debug(
-		"删除脚本：脚本文件删除成功",
+		"删除脚本:脚本文件删除成功",
 		zap.Uint32("script_id", scriptID),
 		zap.String("script_path", scriptPath),
 		zap.Duration("remove_step_duration", removeStepDuration),
 	)
 
 	log.Info(
-		"删除脚本：执行成功",
+		"删除脚本:执行成功",
 		zap.Uint32("script_id", scriptID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("remove_step_duration", removeStepDuration),
@@ -352,14 +352,14 @@ func (s *ScriptService) FindScriptByID(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info(
-		"查询脚本：开始执行",
+		"查询脚本:开始执行",
 		zap.Uint32("script_id", scriptID),
 	)
 
 	m, err := s.scriptRepo.GetModel(ctx, scriptID)
 	if err != nil {
 		log.Error(
-			"查询脚本：查询数据库模型失败",
+			"查询脚本:查询数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("script_id", scriptID),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -367,12 +367,12 @@ func (s *ScriptService) FindScriptByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": scriptID})
 	}
 	log.Debug(
-		"查询脚本：查询到的数据库模型详情",
+		"查询脚本:查询到的数据库模型详情",
 		zap.Object("script_model", m),
 	)
 
 	log.Info(
-		"查询脚本：执行成功",
+		"查询脚本:执行成功",
 		zap.Uint32("script_id", scriptID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -390,10 +390,10 @@ func (s *ScriptService) ListScript(
 
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
-	log.Info("查询脚本列表：开始执行")
+	log.Info("查询脚本列表:开始执行")
 
 	log.Debug(
-		"查询脚本列表：参数详情",
+		"查询脚本列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_script_dto", &dto),
@@ -408,20 +408,20 @@ func (s *ScriptService) ListScript(
 	}
 
 	log.Debug(
-		"查询脚本列表：查询数据库模型参数",
+		"查询脚本列表:查询数据库模型参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询脚本列表：开始查询数据库模型总数",
+		"查询脚本列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.scriptRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询脚本列表：查询数据库模型总数失败",
+			"查询脚本列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -430,13 +430,13 @@ func (s *ScriptService) ListScript(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询脚本列表：查询数据库模型总数成功",
+		"查询脚本列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询脚本列表：数据库模型总数为0",
+			"查询脚本列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -445,7 +445,7 @@ func (s *ScriptService) ListScript(
 	ms, err := s.scriptRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询脚本列表：查询数据库模型失败",
+			"查询脚本列表:查询数据库模型失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -454,7 +454,7 @@ func (s *ScriptService) ListScript(
 	}
 
 	log.Info(
-		"查询脚本列表：执行成功",
+		"查询脚本列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
@@ -471,13 +471,13 @@ func (s *ScriptService) ListScriptsByIDs(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info(
-		"查询指定的脚本列表：开始执行",
+		"查询指定的脚本列表:开始执行",
 		zap.Uint32s("script_ids", scriptIDs),
 	)
 
 	if len(scriptIDs) == 0 {
 		log.Info(
-			"查询指定的脚本列表：脚本 ID 列表为空",
+			"查询指定的脚本列表:脚本 ID 列表为空",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return []jobmodel.ScriptModel{}, nil
@@ -488,14 +488,14 @@ func (s *ScriptService) ListScriptsByIDs(
 	}
 
 	log.Debug(
-		"查询指定的脚本列表：查询数据库模型参数",
+		"查询指定的脚本列表:查询数据库模型参数",
 		zap.Object("query_params", &qp),
 	)
 
 	ms, err := s.scriptRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询指定的脚本列表：查询数据库模型失败",
+			"查询指定的脚本列表:查询数据库模型失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -503,12 +503,12 @@ func (s *ScriptService) ListScriptsByIDs(
 		return nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询指定的脚本列表：查询数据库成功",
+		"查询指定的脚本列表:查询数据库成功",
 		zap.Uint32s("script_ids", scriptIDs),
 	)
 
 	log.Info(
-		"查询指定的脚本列表：执行成功",
+		"查询指定的脚本列表:执行成功",
 		zap.Uint32s("script_ids", scriptIDs),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -525,10 +525,10 @@ func (s *ScriptService) ListProjects(
 
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
-	log.Info("查询项目名称：开始执行")
+	log.Info("查询项目名称:开始执行")
 
 	log.Debug(
-		"查询项目名称：参数详情",
+		"查询项目名称:参数详情",
 		zap.Object("list_script_dto", &dto),
 	)
 
@@ -536,7 +536,7 @@ func (s *ScriptService) ListProjects(
 	projects, err := s.scriptRepo.ListProjects(ctx, query)
 	if err != nil {
 		log.Error(
-			"查询项目名称：数据库查询失败",
+			"查询项目名称:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query_params", query),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -545,7 +545,7 @@ func (s *ScriptService) ListProjects(
 	}
 
 	log.Info(
-		"查询项目名称：执行成功",
+		"查询项目名称:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return projects, nil
@@ -561,10 +561,10 @@ func (s *ScriptService) ListLabels(
 
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
-	log.Info("查询标签名称：开始执行")
+	log.Info("查询标签名称:开始执行")
 
 	log.Debug(
-		"查询标签名称：参数详情",
+		"查询标签名称:参数详情",
 		zap.Object("list_script_dto", &dto),
 	)
 
@@ -572,7 +572,7 @@ func (s *ScriptService) ListLabels(
 	labels, err := s.scriptRepo.ListLabels(ctx, query)
 	if err != nil {
 		log.Error(
-			"查询标签名称：数据库查询失败",
+			"查询标签名称:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query_params", query),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -581,7 +581,7 @@ func (s *ScriptService) ListLabels(
 	}
 
 	log.Info(
-		"查询标签名称：执行成功",
+		"查询标签名称:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return labels, nil

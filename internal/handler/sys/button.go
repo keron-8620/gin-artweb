@@ -49,14 +49,14 @@ func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
 	var req sysmodel.CreateButtonDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"创建按钮：绑定创建按钮请求参数失败") {
+		"创建按钮:绑定创建按钮请求参数失败") {
 		return
 	}
 
-	log.Info("创建按钮：开始执行")
+	log.Info("创建按钮:开始执行")
 
 	log.Debug(
-		"创建按钮：入参详情",
+		"创建按钮:入参详情",
 		zap.Object("create_button_dto", &req),
 	)
 
@@ -65,7 +65,7 @@ func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
 	createStepDuration := time.Since(createStepStart)
 	if err != nil {
 		log.Error(
-			"创建按钮：执行失败",
+			"创建按钮:执行失败",
 			zap.Error(err),
 			zap.Object("create_button_dto", &req),
 			zap.Duration("create_step_duration", createStepDuration),
@@ -75,13 +75,13 @@ func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"创建按钮：创建的按钮模型详情",
+		"创建按钮:创建的按钮模型详情",
 		zap.Object("button_model", m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"创建按钮：执行成功",
+		"创建按钮:执行成功",
 		zap.Uint32("button_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -110,26 +110,26 @@ func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"更新按钮：绑定更新按钮ID参数失败") {
+		"更新按钮:绑定更新按钮ID参数失败") {
 		return
 	}
 
 	var req sysmodel.UpdateButtonDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"更新按钮：绑定更新按钮请求参数失败") {
+		"更新按钮:绑定更新按钮请求参数失败") {
 		return
 	}
 
 	log.Info(
-		"更新按钮：开始执行",
+		"更新按钮:开始执行",
 		zap.Uint32("button_id", uri.ID),
 	)
 
 	log.Debug(
-		"更新按钮：入参详情",
+		"更新按钮:入参详情",
 		zap.Uint32("button_id", uri.ID),
 		zap.Object("update_button_dto", &req),
 	)
@@ -139,7 +139,7 @@ func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
 	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
-			"更新按钮：执行失败",
+			"更新按钮:执行失败",
 			zap.Error(err),
 			zap.Uint32("button_id", uri.ID),
 			zap.Object("update_button_dto", &req),
@@ -150,13 +150,13 @@ func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"更新按钮：更新后的按钮模型详情",
+		"更新按钮:更新后的按钮模型详情",
 		zap.Object("button_model", m),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	log.Info(
-		"更新按钮：执行成功",
+		"更新按钮:执行成功",
 		zap.Uint32("button_id", uri.ID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -184,14 +184,14 @@ func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"删除按钮：绑定删除按钮ID参数失败") {
+		"删除按钮:绑定删除按钮ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"删除按钮：开始执行",
+		"删除按钮:开始执行",
 		zap.Uint32("button_id", uri.ID),
 	)
 
@@ -200,7 +200,7 @@ func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
 	deleteStepDuration := time.Since(deleteStepStart)
 	if err != nil {
 		log.Error(
-			"删除按钮：执行失败",
+			"删除按钮:执行失败",
 			zap.Error(err),
 			zap.Uint32("button_id", uri.ID),
 			zap.Duration("delete_step_duration", deleteStepDuration),
@@ -211,7 +211,7 @@ func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"删除按钮：删除按钮成功",
+		"删除按钮:删除按钮成功",
 		zap.Uint32("button_id", uri.ID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -236,14 +236,14 @@ func (h *ButtonHandler) GetButton(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"查询按钮：绑定查询按钮ID参数失败") {
+		"查询按钮:绑定查询按钮ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"查询按钮：开始执行",
+		"查询按钮:开始执行",
 		zap.Uint32("button_id", uri.ID),
 	)
 
@@ -252,7 +252,7 @@ func (h *ButtonHandler) GetButton(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询按钮：执行失败",
+			"查询按钮:执行失败",
 			zap.Error(err),
 			zap.Uint32("button_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -262,13 +262,13 @@ func (h *ButtonHandler) GetButton(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"查询按钮：查询到的按钮详情",
+		"查询按钮:查询到的按钮详情",
 		zap.Object("button_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
 
 	log.Info(
-		"查询按钮：查询按钮成功",
+		"查询按钮:查询按钮成功",
 		zap.Uint32("button_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -297,14 +297,14 @@ func (h *ButtonHandler) ListButton(ctx *gin.Context) {
 	var req sysmodel.ListButtonDTO
 	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询按钮列表：绑定查询参数失败") {
+		"查询按钮列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询按钮列表：开始执行")
+	log.Info("查询按钮列表:开始执行")
 
 	log.Debug(
-		"查询按钮列表：参数详情",
+		"查询按钮列表:参数详情",
 		zap.Object("list_button_dto", &req),
 	)
 
@@ -314,7 +314,7 @@ func (h *ButtonHandler) ListButton(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询按钮列表：查询按钮列表失败",
+			"查询按钮列表:查询按钮列表失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
@@ -327,7 +327,7 @@ func (h *ButtonHandler) ListButton(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询按钮列表：查询按钮列表成功",
+		"查询按钮列表:查询按钮列表成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),

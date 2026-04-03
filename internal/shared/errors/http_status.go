@@ -59,8 +59,8 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonCheckConstraintViolated:       http.StatusBadRequest,
 
 	// ssh链接
-	ReasonSSHConnectionFailed: http.StatusInternalServerError,
-	ReasonSSHKeyDeployFailed:  http.StatusInternalServerError,
+	ReasonSSHConnectionFailed: http.StatusBadRequest,
+	ReasonSSHKeyDeployFailed:  http.StatusBadRequest,
 
 	// 上传下载文件
 	ReasonDownloadFileNotFound:         http.StatusNotFound,
@@ -90,4 +90,7 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonPackageNotFound:     http.StatusNotFound,
 	ReasonPackageSaveFailed:   http.StatusInternalServerError,
 	ReasonPackageRemoveFailed: http.StatusInternalServerError,
+
+	// 计划任务相关
+	ReasonCronSpecificationInvalid: http.StatusBadRequest,
 }

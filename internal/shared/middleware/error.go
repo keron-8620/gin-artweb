@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
 )
 
@@ -42,7 +43,8 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					"user_agent", c.Request.UserAgent(),
 				)
 
-				logger.Error("panic recovered",
+				logger.Error(
+					"panic recovered",
 					zap.Error(err),
 					zap.Any("panic", r),
 					zap.String("stack", string(stack)),
@@ -50,6 +52,7 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					zap.String("url", c.Request.URL.String()),
 					zap.String("client_ip", c.ClientIP()),
 					zap.String("user_agent", c.Request.UserAgent()),
+					zap.String("trace_id", ctxutil.GetTraceID(c)),
 				)
 				rErr := errors.FromError(err)
 				errors.RespondWithError(c, rErr)

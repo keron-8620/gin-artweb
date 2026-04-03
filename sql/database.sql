@@ -1,33 +1,33 @@
-insert into sys_api(id,url,method,label,descr) values('1','/api/v1/customer/api','GET','customer','查询所有权限');
-insert into sys_api(id,url,method,label,descr) values('2','/api/v1/customer/api','POST','customer','新增权限');
-insert into sys_api(id,url,method,label,descr) values('3','/api/v1/customer/api/:id','GET','customer','查询单个权限');
-insert into sys_api(id,url,method,label,descr) values('4','/api/v1/customer/api/:id','PUT','customer','修改单个权限');
-insert into sys_api(id,url,method,label,descr) values('5','/api/v1/customer/api/:id','DELETE','customer','删除单个权限');
-insert into sys_api(id,url,method,label,descr) values('11','/api/v1/customer/menu','GET','customer','查询所有菜单权限');
-insert into sys_api(id,url,method,label,descr) values('12','/api/v1/customer/menu','POST','customer','新增菜单权限');
-insert into sys_api(id,url,method,label,descr) values('13','/api/v1/customer/menu/:id','GET','customer','查询单个菜单权限');
-insert into sys_api(id,url,method,label,descr) values('14','/api/v1/customer/menu/:id','PUT','customer','修改单个菜单权限');
-insert into sys_api(id,url,method,label,descr) values('15','/api/v1/customer/menu/:id','DELETE','customer','删除单个菜单权限');
-insert into sys_api(id,url,method,label,descr) values('21','/api/v1/customer/button','GET','customer','查询所有按钮');
-insert into sys_api(id,url,method,label,descr) values('22','/api/v1/customer/button','POST','customer','新增按钮');
-insert into sys_api(id,url,method,label,descr) values('23','/api/v1/customer/button/:id','GET','customer','查询单个按钮');
-insert into sys_api(id,url,method,label,descr) values('24','/api/v1/customer/button/:id','PUT','customer','修改单个按钮');
-insert into sys_api(id,url,method,label,descr) values('25','/api/v1/customer/button/:id','DELETE','customer','删除单个按钮');
-insert into sys_api(id,url,method,label,descr) values('31','/api/v1/customer/role','GET','customer','查询所有角色');
-insert into sys_api(id,url,method,label,descr) values('32','/api/v1/customer/role','POST','customer','新增角色');
-insert into sys_api(id,url,method,label,descr) values('33','/api/v1/customer/role/:id','GET','customer','查询单个角色');
-insert into sys_api(id,url,method,label,descr) values('34','/api/v1/customer/role/:id','PUT','customer','修改单个角色');
-insert into sys_api(id,url,method,label,descr) values('35','/api/v1/customer/role/:id','DELETE','customer','删除单个角色');
-insert into sys_api(id,url,method,label,descr) values('36','/api/v1/customer/me/menu/tree','GET','customer','查询角色权限树');
-insert into sys_api(id,url,method,label,descr) values('41','/api/v1/customer/user','GET','customer','查询所有用户');
-insert into sys_api(id,url,method,label,descr) values('42','/api/v1/customer/user','POST','customer','新增用户');
-insert into sys_api(id,url,method,label,descr) values('43','/api/v1/customer/user/:id','GET','customer','查询单个用户');
-insert into sys_api(id,url,method,label,descr) values('44','/api/v1/customer/user/:id','PUT','customer','修改单个用户');
-insert into sys_api(id,url,method,label,descr) values('45','/api/v1/customer/user/:id','DELETE','customer','删除单个用户');
-insert into sys_api(id,url,method,label,descr) values('46','/api/v1/customer/user/password/:id','PATCH','customer','重置用户密码');
-insert into sys_api(id,url,method,label,descr) values('47','/api/v1/customer/me/password','PATCH','customer','修改个人密码');
-insert into sys_api(id,url,method,label,descr) values('48','/api/v1/customer/user/record/login','GET','customer','查询用户登录记录');
-insert into sys_api(id,url,method,label,descr) values('49','/api/v1/customer/me/record/login','GET','customer','查询个人登录记录');
+insert into sys_api(id,url,method,label,descr) values('1','/api/v1/customer/api','GET','sys','查询所有权限');
+insert into sys_api(id,url,method,label,descr) values('2','/api/v1/customer/api','POST','sys','新增权限');
+insert into sys_api(id,url,method,label,descr) values('3','/api/v1/customer/api/:id','GET','sys','查询单个权限');
+insert into sys_api(id,url,method,label,descr) values('4','/api/v1/customer/api/:id','PUT','sys','修改单个权限');
+insert into sys_api(id,url,method,label,descr) values('5','/api/v1/customer/api/:id','DELETE','sys','删除单个权限');
+insert into sys_api(id,url,method,label,descr) values('11','/api/v1/customer/menu','GET','sys','查询所有菜单权限');
+insert into sys_api(id,url,method,label,descr) values('12','/api/v1/customer/menu','POST','sys','新增菜单权限');
+insert into sys_api(id,url,method,label,descr) values('13','/api/v1/customer/menu/:id','GET','sys','查询单个菜单权限');
+insert into sys_api(id,url,method,label,descr) values('14','/api/v1/customer/menu/:id','PUT','sys','修改单个菜单权限');
+insert into sys_api(id,url,method,label,descr) values('15','/api/v1/customer/menu/:id','DELETE','sys','删除单个菜单权限');
+insert into sys_api(id,url,method,label,descr) values('21','/api/v1/customer/button','GET','sys','查询所有按钮');
+insert into sys_api(id,url,method,label,descr) values('22','/api/v1/customer/button','POST','sys','新增按钮');
+insert into sys_api(id,url,method,label,descr) values('23','/api/v1/customer/button/:id','GET','sys','查询单个按钮');
+insert into sys_api(id,url,method,label,descr) values('24','/api/v1/customer/button/:id','PUT','sys','修改单个按钮');
+insert into sys_api(id,url,method,label,descr) values('25','/api/v1/customer/button/:id','DELETE','sys','删除单个按钮');
+insert into sys_api(id,url,method,label,descr) values('31','/api/v1/customer/role','GET','sys','查询所有角色');
+insert into sys_api(id,url,method,label,descr) values('32','/api/v1/customer/role','POST','sys','新增角色');
+insert into sys_api(id,url,method,label,descr) values('33','/api/v1/customer/role/:id','GET','sys','查询单个角色');
+insert into sys_api(id,url,method,label,descr) values('34','/api/v1/customer/role/:id','PUT','sys','修改单个角色');
+insert into sys_api(id,url,method,label,descr) values('35','/api/v1/customer/role/:id','DELETE','sys','删除单个角色');
+insert into sys_api(id,url,method,label,descr) values('36','/api/v1/customer/me/menu/tree','GET','sys','查询角色权限树');
+insert into sys_api(id,url,method,label,descr) values('41','/api/v1/customer/user','GET','sys','查询所有用户');
+insert into sys_api(id,url,method,label,descr) values('42','/api/v1/customer/user','POST','sys','新增用户');
+insert into sys_api(id,url,method,label,descr) values('43','/api/v1/customer/user/:id','GET','sys','查询单个用户');
+insert into sys_api(id,url,method,label,descr) values('44','/api/v1/customer/user/:id','PUT','sys','修改单个用户');
+insert into sys_api(id,url,method,label,descr) values('45','/api/v1/customer/user/:id','DELETE','sys','删除单个用户');
+insert into sys_api(id,url,method,label,descr) values('46','/api/v1/customer/user/password/:id','PATCH','sys','重置用户密码');
+insert into sys_api(id,url,method,label,descr) values('47','/api/v1/customer/me/password','PATCH','sys','修改个人密码');
+insert into sys_api(id,url,method,label,descr) values('48','/api/v1/customer/user/record/login','GET','sys','查询用户登录记录');
+insert into sys_api(id,url,method,label,descr) values('49','/api/v1/customer/me/record/login','GET','sys','查询个人登录记录');
 insert into sys_api(id,url,method,label,descr) values('1001','/api/v1/resource/host','GET','resource','查询主机列表');
 insert into sys_api(id,url,method,label,descr) values('1002','/api/v1/resource/host','POST','resource','新增主机');
 insert into sys_api(id,url,method,label,descr) values('1003','/api/v1/resource/host/:id','GET','resource','查询单个主机');
@@ -38,24 +38,24 @@ insert into sys_api(id,url,method,label,descr) values('1012','/api/v1/resource/p
 insert into sys_api(id,url,method,label,descr) values('1013','/api/v1/resource/package/:id','GET','resource','查询程序包详情');
 insert into sys_api(id,url,method,label,descr) values('1015','/api/v1/resource/package/:id','DELETE','resource','删除程序包');
 insert into sys_api(id,url,method,label,descr) values('1016','/api/v1/resource/package/:id/download','GET','resource','下载程序包');
-insert into sys_api(id,url,method,label,descr) values('2001','/api/v1/jobs/script','GET','jobs','查询脚本列表');
-insert into sys_api(id,url,method,label,descr) values('2002','/api/v1/jobs/script','POST','jobs','新增脚本');
-insert into sys_api(id,url,method,label,descr) values('2003','/api/v1/jobs/script/:id','GET','jobs','查询单个脚本');
-insert into sys_api(id,url,method,label,descr) values('2004','/api/v1/jobs/script/:id','PUT','jobs','修改单个脚本');
-insert into sys_api(id,url,method,label,descr) values('2005','/api/v1/jobs/script/:id','DELETE','jobs','删除单个脚本');
-insert into sys_api(id,url,method,label,descr) values('2006','/api/v1/jobs/script/:id/download','GET','jobs','下载单个脚本');
-insert into sys_api(id,url,method,label,descr) values('2007','/api/v1/jobs/script/project','GET','jobs','查询脚本所有的项目');
-insert into sys_api(id,url,method,label,descr) values('2008','/api/v1/jobs/script/label','GET','jobs','查询脚本所有的标签');
-insert into sys_api(id,url,method,label,descr) values('2011','/api/v1/jobs/record','GET','jobs','查询脚本执行记录列表');
-insert into sys_api(id,url,method,label,descr) values('2012','/api/v1/jobs/record','POST','jobs','执行脚本');
-insert into sys_api(id,url,method,label,descr) values('2013','/api/v1/jobs/record/:id','GET','jobs','查询单个脚本执行记录');
-insert into sys_api(id,url,method,label,descr) values('2016','/api/v1/jobs/record/:id/log','GET','jobs','下载脚本执行日志');
-insert into sys_api(id,url,method,label,descr) values('2017','/api/v1/jobs/record/:id','DELETE','jobs','对正在执行的脚本发送终止信号');
-insert into sys_api(id,url,method,label,descr) values('2021','/api/v1/jobs/schedule','GET','jobs','查询计划任务列表');
-insert into sys_api(id,url,method,label,descr) values('2022','/api/v1/jobs/schedule','POST','jobs','新增计划任务');
-insert into sys_api(id,url,method,label,descr) values('2023','/api/v1/jobs/schedule/:id','GET','jobs','查询单个计划任务');
-insert into sys_api(id,url,method,label,descr) values('2024','/api/v1/jobs/schedule/:id','PUT','jobs','修改单个计划任务');
-insert into sys_api(id,url,method,label,descr) values('2025','/api/v1/jobs/schedule/:id','DELETE','jobs','删除单个计划任务');
+insert into sys_api(id,url,method,label,descr) values('2001','/api/v1/jobs/script','GET','job','查询脚本列表');
+insert into sys_api(id,url,method,label,descr) values('2002','/api/v1/jobs/script','POST','job','新增脚本');
+insert into sys_api(id,url,method,label,descr) values('2003','/api/v1/jobs/script/:id','GET','job','查询单个脚本');
+insert into sys_api(id,url,method,label,descr) values('2004','/api/v1/jobs/script/:id','PUT','job','修改单个脚本');
+insert into sys_api(id,url,method,label,descr) values('2005','/api/v1/jobs/script/:id','DELETE','job','删除单个脚本');
+insert into sys_api(id,url,method,label,descr) values('2006','/api/v1/jobs/script/:id/download','GET','job','下载单个脚本');
+insert into sys_api(id,url,method,label,descr) values('2007','/api/v1/jobs/script/project','GET','job','查询脚本所有的项目');
+insert into sys_api(id,url,method,label,descr) values('2008','/api/v1/jobs/script/label','GET','job','查询脚本所有的标签');
+insert into sys_api(id,url,method,label,descr) values('2011','/api/v1/jobs/record','GET','job','查询脚本执行记录列表');
+insert into sys_api(id,url,method,label,descr) values('2012','/api/v1/jobs/record','POST','job','执行脚本');
+insert into sys_api(id,url,method,label,descr) values('2013','/api/v1/jobs/record/:id','GET','job','查询单个脚本执行记录');
+insert into sys_api(id,url,method,label,descr) values('2016','/api/v1/jobs/record/:id/log','GET','job','下载脚本执行日志');
+insert into sys_api(id,url,method,label,descr) values('2017','/api/v1/jobs/record/:id','DELETE','job','对正在执行的脚本发送终止信号');
+insert into sys_api(id,url,method,label,descr) values('2021','/api/v1/jobs/schedule','GET','job','查询计划任务列表');
+insert into sys_api(id,url,method,label,descr) values('2022','/api/v1/jobs/schedule','POST','job','新增计划任务');
+insert into sys_api(id,url,method,label,descr) values('2023','/api/v1/jobs/schedule/:id','GET','job','查询单个计划任务');
+insert into sys_api(id,url,method,label,descr) values('2024','/api/v1/jobs/schedule/:id','PUT','job','修改单个计划任务');
+insert into sys_api(id,url,method,label,descr) values('2025','/api/v1/jobs/schedule/:id','DELETE','job','删除单个计划任务');
 insert into sys_api(id,url,method,label,descr) values('3001','/api/v1/mon/node','GET','mon','查询mon节点列表');
 insert into sys_api(id,url,method,label,descr) values('3002','/api/v1/mon/node','POST','mon','新增mon节点');
 insert into sys_api(id,url,method,label,descr) values('3003','/api/v1/mon/node/:id','GET','mon','查询单个mon节点');
@@ -67,6 +67,7 @@ insert into sys_api(id,url,method,label,descr) values('4003','/api/v1/mds/colony
 insert into sys_api(id,url,method,label,descr) values('4004','/api/v1/mds/colony/:id','PUT','mds','修改单个mds集群');
 insert into sys_api(id,url,method,label,descr) values('4005','/api/v1/mds/colony/:id','DELETE','mds','删除单个mds集群');
 insert into sys_api(id,url,method,label,descr) values('4006','/api/v1/mds/colony/status','GET','mds','查询mds集群的任务状态');
+insert into sys_api(id,url,method,label,descr) values('4007','/api/v1/mds/colony/:id/schedule','GET','mds','查询mds集群计划任务列表');
 insert into sys_api(id,url,method,label,descr) values('4011','/api/v1/mds/node','GET','mds','查询mds节点列表');
 insert into sys_api(id,url,method,label,descr) values('4012','/api/v1/mds/node','POST','mds','新增mds节点');
 insert into sys_api(id,url,method,label,descr) values('4013','/api/v1/mds/node/:id','GET','mds','查询单个mds节点');
@@ -84,6 +85,7 @@ insert into sys_api(id,url,method,label,descr) values('5005','/api/v1/oes/colony
 insert into sys_api(id,url,method,label,descr) values('5006','/api/v1/oes/colony/status/stk','GET','oes','查询oes现货的任务状态');
 insert into sys_api(id,url,method,label,descr) values('5007','/api/v1/oes/colony/status/crd','GET','oes','查询oes两融的任务状态');
 insert into sys_api(id,url,method,label,descr) values('5008','/api/v1/oes/colony/status/opt','GET','oes','查询oes期权的任务状态');
+insert into sys_api(id,url,method,label,descr) values('5009','/api/v1/oes/colony/:id/schedule','GET','oes','查询oes集群计划任务列表');
 insert into sys_api(id,url,method,label,descr) values('5011','/api/v1/oes/node','GET','oes','查询oes节点列表');
 insert into sys_api(id,url,method,label,descr) values('5012','/api/v1/oes/node','POST','oes','新增oes节点');
 insert into sys_api(id,url,method,label,descr) values('5013','/api/v1/oes/node/:id','GET','oes','查询单个oes节点');
@@ -96,30 +98,31 @@ insert into sys_api(id,url,method,label,descr) values('5026','/api/v1/oes/:colon
 
 
 
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('1','/mon','/mon','MON','{"title":"MON","icon":""}','1',1,'MON',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('2','/oes','/oes','OES','{"title":"OES","icon":""}','2',1,'OES',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('3','/mds','/mds','MDS','{"title":"MDS","icon":""}','3',1,'MDS',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"作业管理","icon":""}','4',1,'作业管理',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('5','/conf','/conf','Conf','{"title":"基础配置","icon":""}','5',1,'基础配置',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('6','/api','/api','api','{"title":"权限管理","icon":""}','6',1,'权限管理',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('50','mon_nodes','mon_nodes','mon_nodes','{"title":"MON结点","icon":""}','1',1,'MON结点','1');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('60','oes_colony','oes_colony','oes_colony','{"title":"OES集群","icon":""}','1',1,'OES集群','2');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('61','oes_nodes','oes_nodes','oes_nodes','{"title":"OES结点","icon":""}','2',1,'OES结点','2');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('62','oes_conf','oes_conf','oes_conf','{"title":"OES配置文件","icon":""}','3',1,'OES配置文件','2');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('63','oes_pkg','oes_pkg','oes_pkg','{"title":"OES程序包","icon":""}','4',1,'OES程序包','2');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('70','mds_colony','mds_colony','mds_colony','{"title":"MDS集群","icon":""}','1',1,'MDS集群','3');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('71','mds_nodes','mds_nodes','mds_nodes','{"title":"MDS结点","icon":""}','2',1,'MDS结点','3');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('72','mds_conf','mds_conf','mds_conf','{"title":"MDS配置文件","icon":""}','3',1,'MDS配置文件','3');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('73','mds_pkg','mds_pkg','mds_pkg','{"title":"MDS程序包","icon":""}','4',1,'MDS程序包','3');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('1','/mon','/mon','MON','{"title":"MON","icon":""}','1','1','MON',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('2','/oes','/oes','OES','{"title":"OES","icon":""}','2','1','OES',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('3','/mds','/mds','MDS','{"title":"MDS","icon":""}','3','1','MDS',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"运维管理","icon":""}','4','1','运维管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('5','/conf','/conf','Conf','{"title":"基础配置","icon":""}','5','1','基础配置',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('6','/api','/api','api','{"title":"权限管理","icon":""}','6','1','权限管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('50','mon_nodes','mon_nodes','mon_nodes','{"title":"MON结点","icon":""}','1','1','MON结点','1');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('60','oes_colony','oes_colony','oes_colony','{"title":"OES集群","icon":""}','1','1','OES集群','2');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('61','oes_nodes','oes_nodes','oes_nodes','{"title":"OES主机","icon":""}','2','1','OES主机','2');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('62','oes_conf','oes_conf','oes_conf','{"title":"OES配置文件","icon":""}','3','1','OES配置文件','2');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('63','oes_pkg','oes_pkg','oes_pkg','{"title":"OES程序包","icon":""}','4','1','OES程序包','2');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('70','mds_colony','mds_colony','mds_colony','{"title":"MDS集群","icon":""}','1','1','MDS集群','3');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('71','mds_nodes','mds_nodes','mds_nodes','{"title":"MDS主机","icon":""}','2','1','MDS主机','3');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('72','mds_conf','mds_conf','mds_conf','{"title":"MDS配置文件","icon":""}','3','1','MDS配置文件','3');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('73','mds_pkg','mds_pkg','mds_pkg','{"title":"MDS程序包","icon":""}','4','1','MDS程序包','3');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('80','daily','daily','daily','{"title":"日常任务运维","icon":""}','1','1','日常任务运维','4');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('81','script_emgy','script_emgy','script_emgy','{"title":"应急脚本管理","icon":""}','4','1','应急脚本管理','4');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('82','schedule','schedule','schedule','{"title":"计划任务管理","icon":""}','2','1','计划任务管理','4');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('83','script','script','script','{"title":"脚本管理","icon":""}','3','1','脚本管理','4');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('84','script_record','script_record','script_record','{"title":"脚本执行记录","icon":""}','5',1,'脚本执行记录','4');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('85','update','update','update','{"title":"部署升级","icon":""}','6',1,'部署升级','4');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('100','host','host','host','{"title":"主机管理","icon":""}','1',1,'主机管理','5');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('110','user','user','user','{"title":"用户管理","icon":""}','1',1,'用户管理','6');
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('111','role','role','role','{"title":"角色管理","icon":""}','2',1,'角色管理','6');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('84','script_record','script_record','script_record','{"title":"脚本执行记录","icon":""}','5','1','脚本执行记录','4');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('85','update','update','update','{"title":"部署升级","icon":""}','6','1','部署升级','4');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('86','control','control','control','{"title":"系统启停","icon":""}','7','1','系统启停','4');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('100','host','host','host','{"title":"主机管理","icon":""}','1','1','主机管理','5');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('110','user','user','user','{"title":"用户管理","icon":""}','1','1','用户管理','6');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('111','role','role','role','{"title":"角色管理","icon":""}','2','1','角色管理','6');
 
 
 
@@ -223,6 +226,13 @@ insert into sys_menu_api(menu_id,api_id) values('82','2022');
 insert into sys_menu_api(menu_id,api_id) values('82','2023');
 insert into sys_menu_api(menu_id,api_id) values('82','2024');
 insert into sys_menu_api(menu_id,api_id) values('82','2025');
+insert into sys_menu_api(menu_id,api_id) values('80','2017');
+insert into sys_menu_api(menu_id,api_id) values('84','2001');
+insert into sys_menu_api(menu_id,api_id) values('86','2001');
+insert into sys_menu_api(menu_id,api_id) values('86','2006');
+insert into sys_menu_api(menu_id,api_id) values('86','2012');
+insert into sys_menu_api(menu_id,api_id) values('86','2013');
+insert into sys_menu_api(menu_id,api_id) values('86','2016');
 
 
 
@@ -324,6 +334,8 @@ insert into sys_role_api(role_id,api_id) values('1','5025');
 insert into sys_role_api(role_id,api_id) values('1','5026');
 insert into sys_role_api(role_id,api_id) values('1','2007');
 insert into sys_role_api(role_id,api_id) values('1','2008');
+insert into sys_role_api(role_id,api_id) values('1','5009');
+insert into sys_role_api(role_id,api_id) values('1','4007');
 
 
 
@@ -351,6 +363,7 @@ insert into sys_role_menu(role_id,menu_id) values('1','85');
 insert into sys_role_menu(role_id,menu_id) values('1','100');
 insert into sys_role_menu(role_id,menu_id) values('1','110');
 insert into sys_role_menu(role_id,menu_id) values('1','111');
+insert into sys_role_menu(role_id,menu_id) values('1','86');
 
 
 

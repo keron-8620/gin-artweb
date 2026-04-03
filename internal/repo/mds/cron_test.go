@@ -31,7 +31,7 @@ func (suite *MdsCronTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
 	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &mdsmodel.MdsColonyModel{}, &jobmodel.ScriptModel{}, &mdsmodel.MdsCronModel{})
 
-	// 创建测试数据：主机
+	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
 		Name:    "test-host",
 		Label:   "test",
@@ -43,7 +43,7 @@ func (suite *MdsCronTestSuite) SetupSuite() {
 	}
 	db.Create(hostModel)
 
-	// 创建测试数据：Mon节点
+	// 创建测试数据:Mon节点
 	monNodeModel := &monmodel.MonNodeModel{
 		Name:        "test-mon-node",
 		DeployPath:  "/opt/mon",
@@ -54,7 +54,7 @@ func (suite *MdsCronTestSuite) SetupSuite() {
 	}
 	db.Create(monNodeModel)
 
-	// 创建测试数据：程序包
+	// 创建测试数据:程序包
 	packageModel := &resomodel.PackageModel{
 		Label:           "test",
 		StorageFilename: "test-package.tar.gz",
@@ -63,7 +63,7 @@ func (suite *MdsCronTestSuite) SetupSuite() {
 	}
 	db.Create(packageModel)
 
-	// 创建测试数据：Mds集群
+	// 创建测试数据:Mds集群
 	colonyModel := &mdsmodel.MdsColonyModel{
 		ColonyNum:     "01",
 		ExtractedName: "test-mds-colony",
@@ -73,7 +73,7 @@ func (suite *MdsCronTestSuite) SetupSuite() {
 	}
 	db.Create(colonyModel)
 
-	// 创建测试数据：脚本
+	// 创建测试数据:脚本
 	scriptModel := &jobmodel.ScriptModel{
 		Name:      "test-script",
 		Descr:     "Test script",
@@ -101,7 +101,7 @@ func (suite *MdsCronTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建MdsCron应该成功")
 	suite.NotZero(cm.ID, "MdsCron ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.cronRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空MdsCron模型应该返回错误")
 }
@@ -143,7 +143,7 @@ func (suite *MdsCronTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的MdsCron应该返回错误")
 	suite.Nil(fm, "已删除的MdsCron应该为nil")
 
-	// 测试边界情况：删除不存在的MdsCron
+	// 测试边界情况:删除不存在的MdsCron
 	err = suite.cronRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的MdsCron应该成功（无操作）")
 }
@@ -161,12 +161,12 @@ func (suite *MdsCronTestSuite) TestGetModel() {
 	suite.Equal(cm.MdsColonyID, fm.MdsColonyID)
 	suite.Equal(cm.ScheduleID, fm.ScheduleID)
 
-	// 测试边界情况：查询不存在的MdsCron
+	// 测试边界情况:查询不存在的MdsCron
 	fm, err = suite.cronRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的MdsCron应该返回错误")
 	suite.Nil(fm, "查询不存在的MdsCron应该返回nil")
 
-	// 测试边界情况：使用预加载
+	// 测试边界情况:使用预加载
 	fm, err = suite.cronRepo.GetModel(context.Background(), []string{"MdsColony", "Schedule"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询MdsCron应该成功")
 	suite.Equal(cm.ID, fm.ID)

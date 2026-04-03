@@ -42,9 +42,9 @@ func CreateTestOesColonyModel() *oesmodel.OesColonyModel {
 type OesColonyTestSuite struct {
 	suite.Suite
 	colonyRepo *OesColonyRepo
-	log      *zap.Logger
-	gormDB   *gorm.DB
-	timeouts *config.DBTimeout
+	log        *zap.Logger
+	gormDB     *gorm.DB
+	timeouts   *config.DBTimeout
 }
 
 func (suite *OesColonyTestSuite) SetupSuite() {
@@ -56,7 +56,7 @@ func (suite *OesColonyTestSuite) SetupSuite() {
 		&oesmodel.OesColonyModel{},
 	)
 
-	// 创建测试数据：主机
+	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
 		Name:    "test-host",
 		Label:   "test",
@@ -68,7 +68,7 @@ func (suite *OesColonyTestSuite) SetupSuite() {
 	}
 	db.Create(hostModel)
 
-	// 创建测试数据：Mon节点
+	// 创建测试数据:Mon节点
 	monNodeModel := &monmodel.MonNodeModel{
 		Name:        "test-mon-node",
 		DeployPath:  "/opt/mon",
@@ -79,7 +79,7 @@ func (suite *OesColonyTestSuite) SetupSuite() {
 	}
 	db.Create(monNodeModel)
 
-	// 创建测试数据：程序包1
+	// 创建测试数据:程序包1
 	packageModel1 := &resomodel.PackageModel{
 		Label:           "test-oes",
 		StorageFilename: "test-oes.tar.gz",
@@ -88,7 +88,7 @@ func (suite *OesColonyTestSuite) SetupSuite() {
 	}
 	db.Create(packageModel1)
 
-	// 创建测试数据：程序包2 (xcounter)
+	// 创建测试数据:程序包2 (xcounter)
 	packageModel2 := &resomodel.PackageModel{
 		Label:           "test-xcounter",
 		StorageFilename: "test-xcounter.tar.gz",
@@ -114,7 +114,7 @@ func (suite *OesColonyTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建OesColony应该成功")
 	suite.NotZero(cm.ID, "OesColony ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.colonyRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空OesColony模型应该返回错误")
 }
@@ -140,11 +140,11 @@ func (suite *OesColonyTestSuite) TestUpdateModel() {
 	suite.Equal("updated-oes", fm.ExtractedName)
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.colonyRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的OesColony
+	// 测试边界情况:更新不存在的OesColony
 	err = suite.colonyRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的OesColony应该成功（无操作）")
 }
@@ -164,7 +164,7 @@ func (suite *OesColonyTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的OesColony应该返回错误")
 	suite.Nil(fm, "已删除的OesColony应该为nil")
 
-	// 测试边界情况：删除不存在的OesColony
+	// 测试边界情况:删除不存在的OesColony
 	err = suite.colonyRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的OesColony应该成功（无操作）")
 }
@@ -182,12 +182,12 @@ func (suite *OesColonyTestSuite) TestGetModel() {
 	suite.Equal(cm.ColonyNum, fm.ColonyNum)
 	suite.Equal(cm.IsEnable, fm.IsEnable)
 
-	// 测试边界情况：查询不存在的OesColony
+	// 测试边界情况:查询不存在的OesColony
 	fm, err = suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的OesColony应该返回错误")
 	suite.Nil(fm, "查询不存在的OesColony应该返回nil")
 
-	// 测试边界情况：使用预加载
+	// 测试边界情况:使用预加载
 	fm, err = suite.colonyRepo.GetModel(context.Background(), []string{"Package", "XCounter", "MonNode"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询OesColony应该成功")
 	suite.Equal(cm.ID, fm.ID)
@@ -213,7 +213,7 @@ func (suite *OesColonyTestSuite) TestListModel() {
 	suite.NotNil(models, "OesColony列表应该不为nil")
 	suite.Greater(len(models), 0, "OesColony列表长度应该大于0")
 
-	// 测试边界情况：空列表
+	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"colony_num": "99"},
 	}
@@ -260,7 +260,7 @@ func (suite *OesColonyTestSuite) TestCountModel() {
 	suite.NoError(err, "带条件查询OesColony总数应该成功")
 	suite.GreaterOrEqual(count2, int64(3), "带条件的OesColony总数应该大于等于3")
 
-	// 测试边界情况：查询不存在的类型
+	// 测试边界情况:查询不存在的类型
 	count3, err := suite.colonyRepo.CountModel(context.Background(), map[string]any{"system_type": "NON-EXISTENT"})
 	suite.NoError(err, "查询不存在类型的OesColony总数应该成功")
 	suite.Equal(int64(0), count3, "不存在类型的OesColony总数应该为0")
@@ -410,7 +410,7 @@ func (suite *OesColonyTestSuite) TestRemoveConfigFileErrorPaths() {
 	// 尝试删除只读文件，在某些系统上可能会成功，在某些系统上可能会失败
 	// 这里我们不强制断言错误，只确保函数能够执行完成
 	err = suite.colonyRepo.RemoveConfigFile(context.Background(), testPath)
-	// 注意：在Linux系统中，删除只读文件是允许的，所以这里可能不会返回错误
+	// 注意:在Linux系统中，删除只读文件是允许的，所以这里可能不会返回错误
 	// 我们只确保函数能够正常执行，不崩溃
 
 	// 清理测试目录
@@ -456,7 +456,7 @@ func TestOesColonyTestSuite(t *testing.T) {
 
 func (suite *OesColonyTestSuite) TestSaveConfigFileCreateDirError() {
 	// 测试创建目录失败的情况
-	// 注意：由于权限问题，在某些系统上可能需要特殊处理
+	// 注意:由于权限问题，在某些系统上可能需要特殊处理
 	testPath := "/root/oes-test-config.yaml" // 通常只有root用户可以写入/root目录
 
 	_ = suite.colonyRepo.SaveConfigFile(context.Background(), bytes.NewReader([]byte("test content")), testPath, true)
@@ -487,7 +487,7 @@ func (suite *OesColonyTestSuite) TestSaveConfigFileChmodError() {
 
 func (suite *OesColonyTestSuite) TestRemoveConfigFileStatError() {
 	// 测试检查文件失败的情况（非文件不存在的错误）
-	// 注意：由于权限问题，在某些系统上可能需要特殊处理
+	// 注意:由于权限问题，在某些系统上可能需要特殊处理
 	testPath := "/root/non-existent-file.txt" // 通常只有root用户可以访问/root目录
 
 	_ = suite.colonyRepo.RemoveConfigFile(context.Background(), testPath)

@@ -13,13 +13,13 @@ import (
 )
 
 // DBPanic 通用 GORM 数据库操作 panic 捕获函数（必须配合 defer 使用）
-// 功能：1. 捕获 panic 并转为标准错误 2. 事务回滚（仅事务场景）3. 记录详细日志（含堆栈、SQL 上下文）
-// 参数：
-//   - ctx：上下文，用于日志记录和 GORM 操作
-//   - db：GORM 数据库实例（事务场景传入 tx 实例，非事务场景传入普通 db 实例）
+// 功能:1. 捕获 panic 并转为标准错误 2. 事务回滚（仅事务场景）3. 记录详细日志（含堆栈、SQL 上下文）
+// 参数:
+//   - ctx:上下文，用于日志记录和 GORM 操作
+//   - db:GORM 数据库实例（事务场景传入 tx 实例，非事务场景传入普通 db 实例）
 //
-// 返回值：
-//   - error：panic 时返回封装了「错误信息+堆栈」的标准错误，无 panic 时返回 nil
+// 返回值:
+//   - error:panic 时返回封装了「错误信息+堆栈」的标准错误，无 panic 时返回 nil
 func DBPanic(ctx context.Context, db *gorm.DB) error {
 	if r := recover(); r != nil {
 		// 回滚事务，捕获回滚错误

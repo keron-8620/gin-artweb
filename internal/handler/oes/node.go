@@ -48,14 +48,14 @@ func (s *OesNodeHandler) CreateOesNode(ctx *gin.Context) {
 	var req oesmodel.OesNodeUpsertDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"创建oes节点：绑定创建oes节点参数失败") {
+		"创建oes节点:绑定创建oes节点参数失败") {
 		return
 	}
 
-	log.Info("创建oes节点：开始执行")
+	log.Info("创建oes节点:开始执行")
 
 	log.Debug(
-		"创建oes节点：创建oes节点参数",
+		"创建oes节点:创建oes节点参数",
 		zap.Object("oes_node_dto", &req),
 	)
 
@@ -76,13 +76,13 @@ func (s *OesNodeHandler) CreateOesNode(ctx *gin.Context) {
 	}
 
 	log.Debug(
-		"创建oes节点：创建oes节点模型详情",
+		"创建oes节点:创建oes节点模型详情",
 		zap.Object("oes_node_model", m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"创建oes节点：执行成功",
+		"创建oes节点:执行成功",
 		zap.Duration("create_step_duration", time.Since(createStepStart)),
 		zap.Duration("total_time", time.Since(startTime)),
 	)
@@ -111,7 +111,7 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
 		"绑定更新oes节点ID参数失败") {
 		return
@@ -124,10 +124,10 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 		return
 	}
 
-	log.Info("更新oes节点：开始执行")
+	log.Info("更新oes节点:开始执行")
 
 	log.Debug(
-		"更新oes节点：更新oes节点参数",
+		"更新oes节点:更新oes节点参数",
 		zap.Object("oes_node_dto", &req),
 	)
 
@@ -148,13 +148,13 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 	}
 
 	log.Debug(
-		"更新oes节点：更新后的oes节点模型详情",
+		"更新oes节点:更新后的oes节点模型详情",
 		zap.Object("oes_node_model", m),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	log.Info(
-		"更新oes节点：执行成功",
+		"更新oes节点:执行成功",
 		zap.Uint32("oes_node_id", uri.ID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_time", time.Since(startTime)),
@@ -183,7 +183,7 @@ func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
 		"绑定删除oes节点ID参数失败") {
 		return
@@ -236,14 +236,14 @@ func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"查询oes节点：绑定查询oes节点ID参数失败") {
+		"查询oes节点:绑定查询oes节点ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"查询oes节点：开始执行",
+		"查询oes节点:开始执行",
 		zap.Uint32("oes_node_id", uri.ID),
 	)
 	findStepStart := time.Now()
@@ -251,7 +251,7 @@ func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询oes节点：执行失败",
+			"查询oes节点:执行失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -261,13 +261,13 @@ func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"查询oes节点：查询到的oes节点模型详情",
+		"查询oes节点:查询到的oes节点模型详情",
 		zap.Object("oes_node_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
 
 	log.Info(
-		"查询oes节点：执行成功",
+		"查询oes节点:执行成功",
 		zap.Uint32("oes_node_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_time", time.Since(startTime)),
@@ -298,14 +298,14 @@ func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
 	var req oesmodel.ListOesNodeDTO
 	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询oes节点列表：绑定查询oes节点列表参数失败") {
+		"查询oes节点列表:绑定查询oes节点列表参数失败") {
 		return
 	}
 
-	log.Info("查询oes节点列表：开始执行")
+	log.Info("查询oes节点列表:开始执行")
 
 	log.Debug(
-		"查询oes节点列表：查询参数",
+		"查询oes节点列表:查询参数",
 		zap.Object("oes_node_dto", &req),
 	)
 
@@ -315,7 +315,7 @@ func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if rErr != nil {
 		log.Error(
-			"查询oes节点列表：执行失败",
+			"查询oes节点列表:执行失败",
 			zap.Error(rErr),
 			zap.Int("page", page),
 			zap.Int("size", size),
@@ -328,7 +328,7 @@ func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询oes节点列表：执行成功",
+		"查询oes节点列表:执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),

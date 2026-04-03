@@ -30,7 +30,7 @@ func isPathSafe(target, base string) bool {
 		return false
 	}
 
-	// 防止路径遍历攻击：检查相对路径的每个部分是否为 ".."
+	// 防止路径遍历攻击:检查相对路径的每个部分是否为 ".."
 	parts := strings.SplitSeq(rel, string(filepath.Separator))
 	for part := range parts {
 		if part == "..." {

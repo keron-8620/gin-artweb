@@ -1,14 +1,14 @@
 #!/usr/bin/env sh
 
 # 检查环境变量是否存在
-if [ -z "$JOBS_BASE_DIR" ]; then
-    echo "错误:环境变量 JOBS_BASE_DIR 未设置或值为空!"
+if [ -z "$JOB_BASE_DIR" ]; then
+    echo "错误:环境变量 JOB_BASE_DIR 未设置或值为空!"
     exit 1  # 退出脚本并返回错误码
 fi
 
 # 检查环境变量是否存在
-if [ -z "$JOBS_RECORD_ID" ]; then
-    echo "错误:环境变量 JOBS_RECORD_ID 未设置或值为空!"
+if [ -z "$JOB_RECORD_ID" ]; then
+    echo "错误:环境变量 JOB_RECORD_ID 未设置或值为空!"
     exit 1  # 退出脚本并返回错误码
 fi
 
@@ -31,7 +31,7 @@ colony_num=$1
 shift 1
 
 # 定义要写入的文件路径（加引号避免路径含空格）
-OUTPUT_FILE="$JOBS_BASE_DIR/storage/mds/flags/$colony_num/.bse"
+OUTPUT_FILE="$JOB_BASE_DIR/storage/mds/flags/$colony_num/.bse"
 
 # 修复4:先创建文件所在的目录（如果不存在），否则写入会失败
 mkdir -p "$(dirname "$OUTPUT_FILE")" || {
@@ -40,12 +40,12 @@ mkdir -p "$(dirname "$OUTPUT_FILE")" || {
 }
 
 # 将环境变量的值写入文件
-echo "$JOBS_RECORD_ID" > "$OUTPUT_FILE"
+echo "$JOB_RECORD_ID" > "$OUTPUT_FILE"
 
 # 验证写入是否成功
 if [ $? -eq 0 ]; then
-    echo "成功!环境变量 JOBS_RECORD_ID 的值已写入文件:$OUTPUT_FILE"
-    echo "值为:$JOBS_RECORD_ID"
+    echo "成功!环境变量 JOB_RECORD_ID 的值已写入文件:$OUTPUT_FILE"
+    echo "值为:$JOB_RECORD_ID"
 else
     echo "错误:写入文件 $OUTPUT_FILE 失败!"
     exit 1

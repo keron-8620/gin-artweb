@@ -101,7 +101,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 				return errors.WithMessagef(walkErr, "遍历目录失败, filepath=%s", filePath)
 			}
 
-			// 安全检查：确保文件路径在源目录内
+			// 安全检查:确保文件路径在源目录内
 			relPath, err := filepath.Rel(cleanSrc, filePath)
 			if err != nil {
 				return errors.WithMessagef(err, "计算相对路径失败, base=%s, target=%s", cleanSrc, filePath)
@@ -307,7 +307,7 @@ func processUnzipEntry(zipFile *zip.File, dst string, options ArchiveOptions) (i
 		return 0, errors.Errorf("非法路径(路径遍历攻击),target=%s, base=%s", target, dst)
 	}
 
-	// 额外的安全检查：确保目标路径在目标目录内
+	// 额外的安全检查:确保目标路径在目标目录内
 	relPath, err := filepath.Rel(dst, target)
 	if err != nil {
 		return 0, errors.WithMessagef(err, "计算相对路径失败, target=%s, base=%s", target, dst)

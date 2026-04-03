@@ -37,8 +37,7 @@ func WriteReaderToFile(
 	}
 
 	dir := filepath.Dir(filePath)
-	dirMode := fileMode | 0111
-	if err := os.MkdirAll(dir, dirMode); err != nil {
+	if err := os.MkdirAll(dir, os.FileMode(0o750)); err != nil {
 		return errors.WithMessagef(err, "创建目录失败: %s", dir)
 	}
 

@@ -151,7 +151,7 @@ func (req *ListHostDTO) ToQueryMap() map[string]any {
 		queryMap["label = ?"] = req.Label
 	}
 	if req.SSHIP != "" {
-		queryMap["ip_addr = ?"] = req.SSHIP
+		queryMap["ssh_ip = ?"] = req.SSHIP
 	}
 	if req.SSHPort != nil {
 		queryMap["ssh_port = ?"] = *req.SSHPort

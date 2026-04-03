@@ -184,16 +184,16 @@ csdc_ftp_root: KSJY                                   # FTP服务获取根目录
 # xter  柜台 脚本生成
 # 文件从远程目录拷贝过来时， 支持正则
 csdc_cp_files:
-  - name: "ipogh.*.txt"
+  - name: "ipogh*.txt"
     se: "sh"
     from_way: "dir"
-  - name: "zqy.*.dbf"
+  - name: "zqy*.dbf"
     se: "sh"
     from_way: "dir"
-  - name: "SJSKS.DBF"
+  - name: "SJSKS*.DBF"
     se: "sz"
     from_way: "dir"
-  - name: "SJSFX.DBF"
+  - name: "SJSFX*.DBF"
     se: "sz"
     from_way: "dir"
 

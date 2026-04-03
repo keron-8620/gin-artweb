@@ -18,7 +18,7 @@ func isWebSocketRequest(c *gin.Context) bool {
 	connection := strings.ToLower(c.GetHeader("Connection"))
 	wsVersion := c.GetHeader("Sec-WebSocket-Version")
 
-	// 标准WebSocket请求需满足：Upgrade=websocket + Connection=upgrade + 非空的Sec-WebSocket-Version
+	// 标准WebSocket请求需满足:Upgrade=websocket + Connection=upgrade + 非空的Sec-WebSocket-Version
 	return upgrade == "websocket" &&
 		connection == "upgrade" &&
 		wsVersion != ""
@@ -69,7 +69,7 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 	}
 
 	return func(c *gin.Context) {
-		log := ctxutil.NewLogger(logger, c.Request.Context())
+		log := logger.With(zap.String("trace_id", ctxutil.GetTraceID(c.Request.Context())))
 		startTime := time.Now()
 
 		// WebSocket请求跳过超时处理
@@ -77,7 +77,6 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 			log.Debug("WebSocket请求跳过超时中间件",
 				zap.String("request_uri", c.Request.RequestURI),
 				zap.String("request_method", c.Request.Method),
-				zap.String("trace_id", ctxutil.GetTraceID(c.Request.Context())),
 			)
 			c.Next()
 			return
@@ -89,7 +88,6 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 				log.Debug("请求在允许列表中，跳过超时中间件",
 					zap.String("request_uri", c.Request.RequestURI),
 					zap.String("request_method", c.Request.Method),
-					zap.String("trace_id", ctxutil.GetTraceID(c.Request.Context())),
 				)
 				c.Next()
 				return
@@ -124,7 +122,7 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 		// 替换请求上下文
 		c.Request = c.Request.WithContext(ctx)
 
-		// 优化channel设计：done使用无缓冲，但通过ctx控制goroutine退出
+		// 优化channel设计:done使用无缓冲，但通过ctx控制goroutine退出
 		done := make(chan struct{})
 		panicChan := make(chan any, 1)
 
@@ -134,30 +132,29 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 				if r := recover(); r != nil {
 					panicChan <- r
 				}
-				// 防止done阻塞：仅当ctx未超时/未取消时才发送
+				// 防止done阻塞:仅当ctx未超时/未取消时才发送
 				select {
 				case done <- struct{}{}:
 				case <-ctx.Done():
 				}
 			}()
-			// 注意：gin.Context非goroutine安全，此处依赖c.Next()的原子性（业界通用做法）
+			// 注意:gin.Context非goroutine安全，此处依赖c.Next()的原子性（业界通用做法）
 			c.Next()
 		}()
 
 		// 等待处理完成/超时/panic
 		select {
 		case <-done:
-			// 正常完成：检查panic
+			// 正常完成:检查panic
 			handlePanicIfAny(c, log, panicChan)
 			return
 
 		case r := <-panicChan:
-			// panic触发：记录并返回500，同时重新panic让上层中间件感知
+			// panic触发:记录并返回500，同时重新panic让上层中间件感知
 			log.Error("请求处理发生panic",
 				zap.Any("panic", r),
 				zap.String("request_uri", c.Request.RequestURI),
 				zap.String("request_method", c.Request.Method),
-				zap.String("trace_id", ctxutil.GetTraceID(c.Request.Context())),
 			)
 			if !c.Writer.Written() {
 				errors.RespondWithError(c, errors.ErrUnknown)
@@ -167,13 +164,12 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 			panic(r)
 
 		case <-ctx.Done():
-			// 超时触发：优化日志和响应
+			// 超时触发:优化日志和响应
 			log.Error("请求超时",
 				zap.String("request_uri", c.Request.RequestURI),
 				zap.String("request_method", c.Request.Method),
 				zap.Duration("timeout", timeout),
 				zap.Duration("elapsed", time.Since(startTime)),
-				zap.String("trace_id", ctxutil.GetTraceID(c.Request.Context())),
 			)
 
 			// 仅当响应未写入时返回超时错误

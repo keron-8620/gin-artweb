@@ -50,13 +50,13 @@ func (s *RoleService) GetApis(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询角色关联的API列表：开始执行",
+		"查询角色关联的API列表:开始执行",
 		zap.Uint32s("api_ids", apiIDs),
 	)
 
 	if len(apiIDs) == 0 {
 		log.Info(
-			"查询角色关联的API列表：API ID列表为空",
+			"查询角色关联的API列表:API ID列表为空",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return []sysmodel.ApiModel{}, nil
@@ -68,7 +68,7 @@ func (s *RoleService) GetApis(
 	ms, err := s.apiRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询角色关联的API列表：查询数据库失败",
+			"查询角色关联的API列表:查询数据库失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -76,12 +76,12 @@ func (s *RoleService) GetApis(
 		return nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询角色关联的API列表：查询数据库成功",
+		"查询角色关联的API列表:查询数据库成功",
 		zap.Uint32s("api_ids", sysmodel.ListApiModelToUint32s(ms)),
 	)
 
 	log.Info(
-		"查询角色关联的API列表：执行成功",
+		"查询角色关联的API列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
@@ -99,13 +99,13 @@ func (s *RoleService) GetMenus(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询角色关联的菜单列表：开始执行",
+		"查询角色关联的菜单列表:开始执行",
 		zap.Uint32s("menu_ids", menuIDs),
 	)
 
 	if len(menuIDs) == 0 {
 		log.Info(
-			"查询角色关联的菜单列表：菜单 ID列表为空",
+			"查询角色关联的菜单列表:菜单 ID列表为空",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return []sysmodel.MenuModel{}, nil
@@ -117,7 +117,7 @@ func (s *RoleService) GetMenus(
 	ms, err := s.menuRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询角色关联的菜单列表：查询数据库失败",
+			"查询角色关联的菜单列表:查询数据库失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -125,12 +125,12 @@ func (s *RoleService) GetMenus(
 		return nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询角色关联的菜单列表：查询数据库成功",
+		"查询角色关联的菜单列表:查询数据库成功",
 		zap.Uint32s("menu_ids", sysmodel.ListMenuModelToUint32s(ms)),
 	)
 
 	log.Info(
-		"查询角色关联的菜单列表：执行成功",
+		"查询角色关联的菜单列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
@@ -148,13 +148,13 @@ func (s *RoleService) GetButtons(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询角色关联的按钮列表：开始执行",
+		"查询角色关联的按钮列表:开始执行",
 		zap.Uint32s("button_ids", buttonIDs),
 	)
 
 	if len(buttonIDs) == 0 {
 		log.Info(
-			"查询角色关联的按钮列表：按钮 ID列表为空",
+			"查询角色关联的按钮列表:按钮 ID列表为空",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return []sysmodel.ButtonModel{}, nil
@@ -166,7 +166,7 @@ func (s *RoleService) GetButtons(
 	ms, err := s.buttonRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询角色关联的按钮列表：查询数据库失败",
+			"查询角色关联的按钮列表:查询数据库失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -174,12 +174,12 @@ func (s *RoleService) GetButtons(
 		return nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询角色关联的按钮列表：查询数据库成功",
+		"查询角色关联的按钮列表:查询数据库成功",
 		zap.Uint32s("button_ids", sysmodel.ListButtonModelToUint32s(ms)),
 	)
 
 	log.Info(
-		"查询角色关联的按钮列表：执行成功",
+		"查询角色关联的按钮列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return ms, nil
@@ -199,7 +199,7 @@ func (s *RoleService) CreateRole(
 	log.Info("开始创建角色")
 
 	log.Debug(
-		"创建角色：输入参数",
+		"创建角色:输入参数",
 		zap.Object("role_upsert_dto", &dto),
 	)
 
@@ -211,44 +211,44 @@ func (s *RoleService) CreateRole(
 	apis, rErr := s.GetApis(ctx, dto.ApiIDs)
 	if rErr != nil {
 		log.Error(
-			"创建角色：查询角色关联的权限列表失败",
+			"创建角色:查询角色关联的权限列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("api_ids", dto.ApiIDs),
 		)
 		return nil, rErr
 	}
-	log.Debug("创建角色：查询角色关联的权限列表成功")
+	log.Debug("创建角色:查询角色关联的权限列表成功")
 
 	menus, rErr := s.GetMenus(ctx, dto.MenuIDs)
 	if rErr != nil {
 		log.Error(
-			"创建角色：查询菜单关联的菜单列表失败",
+			"创建角色:查询菜单关联的菜单列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("menu_ids", dto.MenuIDs),
 		)
 		return nil, rErr
 	}
-	log.Debug("创建角色：查询菜单关联的菜单列表成功")
+	log.Debug("创建角色:查询菜单关联的菜单列表成功")
 
 	buttons, rErr := s.GetButtons(ctx, dto.ButtonIDs)
 	if rErr != nil {
 		log.Error(
-			"创建角色：查询按钮关联的按钮列表失败",
+			"创建角色:查询按钮关联的按钮列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("button_ids", dto.ButtonIDs),
 		)
 		return nil, rErr
 	}
-	log.Debug("创建角色：查询按钮关联的按钮列表成功")
+	log.Debug("创建角色:查询按钮关联的按钮列表成功")
 
 	createStepStart := time.Now()
 	log.Debug(
-		"创建角色：开始创建数据库模型",
+		"创建角色:开始创建数据库模型",
 		zap.Object("role_model", &m),
 	)
 	if err := s.roleRepo.CreateModel(ctx, &m, apis, menus, buttons); err != nil {
 		log.Error(
-			"创建角色：创建数据库模型失败",
+			"创建角色:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("role_model", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -257,7 +257,7 @@ func (s *RoleService) CreateRole(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建角色：创建数据库模型成功",
+		"创建角色:创建数据库模型成功",
 		zap.Object("role_model", &m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
@@ -274,12 +274,12 @@ func (s *RoleService) CreateRole(
 
 	addPolicyStepStart := time.Now()
 	log.Debug(
-		"创建角色：开始添加角色组策略",
+		"创建角色:开始添加角色组策略",
 		zap.Object("role_model", &m),
 	)
 	if err := s.roleRepo.AddGroupPolicy(ctx, &m); err != nil {
 		log.Error(
-			"创建角色：添加角色组策略失败",
+			"创建角色:添加角色组策略失败",
 			zap.Error(err),
 			zap.Object("role_model", &m),
 			zap.Duration("add_policy_step_duration", time.Since(addPolicyStepStart)),
@@ -288,13 +288,13 @@ func (s *RoleService) CreateRole(
 	}
 	addPolicyStepDuration := time.Since(addPolicyStepStart)
 	log.Debug(
-		"创建角色：添加角色组策略成功",
+		"创建角色:添加角色组策略成功",
 		zap.Object("role_model", &m),
 		zap.Duration("add_policy_step_duration", addPolicyStepDuration),
 	)
 
 	log.Info(
-		"创建角色：执行成功",
+		"创建角色:执行成功",
 		zap.Uint32("role_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("add_policy_step_duration", addPolicyStepDuration),
@@ -316,12 +316,12 @@ func (s *RoleService) UpdateRoleByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新角色：开始执行",
+		"更新角色:开始执行",
 		zap.Uint32("role_id", roleID),
 	)
 
 	log.Debug(
-		"更新角色：输入参数",
+		"更新角色:输入参数",
 		zap.Uint32("role_id", roleID),
 		zap.Object("update_role_dto", &dto),
 	)
@@ -329,46 +329,46 @@ func (s *RoleService) UpdateRoleByID(
 	apis, rErr := s.GetApis(ctx, dto.ApiIDs)
 	if rErr != nil {
 		log.Error(
-			"更新角色：查询角色关联的权限列表失败",
+			"更新角色:查询角色关联的权限列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("api_ids", dto.ApiIDs),
 		)
 		return nil, rErr
 	}
-	log.Debug("更新角色：查询角色关联的权限列表成功")
+	log.Debug("更新角色:查询角色关联的权限列表成功")
 
 	menus, rErr := s.GetMenus(ctx, dto.MenuIDs)
 	if rErr != nil {
 		log.Error(
-			"更新角色：查询菜单关联的菜单列表失败",
+			"更新角色:查询菜单关联的菜单列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("menu_ids", dto.MenuIDs),
 		)
 		return nil, rErr
 	}
-	log.Debug("更新角色：查询菜单关联的菜单列表成功")
+	log.Debug("更新角色:查询菜单关联的菜单列表成功")
 
 	buttons, rErr := s.GetButtons(ctx, dto.ButtonIDs)
 	if rErr != nil {
 		log.Error(
-			"更新角色：查询按钮关联的按钮列表失败",
+			"更新角色:查询按钮关联的按钮列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("button_ids", dto.ButtonIDs),
 		)
 		return nil, rErr
 	}
-	log.Debug("更新角色：查询按钮关联的按钮列表成功")
+	log.Debug("更新角色:查询按钮关联的按钮列表成功")
 
 	updateData := dto.ToUpdateMap()
 	updateStepStart := time.Now()
 	log.Debug(
-		"更新角色：开始更新数据库模型",
+		"更新角色:开始更新数据库模型",
 		zap.Any("update_data", updateData),
 		zap.Uint32("role_id", roleID),
 	)
 	if err := s.roleRepo.UpdateModel(ctx, updateData, apis, menus, buttons, "id = ?", roleID); err != nil {
 		log.Error(
-			"更新角色：更新数据库模型失败",
+			"更新角色:更新数据库模型失败",
 			zap.Error(err),
 			zap.Any("update_data", updateData),
 			zap.Uint32("role_id", roleID),
@@ -377,7 +377,7 @@ func (s *RoleService) UpdateRoleByID(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新角色：更新数据库模型成功",
+		"更新角色:更新数据库模型成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
@@ -386,7 +386,7 @@ func (s *RoleService) UpdateRoleByID(
 	m, rErr = s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		log.Error(
-			"更新角色：查询更新后的角色详情失败",
+			"更新角色:查询更新后的角色详情失败",
 			zap.Error(rErr),
 			zap.Uint32("role_id", roleID),
 		)
@@ -395,13 +395,13 @@ func (s *RoleService) UpdateRoleByID(
 
 	removePolicyStepStart := time.Now()
 	log.Debug(
-		"更新角色：开始移除旧策略",
+		"更新角色:开始移除旧策略",
 		zap.Uint32("role_id", roleID),
 		zap.Bool("remove_inherited", false),
 	)
 	if err := s.roleRepo.RemoveGroupPolicy(ctx, m); err != nil {
 		log.Error(
-			"更新角色：移除旧策略失败",
+			"更新角色:移除旧策略失败",
 			zap.Error(err),
 			zap.Object("role_model", m),
 			zap.Bool("remove_inherited", false),
@@ -411,7 +411,7 @@ func (s *RoleService) UpdateRoleByID(
 	}
 	removePolicyStepDuration := time.Since(removePolicyStepStart)
 	log.Debug(
-		"更新角色：移除旧策略耗时",
+		"更新角色:移除旧策略耗时",
 		zap.Object("role_model", m),
 		zap.Duration("remove_policy_step_duration", removePolicyStepDuration),
 	)
@@ -419,7 +419,7 @@ func (s *RoleService) UpdateRoleByID(
 	addPolicyStepStart := time.Now()
 	if err := s.roleRepo.AddGroupPolicy(ctx, m); err != nil {
 		log.Error(
-			"更新角色：添加新策略失败",
+			"更新角色:添加新策略失败",
 			zap.Error(err),
 			zap.Object("role_model", m),
 			zap.Duration("add_policy_step_duration", time.Since(addPolicyStepStart)),
@@ -428,13 +428,13 @@ func (s *RoleService) UpdateRoleByID(
 	}
 	addPolicyStepDuration := time.Since(addPolicyStepStart)
 	log.Debug(
-		"更新角色：添加新策略成功",
+		"更新角色:添加新策略成功",
 		zap.Object("role_model", m),
 		zap.Duration("add_policy_step_duration", addPolicyStepDuration),
 	)
 
 	log.Info(
-		"更新角色：执行成功",
+		"更新角色:执行成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -453,14 +453,14 @@ func (s *RoleService) DeleteRoleByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除角色：执行开始",
+		"删除角色:执行开始",
 		zap.Uint32("role_id", roleID),
 	)
 
 	m, rErr := s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		log.Error(
-			"删除角色：查询角色详情失败",
+			"删除角色:查询角色详情失败",
 			zap.Error(rErr),
 			zap.Uint32("role_id", roleID),
 		)
@@ -469,12 +469,12 @@ func (s *RoleService) DeleteRoleByID(
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除角色：开始删除数据库模型",
+		"删除角色:开始删除数据库模型",
 		zap.Uint32("role_id", roleID),
 	)
 	if err := s.roleRepo.DeleteModel(ctx, roleID); err != nil {
 		log.Error(
-			"删除角色：删除数据库模型失败",
+			"删除角色:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("role_id", roleID),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -483,20 +483,20 @@ func (s *RoleService) DeleteRoleByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除角色：删除数据库模型成功",
+		"删除角色:删除数据库模型成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	removePolicyStepStart := time.Now()
 	log.Debug(
-		"删除角色：开始移除策略",
+		"删除角色:开始移除策略",
 		zap.Uint32("role_id", roleID),
 		zap.Bool("remove_inherited", true),
 	)
 	if err := s.roleRepo.RemoveGroupPolicy(ctx, m); err != nil {
 		log.Error(
-			"删除角色：移除策略失败",
+			"删除角色:移除策略失败",
 			zap.Error(err),
 			zap.Object("role_model", m),
 			zap.Bool("remove_inherited", true),
@@ -506,13 +506,13 @@ func (s *RoleService) DeleteRoleByID(
 	}
 	removePolicyStepDuration := time.Since(removePolicyStepStart)
 	log.Debug(
-		"删除角色：移除策略成功",
+		"删除角色:移除策略成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("remove_policy_step_duration", removePolicyStepDuration),
 	)
 
 	log.Info(
-		"删除角色：执行成功",
+		"删除角色:执行成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("remove_policy_step_duration", removePolicyStepDuration),
@@ -534,7 +534,7 @@ func (s *RoleService) FindRoleByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询角色：开始执行",
+		"查询角色:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Uint32("role_id", roleID),
 	)
@@ -542,7 +542,7 @@ func (s *RoleService) FindRoleByID(
 	m, err := s.roleRepo.GetModel(ctx, preloads, roleID)
 	if err != nil {
 		log.Error(
-			"查询角色：查询数据库模型失败",
+			"查询角色:查询数据库模型失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Uint32("role_id", roleID),
@@ -551,12 +551,12 @@ func (s *RoleService) FindRoleByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": roleID})
 	}
 	log.Debug(
-		"查询角色：查询到的数据库模型详情",
+		"查询角色:查询到的数据库模型详情",
 		zap.Object("role_model", m),
 	)
 
 	log.Info(
-		"查询角色：执行成功",
+		"查询角色:执行成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -575,10 +575,10 @@ func (s *RoleService) ListRole(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询角色列表：开始执行")
+	log.Info("查询角色列表:开始执行")
 
 	log.Debug(
-		"查询角色列表：参数详情",
+		"查询角色列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_role_dto", &dto),
@@ -587,7 +587,6 @@ func (s *RoleService) ListRole(
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Apis", "Menus", "Buttons"},
-		Columns:  []string{"id"},
 		Limit:    limit,
 		Offset:   offset,
 		OrderBy:  []string{"id ASC"},
@@ -595,20 +594,20 @@ func (s *RoleService) ListRole(
 	}
 
 	log.Debug(
-		"查询角色列表：查询数据库模型参数",
+		"查询角色列表:查询数据库模型参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询角色列表：开始查询数据库模型总数",
+		"查询角色列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.roleRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询角色列表：查询数据库模型总数失败",
+			"查询角色列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -616,13 +615,13 @@ func (s *RoleService) ListRole(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询角色列表：查询数据库模型总数成功",
+		"查询角色列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询角色列表：数据库模型总数为0",
+			"查询角色列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -631,7 +630,7 @@ func (s *RoleService) ListRole(
 	ms, err := s.roleRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询角色列表：查询数据库模型失败",
+			"查询角色列表:查询数据库模型失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -640,7 +639,7 @@ func (s *RoleService) ListRole(
 	}
 
 	log.Info(
-		"查询角色列表：执行成功",
+		"查询角色列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
@@ -655,7 +654,7 @@ func (s *RoleService) LoadRolePolicy(ctx context.Context) *errors.Error {
 	log := s.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
 
 	log.Debug(
-		"加载角色策略：开始执行",
+		"加载角色策略:开始执行",
 	)
 
 	qp := database.QueryParams{
@@ -668,7 +667,7 @@ func (s *RoleService) LoadRolePolicy(ctx context.Context) *errors.Error {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"加载角色策略：查询数据库模型角色列表失败",
+			"加载角色策略:查询数据库模型角色列表失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -679,12 +678,12 @@ func (s *RoleService) LoadRolePolicy(ctx context.Context) *errors.Error {
 	var policyCount int
 	if len(ms) > 0 {
 		policyStepStart := time.Now()
-		log.Debug("加载角色策略：开始添加角色组策略")
+		log.Debug("加载角色策略:开始添加角色组策略")
 		policyCount = len(ms)
 		for i := range ms {
 			if err := s.roleRepo.AddGroupPolicy(ctx, &ms[i]); err != nil {
 				log.Error(
-					"加载角色策略：添加角色组策略失败",
+					"加载角色策略:添加角色组策略失败",
 					zap.Error(err),
 					zap.Uint32("role_id", ms[i].ID),
 				)
@@ -693,14 +692,14 @@ func (s *RoleService) LoadRolePolicy(ctx context.Context) *errors.Error {
 		}
 		policyStepDuration := time.Since(policyStepStart)
 		log.Debug(
-			"加载角色策略：添加角色组策略耗时",
+			"加载角色策略:添加角色组策略耗时",
 			zap.Int("policy_count", policyCount),
 			zap.Duration("policy_step_duration", policyStepDuration),
 		)
 	}
 
 	log.Debug(
-		"加载角色策略：执行成功",
+		"加载角色策略:执行成功",
 		zap.Int("policy_count", policyCount),
 		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -720,14 +719,14 @@ func (s *RoleService) GetRoleMenuTree(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"获取角色菜单树：开始执行",
+		"获取角色菜单树:开始执行",
 		zap.Uint32("role_id", roleID),
 	)
 
 	m, rErr := s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
 	if rErr != nil {
 		log.Error(
-			"获取角色菜单树：查询角色详情失败",
+			"获取角色菜单树:查询角色详情失败",
 			zap.Error(rErr),
 			zap.Uint32("role_id", roleID),
 		)
@@ -750,7 +749,7 @@ func (s *RoleService) GetRoleMenuTree(
 		mt, err := s.buildMenuTree(menu, roleMenuMap, roleButtonMap)
 		if err != nil {
 			log.Error(
-				"获取角色菜单树：构建菜单树失败",
+				"获取角色菜单树:构建菜单树失败",
 				zap.Error(err),
 				zap.Uint32("role_id", roleID),
 			)
@@ -760,7 +759,7 @@ func (s *RoleService) GetRoleMenuTree(
 	}
 
 	log.Info(
-		"获取角色菜单树：执行成功",
+		"获取角色菜单树:执行成功",
 		zap.Uint32("role_id", roleID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)

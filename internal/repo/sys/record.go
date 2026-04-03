@@ -30,7 +30,7 @@ type LoginRecordRepo struct {
 
 // NewLoginRecordRepo 创建登录记录仓库实例
 //
-// 参数：
+// 参数:
 //
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
@@ -39,7 +39,7 @@ type LoginRecordRepo struct {
 //	clearTime: 缓存清理时间
 //	num: 最大允许的登录失败次数
 //
-// 返回值：
+// 返回值:
 //
 //	sysmodel.LoginRecordRepo: 登录记录仓库接口实现
 func NewLoginRecordRepo(
@@ -62,16 +62,16 @@ func NewLoginRecordRepo(
 
 // CreateModel 创建登录记录模型
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	m: 登录记录模型，包含登录记录的详细信息
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查登录记录模型是否为空
 //  2. 设置登录时间
 //  3. 执行数据库创建操作
@@ -85,16 +85,16 @@ func (r *LoginRecordRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建登录记录模型：模型为空")
+		err := errors.New("创建登录记录模型:模型为空")
 		log.Error(
-			"创建登录记录模型：模型为空",
+			"创建登录记录模型:模型为空",
 			zap.Error(err),
 		)
 		return err
 	}
 
 	log.Debug(
-		"创建登录记录模型：开始执行",
+		"创建登录记录模型:开始执行",
 		zap.Object("login_record_model", m),
 	)
 
@@ -106,16 +106,16 @@ func (r *LoginRecordRepo) CreateModel(
 	createLoginRecordDuration := time.Since(createLoginRecordStartTime)
 	if err != nil {
 		log.Error(
-			"创建登录记录模型：数据库创建失败",
+			"创建登录记录模型:数据库创建失败",
 			zap.Object("login_record_model", m),
 			zap.Error(err),
 			zap.Duration("create_login_record_duration", createLoginRecordDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "创建登录记录模型：数据库创建失败")
+		return errors.WrapIf(err, "创建登录记录模型:数据库创建失败")
 	}
 	log.Debug(
-		"创建登录记录模型：执行成功",
+		"创建登录记录模型:执行成功",
 		zap.Object("login_record_model", m),
 		zap.Duration("create_login_record_duration", createLoginRecordDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -125,18 +125,18 @@ func (r *LoginRecordRepo) CreateModel(
 
 // ListModel 查询登录记录模型列表
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	qp: 查询参数，包含分页、排序等查询条件
 //
-// 返回值：
+// 返回值:
 //
 //	int64: 总记录数
 //	[]sysmodel.LoginRecordModel: 登录记录模型列表指针，包含符合条件的登录记录
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 执行数据库查询操作
 //  2. 获取登录记录模型列表
 //  3. 返回总记录数和模型列表
@@ -149,7 +149,7 @@ func (r *LoginRecordRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询登录记录模型列表：开始执行",
+		"查询登录记录模型列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 
@@ -161,16 +161,16 @@ func (r *LoginRecordRepo) ListModel(
 	listLoginRecordDuration := time.Since(listLoginRecordStartTime)
 	if err != nil {
 		log.Error(
-			"查询登录记录模型列表：数据库查询失败",
+			"查询登录记录模型列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_login_record_duration", listLoginRecordDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询登录记录模型列表：数据库查询失败")
+		return nil, errors.WrapIf(err, "查询登录记录模型列表:数据库查询失败")
 	}
 	log.Debug(
-		"查询登录记录模型列表：执行成功",
+		"查询登录记录模型列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_login_record_duration", listLoginRecordDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -186,7 +186,7 @@ func (r *LoginRecordRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询登录记录模型总数：开始执行",
+		"查询登录记录模型总数:开始执行",
 		zap.Any("query", query),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
@@ -196,16 +196,16 @@ func (r *LoginRecordRepo) CountModel(
 	countLoginRecordDuration := time.Since(countLoginRecordStartTime)
 	if err != nil {
 		log.Error(
-			"查询登录记录模型总数：数据库查询失败",
+			"查询登录记录模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_login_record_duration", countLoginRecordDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, errors.WrapIf(err, "查询登录记录模型总数：数据库查询失败")
+		return 0, errors.WrapIf(err, "查询登录记录模型总数:数据库查询失败")
 	}
 	log.Debug(
-		"查询登录记录模型总数：执行成功",
+		"查询登录记录模型总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_login_record_duration", countLoginRecordDuration),
@@ -216,17 +216,17 @@ func (r *LoginRecordRepo) CountModel(
 
 // GetLoginFailNum 获取登录失败次数
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	ip: IP地址，用于标识登录失败的客户端
 //
-// 返回值：
+// 返回值:
 //
 //	int: 剩余的登录失败次数（未找到记录时返回最大允许失败次数）
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查上下文是否有效
 //  2. 检查IP地址是否为空
 //  3. 从缓存中获取登录失败次数
@@ -240,7 +240,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(
 
 	// 检查上下文
 	if ctx.Err() != nil {
-		return 0, errors.WrapIf(ctx.Err(), "获取登录失败次数：上下文错误")
+		return 0, errors.WrapIf(ctx.Err(), "获取登录失败次数:上下文错误")
 	}
 
 	// 检查参数
@@ -251,7 +251,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"获取登录失败次数：开始执行",
+		"获取登录失败次数:开始执行",
 		zap.String("ip", ip),
 	)
 
@@ -259,7 +259,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(
 	num, exists := r.cache.Get(ip)
 	if !exists {
 		log.Debug(
-			"获取登录失败次数：未找到IP的登录失败记录, 返回最大允许失败次数",
+			"获取登录失败次数:未找到IP的登录失败记录, 返回最大允许失败次数",
 			zap.String("ip", ip),
 			zap.Int("max_fail_num", r.maxNum),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -269,7 +269,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(
 
 	n, _ := num.(int)
 	log.Debug(
-		"获取登录失败次数：获取到IP的登录失败次数",
+		"获取登录失败次数:获取到IP的登录失败次数",
 		zap.String("ip", ip),
 		zap.Int("fail_num", n),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -279,17 +279,17 @@ func (r *LoginRecordRepo) GetLoginFailNum(
 
 // SetLoginFailNum 设置登录失败次数
 //
-// 参数：
+// 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
 //	ip: IP地址，用于标识登录失败的客户端
 //	num: 登录失败次数
 //
-// 返回值：
+// 返回值:
 //
 //	error: 操作错误信息，成功则返回nil
 //
-// 功能：
+// 功能:
 //  1. 检查上下文是否有效
 //  2. 检查IP地址是否为空
 //  3. 将登录失败次数设置到缓存中
@@ -303,7 +303,7 @@ func (r *LoginRecordRepo) SetLoginFailNum(
 
 	// 检查上下文
 	if ctx.Err() != nil {
-		return errors.WrapIf(ctx.Err(), "设置登录失败次数：上下文错误")
+		return errors.WrapIf(ctx.Err(), "设置登录失败次数:上下文错误")
 	}
 
 	// 检查参数
@@ -314,7 +314,7 @@ func (r *LoginRecordRepo) SetLoginFailNum(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"设置登录失败次数：开始执行",
+		"设置登录失败次数:开始执行",
 		zap.String("ip", ip),
 		zap.Int("fail_num", num),
 		zap.Duration("ttl", r.ttl),
@@ -324,7 +324,7 @@ func (r *LoginRecordRepo) SetLoginFailNum(
 	r.cache.Set(ip, num, r.ttl)
 
 	log.Debug(
-		"设置登录失败次数：执行成功",
+		"设置登录失败次数:执行成功",
 		zap.String("ip", ip),
 		zap.Int("fail_num", num),
 		zap.Duration("total_duration", time.Since(startTime)),

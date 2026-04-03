@@ -88,4 +88,7 @@ const (
 	ReasonPackageNotFound     ErrorReason = "PACKAGE_NOT_FOUND"     // 程序包未找到
 	ReasonPackageSaveFailed   ErrorReason = "PACKAGE_SAVE_FAILED"   // 程序包保存失败
 	ReasonPackageRemoveFailed ErrorReason = "PACKAGE_REMOVE_FAILED" // 程序包删除失败
+
+	// 计划任务相关
+	ReasonCronSpecificationInvalid ErrorReason = "CRON_SPECIFICATION_INVALID" // 计划任务表达式格式错误
 )

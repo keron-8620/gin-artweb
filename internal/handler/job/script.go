@@ -56,21 +56,21 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 	var req jobmodel.UploadScriptDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"上传脚本：绑定上传脚本请求参数失败") {
+		"上传脚本:绑定上传脚本请求参数失败") {
 		return
 	}
 
-	log.Info("上传脚本：开始执行")
+	log.Info("上传脚本:开始执行")
 
 	log.Debug(
-		"上传脚本：入参详情",
+		"上传脚本:入参详情",
 		zap.Object("upload_script_dto", &req),
 	)
 
 	fileReader, err := req.File.Open()
 	if err != nil {
 		log.Error(
-			"上传脚本：打开上传文件失败",
+			"上传脚本:打开上传文件失败",
 			zap.Error(err),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -95,7 +95,7 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
-			"上传脚本：执行失败",
+			"上传脚本:执行失败",
 			zap.Error(rErr),
 			zap.Object("upload_script_biz", &dto),
 			zap.Duration("create_step_duration", createStepDuration),
@@ -105,13 +105,13 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"上传脚本：创建的脚本模型详情",
+		"上传脚本:创建的脚本模型详情",
 		zap.Object("script_model", m),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"上传脚本：执行成功",
+		"上传脚本:执行成功",
 		zap.Uint32("script_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -146,26 +146,26 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"更新脚本：绑定脚本ID参数失败") {
+		"更新脚本:绑定脚本ID参数失败") {
 		return
 	}
 
 	var req jobmodel.UploadScriptDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"更新脚本：绑定更新脚本请求参数失败") {
+		"更新脚本:绑定更新脚本请求参数失败") {
 		return
 	}
 
 	log.Info(
-		"更新脚本：开始执行",
+		"更新脚本:开始执行",
 		zap.Uint32("script_id", uri.ID),
 	)
 
 	log.Debug(
-		"更新脚本：入参详情",
+		"更新脚本:入参详情",
 		zap.Uint32("script_id", uri.ID),
 		zap.Object("update_script_dto", &req),
 	)
@@ -173,7 +173,7 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 	fileReader, err := req.File.Open()
 	if err != nil {
 		log.Error(
-			"上传脚本：打开上传文件失败",
+			"上传脚本:打开上传文件失败",
 			zap.Error(err),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -198,7 +198,7 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 	updateStepDuration := time.Since(updateStepStart)
 	if rErr != nil {
 		log.Error(
-			"更新脚本：执行失败",
+			"更新脚本:执行失败",
 			zap.Error(rErr),
 			zap.Uint32("script_id", uri.ID),
 			zap.Object("update_script_biz", &dto),
@@ -210,13 +210,13 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 	}
 
 	log.Debug(
-		"更新脚本：更新后的脚本模型详情",
+		"更新脚本:更新后的脚本模型详情",
 		zap.Object("script_model", nm),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	log.Info(
-		"更新脚本：执行成功",
+		"更新脚本:执行成功",
 		zap.Uint32("script_id", uri.ID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -244,14 +244,14 @@ func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"删除脚本：绑定删除脚本ID参数失败") {
+		"删除脚本:绑定删除脚本ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"删除脚本：开始执行",
+		"删除脚本:开始执行",
 		zap.Uint32("script_id", uri.ID),
 	)
 
@@ -260,7 +260,7 @@ func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
 	deleteStepDuration := time.Since(deleteStepStart)
 	if err != nil {
 		log.Error(
-			"删除脚本：执行失败",
+			"删除脚本:执行失败",
 			zap.Error(err),
 			zap.Uint32("script_id", uri.ID),
 			zap.Duration("delete_step_duration", deleteStepDuration),
@@ -271,7 +271,7 @@ func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"删除脚本：删除脚本成功",
+		"删除脚本:删除脚本成功",
 		zap.Uint32("script_id", uri.ID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -296,14 +296,14 @@ func (h *ScriptHandler) GetScript(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"查询脚本：绑定查询脚本ID参数失败") {
+		"查询脚本:绑定查询脚本ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"查询脚本：开始执行",
+		"查询脚本:开始执行",
 		zap.Uint32("script_id", uri.ID),
 	)
 
@@ -312,7 +312,7 @@ func (h *ScriptHandler) GetScript(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询脚本：执行失败",
+			"查询脚本:执行失败",
 			zap.Error(err),
 			zap.Uint32("script_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -322,13 +322,13 @@ func (h *ScriptHandler) GetScript(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"查询脚本：查询到的脚本详情",
+		"查询脚本:查询到的脚本详情",
 		zap.Object("script_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
 
 	log.Info(
-		"查询脚本：执行成功",
+		"查询脚本:执行成功",
 		zap.Uint32("script_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -358,14 +358,14 @@ func (h *ScriptHandler) ListScript(ctx *gin.Context) {
 	var req jobmodel.ListScriptDTO
 	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询脚本列表：绑定查询参数失败") {
+		"查询脚本列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询脚本列表：开始执行")
+	log.Info("查询脚本列表:开始执行")
 
 	log.Debug(
-		"查询脚本列表：入参详情",
+		"查询脚本列表:入参详情",
 		zap.Object("list_script_dto", &req),
 	)
 
@@ -375,7 +375,7 @@ func (h *ScriptHandler) ListScript(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询脚本列表：执行失败",
+			"查询脚本列表:执行失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
@@ -388,7 +388,7 @@ func (h *ScriptHandler) ListScript(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询脚本列表：执行成功",
+		"查询脚本列表:执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
@@ -419,14 +419,14 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"下载脚本：绑定脚本ID参数失败") {
+		"下载脚本:绑定脚本ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"下载脚本：开始执行",
+		"下载脚本:开始执行",
 		zap.Uint32("script_id", uri.ID),
 	)
 
@@ -435,7 +435,7 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"下载脚本：查询脚本详情失败",
+			"下载脚本:查询脚本详情失败",
 			zap.Error(err),
 			zap.Uint32("script_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -445,7 +445,7 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"下载脚本：查询脚本详情成功",
+		"下载脚本:查询脚本详情成功",
 		zap.Uint32("script_id", uri.ID),
 		zap.String("script_name", m.Name),
 		zap.Duration("find_step_duration", findStepDuration),
@@ -457,7 +457,7 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 	downloadStepDuration := time.Since(downloadStepStart)
 	if err != nil {
 		log.Error(
-			"下载脚本：下载脚本失败",
+			"下载脚本:下载脚本失败",
 			zap.Error(err),
 			zap.Uint32("script_id", uri.ID),
 			zap.String("script_name", m.Name),
@@ -469,7 +469,7 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"下载脚本：下载脚本成功",
+		"下载脚本:下载脚本成功",
 		zap.Uint32("script_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("download_step_duration", downloadStepDuration),
@@ -494,14 +494,14 @@ func (h *ScriptHandler) ListProject(ctx *gin.Context) {
 	var req jobmodel.ListScriptDTO
 	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询项目列表：绑定查询参数失败") {
+		"查询项目列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询项目列表：开始执行")
+	log.Info("查询项目列表:开始执行")
 
 	log.Debug(
-		"查询项目列表：入参详情",
+		"查询项目列表:入参详情",
 		zap.Object("list_project_dto", &req),
 	)
 
@@ -510,7 +510,7 @@ func (h *ScriptHandler) ListProject(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询项目列表：查询项目列表失败",
+			"查询项目列表:查询项目列表失败",
 			zap.Error(err),
 			zap.Object("list_script_dto", &req),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -521,7 +521,7 @@ func (h *ScriptHandler) ListProject(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询项目列表：查询项目列表成功",
+		"查询项目列表:查询项目列表成功",
 		zap.Strings("projects", projects),
 		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -550,12 +550,12 @@ func (h *ScriptHandler) ListLabel(ctx *gin.Context) {
 	var req jobmodel.ListScriptDTO
 	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询标签列表：绑定查询参数失败") {
+		"查询标签列表:绑定查询参数失败") {
 		return
 	}
 
 	log.Debug(
-		"查询标签列表：入参详情",
+		"查询标签列表:入参详情",
 		zap.Object("list_label_dto", &req),
 	)
 
@@ -564,7 +564,7 @@ func (h *ScriptHandler) ListLabel(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询标签列表：查询标签列表失败",
+			"查询标签列表:查询标签列表失败",
 			zap.Error(err),
 			zap.Object("list_script_dto", &req),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -575,7 +575,7 @@ func (h *ScriptHandler) ListLabel(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询标签列表：查询标签列表成功",
+		"查询标签列表:查询标签列表成功",
 		zap.Strings("labels", labels),
 		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),

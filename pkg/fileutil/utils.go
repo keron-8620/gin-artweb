@@ -26,7 +26,7 @@ func ValidatePath(ctx context.Context, filePath string) error {
 // isPathSafe 检查路径是否安全（防止路径遍历攻击）
 func isPathSafe(filePath string) bool {
 	// 检查原始路径是否包含路径遍历攻击
-	// 注意：不能简单使用strings.Contains，因为文件名中可能包含"..."
+	// 注意:不能简单使用strings.Contains，因为文件名中可能包含"..."
 	// 正确的做法是检查路径的每个部分是否为".."
 	parts := strings.SplitSeq(filePath, string(filepath.Separator))
 	for part := range parts {
@@ -42,7 +42,7 @@ func isPathSafe(filePath string) bool {
 	cleanPath := filepath.Clean(filePath)
 	if cleanPath != filePath {
 		// 检查清理后的路径是否与原始路径的差异仅在于文件名中的点
-		// 例如："file..txt" 清理后还是 "file..txt"
+		// 例如:"file..txt" 清理后还是 "file..txt"
 		// 而 "/tmp/../file.txt" 清理后变成 "/file.txt"
 		cleanParts := strings.Split(cleanPath, string(filepath.Separator))
 		origParts := strings.Split(filePath, string(filepath.Separator))

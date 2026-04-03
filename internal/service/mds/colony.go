@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
+	jobmodel "gin-artweb/internal/model/job"
 	mdsmodel "gin-artweb/internal/model/mds"
 	mdsrepo "gin-artweb/internal/repo/mds"
 	resocvs "gin-artweb/internal/service/resource"
@@ -50,23 +51,29 @@ func (s *MdsColonyService) CreateMdsColony(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建mds集群：开始执行")
+	log.Info("创建mds集群:开始执行")
 
 	log.Debug(
-		"创建mds集群：入参详情",
+		"创建mds集群:入参详情",
 		zap.Object("mds_colony_dto", dto),
 	)
 
-	m := mdsmodel.MdsColonyModel{}
+	m := mdsmodel.MdsColonyModel{
+		ColonyNum:     dto.ColonyNum,
+		ExtractedName: dto.ExtractedName,
+		IsEnable:      dto.IsEnable,
+		PackageID:     dto.PackageID,
+		MonNodeID:     dto.MonNodeID,
+	}
 
 	createStepStart := time.Now()
 	log.Debug(
-		"创建mds集群：开始创建数据库模型",
+		"创建mds集群:开始创建数据库模型",
 		zap.Object("mds_colony_model", &m),
 	)
 	if err := s.colonyRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建mds集群：创建数据库模型失败",
+			"创建mds集群:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("mds_colony_model", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -75,14 +82,14 @@ func (s *MdsColonyService) CreateMdsColony(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建mds集群：创建数据库模型成功",
+		"创建mds集群:创建数据库模型成功",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	queryStepStart := time.Now()
 	log.Debug(
-		"创建mds集群：开始查询mds集群关联数据",
+		"创建mds集群:开始查询mds集群关联数据",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.Strings("preloads", []string{"Package", "MonNode"}),
 	)
@@ -90,7 +97,7 @@ func (s *MdsColonyService) CreateMdsColony(
 	nm, rErr := s.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, m.ID)
 	if rErr != nil {
 		log.Error(
-			"创建mds集群：查询mds集群关联数据失败",
+			"创建mds集群:查询mds集群关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("mds_colony_id", m.ID),
 			zap.Duration("query_step_duration", time.Since(queryStepStart)),
@@ -99,20 +106,20 @@ func (s *MdsColonyService) CreateMdsColony(
 	}
 	queryStepDuration := time.Since(queryStepStart)
 	log.Debug(
-		"创建mds集群：查询mds集群关联数据成功",
-		zap.Uint32("mds_colony_id", m.ID),
+		"创建mds集群:查询mds集群关联数据成功",
+		zap.Object("mds_colony_model", nm),
 		zap.Duration("query_step_duration", queryStepDuration),
 	)
 
 	exportStepStart := time.Now()
 	log.Debug(
-		"创建mds集群：开始导出mds集群缓存数据",
+		"创建mds集群:开始导出mds集群缓存数据",
 		zap.Uint32("mds_colony_id", m.ID),
 	)
 	// 导出mds集群缓存数据
 	if err := s.OutportMdsColonyData(ctx, nm); err != nil {
 		log.Error(
-			"创建mds集群：导出mds集群缓存数据失败",
+			"创建mds集群:导出mds集群缓存数据失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", m.ID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -121,7 +128,7 @@ func (s *MdsColonyService) CreateMdsColony(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"创建mds集群：导出mds集群缓存数据成功",
+		"创建mds集群:导出mds集群缓存数据成功",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
@@ -129,14 +136,14 @@ func (s *MdsColonyService) CreateMdsColony(
 	// 初始化mds集群定时任务
 	initCronStepStart := time.Now()
 	log.Debug(
-		"创建mds集群：开始初始化mds集群定时任务",
+		"创建mds集群:开始初始化mds集群定时任务",
 		zap.Uint32("mds_colony_id", m.ID),
 	)
 	rErr = s.cronSvc.CreateCornByColony(ctx, nm)
 	initCronStepDuration := time.Since(initCronStepStart)
 	if rErr != nil {
 		log.Error(
-			"创建mds集群：初始化mds集群定时任务失败",
+			"创建mds集群:初始化mds集群定时任务失败",
 			zap.Error(rErr),
 			zap.Uint32("mds_colony_id", m.ID),
 			zap.Duration("init_cron_step_duration", initCronStepDuration),
@@ -144,13 +151,13 @@ func (s *MdsColonyService) CreateMdsColony(
 		return nil, rErr
 	}
 	log.Debug(
-		"创建mds集群：初始化mds集群定时任务成功",
+		"创建mds集群:初始化mds集群定时任务成功",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.Duration("init_cron_step_duration", initCronStepDuration),
 	)
 
 	log.Info(
-		"创建mds集群：执行成功",
+		"创建mds集群:执行成功",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("query_step_duration", queryStepDuration),
@@ -175,12 +182,12 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新mds集群：开始执行",
+		"更新mds集群:开始执行",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 	)
 
 	log.Debug(
-		"更新mds集群：入参详情",
+		"更新mds集群:入参详情",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Object("mds_colony_dto", &dto),
 	)
@@ -189,7 +196,7 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	om, rErr := s.FindMdsColonyByID(ctx, nil, mdsColonyID)
 	if rErr != nil {
 		log.Error(
-			"更新mds集群：查询更新前mds集群关联数据失败",
+			"更新mds集群:查询更新前mds集群关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("find_old_step_duration", time.Since(findOldStepStart)),
@@ -198,25 +205,25 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	}
 	findOldStepDuration := time.Since(findOldStepStart)
 	log.Debug(
-		"更新mds集群：查询更新前mds集群关联数据成功",
+		"更新mds集群:查询更新前mds集群关联数据成功",
 		zap.Object("mds_colony_model", om),
 		zap.Duration("find_old_step_duration", findOldStepDuration),
 	)
 
 	updateData := dto.ToUpdateMap()
 	log.Debug(
-		"更新mds集群：转换为数据库更新参数",
+		"更新mds集群:转换为数据库更新参数",
 		zap.Any("update_data", updateData),
 	)
 	updateStepStart := time.Now()
 	log.Debug(
-		"更新mds集群：开始更新数据库模型",
+		"更新mds集群:开始更新数据库模型",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Any("update_data", updateData),
 	)
 	if err := s.colonyRepo.UpdateModel(ctx, updateData, "id = ?", mdsColonyID); err != nil {
 		log.Error(
-			"更新mds集群：更新数据库模型失败",
+			"更新mds集群:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Any("update_data", updateData),
@@ -226,14 +233,14 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新mds集群：更新数据库模型成功",
+		"更新mds集群:更新数据库模型成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
 
 	queryStepStart := time.Now()
 	log.Debug(
-		"更新mds集群：开始查询mds集群关联数据",
+		"更新mds集群:开始查询mds集群关联数据",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Strings("preloads", []string{"Package", "MonNode"}),
 	)
@@ -241,7 +248,7 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	nm, rErr := s.FindMdsColonyByID(ctx, []string{"Package", "MonNode"}, mdsColonyID)
 	if rErr != nil {
 		log.Error(
-			"更新mds集群：查询mds集群关联数据失败",
+			"更新mds集群:查询mds集群关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("query_step_duration", time.Since(queryStepStart)),
@@ -250,19 +257,19 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	}
 	queryStepDuration := time.Since(queryStepStart)
 	log.Debug(
-		"更新mds集群：查询mds集群关联数据成功",
+		"更新mds集群:查询mds集群关联数据成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("query_step_duration", queryStepDuration),
 	)
 	exportStepStart := time.Now()
 	log.Debug(
-		"更新mds集群：开始导出mds集群缓存数据",
+		"更新mds集群:开始导出mds集群缓存数据",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 	)
 	// 导出mds集群缓存数据
 	if err := s.OutportMdsColonyData(ctx, nm); err != nil {
 		log.Error(
-			"更新mds集群：导出mds集群缓存数据失败",
+			"更新mds集群:导出mds集群缓存数据失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -271,7 +278,7 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"更新mds集群：导出mds集群缓存数据成功",
+		"更新mds集群:导出mds集群缓存数据成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
@@ -279,12 +286,12 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 	if om.ColonyNum != nm.ColonyNum {
 		clearStepStart := time.Now()
 		log.Debug(
-			"更新mds集群：开始清理计划任务",
+			"更新mds集群:开始清理计划任务",
 			zap.Uint32("mds_colony_id", mdsColonyID),
 		)
 		if err := s.cronSvc.DeleteCornByColonyID(ctx, mdsColonyID); err != nil {
 			log.Error(
-				"更新mds集群：清理计划任务失败",
+				"更新mds集群:清理计划任务失败",
 				zap.Error(err),
 				zap.Uint32("mds_colony_id", mdsColonyID),
 				zap.Duration("clear_step_duration", time.Since(clearStepStart)),
@@ -293,19 +300,19 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 		}
 		clearStepDuration := time.Since(clearStepStart)
 		log.Debug(
-			"更新mds集群：清理计划任务成功",
+			"更新mds集群:清理计划任务成功",
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("clear_step_duration", clearStepDuration),
 		)
 
 		initStepStart := time.Now()
 		log.Debug(
-			"更新mds集群：开始初始化计划任务",
+			"更新mds集群:开始初始化计划任务",
 			zap.Uint32("mds_colony_id", mdsColonyID),
 		)
 		if err := s.cronSvc.CreateCornByColony(ctx, nm); err != nil {
 			log.Error(
-				"更新mds集群：初始化计划任务失败",
+				"更新mds集群:初始化计划任务失败",
 				zap.Error(err),
 				zap.Uint32("mds_colony_id", mdsColonyID),
 				zap.Duration("init_step_duration", time.Since(initStepStart)),
@@ -314,14 +321,14 @@ func (s *MdsColonyService) UpdateMdsColonyByID(
 		}
 		initStepDuration := time.Since(initStepStart)
 		log.Debug(
-			"更新mds集群：初始化计划任务成功",
+			"更新mds集群:初始化计划任务成功",
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("init_step_duration", initStepDuration),
 		)
 	}
 
 	log.Info(
-		"更新mds集群：执行成功",
+		"更新mds集群:执行成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("query_step_duration", queryStepDuration),
@@ -343,18 +350,18 @@ func (s *MdsColonyService) DeleteMdsColonyByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除mds集群：开始执行",
+		"删除mds集群:开始执行",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 	)
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除mds集群：开始删除数据库模型",
+		"删除mds集群:开始删除数据库模型",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 	)
 	if err := s.colonyRepo.DeleteModel(ctx, mdsColonyID); err != nil {
 		log.Error(
-			"删除mds集群：删除数据库模型失败",
+			"删除mds集群:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -363,19 +370,19 @@ func (s *MdsColonyService) DeleteMdsColonyByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除mds集群：删除数据库模型成功",
+		"删除mds集群:删除数据库模型成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	clearStepStart := time.Now()
 	log.Debug(
-		"删除mds集群：开始清理计划任务",
+		"删除mds集群:开始清理计划任务",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 	)
 	if err := s.cronSvc.DeleteCornByColonyID(ctx, mdsColonyID); err != nil {
 		log.Error(
-			"删除mds集群：清理计划任务失败",
+			"删除mds集群:清理计划任务失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Duration("clear_step_duration", time.Since(clearStepStart)),
@@ -384,13 +391,13 @@ func (s *MdsColonyService) DeleteMdsColonyByID(
 	}
 	clearStepDuration := time.Since(clearStepStart)
 	log.Debug(
-		"删除mds集群：清理计划任务成功",
+		"删除mds集群:清理计划任务成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("clear_step_duration", clearStepDuration),
 	)
 
 	log.Info(
-		"删除mds集群：执行成功",
+		"删除mds集群:执行成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("clear_step_duration", clearStepDuration),
@@ -412,21 +419,21 @@ func (s *MdsColonyService) FindMdsColonyByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询mds集群：开始执行",
+		"查询mds集群:开始执行",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Strings("preloads", preloads),
 	)
 
 	queryStepStart := time.Now()
 	log.Debug(
-		"查询mds集群：开始查询数据库模型",
+		"查询mds集群:开始查询数据库模型",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Strings("preloads", preloads),
 	)
 	m, err := s.colonyRepo.GetModel(ctx, preloads, mdsColonyID)
 	if err != nil {
 		log.Error(
-			"查询mds集群：查询数据库模型失败",
+			"查询mds集群:查询数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", mdsColonyID),
 			zap.Strings("preloads", preloads),
@@ -436,12 +443,12 @@ func (s *MdsColonyService) FindMdsColonyByID(
 	}
 	queryStepDuration := time.Since(queryStepStart)
 	log.Debug(
-		"查询mds集群：查询到的数据库模型详情",
+		"查询mds集群:查询到的数据库模型详情",
 		zap.Object("mds_colony_model", m),
 	)
 
 	log.Info(
-		"查询mds集群：执行成功",
+		"查询mds集群:执行成功",
 		zap.Uint32("mds_colony_id", mdsColonyID),
 		zap.Duration("query_step_duration", queryStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -461,10 +468,10 @@ func (s *MdsColonyService) ListMdsColony(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询mds集群列表：开始执行")
+	log.Info("查询mds集群列表:开始执行")
 
 	log.Debug(
-		"查询mds集群列表：入参详情",
+		"查询mds集群列表:入参详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("mds_colony_dto", &dto),
@@ -479,19 +486,19 @@ func (s *MdsColonyService) ListMdsColony(
 		Query:    dto.ToQueryMap(),
 	}
 	log.Debug(
-		"查询mds集群列表：查询参数",
+		"查询mds集群列表:查询参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询mds集群列表：开始查询数据库模型总数",
+		"查询mds集群列表:开始查询数据库模型总数",
 		zap.Any("query", qp.Query),
 	)
 	count, err := s.colonyRepo.CountModel(ctx, qp.Query)
 	if err != nil {
 		log.Error(
-			"查询mds集群列表：查询数据库模型总数失败",
+			"查询mds集群列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Any("query", qp.Query),
 			zap.Duration("count_step_duration", time.Since(countStepStart)),
@@ -500,7 +507,7 @@ func (s *MdsColonyService) ListMdsColony(
 	}
 	countStepDuration := time.Since(countStepStart)
 	log.Debug(
-		"查询mds集群列表：查询数据库模型总数成功",
+		"查询mds集群列表:查询数据库模型总数成功",
 		zap.Any("query", qp.Query),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
@@ -510,13 +517,13 @@ func (s *MdsColonyService) ListMdsColony(
 
 	listStepStart := time.Now()
 	log.Debug(
-		"查询mds集群列表：开始查询数据库模型",
+		"查询mds集群列表:开始查询数据库模型",
 		zap.Any("query", qp.Query),
 	)
 	ms, err := s.colonyRepo.ListModel(ctx, qp)
 	if err != nil {
 		log.Error(
-			"查询mds集群列表：查询数据库模型失败",
+			"查询mds集群列表:查询数据库模型失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_step_duration", time.Since(listStepStart)),
@@ -525,13 +532,20 @@ func (s *MdsColonyService) ListMdsColony(
 	}
 	listStepDuration := time.Since(listStepStart)
 	log.Info(
-		"查询mds集群列表：执行成功",
+		"查询mds集群列表:执行成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
+}
+
+func (s *MdsColonyService) ListMdsSchedules(
+	ctx context.Context,
+	mdsColonyID uint32,
+) ([]jobmodel.ScheduleModel, *errors.Error) {
+	return s.cronSvc.ListCornByColonyID(ctx, mdsColonyID)
 }
 
 func (s *MdsColonyService) OutportMdsColonyData(
@@ -546,13 +560,13 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"导出mds集群数据：开始执行",
+		"导出mds集群数据:开始执行",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.String("colony_num", m.ColonyNum),
 	)
 
 	log.Debug(
-		"导出mds集群数据：入参详情",
+		"导出mds集群数据:入参详情",
 		zap.Object("mds_colony_model", m),
 	)
 
@@ -561,13 +575,13 @@ func (s *MdsColonyService) OutportMdsColonyData(
 
 	cleanStepStart := time.Now()
 	log.Debug(
-		"导出mds集群数据：开始清理原mds集群配置文件",
+		"导出mds集群数据:开始清理原mds集群配置文件",
 		zap.String("path", colonyBinDir),
 	)
 	if _, err := os.Stat(colonyBinDir); !os.IsNotExist(err) {
 		if err := os.RemoveAll(colonyBinDir); err != nil {
 			log.Error(
-				"导出mds集群数据：清理原mds集群配置文件失败",
+				"导出mds集群数据:清理原mds集群配置文件失败",
 				zap.Error(err),
 				zap.String("path", colonyBinDir),
 				zap.Duration("clean_step_duration", time.Since(cleanStepStart)),
@@ -577,19 +591,19 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	cleanStepDuration := time.Since(cleanStepStart)
 	log.Debug(
-		"导出mds集群数据：清理原mds集群配置文件成功",
+		"导出mds集群数据:清理原mds集群配置文件成功",
 		zap.String("path", colonyBinDir),
 		zap.Duration("clean_step_duration", cleanStepDuration),
 	)
 
 	tempStepStart := time.Now()
 	log.Debug(
-		"导出mds集群数据：开始创建临时文件夹",
+		"导出mds集群数据:开始创建临时文件夹",
 	)
 	tmpDir, mErr := os.MkdirTemp("/tmp", "mds-")
 	if mErr != nil {
 		log.Error(
-			"导出mds集群数据：创建临时文件夹失败",
+			"导出mds集群数据:创建临时文件夹失败",
 			zap.Error(mErr),
 			zap.Duration("temp_step_duration", time.Since(tempStepStart)),
 		)
@@ -597,14 +611,14 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	tempStepDuration := time.Since(tempStepStart)
 	log.Debug(
-		"导出mds集群数据：创建临时文件夹成功",
+		"导出mds集群数据:创建临时文件夹成功",
 		zap.String("path", tmpDir),
 		zap.Duration("temp_step_duration", tempStepDuration),
 	)
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			log.Error(
-				"导出mds集群数据：删除临时文件夹失败",
+				"导出mds集群数据:删除临时文件夹失败",
 				zap.Error(err),
 				zap.String("path", tmpDir),
 			)
@@ -614,13 +628,13 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	validateStepStart := time.Now()
 	mdsPkgPath := resocvs.GetPackageStoragePath(m.Package.StorageFilename)
 	log.Debug(
-		"导出mds集群数据：开始校验mds程序包",
+		"导出mds集群数据:开始校验mds程序包",
 		zap.String("path", mdsPkgPath),
 	)
 	mdsUnTarDirName, valiErr := archive.ValidateSingleDirTarGz(mdsPkgPath)
 	if valiErr != nil {
 		log.Error(
-			"导出mds集群数据：mds程序包校验失败",
+			"导出mds集群数据:mds程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", mdsPkgPath),
 			zap.Duration("validate_step_duration", time.Since(validateStepStart)),
@@ -629,7 +643,7 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	validateStepDuration := time.Since(validateStepStart)
 	log.Debug(
-		"导出mds集群数据：mds程序包校验成功",
+		"导出mds集群数据:mds程序包校验成功",
 		zap.String("path", mdsPkgPath),
 		zap.String("un_tar_dir_name", mdsUnTarDirName),
 		zap.Duration("validate_step_duration", validateStepDuration),
@@ -637,13 +651,13 @@ func (s *MdsColonyService) OutportMdsColonyData(
 
 	extractStepStart := time.Now()
 	log.Debug(
-		"导出mds集群数据：开始解压mds程序包",
+		"导出mds集群数据:开始解压mds程序包",
 		zap.String("src_path", mdsPkgPath),
 		zap.String("dest_path", tmpDir),
 	)
 	if err := archive.UntarGz(mdsPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
 		log.Error(
-			"导出mds集群数据：解压mds程序包失败",
+			"导出mds集群数据:解压mds程序包失败",
 			zap.Error(err),
 			zap.Uint32("mds_colony_id", m.ID),
 			zap.String("pkg_name", m.ExtractedName),
@@ -655,7 +669,7 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	extractStepDuration := time.Since(extractStepStart)
 	log.Debug(
-		"导出mds集群数据：解压mds程序包成功",
+		"导出mds集群数据:解压mds程序包成功",
 		zap.String("src_path", mdsPkgPath),
 		zap.String("dest_path", tmpDir),
 		zap.Duration("extract_step_duration", extractStepDuration),
@@ -664,13 +678,13 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	copyStepStart := time.Now()
 	mdsTmpDir := filepath.Join(tmpDir, mdsUnTarDirName)
 	log.Debug(
-		"导出mds集群数据：开始复制mds程序包解压目录",
+		"导出mds集群数据:开始复制mds程序包解压目录",
 		zap.String("src_path", mdsTmpDir),
 		zap.String("dst_path", colonyBinDir),
 	)
 	if err := fileutil.CopyDir(ctx, mdsTmpDir, colonyBinDir, true); err != nil {
 		log.Error(
-			"导出mds集群数据：复制mds程序包解压目录失败",
+			"导出mds集群数据:复制mds程序包解压目录失败",
 			zap.Error(err),
 			zap.String("src_path", mdsTmpDir),
 			zap.String("dst_path", colonyBinDir),
@@ -680,7 +694,7 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	copyStepDuration := time.Since(copyStepStart)
 	log.Debug(
-		"导出mds集群数据：复制mds程序包解压目录成功",
+		"导出mds集群数据:复制mds程序包解压目录成功",
 		zap.String("src_path", mdsTmpDir),
 		zap.String("dst_path", colonyBinDir),
 		zap.Duration("copy_step_duration", copyStepDuration),
@@ -689,14 +703,14 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	configStepStart := time.Now()
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
 	log.Debug(
-		"导出mds集群数据：开始处理mds集群配置文件",
+		"导出mds集群数据:开始处理mds集群配置文件",
 		zap.String("path", colonyConfAll),
 	)
 	if _, err := os.Stat(colonyConfAll); os.IsNotExist(err) {
 		colonyBinConf := filepath.Join(colonyBinDir, "conf")
 		if err := fileutil.CopyDir(ctx, colonyBinConf, colonyConfAll, true); err != nil {
 			log.Error(
-				"导出mds集群数据：复制mds集群配置文件失败",
+				"导出mds集群数据:复制mds集群配置文件失败",
 				zap.Error(err),
 				zap.String("src_path", colonyBinConf),
 				zap.String("dst_path", colonyConfAll),
@@ -708,7 +722,7 @@ func (s *MdsColonyService) OutportMdsColonyData(
 		dstPath := filepath.Join(colonyConfAll, "automatic.yaml")
 		if err := fileutil.CopyFile(ctx, srcPath, dstPath); err != nil {
 			log.Error(
-				"导出mds集群数据：复制mds的automatic配置文件失败",
+				"导出mds集群数据:复制mds的automatic配置文件失败",
 				zap.Error(err),
 				zap.String("src_path", srcPath),
 				zap.String("dst_path", dstPath),
@@ -719,7 +733,7 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	configStepDuration := time.Since(configStepStart)
 	log.Debug(
-		"导出mds集群数据：处理mds集群配置文件成功",
+		"导出mds集群数据:处理mds集群配置文件成功",
 		zap.String("path", colonyConfAll),
 		zap.Duration("config_step_duration", configStepDuration),
 	)
@@ -736,13 +750,13 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	mdsColonyConf := filepath.Join(colonyConfAll, "colony.yaml")
 	log.Debug(
-		"导出mds集群数据：开始导出mds集群配置变量文件",
+		"导出mds集群数据:开始导出mds集群配置变量文件",
 		zap.String("path", mdsColonyConf),
 		zap.Object("mds_colony_vars", &mdsVars),
 	)
 	if _, err := serializer.WriteYAML(mdsColonyConf, mdsVars); err != nil {
 		log.Error(
-			"导出mds集群数据：导出mds集群配置变量文件失败",
+			"导出mds集群数据:导出mds集群配置变量文件失败",
 			zap.Error(err),
 			zap.String("path", mdsColonyConf),
 			zap.Object("mds_colony_vars", &mdsVars),
@@ -752,14 +766,14 @@ func (s *MdsColonyService) OutportMdsColonyData(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"导出mds集群数据：导出mds集群配置变量文件成功",
+		"导出mds集群数据:导出mds集群配置变量文件成功",
 		zap.String("path", mdsColonyConf),
 		zap.Object("mds_colony_vars", &mdsVars),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"导出mds集群数据：执行成功",
+		"导出mds集群数据:执行成功",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.String("colony_num", m.ColonyNum),
 		zap.String("config_path", mdsColonyConf),

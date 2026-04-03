@@ -39,6 +39,10 @@ type RecordServiceTestSuite struct {
 func (suite *RecordServiceTestSuite) SetupSuite() {
 	suite.db = test.NewTestGormDBWithConfig(nil)
 	suite.db.AutoMigrate(&jobmodel.ScriptModel{}, &jobmodel.ScriptRecordModel{})
+
+	suite.db.Exec("DELETE FROM job_script_record")
+	suite.db.Exec("DELETE FROM job_script")
+
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
 

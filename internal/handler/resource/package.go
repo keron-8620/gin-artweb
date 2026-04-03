@@ -40,8 +40,8 @@ func NewPackageHandler(
 // @Tags 程序包管理
 // @Accept multipart/form-data
 // @Produce json
-// @Param label formData string true "程序包标签，长度限制：1-50个字符"
-// @Param version formData string true "程序包版本，长度限制：1-50个字符"
+// @Param label formData string true "程序包标签，长度限制:1-50个字符"
+// @Param version formData string true "程序包版本，长度限制:1-50个字符"
 // @Param file formData file true "程序包文件"
 // @Success 201 {object} resomodel.PackageResp "成功返回程序包信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
@@ -54,21 +54,21 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 	var req resomodel.UploadPackageDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
-		"上传程序包：绑定上传程序包参数失败") {
+		"上传程序包:绑定上传程序包参数失败") {
 		return
 	}
 
-	log.Info("上传程序包：开始执行")
+	log.Info("上传程序包:开始执行")
 
 	log.Debug(
-		"上传程序包：入参详情",
+		"上传程序包:入参详情",
 		zap.Object("upload_package_dto", &req),
 	)
 
 	fileReader, err := req.File.Open()
 	if err != nil {
 		log.Error(
-			"上传程序包：打开上传文件失败",
+			"上传程序包:打开上传文件失败",
 			zap.Error(err),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -90,7 +90,7 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
-			"上传程序包：执行失败",
+			"上传程序包:执行失败",
 			zap.Error(rErr),
 			zap.Object("upload_package_biz", &dto),
 			zap.Duration("create_step_duration", createStepDuration),
@@ -100,13 +100,13 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"上传程序包：创建程序包模型详情",
+		"上传程序包:创建程序包模型详情",
 		zap.Object("package_model", pkg),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	log.Info(
-		"上传程序包：上传程序包成功",
+		"上传程序包:上传程序包成功",
 		zap.Uint32("package_id", pkg.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -133,14 +133,14 @@ func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"删除程序包：绑定删除程序包ID参数失败") {
+		"删除程序包:绑定删除程序包ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"删除程序包：开始执行",
+		"删除程序包:开始执行",
 		zap.Uint32("package_id", uri.ID),
 	)
 
@@ -149,7 +149,7 @@ func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
 	deleteStepDuration := time.Since(deleteStepStart)
 	if err != nil {
 		log.Error(
-			"删除程序包：执行失败",
+			"删除程序包:执行失败",
 			zap.Error(err),
 			zap.Uint32("package_id", uri.ID),
 			zap.Duration("delete_step_duration", deleteStepDuration),
@@ -160,7 +160,7 @@ func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"删除程序包：删除程序包成功",
+		"删除程序包:删除程序包成功",
 		zap.Uint32("package_id", uri.ID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -183,14 +183,14 @@ func (h *PackageHandler) GetPackage(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBind(
+	if !common.ShouldBindUri(
 		ctx, log, &uri,
-		"查询程序包：绑定查询程序包ID参数失败") {
+		"查询程序包:绑定查询程序包ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"查询程序包：开始执行",
+		"查询程序包:开始执行",
 		zap.Uint32("package_id", uri.ID),
 	)
 
@@ -199,7 +199,7 @@ func (h *PackageHandler) GetPackage(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"查询程序包：执行失败",
+			"查询程序包:执行失败",
 			zap.Error(err),
 			zap.Uint32("package_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -209,13 +209,13 @@ func (h *PackageHandler) GetPackage(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"查询程序包：查询程序包详情",
+		"查询程序包:查询程序包详情",
 		zap.Object("package_model", m),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
 
 	log.Info(
-		"查询程序包：执行成功",
+		"查询程序包:执行成功",
 		zap.Uint32("package_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -242,16 +242,16 @@ func (h *PackageHandler) ListPackage(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var req resomodel.ListPackageDTO
-	if !common.ShouldBind(
+	if !common.ShouldBindQuery(
 		ctx, log, &req,
-		"查询程序包列表：绑定参数失败") {
+		"查询程序包列表:绑定参数失败") {
 		return
 	}
 
-	log.Info("查询程序包列表：开始执行")
+	log.Info("查询程序包列表:开始执行")
 
 	log.Debug(
-		"查询程序包列表：入参详情",
+		"查询程序包列表:入参详情",
 		zap.Object("list_package_dto", &req),
 	)
 
@@ -261,7 +261,7 @@ func (h *PackageHandler) ListPackage(ctx *gin.Context) {
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询程序包列表：执行失败",
+			"查询程序包列表:执行失败",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("size", size),
@@ -274,7 +274,7 @@ func (h *PackageHandler) ListPackage(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"查询程序包列表：执行成功",
+		"查询程序包列表:执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
@@ -306,12 +306,12 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 	var uri commodel.IDUri
 	if !common.ShouldBind(
 		ctx, log, &uri,
-		"下载程序包：绑定下载程序包ID参数失败") {
+		"下载程序包:绑定下载程序包ID参数失败") {
 		return
 	}
 
 	log.Info(
-		"下载程序包：开始执行",
+		"下载程序包:开始执行",
 		zap.Uint32("package_id", uri.ID),
 	)
 
@@ -321,7 +321,7 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
-			"下载程序包：查询程序包详情失败",
+			"下载程序包:查询程序包详情失败",
 			zap.Error(err),
 			zap.Uint32("package_id", uri.ID),
 			zap.Duration("find_step_duration", findStepDuration),
@@ -331,7 +331,7 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 		return
 	}
 	log.Debug(
-		"下载程序包：查询程序包详情",
+		"下载程序包:查询程序包详情",
 		zap.Object("package_model", pkg),
 		zap.Duration("find_step_duration", findStepDuration),
 	)
@@ -340,7 +340,7 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 	filePath := resosvc.GetPackageStoragePath(pkg.StorageFilename)
 	if err := common.DownloadFile(ctx, log, filePath, pkg.OriginFilename); err != nil {
 		log.Error(
-			"下载程序包：下载文件失败",
+			"下载程序包:下载文件失败",
 			zap.Error(err),
 			zap.Uint32("package_id", uri.ID),
 			zap.String("filename", pkg.OriginFilename),
@@ -351,7 +351,7 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 	}
 
 	log.Info(
-		"下载程序包：执行成功",
+		"下载程序包:执行成功",
 		zap.Uint32("package_id", uri.ID),
 		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),

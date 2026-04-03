@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"emperror.dev/errors"
@@ -15,6 +14,7 @@ import (
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
+	"gin-artweb/pkg/fileutil"
 )
 
 type MdsColonyRepo struct {
@@ -44,15 +44,15 @@ func (r *MdsColonyRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建mds集群：模型为空")
+		err := errors.New("创建mds集群:模型为空")
 		log.Error(
-			"创建mds集群：模型为空",
+			"创建mds集群:模型为空",
 			zap.Error(err),
 		)
 		return err
 	}
 	log.Debug(
-		"创建mds集群：开始执行",
+		"创建mds集群:开始执行",
 		zap.Object("colony_model", m),
 	)
 
@@ -63,16 +63,16 @@ func (r *MdsColonyRepo) CreateModel(
 	createMdsColonyDuration := time.Since(createMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"创建mds集群：数据库操作失败",
+			"创建mds集群:数据库操作失败",
 			zap.Error(err),
 			zap.Object("colony_model", m),
 			zap.Duration("create_duration", createMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "创建mds集群：数据库操作失败")
+		return errors.WrapIf(err, "创建mds集群:数据库操作失败")
 	}
 	log.Debug(
-		"创建mds集群：执行成功",
+		"创建mds集群:执行成功",
 		zap.Object("colony_model", m),
 		zap.Duration("create_duration", createMdsColonyDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -90,9 +90,9 @@ func (r *MdsColonyRepo) UpdateModel(
 
 	// 检查参数
 	if len(data) == 0 {
-		err := errors.New("更新mds集群：更新数据为空")
+		err := errors.New("更新mds集群:更新数据为空")
 		log.Error(
-			"更新mds集群：更新数据为空",
+			"更新mds集群:更新数据为空",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
@@ -101,7 +101,7 @@ func (r *MdsColonyRepo) UpdateModel(
 	}
 
 	log.Debug(
-		"更新mds集群：开始执行",
+		"更新mds集群:开始执行",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 	)
@@ -112,17 +112,17 @@ func (r *MdsColonyRepo) UpdateModel(
 	updateMdsColonyDuration := time.Since(updateMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"更新mds集群：数据库操作失败",
+			"更新mds集群:数据库操作失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
 			zap.Duration("update_duration", updateMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "更新mds集群：数据库操作失败")
+		return errors.WrapIf(err, "更新mds集群:数据库操作失败")
 	}
 	log.Debug(
-		"更新mds集群：执行成功",
+		"更新mds集群:执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 		zap.Duration("update_duration", updateMdsColonyDuration),
@@ -139,7 +139,7 @@ func (r *MdsColonyRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除mds集群：开始执行",
+		"删除mds集群:开始执行",
 		zap.Any("conds", conds),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
@@ -149,16 +149,16 @@ func (r *MdsColonyRepo) DeleteModel(
 	deleteMdsColonyDuration := time.Since(deleteMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"删除mds集群：数据库操作失败",
+			"删除mds集群:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("delete_duration", deleteMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除mds集群：数据库操作失败")
+		return errors.WrapIf(err, "删除mds集群:数据库操作失败")
 	}
 	log.Debug(
-		"删除mds集群：执行成功",
+		"删除mds集群:执行成功",
 		zap.Any("conds", conds),
 		zap.Duration("delete_duration", deleteMdsColonyDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -175,7 +175,7 @@ func (r *MdsColonyRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mds集群：开始执行",
+		"查询mds集群:开始执行",
 		zap.Any("conds", conds),
 	)
 	var m mdsmodel.MdsColonyModel
@@ -186,16 +186,16 @@ func (r *MdsColonyRepo) GetModel(
 	getMdsColonyDuration := time.Since(getMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"查询mds集群：数据库操作失败",
+			"查询mds集群:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("get_duration", getMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询mds集群：数据库操作失败")
+		return nil, errors.WrapIf(err, "查询mds集群:数据库操作失败")
 	}
 	log.Debug(
-		"查询mds集群：执行成功",
+		"查询mds集群:执行成功",
 		zap.Object("colony_model", &m),
 		zap.Any("conds", conds),
 		zap.Duration("get_duration", getMdsColonyDuration),
@@ -212,7 +212,7 @@ func (r *MdsColonyRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mds集群列表：开始执行",
+		"查询mds集群列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 	var ms []mdsmodel.MdsColonyModel
@@ -223,16 +223,16 @@ func (r *MdsColonyRepo) ListModel(
 	listMdsColonyDuration := time.Since(listMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"查询mds集群列表：数据库操作失败",
+			"查询mds集群列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_duration", listMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询mds集群列表：数据库操作失败")
+		return nil, errors.WrapIf(err, "查询mds集群列表:数据库操作失败")
 	}
 	log.Debug(
-		"查询mds集群列表：执行成功",
+		"查询mds集群列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_duration", listMdsColonyDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -248,7 +248,7 @@ func (r *MdsColonyRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mds集群总数：开始执行",
+		"查询mds集群总数:开始执行",
 		zap.Any("query", query),
 	)
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
@@ -258,16 +258,16 @@ func (r *MdsColonyRepo) CountModel(
 	countMdsColonyDuration := time.Since(countMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"查询mds集群总数：数据库查询失败",
+			"查询mds集群总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_duration", countMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, errors.WrapIf(err, "查询mds集群总数：数据库查询失败")
+		return 0, errors.WrapIf(err, "查询mds集群总数:数据库查询失败")
 	}
 	log.Debug(
-		"查询mds集群总数：执行成功",
+		"查询mds集群总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_duration", countMdsColonyDuration),
@@ -279,74 +279,34 @@ func (r *MdsColonyRepo) CountModel(
 func (r *MdsColonyRepo) SaveConfigFile(
 	ctx context.Context,
 	fileReader io.Reader,
-	pkgPath string,
+	confPath string,
 	overwrite bool,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	// 检查文件是否已存在且不允许覆盖
-	if !overwrite {
-		if _, err := os.Stat(pkgPath); err == nil {
-			err := errors.New("保存mds集群配置文件：配置文件已存在")
-			log.Error(
-				"保存mds集群配置文件：配置文件已存在",
-				zap.Error(err),
-				zap.String("pkg_path", pkgPath),
-				zap.Duration("total_duration", time.Since(startTime)),
-			)
-			return err
-		}
-	}
-
 	log.Debug(
-		"保存mds集群配置文件：开始执行",
-		zap.String("pkg_path", pkgPath),
+		"保存mds集群配置文件:开始执行",
+		zap.String("conf_path", confPath),
 		zap.Bool("overwrite", overwrite),
 	)
-
-	mode := os.FileMode(0o644)
-	dir := filepath.Dir(pkgPath)
-	if err := os.MkdirAll(dir, mode); err != nil {
-		log.Error(
-			"保存mds集群配置文件：创建配置文件目录失败",
-			zap.Error(err),
-			zap.String("pkg_dir", dir),
-		)
-		return errors.WrapIf(err, "保存mds集群配置文件：创建配置文件目录失败")
-	}
-	if err := os.Chmod(dir, mode); err != nil {
-		// 忽略权限设置错误，因为目录可能已经存在并且权限正确
-		log.Debug(
-			"保存mds集群配置文件：设置配置文件目录权限失败（忽略）",
-			zap.Error(err),
-			zap.String("pkg_dir", dir),
-		)
-	}
-
-	// 创建文件并写入内容
-	file, err := os.OpenFile(pkgPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+	saveScriptStartTime := time.Now()
+	err := fileutil.WriteReaderToFile(ctx, fileReader, confPath, os.FileMode(0o750), overwrite)
+	saveScriptDuration := time.Since(saveScriptStartTime)
 	if err != nil {
 		log.Error(
-			"保存mds集群配置文件：创建配置文件失败",
+			"保存mds集群配置文件:文件写入失败",
 			zap.Error(err),
-			zap.String("pkg_path", pkgPath),
+			zap.String("conf_path", confPath),
+			zap.Duration("save_conf_duration", saveScriptDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "保存mds集群配置文件：创建配置文件失败")
-	}
-	defer file.Close()
-
-	if _, err = io.Copy(file, fileReader); err != nil {
-		log.Error(
-			"保存mds集群配置文件：写入配置文件失败",
-			zap.Error(err),
-			zap.String("save_path", pkgPath),
-		)
-		return errors.WrapIf(err, "保存mds集群配置文件：写入配置文件失败")
+		return errors.WrapIf(err, "保存mds集群配置文件:文件写入失败")
 	}
 	log.Debug(
-		"保存mds集群配置文件：执行成功",
-		zap.String("pkg_path", pkgPath),
+		"保存mds集群配置文件:执行成功",
+		zap.String("conf_path", confPath),
+		zap.Duration("save_conf_duration", saveScriptDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
@@ -360,7 +320,7 @@ func (r *MdsColonyRepo) RemoveConfigFile(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除mds集群配置文件：开始执行",
+		"删除mds集群配置文件:开始执行",
 		zap.String("pkg_path", pkgPath),
 	)
 
@@ -368,7 +328,7 @@ func (r *MdsColonyRepo) RemoveConfigFile(
 	if _, err := os.Stat(pkgPath); err != nil {
 		if os.IsNotExist(err) {
 			log.Warn(
-				"删除mds集群配置文件：配置文件不存在",
+				"删除mds集群配置文件:配置文件不存在",
 				zap.Error(err),
 				zap.String("pkg_path", pkgPath),
 				zap.Duration("total_duration", time.Since(startTime)),
@@ -376,12 +336,12 @@ func (r *MdsColonyRepo) RemoveConfigFile(
 			return nil
 		}
 		log.Error(
-			"删除mds集群配置文件：检查配置文件失败",
+			"删除mds集群配置文件:检查配置文件失败",
 			zap.Error(err),
 			zap.String("pkg_path", pkgPath),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除mds集群配置文件：检查配置文件失败")
+		return errors.WrapIf(err, "删除mds集群配置文件:检查配置文件失败")
 	}
 	// 删除文件
 	removeMdsColonyStartTime := time.Now()
@@ -389,16 +349,16 @@ func (r *MdsColonyRepo) RemoveConfigFile(
 	removeMdsColonyDuration := time.Since(removeMdsColonyStartTime)
 	if err != nil {
 		log.Error(
-			"删除mds集群配置文件：文件删除失败",
+			"删除mds集群配置文件:文件删除失败",
 			zap.Error(err),
 			zap.String("pkg_path", pkgPath),
 			zap.Duration("remove_duration", removeMdsColonyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除mds集群配置文件：文件删除失败")
+		return errors.WrapIf(err, "删除mds集群配置文件:文件删除失败")
 	}
 	log.Debug(
-		"删除mds集群配置文件：执行成功",
+		"删除mds集群配置文件:执行成功",
 		zap.String("pkg_path", pkgPath),
 		zap.Duration("remove_duration", removeMdsColonyDuration),
 		zap.Duration("total_duration", time.Since(startTime)),

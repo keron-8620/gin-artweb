@@ -42,10 +42,10 @@ func (s *OesNodeService) CreateOesNode(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建oes节点：开始执行")
+	log.Info("创建oes节点:开始执行")
 
 	log.Debug(
-		"创建oes节点：入参详情",
+		"创建oes节点:入参详情",
 		zap.Object("oes_node_dto", &dto),
 	)
 
@@ -58,12 +58,12 @@ func (s *OesNodeService) CreateOesNode(
 
 	createStepStart := time.Now()
 	log.Debug(
-		"创建oes节点：开始创建数据库模型",
+		"创建oes节点:开始创建数据库模型",
 		zap.Object("oes_node", &m),
 	)
 	if err := s.nodeRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建oes节点：创建数据库模型失败",
+			"创建oes节点:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("oes_node", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -73,7 +73,7 @@ func (s *OesNodeService) CreateOesNode(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建oes节点：创建数据库模型成功",
+		"创建oes节点:创建数据库模型成功",
 		zap.Uint32("oes_node_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
@@ -81,14 +81,14 @@ func (s *OesNodeService) CreateOesNode(
 	// 查询oes节点关联数据
 	queryStepStart := time.Now()
 	log.Debug(
-		"创建oes节点：开始查询关联数据",
+		"创建oes节点:开始查询关联数据",
 		zap.Uint32("oes_node_id", m.ID),
 	)
 	nm, rErr := s.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, m.ID)
 	queryStepDuration := time.Since(queryStepStart)
 	if rErr != nil {
 		log.Error(
-			"创建oes节点：查询关联数据失败",
+			"创建oes节点:查询关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("oes_node_id", m.ID),
 			zap.Duration("query_step_duration", queryStepDuration),
@@ -97,7 +97,7 @@ func (s *OesNodeService) CreateOesNode(
 		return nil, rErr
 	}
 	log.Debug(
-		"创建oes节点：查询关联数据成功",
+		"创建oes节点:查询关联数据成功",
 		zap.Uint32("oes_node_id", m.ID),
 		zap.Duration("query_step_duration", queryStepDuration),
 	)
@@ -105,12 +105,12 @@ func (s *OesNodeService) CreateOesNode(
 	// 导出oes节点缓存数据
 	exportStepStart := time.Now()
 	log.Debug(
-		"创建oes节点：开始导出缓存数据",
+		"创建oes节点:开始导出缓存数据",
 		zap.Uint32("oes_node_id", m.ID),
 	)
 	if err := s.OutPortOesNodeData(ctx, nm); err != nil {
 		log.Error(
-			"创建oes节点：导出缓存数据失败",
+			"创建oes节点:导出缓存数据失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", m.ID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -120,13 +120,13 @@ func (s *OesNodeService) CreateOesNode(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"创建oes节点：导出缓存数据成功",
+		"创建oes节点:导出缓存数据成功",
 		zap.Uint32("oes_node_id", m.ID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"创建oes节点：执行成功",
+		"创建oes节点:执行成功",
 		zap.Uint32("oes_node_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("query_step_duration", queryStepDuration),
@@ -149,31 +149,31 @@ func (s *OesNodeService) UpdateOesNodeByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新oes节点：开始执行",
+		"更新oes节点:开始执行",
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
 
 	log.Debug(
-		"更新oes节点：入参详情",
+		"更新oes节点:入参详情",
 		zap.Object("oes_node_dto", &dto),
 	)
 
 	updateData := dto.ToUpdateMap()
 	log.Debug(
-		"更新oes节点：转换为数据库更新参数",
+		"更新oes节点:转换为数据库更新参数",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Any("update_data", updateData),
 	)
 
 	updateStepStart := time.Now()
 	log.Debug(
-		"更新oes节点：开始更新数据库模型",
+		"更新oes节点:开始更新数据库模型",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Any("update_data", updateData),
 	)
 	if err := s.nodeRepo.UpdateModel(ctx, updateData, "id = ?", oesNodeID); err != nil {
 		log.Error(
-			"更新oes节点：更新数据库模型失败",
+			"更新oes节点:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", oesNodeID),
 			zap.Any("update_data", updateData),
@@ -184,7 +184,7 @@ func (s *OesNodeService) UpdateOesNodeByID(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新oes节点：更新数据库模型成功",
+		"更新oes节点:更新数据库模型成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
@@ -192,14 +192,14 @@ func (s *OesNodeService) UpdateOesNodeByID(
 	// 查询oes节点关联数据
 	queryStepStart := time.Now()
 	log.Debug(
-		"更新oes节点：开始查询关联数据",
+		"更新oes节点:开始查询关联数据",
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
 	m, rErr := s.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, oesNodeID)
 	queryStepDuration := time.Since(queryStepStart)
 	if rErr != nil {
 		log.Error(
-			"更新oes节点：查询关联数据失败",
+			"更新oes节点:查询关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("oes_node_id", oesNodeID),
 			zap.Duration("query_step_duration", queryStepDuration),
@@ -208,7 +208,7 @@ func (s *OesNodeService) UpdateOesNodeByID(
 		return nil, rErr
 	}
 	log.Debug(
-		"更新oes节点：查询关联数据成功",
+		"更新oes节点:查询关联数据成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("query_step_duration", queryStepDuration),
 	)
@@ -216,12 +216,12 @@ func (s *OesNodeService) UpdateOesNodeByID(
 	// 导出oes节点缓存数据
 	exportStepStart := time.Now()
 	log.Debug(
-		"更新oes节点：开始导出缓存数据",
+		"更新oes节点:开始导出缓存数据",
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
 	if err := s.OutPortOesNodeData(ctx, m); err != nil {
 		log.Error(
-			"更新oes节点：导出缓存数据失败",
+			"更新oes节点:导出缓存数据失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", oesNodeID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -231,13 +231,13 @@ func (s *OesNodeService) UpdateOesNodeByID(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"更新oes节点：导出缓存数据成功",
+		"更新oes节点:导出缓存数据成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"更新oes节点：执行成功",
+		"更新oes节点:执行成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("query_step_duration", queryStepDuration),
@@ -259,18 +259,18 @@ func (s *OesNodeService) DeleteOesNodeByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除oes节点：开始执行",
+		"删除oes节点:开始执行",
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除oes节点：开始删除数据库模型",
+		"删除oes节点:开始删除数据库模型",
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
 	if err := s.nodeRepo.DeleteModel(ctx, oesNodeID); err != nil {
 		log.Error(
-			"删除oes节点：删除数据库模型失败",
+			"删除oes节点:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", oesNodeID),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -280,13 +280,13 @@ func (s *OesNodeService) DeleteOesNodeByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除oes节点：删除数据库模型成功",
+		"删除oes节点:删除数据库模型成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	log.Info(
-		"删除oes节点：执行成功",
+		"删除oes节点:执行成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -307,7 +307,7 @@ func (s *OesNodeService) FindOesNodeByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询oes节点：开始执行",
+		"查询oes节点:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
@@ -315,7 +315,7 @@ func (s *OesNodeService) FindOesNodeByID(
 	m, err := s.nodeRepo.GetModel(ctx, preloads, oesNodeID)
 	if err != nil {
 		log.Error(
-			"查询oes节点：查询数据库模型失败",
+			"查询oes节点:查询数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", oesNodeID),
 			zap.Strings("preloads", preloads),
@@ -324,12 +324,12 @@ func (s *OesNodeService) FindOesNodeByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": oesNodeID})
 	}
 	log.Debug(
-		"查询oes节点：查询到的数据库模型详情",
+		"查询oes节点:查询到的数据库模型详情",
 		zap.Object("oes_node_model", m),
 	)
 
 	log.Info(
-		"查询oes节点：执行成功",
+		"查询oes节点:执行成功",
 		zap.Uint32("oes_node_id", oesNodeID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -348,10 +348,10 @@ func (s *OesNodeService) ListOesNode(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询oes节点列表：开始执行")
+	log.Info("查询oes节点列表:开始执行")
 
 	log.Debug(
-		"查询oes节点列表：入参详情",
+		"查询oes节点列表:入参详情",
 		zap.Object("oes_node_dto", &dto),
 	)
 
@@ -364,20 +364,20 @@ func (s *OesNodeService) ListOesNode(
 		Query:    dto.ToQueryMap(),
 	}
 	log.Debug(
-		"查询oes节点列表：查询参数",
+		"查询oes节点列表:查询参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询oes节点列表：开始查询数据库模型总数",
+		"查询oes节点列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.nodeRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询oes节点列表：查询数据库模型总数失败",
+			"查询oes节点列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -386,27 +386,27 @@ func (s *OesNodeService) ListOesNode(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询oes节点列表：查询数据库模型总数成功",
+		"查询oes节点列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询oes节点列表：数据库模型总数为0",
+			"查询oes节点列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
 	}
 	listStepStart := time.Now()
 	log.Debug(
-		"查询oes节点列表：开始查询数据库模型列表",
+		"查询oes节点列表:开始查询数据库模型列表",
 		zap.Object("query_params", &qp),
 	)
 	ms, err := s.nodeRepo.ListModel(ctx, qp)
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询oes节点列表：查询数据库模型列表失败",
+			"查询oes节点列表:查询数据库模型列表失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -415,13 +415,13 @@ func (s *OesNodeService) ListOesNode(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询oes节点列表：查询数据库模型列表成功",
+		"查询oes节点列表:查询数据库模型列表成功",
 		zap.Int("node_count", len(ms)),
 		zap.Duration("list_step_duration", listStepDuration),
 	)
 
 	log.Info(
-		"查询oes节点列表：执行成功",
+		"查询oes节点列表:执行成功",
 		zap.Duration("count_step_duration", countStepDuration),
 		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -441,7 +441,7 @@ func (s *OesNodeService) OutPortOesNodeData(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"导出oes节点变量文件：开始执行",
+		"导出oes节点变量文件:开始执行",
 		zap.Object("oes_node", m),
 	)
 	var specdir string
@@ -465,13 +465,13 @@ func (s *OesNodeService) OutPortOesNodeData(
 
 	exportStepStart := time.Now()
 	log.Debug(
-		"导出oes节点变量文件：开始写入文件",
+		"导出oes节点变量文件:开始写入文件",
 		zap.String("path", oesColonyConf),
 		zap.Object("oes_node_vars", &oesVars),
 	)
 	if _, err := serializer.WriteYAML(oesColonyConf, oesVars); err != nil {
 		log.Error(
-			"导出oes节点变量文件：写入文件失败",
+			"导出oes节点变量文件:写入文件失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", m.ID),
 			zap.String("colony_num", m.OesColony.ColonyNum),
@@ -484,13 +484,13 @@ func (s *OesNodeService) OutPortOesNodeData(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"导出oes节点变量文件：写入文件成功",
+		"导出oes节点变量文件:写入文件成功",
 		zap.String("path", oesColonyConf),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
 
 	log.Info(
-		"导出oes节点变量文件：执行成功",
+		"导出oes节点变量文件:执行成功",
 		zap.String("path", oesColonyConf),
 		zap.Object("oes_node_vars", &oesVars),
 		zap.Duration("export_step_duration", exportStepDuration),

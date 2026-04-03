@@ -36,9 +36,11 @@ func DBAutoMigrate(db *gorm.DB) error {
 		// mds模型
 		&mds.MdsColonyModel{},
 		&mds.MdsNodeModel{},
+		&mds.MdsCronModel{},
 
 		// oes模型
 		&oes.OesColonyModel{},
 		&oes.OesNodeModel{},
+		&oes.OesCronModel{},
 	)
 }

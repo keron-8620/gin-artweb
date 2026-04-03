@@ -41,15 +41,15 @@ func (r *MdsNodeRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建mds节点：模型不能为空")
+		err := errors.New("创建mds节点:模型不能为空")
 		log.Error(
-			"创建mds节点：模型不能为空",
+			"创建mds节点:模型不能为空",
 			zap.Error(err),
 		)
 		return err
 	}
 	log.Debug(
-		"创建mds节点：开始执行",
+		"创建mds节点:开始执行",
 		zap.Object("model", m),
 	)
 
@@ -60,16 +60,16 @@ func (r *MdsNodeRepo) CreateModel(
 	createMdsNodeDuration := time.Since(createMdsNodeStartTime)
 	if err != nil {
 		log.Error(
-			"创建mds节点：数据库操作失败",
+			"创建mds节点:数据库操作失败",
 			zap.Error(err),
 			zap.Object("node_model", m),
 			zap.Duration("create_mds_node_duration", createMdsNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "创建mds节点：数据库操作失败")
+		return errors.WrapIf(err, "创建mds节点:数据库操作失败")
 	}
 	log.Debug(
-		"创建mds节点：执行成功",
+		"创建mds节点:执行成功",
 		zap.Object("node_model", m),
 		zap.Duration("create_mds_node_duration", createMdsNodeDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -87,9 +87,9 @@ func (r *MdsNodeRepo) UpdateModel(
 
 	// 检查参数
 	if len(data) == 0 {
-		err := errors.New("更新mds节点：更新数据不能为空")
+		err := errors.New("更新mds节点:更新数据不能为空")
 		log.Error(
-			"更新mds节点：更新数据不能为空",
+			"更新mds节点:更新数据不能为空",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
@@ -98,7 +98,7 @@ func (r *MdsNodeRepo) UpdateModel(
 	}
 
 	log.Debug(
-		"更新mds节点：开始执行",
+		"更新mds节点:开始执行",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 	)
@@ -110,17 +110,17 @@ func (r *MdsNodeRepo) UpdateModel(
 	updateMdsNodeDuration := time.Since(updateMdsNodeStartTime)
 	if err != nil {
 		log.Error(
-			"更新mds节点：数据库操作失败",
+			"更新mds节点:数据库操作失败",
 			zap.Error(err),
 			zap.Any("update_data", data),
 			zap.Any("conds", conds),
 			zap.Duration("update_mds_node_duration", updateMdsNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "更新mds节点：数据库操作失败")
+		return errors.WrapIf(err, "更新mds节点:数据库操作失败")
 	}
 	log.Debug(
-		"更新mds节点：执行成功",
+		"更新mds节点:执行成功",
 		zap.Any("update_data", data),
 		zap.Any("conds", conds),
 		zap.Duration("update_mds_node_duration", updateMdsNodeDuration),
@@ -137,7 +137,7 @@ func (r *MdsNodeRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除mds节点：开始执行",
+		"删除mds节点:开始执行",
 		zap.Any("conds", conds),
 	)
 
@@ -148,16 +148,16 @@ func (r *MdsNodeRepo) DeleteModel(
 	deleteMdsNodeDuration := time.Since(deleteMdsNodeStartTime)
 	if err != nil {
 		log.Error(
-			"删除mds节点：数据库操作失败",
+			"删除mds节点:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("delete_mds_node_duration", deleteMdsNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return errors.WrapIf(err, "删除mds节点：数据库操作失败")
+		return errors.WrapIf(err, "删除mds节点:数据库操作失败")
 	}
 	log.Debug(
-		"删除mds节点：执行成功",
+		"删除mds节点:执行成功",
 		zap.Any("conds", conds),
 		zap.Duration("delete_mds_node_duration", deleteMdsNodeDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -173,7 +173,7 @@ func (r *MdsNodeRepo) GetModel(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 	log.Debug(
-		"查询mds节点：开始执行",
+		"查询mds节点:开始执行",
 		zap.Any("conds", conds),
 	)
 	var m mdsmodel.MdsNodeModel
@@ -184,16 +184,16 @@ func (r *MdsNodeRepo) GetModel(
 	getMdsNodeDuration := time.Since(getMdsNodeStartTime)
 	if err != nil {
 		log.Error(
-			"查询mds节点：数据库操作失败",
+			"查询mds节点:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("get_mds_node_duration", getMdsNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询mds节点：数据库操作失败")
+		return nil, errors.WrapIf(err, "查询mds节点:数据库操作失败")
 	}
 	log.Debug(
-		"查询mds节点：执行成功",
+		"查询mds节点:执行成功",
 		zap.Object("node_model", &m),
 		zap.Any("conds", conds),
 		zap.Duration("get_mds_node_duration", getMdsNodeDuration),
@@ -209,7 +209,7 @@ func (r *MdsNodeRepo) ListModel(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 	log.Debug(
-		"查询mds节点列表：开始执行",
+		"查询mds节点列表:开始执行",
 		zap.Object("query_params", &qp),
 	)
 	var ms []mdsmodel.MdsNodeModel
@@ -220,16 +220,16 @@ func (r *MdsNodeRepo) ListModel(
 	listMdsNodeDuration := time.Since(listMdsNodeStartTime)
 	if err != nil {
 		log.Error(
-			"查询mds节点列表：数据库操作失败",
+			"查询mds节点列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_mds_node_duration", listMdsNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "查询mds节点列表：数据库操作失败")
+		return nil, errors.WrapIf(err, "查询mds节点列表:数据库操作失败")
 	}
 	log.Debug(
-		"查询mds节点列表：执行成功",
+		"查询mds节点列表:执行成功",
 		zap.Object("query_params", &qp),
 		zap.Duration("list_mds_node_duration", listMdsNodeDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
@@ -245,7 +245,7 @@ func (r *MdsNodeRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mds节点总数：开始执行",
+		"查询mds节点总数:开始执行",
 		zap.Any("query", query),
 	)
 
@@ -256,16 +256,16 @@ func (r *MdsNodeRepo) CountModel(
 	countMdsNodeDuration := time.Since(countMdsNodeStartTime)
 	if err != nil {
 		log.Error(
-			"查询mds节点总数：数据库查询失败",
+			"查询mds节点总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
 			zap.Duration("count_mds_node_duration", countMdsNodeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, errors.WrapIf(err, "查询mds节点总数：数据库查询失败")
+		return 0, errors.WrapIf(err, "查询mds节点总数:数据库查询失败")
 	}
 	log.Debug(
-		"查询mds节点总数：执行成功",
+		"查询mds节点总数:执行成功",
 		zap.Any("query", query),
 		zap.Int64("count", count),
 		zap.Duration("count_mds_node_duration", countMdsNodeDuration),

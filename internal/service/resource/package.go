@@ -46,10 +46,10 @@ func (s *PackageService) CreatePackage(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建程序包：开始执行")
+	log.Info("创建程序包:开始执行")
 
 	log.Debug(
-		"创建程序包：输入参数",
+		"创建程序包:输入参数",
 		zap.Object("upload_package_biz", &dto),
 	)
 
@@ -63,12 +63,12 @@ func (s *PackageService) CreatePackage(
 
 	createStepStart := time.Now()
 	log.Debug(
-		"创建程序包：开始创建数据库模型",
+		"创建程序包:开始创建数据库模型",
 		zap.Object("package_model", &m),
 	)
 	if err := s.pkgRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建程序包：创建数据库模型失败",
+			"创建程序包:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("package_model", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -78,17 +78,17 @@ func (s *PackageService) CreatePackage(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建程序包：创建数据库模型成功",
+		"创建程序包:创建数据库模型成功",
 		zap.Uint32("package_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
 
 	saveStepStart := time.Now()
-	log.Debug("创建程序包：开始保存程序包文件")
+	log.Debug("创建程序包:开始保存程序包文件")
 	savePath := GetPackageStoragePath(newFileNameWithExt)
 	if err := s.pkgRepo.SavePackageFile(ctx, dto.File, savePath, false); err != nil {
 		log.Error(
-			"创建程序包：程序包文件创建失败",
+			"创建程序包:程序包文件创建失败",
 			zap.Error(err),
 			zap.String("pkg_path", savePath),
 			zap.Duration("save_step_duration", time.Since(saveStepStart)),
@@ -98,13 +98,13 @@ func (s *PackageService) CreatePackage(
 	}
 	saveStepDuration := time.Since(saveStepStart)
 	log.Debug(
-		"创建程序包：程序包文件创建成功",
+		"创建程序包:程序包文件创建成功",
 		zap.String("pkg_path", savePath),
 		zap.Duration("save_step_duration", saveStepDuration),
 	)
 
 	log.Info(
-		"创建程序包：执行成功",
+		"创建程序包:执行成功",
 		zap.Uint32("package_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("save_step_duration", saveStepDuration),
@@ -125,14 +125,14 @@ func (s *PackageService) DeletePackageByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除程序包：开始执行",
+		"删除程序包:开始执行",
 		zap.Uint32("package_id", pkgId),
 	)
 
 	m, err := s.FindPackageByID(ctx, pkgId)
 	if err != nil {
 		log.Error(
-			"删除程序包：查询程序包失败",
+			"删除程序包:查询程序包失败",
 			zap.Error(err),
 			zap.Uint32("package_id", pkgId),
 		)
@@ -142,12 +142,12 @@ func (s *PackageService) DeletePackageByID(
 	// 先从数据库删除
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除程序包：开始删除数据库模型",
+		"删除程序包:开始删除数据库模型",
 		zap.Uint32("package_id", pkgId),
 	)
 	if err := s.pkgRepo.DeleteModel(ctx, pkgId); err != nil {
 		log.Error(
-			"删除程序包：数据库删除失败",
+			"删除程序包:数据库删除失败",
 			zap.Error(err),
 			zap.Uint32("package_id", pkgId),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -156,7 +156,7 @@ func (s *PackageService) DeletePackageByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除程序包：数据库删除成功",
+		"删除程序包:数据库删除成功",
 		zap.Uint32("package_id", pkgId),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
@@ -165,12 +165,12 @@ func (s *PackageService) DeletePackageByID(
 	removeFileStepStart := time.Now()
 	deletePath := GetPackageStoragePath(m.StorageFilename)
 	log.Debug(
-		"删除程序包：开始删除物理文件",
+		"删除程序包:开始删除物理文件",
 		zap.String("pkg_path", deletePath),
 	)
 	if rmErr := s.pkgRepo.RemovePackageFile(ctx, deletePath); rmErr != nil {
 		log.Error(
-			"删除程序包：删除物理文件失败",
+			"删除程序包:删除物理文件失败",
 			zap.Error(rmErr),
 			zap.Uint32("package_id", pkgId),
 			zap.String("pkg_path", deletePath),
@@ -180,14 +180,14 @@ func (s *PackageService) DeletePackageByID(
 	}
 	removeFileStepDuration := time.Since(removeFileStepStart)
 	log.Debug(
-		"删除程序包：删除物理文件成功",
+		"删除程序包:删除物理文件成功",
 		zap.Uint32("package_id", pkgId),
 		zap.String("pkg_path", deletePath),
 		zap.Duration("remove_file_step_duration", removeFileStepDuration),
 	)
 
 	log.Info(
-		"删除程序包：执行成功",
+		"删除程序包:执行成功",
 		zap.Uint32("package_id", pkgId),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("remove_file_step_duration", removeFileStepDuration),
@@ -208,14 +208,14 @@ func (s *PackageService) FindPackageByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询程序包：开始执行",
+		"查询程序包:开始执行",
 		zap.Uint32("package_id", pkgId),
 	)
 
 	m, err := s.pkgRepo.GetModel(ctx, nil, pkgId)
 	if err != nil {
 		log.Error(
-			"查询程序包：数据库查询失败",
+			"查询程序包:数据库查询失败",
 			zap.Error(err),
 			zap.Uint32("package_id", pkgId),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -223,12 +223,12 @@ func (s *PackageService) FindPackageByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": pkgId})
 	}
 	log.Debug(
-		"查询程序包：查询到的数据库模型详情",
+		"查询程序包:查询到的数据库模型详情",
 		zap.Object("package_model", m),
 	)
 
 	log.Info(
-		"查询程序包：执行成功",
+		"查询程序包:执行成功",
 		zap.Uint32("package_id", pkgId),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -247,10 +247,10 @@ func (s *PackageService) ListPackage(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("查询程序包列表：开始执行")
+	log.Info("查询程序包列表:开始执行")
 
 	log.Debug(
-		"查询程序包列表：参数详情",
+		"查询程序包列表:参数详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("list_package_dto", &dto),
@@ -264,20 +264,20 @@ func (s *PackageService) ListPackage(
 		Query:   dto.ToQueryMap(),
 	}
 	log.Debug(
-		"查询程序包列表：数据库查询参数详情",
+		"查询程序包列表:数据库查询参数详情",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询程序包列表：开始查询数据库模型总数",
+		"查询程序包列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.pkgRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询程序包列表：查询数据库模型总数失败",
+			"查询程序包列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -286,13 +286,13 @@ func (s *PackageService) ListPackage(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询程序包列表：查询数据库模型总数成功",
+		"查询程序包列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询程序包列表：数据库模型总数为0",
+			"查询程序包列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -300,14 +300,14 @@ func (s *PackageService) ListPackage(
 
 	listStepStart := time.Now()
 	log.Debug(
-		"查询程序包列表：开始查询数据库模型列表",
+		"查询程序包列表:开始查询数据库模型列表",
 		zap.Object("query_params", &qp),
 	)
 	ms, err := s.pkgRepo.ListModel(ctx, qp)
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询程序包列表：数据库查询失败",
+			"查询程序包列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -316,13 +316,13 @@ func (s *PackageService) ListPackage(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询程序包列表：查询数据库模型列表成功",
+		"查询程序包列表:查询数据库模型列表成功",
 		zap.Int("package_count", len(ms)),
 		zap.Duration("list_step_duration", listStepDuration),
 	)
 
 	log.Info(
-		"查询程序包列表：执行成功",
+		"查询程序包列表:执行成功",
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil

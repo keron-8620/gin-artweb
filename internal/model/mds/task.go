@@ -7,8 +7,8 @@ import (
 )
 
 type MdsCronTask struct {
-	ScriptID      uint32
-	Specification string
+	ScriptID      uint32 `yaml:"script_id"`
+	Specification string `yaml:"specification"`
 }
 
 func (mds MdsCronTask) MarshalLogObject(enc zapcore.ObjectEncoder) error {

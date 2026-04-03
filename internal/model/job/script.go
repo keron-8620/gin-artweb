@@ -138,10 +138,32 @@ type ListScriptDTO struct {
 	Status *bool `form:"status"`
 
 	// 是否是内置脚本
-	IsBuiltin *bool `form:"is_builtin" binding:"omitempty"`
+	IsBuiltin *bool `form:"is_builtin"`
 
 	// 最后修改的用户
 	UserID uint32 `form:"user_id" binding:"omitempty"`
+}
+
+func (dto *ListScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if dto == nil {
+		return nil
+	}
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
+	}
+	enc.AddString("name", dto.Name)
+	enc.AddString("descr", dto.Descr)
+	enc.AddString("project", dto.Project)
+	enc.AddString("label", dto.Label)
+	enc.AddString("language", dto.Language)
+	if dto.Status != nil {
+		enc.AddBool("status", *dto.Status)
+	}
+	if dto.IsBuiltin != nil {
+		enc.AddBool("is_builtin", *dto.IsBuiltin)
+	}
+	enc.AddUint32("user_id", dto.UserID)
+	return nil
 }
 
 func (dto *ListScriptDTO) ToQueryMap() map[string]any {
@@ -190,6 +212,9 @@ type ScriptStandardOut struct {
 	// 描述信息
 	Descr string `json:"descr" example:"这是一个测试脚本"`
 
+	// 参数描述
+	ParamDesc string `json:"param_desc" example:"--param1=value1 --param2=value2"`
+
 	// 项目
 	Project string `json:"project" example:"artweb"`
 
@@ -230,6 +255,7 @@ func ScriptModelToStandardOut(
 		UpdatedAt: m.UpdatedAt.Format(time.DateTime),
 		Name:      m.Name,
 		Descr:     m.Descr,
+		ParamDesc: m.ParamDesc,
 		Project:   m.Project,
 		Label:     m.Label,
 		Language:  m.Language,

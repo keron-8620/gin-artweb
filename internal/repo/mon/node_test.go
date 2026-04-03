@@ -63,7 +63,7 @@ func (suite *MonNodeTestSuite) TestCreateModel() {
 	suite.NoError(err, "创建MonNode应该成功")
 	suite.NotZero(nm.ID, "MonNode ID应该不为零")
 
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err = suite.nodeRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空MonNode模型应该返回错误")
 }
@@ -90,11 +90,11 @@ func (suite *MonNodeTestSuite) TestUpdateModel() {
 	suite.Equal("/opt/mon-updated", fm.DeployPath)
 	suite.Equal("/usr/lib/jvm/java-17-openjdk-amd64", fm.JavaHome)
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.nodeRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", nm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的MonNode
+	// 测试边界情况:更新不存在的MonNode
 	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的MonNode应该成功（无操作）")
 }
@@ -114,7 +114,7 @@ func (suite *MonNodeTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的MonNode应该返回错误")
 	suite.Nil(fm, "已删除的MonNode应该为nil")
 
-	// 测试边界情况：删除不存在的MonNode
+	// 测试边界情况:删除不存在的MonNode
 	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的MonNode应该成功（无操作）")
 }
@@ -132,12 +132,12 @@ func (suite *MonNodeTestSuite) TestGetModel() {
 	suite.Equal(nm.Name, fm.Name)
 	suite.Equal(nm.URL, fm.URL)
 
-	// 测试边界情况：查询不存在的MonNode
+	// 测试边界情况:查询不存在的MonNode
 	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的MonNode应该返回错误")
 	suite.Nil(fm, "查询不存在的MonNode应该返回nil")
 
-	// 测试边界情况：使用预加载
+	// 测试边界情况:使用预加载
 	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"Host"}, "id = ?", nm.ID)
 	suite.NoError(err, "使用预加载查询MonNode应该成功")
 	suite.Equal(nm.ID, fm.ID)
@@ -163,8 +163,8 @@ func (suite *MonNodeTestSuite) TestListModel() {
 	suite.Greater(int64(len(models)), int64(0), "MonNode列表数量应该大于0")
 	suite.NotNil(models, "MonNode列表应该不为nil")
 
-	// 测试边界情况：空列表（如果之前没有数据）
-	// 注意：由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
+	// 测试边界情况:空列表（如果之前没有数据）
+	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
 	qp2 := database.QueryParams{
 		Query: map[string]any{"name": "non-existent-mon-node"},
 	}
@@ -252,7 +252,7 @@ func (suite *MonNodeTestSuite) TestDatabaseErrorScenarios() {
 
 	testTimeoutError()
 
-	// 注意：空条件的删除和更新操作会失败，因为数据库操作需要WHERE条件
+	// 注意:空条件的删除和更新操作会失败，因为数据库操作需要WHERE条件
 	// 这里我们不测试空条件操作，因为它们不是预期的用例
 }
 

@@ -85,7 +85,7 @@ func Move(ctx context.Context, src, dst string) error {
 
 		// 删除源目录
 		if err := RemoveAll(ctx, src); err != nil {
-			// 注意：此时目标已存在，源删除失败需要记录但不要回滚
+			// 注意:此时目标已存在，源删除失败需要记录但不要回滚
 			return errors.WithMessage(err, "跨文件系统删除源目录失败")
 		}
 	} else {
@@ -106,7 +106,7 @@ func Move(ctx context.Context, src, dst string) error {
 
 		// 删除源文件
 		if err := Remove(ctx, src); err != nil {
-			// 注意：此时目标已存在，源删除失败需要记录但不要回滚
+			// 注意:此时目标已存在，源删除失败需要记录但不要回滚
 			return errors.WithMessage(err, "跨文件系统删除源文件失败")
 		}
 	}

@@ -9,6 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
+	jobmodel "gin-artweb/internal/model/job"
 	oesmodel "gin-artweb/internal/model/oes"
 	oesrepo "gin-artweb/internal/repo/oes"
 	resosvc "gin-artweb/internal/service/resource"
@@ -51,10 +52,10 @@ func (s *OesColonyService) CreateOesColony(
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建oes集群：开始执行")
+	log.Info("创建oes集群:开始执行")
 
 	log.Debug(
-		"创建oes集群：入参详情",
+		"创建oes集群:入参详情",
 		zap.Object("oes_colony_dto", &dto),
 	)
 
@@ -69,12 +70,12 @@ func (s *OesColonyService) CreateOesColony(
 	}
 	createStepStart := time.Now()
 	log.Debug(
-		"创建oes集群：开始创建数据库模型",
+		"创建oes集群:开始创建数据库模型",
 		zap.Object("oes_colony", &m),
 	)
 	if err := s.colonyRepo.CreateModel(ctx, &m); err != nil {
 		log.Error(
-			"创建oes集群：创建数据库模型失败",
+			"创建oes集群:创建数据库模型失败",
 			zap.Error(err),
 			zap.Object("oes_colony", &m),
 			zap.Duration("create_step_duration", time.Since(createStepStart)),
@@ -84,7 +85,7 @@ func (s *OesColonyService) CreateOesColony(
 	}
 	createStepDuration := time.Since(createStepStart)
 	log.Debug(
-		"创建oes集群：创建数据库模型成功",
+		"创建oes集群:创建数据库模型成功",
 		zap.Uint32("oes_colony_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 	)
@@ -92,14 +93,14 @@ func (s *OesColonyService) CreateOesColony(
 	// 查询oes集群关联数据
 	queryStepStart := time.Now()
 	log.Debug(
-		"创建oes集群：开始查询关联数据",
+		"创建oes集群:开始查询关联数据",
 		zap.Uint32("oes_colony_id", m.ID),
 	)
 	nm, rErr := s.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, m.ID)
 	queryStepDuration := time.Since(queryStepStart)
 	if rErr != nil {
 		log.Error(
-			"创建oes集群：查询关联数据失败",
+			"创建oes集群:查询关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("oes_colony_id", m.ID),
 			zap.Duration("query_step_duration", queryStepDuration),
@@ -108,7 +109,7 @@ func (s *OesColonyService) CreateOesColony(
 		return nil, rErr
 	}
 	log.Debug(
-		"创建oes集群：查询关联数据成功",
+		"创建oes集群:查询关联数据成功",
 		zap.Uint32("oes_colony_id", m.ID),
 		zap.Duration("query_step_duration", queryStepDuration),
 	)
@@ -116,12 +117,12 @@ func (s *OesColonyService) CreateOesColony(
 	// 导出oes集群缓存数据
 	exportStepStart := time.Now()
 	log.Debug(
-		"创建oes集群：开始导出缓存数据",
+		"创建oes集群:开始导出缓存数据",
 		zap.Uint32("oes_colony_id", m.ID),
 	)
 	if err := s.OutportOesColonyData(ctx, nm); err != nil {
 		log.Error(
-			"创建oes集群：导出缓存数据失败",
+			"创建oes集群:导出缓存数据失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", m.ID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -131,7 +132,7 @@ func (s *OesColonyService) CreateOesColony(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"创建oes集群：导出缓存数据成功",
+		"创建oes集群:导出缓存数据成功",
 		zap.Uint32("oes_colony_id", m.ID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
@@ -139,14 +140,14 @@ func (s *OesColonyService) CreateOesColony(
 	// 初始化mds集群定时任务
 	initCronStepStart := time.Now()
 	log.Debug(
-		"创建oes集群：开始初始化oes集群定时任务",
+		"创建oes集群:开始初始化oes集群定时任务",
 		zap.Uint32("oes_colony_id", m.ID),
 	)
 	rErr = s.cronSvc.CreateCornByColony(ctx, nm)
 	initCronStepDuration := time.Since(initCronStepStart)
 	if rErr != nil {
 		log.Error(
-			"创建oes集群：初始化oes集群定时任务失败",
+			"创建oes集群:初始化oes集群定时任务失败",
 			zap.Error(rErr),
 			zap.Uint32("oes_colony_id", m.ID),
 			zap.Duration("init_cron_step_duration", initCronStepDuration),
@@ -154,13 +155,13 @@ func (s *OesColonyService) CreateOesColony(
 		return nil, rErr
 	}
 	log.Debug(
-		"创建oes集群：初始化oes集群定时任务成功",
+		"创建oes集群:初始化oes集群定时任务成功",
 		zap.Uint32("oes_colony_id", m.ID),
 		zap.Duration("init_cron_step_duration", initCronStepDuration),
 	)
 
 	log.Info(
-		"创建oes集群：执行成功",
+		"创建oes集群:执行成功",
 		zap.Uint32("oes_colony_id", m.ID),
 		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("query_step_duration", queryStepDuration),
@@ -184,7 +185,7 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"更新oes集群：开始执行",
+		"更新oes集群:开始执行",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Object("oes_colony_dto", &dto),
 	)
@@ -194,7 +195,7 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	findOldStepDuration := time.Since(findOldStepStart)
 	if rErr != nil {
 		log.Error(
-			"更新oes集群：查询更新前oes集群数据失败",
+			"更新oes集群:查询更新前oes集群数据失败",
 			zap.Error(rErr),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("find_old_step_duration", findOldStepDuration),
@@ -203,7 +204,7 @@ func (s *OesColonyService) UpdateOesColonyByID(
 		return nil, rErr
 	}
 	log.Debug(
-		"更新oes集群：查询更新前oes集群数据成功",
+		"更新oes集群:查询更新前oes集群数据成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("find_old_step_duration", findOldStepDuration),
 	)
@@ -211,13 +212,13 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	updateStepStart := time.Now()
 	updateData := dto.ToUpdateMap()
 	log.Debug(
-		"更新oes集群：开始更新数据库模型",
+		"更新oes集群:开始更新数据库模型",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Any("update_data", updateData),
 	)
 	if err := s.colonyRepo.UpdateModel(ctx, updateData, "id = ?", oesColonyID); err != nil {
 		log.Error(
-			"更新oes集群：更新数据库模型失败",
+			"更新oes集群:更新数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Any("update_data", updateData),
@@ -228,7 +229,7 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	}
 	updateStepDuration := time.Since(updateStepStart)
 	log.Debug(
-		"更新oes集群：更新数据库模型成功",
+		"更新oes集群:更新数据库模型成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("update_step_duration", updateStepDuration),
 	)
@@ -236,14 +237,14 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	// 查询关联数据
 	queryStepStart := time.Now()
 	log.Debug(
-		"更新oes集群：开始查询关联数据",
+		"更新oes集群:开始查询关联数据",
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 	nm, rErr := s.FindOesColonyByID(ctx, []string{"Package", "XCounter", "MonNode"}, oesColonyID)
 	queryStepDuration := time.Since(queryStepStart)
 	if rErr != nil {
 		log.Error(
-			"更新oes集群：查询关联数据失败",
+			"更新oes集群:查询关联数据失败",
 			zap.Error(rErr),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("query_step_duration", queryStepDuration),
@@ -252,7 +253,7 @@ func (s *OesColonyService) UpdateOesColonyByID(
 		return nil, rErr
 	}
 	log.Debug(
-		"更新oes集群：查询关联数据成功",
+		"更新oes集群:查询关联数据成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("query_step_duration", queryStepDuration),
 	)
@@ -260,12 +261,12 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	// 导出数据库缓存数据
 	exportStepStart := time.Now()
 	log.Debug(
-		"更新oes集群：开始导出缓存数据",
+		"更新oes集群:开始导出缓存数据",
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 	if err := s.OutportOesColonyData(ctx, nm); err != nil {
 		log.Error(
-			"更新oes集群：导出缓存数据失败",
+			"更新oes集群:导出缓存数据失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("export_step_duration", time.Since(exportStepStart)),
@@ -275,7 +276,7 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	}
 	exportStepDuration := time.Since(exportStepStart)
 	log.Debug(
-		"更新oes集群：导出缓存数据成功",
+		"更新oes集群:导出缓存数据成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("export_step_duration", exportStepDuration),
 	)
@@ -283,12 +284,12 @@ func (s *OesColonyService) UpdateOesColonyByID(
 	if om.ColonyNum != nm.ColonyNum || om.IsEnable != nm.IsEnable {
 		clearStepStart := time.Now()
 		log.Debug(
-			"更新oes集群：开始清理计划任务",
+			"更新oes集群:开始清理计划任务",
 			zap.Uint32("oes_colony_id", oesColonyID),
 		)
 		if err := s.cronSvc.DeleteCornByColonyID(ctx, oesColonyID); err != nil {
 			log.Error(
-				"更新oes集群：清理计划任务失败",
+				"更新oes集群:清理计划任务失败",
 				zap.Error(err),
 				zap.Uint32("oes_colony_id", oesColonyID),
 				zap.Duration("clear_step_duration", time.Since(clearStepStart)),
@@ -297,19 +298,19 @@ func (s *OesColonyService) UpdateOesColonyByID(
 		}
 		clearStepDuration := time.Since(clearStepStart)
 		log.Debug(
-			"更新oes集群：清理计划任务成功",
+			"更新oes集群:清理计划任务成功",
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("clear_step_duration", clearStepDuration),
 		)
 
 		initStepStart := time.Now()
 		log.Debug(
-			"更新oes集群：开始初始化计划任务",
+			"更新oes集群:开始初始化计划任务",
 			zap.Uint32("oes_colony_id", oesColonyID),
 		)
 		if err := s.cronSvc.CreateCornByColony(ctx, nm); err != nil {
 			log.Error(
-				"更新oes集群：初始化计划任务失败",
+				"更新oes集群:初始化计划任务失败",
 				zap.Error(err),
 				zap.Uint32("oes_colony_id", oesColonyID),
 				zap.Duration("init_step_duration", time.Since(initStepStart)),
@@ -318,14 +319,14 @@ func (s *OesColonyService) UpdateOesColonyByID(
 		}
 		initStepDuration := time.Since(initStepStart)
 		log.Debug(
-			"更新oes集群：初始化计划任务成功",
+			"更新oes集群:初始化计划任务成功",
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("init_step_duration", initStepDuration),
 		)
 	}
 
 	log.Info(
-		"更新oes集群：执行成功",
+		"更新oes集群:执行成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("query_step_duration", queryStepDuration),
@@ -347,18 +348,18 @@ func (s *OesColonyService) DeleteOesColonyByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"删除oes集群：开始执行",
+		"删除oes集群:开始执行",
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 
 	deleteStepStart := time.Now()
 	log.Debug(
-		"删除oes集群：开始删除数据库模型",
+		"删除oes集群:开始删除数据库模型",
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 	if err := s.colonyRepo.DeleteModel(ctx, oesColonyID); err != nil {
 		log.Error(
-			"删除oes集群：删除数据库模型失败",
+			"删除oes集群:删除数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
@@ -368,19 +369,19 @@ func (s *OesColonyService) DeleteOesColonyByID(
 	}
 	deleteStepDuration := time.Since(deleteStepStart)
 	log.Debug(
-		"删除oes集群：删除数据库模型成功",
+		"删除oes集群:删除数据库模型成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 	)
 
 	clearStepStart := time.Now()
 	log.Debug(
-		"删除oes集群：开始清理计划任务",
+		"删除oes集群:开始清理计划任务",
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 	if err := s.cronSvc.DeleteCornByColonyID(ctx, oesColonyID); err != nil {
 		log.Error(
-			"删除oes集群：清理计划任务失败",
+			"删除oes集群:清理计划任务失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Duration("clear_step_duration", time.Since(clearStepStart)),
@@ -389,13 +390,13 @@ func (s *OesColonyService) DeleteOesColonyByID(
 	}
 	clearStepDuration := time.Since(clearStepStart)
 	log.Debug(
-		"删除oes集群：清理计划任务成功",
+		"删除oes集群:清理计划任务成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("clear_step_duration", clearStepDuration),
 	)
 
 	log.Info(
-		"删除oes集群：执行成功",
+		"删除oes集群:执行成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("clear_step_duration", clearStepDuration),
@@ -417,7 +418,7 @@ func (s *OesColonyService) FindOesColonyByID(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询oes集群：开始执行",
+		"查询oes集群:开始执行",
 		zap.Strings("preloads", preloads),
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
@@ -425,7 +426,7 @@ func (s *OesColonyService) FindOesColonyByID(
 	m, err := s.colonyRepo.GetModel(ctx, preloads, oesColonyID)
 	if err != nil {
 		log.Error(
-			"查询oes集群：查询数据库模型失败",
+			"查询oes集群:查询数据库模型失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", oesColonyID),
 			zap.Strings("preloads", preloads),
@@ -434,12 +435,12 @@ func (s *OesColonyService) FindOesColonyByID(
 		return nil, errors.NewGormError(err, map[string]any{"id": oesColonyID})
 	}
 	log.Debug(
-		"查询oes集群：查询到的数据库模型详情",
+		"查询oes集群:查询到的数据库模型详情",
 		zap.Object("oes_colony_model", m),
 	)
 
 	log.Info(
-		"查询oes集群：执行成功",
+		"查询oes集群:执行成功",
 		zap.Uint32("oes_colony_id", oesColonyID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -459,12 +460,12 @@ func (s *OesColonyService) ListOesColony(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"查询oes集群列表：开始执行",
+		"查询oes集群列表:开始执行",
 		zap.Object("dto", &dto),
 	)
 
 	log.Debug(
-		"查询mds集群列表：入参详情",
+		"查询mds集群列表:入参详情",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Object("mds_colony_dto", &dto),
@@ -479,20 +480,20 @@ func (s *OesColonyService) ListOesColony(
 		Query:    dto.ToQueryMap(),
 	}
 	log.Debug(
-		"查询mds集群列表：查询参数",
+		"查询mds集群列表:查询参数",
 		zap.Object("query_params", &qp),
 	)
 
 	countStepStart := time.Now()
 	log.Debug(
-		"查询oes集群列表：开始查询数据库模型总数",
+		"查询oes集群列表:开始查询数据库模型总数",
 		zap.Object("query_params", &qp),
 	)
 	count, err := s.colonyRepo.CountModel(ctx, qp.Query)
 	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
-			"查询oes集群列表：查询数据库模型总数失败",
+			"查询oes集群列表:查询数据库模型总数失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("count_step_duration", countStepDuration),
@@ -501,13 +502,13 @@ func (s *OesColonyService) ListOesColony(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询oes集群列表：查询数据库模型总数成功",
+		"查询oes集群列表:查询数据库模型总数成功",
 		zap.Int64("total_count", count),
 		zap.Duration("count_step_duration", countStepDuration),
 	)
 	if count == 0 {
 		log.Warn(
-			"查询oes集群列表：数据库模型总数为0",
+			"查询oes集群列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return count, nil, nil
@@ -515,14 +516,14 @@ func (s *OesColonyService) ListOesColony(
 
 	listStepStart := time.Now()
 	log.Debug(
-		"查询oes集群列表：开始查询数据库模型列表",
+		"查询oes集群列表:开始查询数据库模型列表",
 		zap.Object("query_params", &qp),
 	)
 	ms, err := s.colonyRepo.ListModel(ctx, qp)
 	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
-			"查询oes集群列表：查询数据库模型列表失败",
+			"查询oes集群列表:查询数据库模型列表失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_step_duration", listStepDuration),
@@ -531,18 +532,25 @@ func (s *OesColonyService) ListOesColony(
 		return 0, nil, errors.NewGormError(err, nil)
 	}
 	log.Debug(
-		"查询oes集群列表：查询数据库模型列表成功",
+		"查询oes集群列表:查询数据库模型列表成功",
 		zap.Int("colony_count", len(ms)),
 		zap.Duration("list_step_duration", listStepDuration),
 	)
 
 	log.Info(
-		"查询oes集群列表：执行成功",
+		"查询oes集群列表:执行成功",
 		zap.Duration("count_step_duration", countStepDuration),
 		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return count, ms, nil
+}
+
+func (s *OesColonyService) ListOesSchedules(
+	ctx context.Context,
+	oesColonyID uint32,
+) ([]jobmodel.ScheduleModel, *errors.Error) {
+	return s.cronSvc.ListCornByColonyID(ctx, oesColonyID)
 }
 
 func (s *OesColonyService) OutportOesColonyData(
@@ -557,7 +565,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
-		"解压oes程序包并初始化集群配置文件：开始执行",
+		"解压oes程序包并初始化集群配置文件:开始执行",
 		zap.Object("oes_colony", m),
 	)
 
@@ -568,12 +576,12 @@ func (s *OesColonyService) OutportOesColonyData(
 	cleanStepStart := time.Now()
 	if _, err := os.Stat(colonyBinDir); !os.IsNotExist(err) {
 		log.Debug(
-			"解压oes程序包并初始化集群配置文件：开始清理原配置文件",
+			"解压oes程序包并初始化集群配置文件:开始清理原配置文件",
 			zap.String("path", colonyBinDir),
 		)
 		if err := os.RemoveAll(colonyBinDir); err != nil {
 			log.Error(
-				"解压oes程序包并初始化集群配置文件：清理原oes集群配置文件失败",
+				"解压oes程序包并初始化集群配置文件:清理原oes集群配置文件失败",
 				zap.Error(err),
 				zap.String("path", colonyBinDir),
 				zap.Duration("clean_step_duration", time.Since(cleanStepStart)),
@@ -582,7 +590,7 @@ func (s *OesColonyService) OutportOesColonyData(
 			return errors.FromError(err)
 		}
 		log.Debug(
-			"解压oes程序包并初始化集群配置文件：清理原配置文件成功",
+			"解压oes程序包并初始化集群配置文件:清理原配置文件成功",
 			zap.String("path", colonyBinDir),
 			zap.Duration("clean_step_duration", time.Since(cleanStepStart)),
 		)
@@ -592,7 +600,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	tmpDir, mErr := os.MkdirTemp("/tmp", "oes-")
 	if mErr != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：创建oes程序包解压的tmp文件夹失败",
+			"解压oes程序包并初始化集群配置文件:创建oes程序包解压的tmp文件夹失败",
 			zap.Error(mErr),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -601,7 +609,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			log.Error(
-				"解压oes程序包并初始化集群配置文件：删除oes程序包解压的tmp文件夹失败",
+				"解压oes程序包并初始化集群配置文件:删除oes程序包解压的tmp文件夹失败",
 				zap.Error(err),
 				zap.String("path", tmpDir),
 			)
@@ -612,13 +620,13 @@ func (s *OesColonyService) OutportOesColonyData(
 	oesStepStart := time.Now()
 	oesPkgPath := resosvc.GetPackageStoragePath(m.Package.StorageFilename)
 	log.Debug(
-		"解压oes程序包并初始化集群配置文件：开始处理oes程序包",
+		"解压oes程序包并初始化集群配置文件:开始处理oes程序包",
 		zap.String("pkg_path", oesPkgPath),
 	)
 	oesUnTarDirName, valiErr := archive.ValidateSingleDirTarGz(oesPkgPath)
 	if valiErr != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：oes程序包校验失败",
+			"解压oes程序包并初始化集群配置文件:oes程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", oesPkgPath),
 			zap.Duration("oes_step_duration", time.Since(oesStepStart)),
@@ -629,7 +637,7 @@ func (s *OesColonyService) OutportOesColonyData(
 
 	if err := archive.UntarGz(oesPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：解压oes程序包失败",
+			"解压oes程序包并初始化集群配置文件:解压oes程序包失败",
 			zap.Error(err),
 			zap.String("src_path", oesPkgPath),
 			zap.String("dst_path", colonyBinDir),
@@ -642,7 +650,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	oesTmpDir := filepath.Join(tmpDir, oesUnTarDirName)
 	if err := fileutil.CopyDir(ctx, oesTmpDir, colonyBinDir, true); err != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：复制oes程序包解压目录失败",
+			"解压oes程序包并初始化集群配置文件:复制oes程序包解压目录失败",
 			zap.Error(err),
 			zap.String("src_path", oesTmpDir),
 			zap.String("dst_path", colonyBinDir),
@@ -653,7 +661,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	}
 	oesStepDuration := time.Since(oesStepStart)
 	log.Debug(
-		"解压oes程序包并初始化集群配置文件：处理oes程序包成功",
+		"解压oes程序包并初始化集群配置文件:处理oes程序包成功",
 		zap.String("pkg_path", oesPkgPath),
 		zap.Duration("oes_step_duration", oesStepDuration),
 	)
@@ -662,13 +670,13 @@ func (s *OesColonyService) OutportOesColonyData(
 	xcterStepStart := time.Now()
 	xcterPkgPath := resosvc.GetPackageStoragePath(m.XCounter.StorageFilename)
 	log.Debug(
-		"解压oes程序包并初始化集群配置文件：开始处理xcounter程序包",
+		"解压oes程序包并初始化集群配置文件:开始处理xcounter程序包",
 		zap.String("pkg_path", xcterPkgPath),
 	)
 	xcterUnTarDirName, valiErr := archive.ValidateSingleDirTarGz(xcterPkgPath)
 	if valiErr != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：xcounter程序包校验失败",
+			"解压oes程序包并初始化集群配置文件:xcounter程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", xcterPkgPath),
 			zap.Duration("xcter_step_duration", time.Since(xcterStepStart)),
@@ -678,7 +686,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	}
 	if err := archive.UntarGz(xcterPkgPath, tmpDir); err != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：解压xcounter程序包失败",
+			"解压oes程序包并初始化集群配置文件:解压xcounter程序包失败",
 			zap.Error(err),
 			zap.String("src_path", xcterPkgPath),
 			zap.String("dst_path", tmpDir),
@@ -691,7 +699,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	oesBinDir := filepath.Join(colonyBinDir, "bin")
 	if err := fileutil.CopyDir(ctx, xcterTmpDir, oesBinDir, true); err != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：复制xcounter程序包解压目录失败",
+			"解压oes程序包并初始化集群配置文件:复制xcounter程序包解压目录失败",
 			zap.Error(err),
 			zap.String("src_path", xcterTmpDir),
 			zap.String("dst_path", oesBinDir),
@@ -702,7 +710,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	}
 	xcterStepDuration := time.Since(xcterStepStart)
 	log.Debug(
-		"解压oes程序包并初始化集群配置文件：处理xcounter程序包成功",
+		"解压oes程序包并初始化集群配置文件:处理xcounter程序包成功",
 		zap.String("pkg_path", xcterPkgPath),
 		zap.Duration("xcter_step_duration", xcterStepDuration),
 	)
@@ -711,14 +719,14 @@ func (s *OesColonyService) OutportOesColonyData(
 	confStepStart := time.Now()
 	colonyConfAll := filepath.Join(colonyConfDir, "all")
 	log.Debug(
-		"解压oes程序包并初始化集群配置文件：开始处理配置文件",
+		"解压oes程序包并初始化集群配置文件:开始处理配置文件",
 		zap.String("conf_dir", colonyConfAll),
 	)
 	if _, err := os.Stat(colonyConfAll); os.IsNotExist(err) {
 		colonyBinConf := filepath.Join(colonyBinDir, "conf")
 		if err := fileutil.CopyDir(ctx, colonyBinConf, colonyConfAll, true); err != nil {
 			log.Error(
-				"解压oes程序包并初始化集群配置文件：复制oes集群配置文件失败",
+				"解压oes程序包并初始化集群配置文件:复制oes集群配置文件失败",
 				zap.Error(err),
 				zap.String("src_path", colonyBinConf),
 				zap.String("dst_path", colonyConfAll),
@@ -731,7 +739,7 @@ func (s *OesColonyService) OutportOesColonyData(
 		dstPath := filepath.Join(colonyConfAll, "automatic.yaml")
 		if err := fileutil.CopyFile(ctx, srcPath, dstPath); err != nil {
 			log.Error(
-				"解压oes程序包并初始化集群配置文件：复制oes的automatic配置文件失败",
+				"解压oes程序包并初始化集群配置文件:复制oes的automatic配置文件失败",
 				zap.Error(err),
 				zap.String("src_path", srcPath),
 				zap.String("dst_path", dstPath),
@@ -755,7 +763,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	oesColonyConf := filepath.Join(colonyConfAll, "colony.yaml")
 	if _, err := serializer.WriteYAML(oesColonyConf, oesVars); err != nil {
 		log.Error(
-			"解压oes程序包并初始化集群配置文件：导出oes集群配置变量文件失败",
+			"解压oes程序包并初始化集群配置文件:导出oes集群配置变量文件失败",
 			zap.Error(err),
 			zap.String("path", oesColonyConf),
 			zap.Object("oes_colony_vars", &oesVars),
@@ -766,13 +774,13 @@ func (s *OesColonyService) OutportOesColonyData(
 	}
 	confStepDuration := time.Since(confStepStart)
 	log.Debug(
-		"解压oes程序包并初始化集群配置文件：处理配置文件成功",
+		"解压oes程序包并初始化集群配置文件:处理配置文件成功",
 		zap.String("conf_dir", colonyConfAll),
 		zap.Duration("conf_step_duration", confStepDuration),
 	)
 
 	log.Info(
-		"解压oes程序包并初始化集群配置文件：执行成功",
+		"解压oes程序包并初始化集群配置文件:执行成功",
 		zap.String("path", oesColonyConf),
 		zap.Object("oes_colony_vars", &oesVars),
 		zap.Duration("oes_step_duration", oesStepDuration),

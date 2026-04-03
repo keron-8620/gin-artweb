@@ -1197,6 +1197,10 @@ definitions:
         description: 名称
         example: test.sh
         type: string
+      param_desc:
+        description: 参数描述
+        example: --param1=value1 --param2=value2
+        type: string
       project:
         description: 项目
         example: artweb
@@ -3173,11 +3177,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: URL地址
@@ -3388,11 +3393,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -3655,11 +3661,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 登陆状态
@@ -3750,6 +3757,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 父级菜单ID
@@ -3763,7 +3771,7 @@ paths:
         type: string
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -3977,11 +3985,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -4193,6 +4202,7 @@ paths:
         type: boolean
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 角色ID
@@ -4201,7 +4211,7 @@ paths:
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 用户名
@@ -4449,11 +4459,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 登陆状态
@@ -4525,6 +4536,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 按脚本ID筛选
@@ -4533,7 +4545,7 @@ paths:
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 筛选脚本执行的任务状态
@@ -4777,6 +4789,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 脚本ID
@@ -4785,7 +4798,7 @@ paths:
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 用户名
@@ -5015,6 +5028,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 项目
@@ -5023,7 +5037,7 @@ paths:
         type: string
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 状态
@@ -5344,6 +5358,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 项目
@@ -5352,7 +5367,7 @@ paths:
         type: string
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 状态
@@ -5446,6 +5461,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 项目
@@ -5454,7 +5470,7 @@ paths:
         type: string
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 状态
@@ -5859,6 +5875,41 @@ paths:
       summary: 更新mds集群
       tags:
       - mds集群管理
+  /api/v1/mds/colony/{id}/schedule:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的mds集群计划任务列表
+      parameters:
+      - description: mds集群编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回mds计划任务列表
+          schema:
+            $ref: '#/definitions/job.PagScheduleResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: mds集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询mds集群计划任务列表
+      tags:
+      - mds集群管理
   /api/v1/mds/colony/status:
     get:
       consumes:
@@ -5920,11 +5971,12 @@ paths:
         type: integer
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -6004,11 +6056,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -6220,11 +6273,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -6599,11 +6653,12 @@ paths:
         type: integer
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 系统类型
@@ -6774,6 +6829,41 @@ paths:
       summary: 更新oes集群
       tags:
       - oes集群管理
+  /api/v1/oes/colony/{id}/schedule:
+    get:
+      consumes:
+      - application/json
+      description: 本接口用于查询指定ID的oes集群计划任务列表
+      parameters:
+      - description: oes集群编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回oes计划任务列表
+          schema:
+            $ref: '#/definitions/job.PagScheduleResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: oes集群未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询oes集群计划任务列表
+      tags:
+      - oes集群管理
   /api/v1/oes/colony/status/crd:
     get:
       consumes:
@@ -6835,11 +6925,12 @@ paths:
         type: integer
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 系统类型
@@ -6931,11 +7022,12 @@ paths:
         type: integer
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 系统类型
@@ -7027,11 +7119,12 @@ paths:
         type: integer
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 系统类型
@@ -7119,11 +7212,12 @@ paths:
         type: integer
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       produces:
@@ -7371,6 +7465,7 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: python路径
@@ -7385,7 +7480,7 @@ paths:
         type: string
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: ip地址
@@ -7604,11 +7699,12 @@ paths:
         type: string
       - description: 分页页码
         in: query
+        minimum: 1
         name: page
         type: integer
       - description: 分页大小
         in: query
-        minimum: 0
+        minimum: 1
         name: size
         type: integer
       - description: 版本号
@@ -7640,12 +7736,12 @@ paths:
       - multipart/form-data
       description: 上传一个新的程序包文件并创建记录
       parameters:
-      - description: 程序包标签，长度限制：1-50个字符
+      - description: 程序包标签，长度限制:1-50个字符
         in: formData
         name: label
         required: true
         type: string
-      - description: 程序包版本，长度限制：1-50个字符
+      - description: 程序包版本，长度限制:1-50个字符
         in: formData
         name: version
         required: true

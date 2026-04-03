@@ -71,6 +71,7 @@ func main() {
 	}
 	// 加载系统配置
 	sysConf := newSystemConf(filepath.Join(config.ConfigDir, configPath))
+
 	// 初始化服务器日志记录器
 	serverWrite := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "server.log"))
 	handlerWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "handler.log"))

@@ -181,11 +181,11 @@ func (suite *HostTestSuite) TestUpdateModel() {
 	suite.Equal(uint16(2222), fm.SSHPort)
 	suite.Equal("updated remark", fm.Remark)
 
-	// 测试边界情况：更新数据为空
+	// 测试边界情况:更新数据为空
 	err = suite.hostRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", hm.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况：更新不存在的Host
+	// 测试边界情况:更新不存在的Host
 	err = suite.hostRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的Host应该成功（无操作）")
 }
@@ -205,7 +205,7 @@ func (suite *HostTestSuite) TestDeleteModel() {
 	suite.Error(err, "查询已删除的Host应该返回错误")
 	suite.Nil(fm, "已删除的Host应该为nil")
 
-	// 测试边界情况：删除不存在的Host
+	// 测试边界情况:删除不存在的Host
 	err = suite.hostRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的Host应该成功（无操作）")
 }
@@ -222,12 +222,12 @@ func (suite *HostTestSuite) TestGetModel() {
 	suite.Equal(hm.ID, fm.ID)
 	suite.Equal(hm.Name, fm.Name)
 
-	// 测试边界情况：查询不存在的Host
+	// 测试边界情况:查询不存在的Host
 	fm, err = suite.hostRepo.GetModel(context.Background(), nil, "id = ?", 999999)
 	suite.Error(err, "查询不存在的Host应该返回错误")
 	suite.Nil(fm, "查询不存在的Host应该返回nil")
 
-	// 测试边界情况：使用预加载（虽然HostModel可能没有关联关系，但测试方法调用）
+	// 测试边界情况:使用预加载（虽然HostModel可能没有关联关系，但测试方法调用）
 	fm, err = suite.hostRepo.GetModel(context.Background(), []string{}, "id = ?", hm.ID)
 	suite.NoError(err, "使用空预加载查询Host应该成功")
 	suite.Equal(hm.ID, fm.ID)
@@ -250,8 +250,8 @@ func (suite *HostTestSuite) TestListModel() {
 	suite.NotNil(models, "Host列表应该不为nil")
 	suite.Greater(int64(len(models)), int64(0), "Host列表长度应该大于0")
 
-	// 测试边界情况：空列表（如果之前没有数据）
-	// 注意：由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
+	// 测试边界情况:空列表（如果之前没有数据）
+	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
 	qp2 := database.QueryParams{
 		Query: map[string]any{"name": "non-existent-host"},
 	}
@@ -263,7 +263,7 @@ func (suite *HostTestSuite) TestListModel() {
 }
 
 func (suite *HostTestSuite) TestCreateModelWithEmpty() {
-	// 测试边界情况：创建空模型
+	// 测试边界情况:创建空模型
 	err := suite.hostRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空Host模型应该返回错误")
 }

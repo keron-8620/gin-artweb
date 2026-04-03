@@ -25,10 +25,10 @@ var (
 
 type BaseModelQuery struct {
 	// 分页页码
-	Page int `form:"page" binding:"omitempty,gt=0"`
+	Page int `form:"page" binding:"omitempty,gte=1"`
 
 	// 分页大小
-	Size int `form:"size" binding:"omitempty,gte=0"`
+	Size int `form:"size" binding:"omitempty,gte=1"`
 
 	// 唯一标识
 	ID uint32 `form:"id" binding:"omitempty,gt=0"`
@@ -49,7 +49,7 @@ func (dto *BaseModelQuery) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 func (q *BaseModelQuery) GetPageParam() (int, int) {
-	return max(q.Page, DefaultPage), min(max(q.Size, DefaultSize), 100)
+	return max(q.Page, DefaultPage), max(q.Size, DefaultSize)
 }
 
 func (q *BaseModelQuery) ToQueryMap(l int) map[string]any {

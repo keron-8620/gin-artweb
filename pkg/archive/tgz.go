@@ -115,7 +115,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 				return errors.Wrapf(walkErr, "遍历目录失败, filepath=%s", filePath)
 			}
 
-			// 安全检查：确保文件路径在源目录内
+			// 安全检查:确保文件路径在源目录内
 			relPath, err := filepath.Rel(cleanSrc, filePath)
 			if err != nil {
 				return errors.Wrapf(err, "计算相对路径失败, base=%s, target=%s", cleanSrc, filePath)

@@ -167,6 +167,22 @@ type ListButtonDTO struct {
 	MenuID uint32 `form:"menu_id" binding:"omitempty"`
 }
 
+func (dto *ListButtonDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if dto == nil {
+		return nil
+	}
+	if err := dto.StandardModelQuery.MarshalLogObject(enc); err != nil {
+		return err
+	}
+	enc.AddString("name", dto.Name)
+	if dto.IsActive != nil {
+		enc.AddBool("is_active", *dto.IsActive)
+	}
+	enc.AddString("descr", dto.Descr)
+	enc.AddUint32("menu_id", dto.MenuID)
+	return nil
+}
+
 func (dto *ListButtonDTO) ToQueryMap() map[string]any {
 	queryMap := dto.StandardModelQuery.ToQueryMap(10)
 	if dto.Name != "" {

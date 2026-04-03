@@ -1,12 +1,12 @@
 package common
 
 // Page2LimitOffset 将页码page、页大小size转换为limit和offset
-// 参数说明：
+// 参数说明:
 //
 //	page: 页码（从1开始，若传入<=0则自动转为1）
 //	size: 页大小（若传入<=0则自动转为默认值10，可根据业务调整）
 //
-// 返回值：
+// 返回值:
 //
 //	limit: 每页条数
 //	offset: 偏移量（(page-1)*size）

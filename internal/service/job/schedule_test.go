@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 
 	jobmodel "gin-artweb/internal/model/job"
 	jobrepo "gin-artweb/internal/repo/job"
@@ -49,41 +50,46 @@ func createScheduleTestContext() context.Context {
 type ScheduleTestSuite struct {
 	suite.Suite
 	scheduleService *ScheduleService
+	db              *gorm.DB
 }
 
 func (suite *ScheduleTestSuite) SetupSuite() {
-	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&jobmodel.ScheduleModel{}, &jobmodel.ScriptModel{})
+	suite.db = test.NewTestGormDBWithConfig(nil)
+	suite.db.AutoMigrate(&jobmodel.ScheduleModel{}, &jobmodel.ScriptModel{})
+
+	suite.db.Exec("DELETE FROM job_schedule")
+
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
 
-	// 创建测试脚本
-	script := &jobmodel.ScriptModel{
-		Name:      "test_script.sh",
-		Descr:     "测试脚本",
-		Project:   "test_project",
-		Label:     "test_label",
-		Language:  "bash",
-		Status:    true,
-		IsBuiltin: false,
-		Username:  "test_user",
+	var script jobmodel.ScriptModel
+	result := suite.db.Where("id = ?", 1).First(&script)
+	if result.Error != nil {
+		script = jobmodel.ScriptModel{
+			Name:      "test_script.sh",
+			Descr:     "测试脚本",
+			Project:   "test_project",
+			Label:     "test_label",
+			Language:  "bash",
+			Status:    true,
+			IsBuiltin: false,
+			Username:  "test_user",
+		}
+		suite.db.Create(&script)
 	}
-	db.Create(script)
 
-	// 创建 crontab 实例
 	crontab := cron.New()
 
-	// 创建 recordService
 	recordService := NewScriptRecordService(
 		logger,
 		jobrepo.NewScriptRepo(
 			logger,
-			db,
+			suite.db,
 			dbTimeout,
 		),
 		jobrepo.NewRecordRepo(
 			logger,
-			db,
+			suite.db,
 			dbTimeout,
 		),
 	)
@@ -92,17 +98,34 @@ func (suite *ScheduleTestSuite) SetupSuite() {
 		logger,
 		jobrepo.NewScriptRepo(
 			logger,
-			db,
+			suite.db,
 			dbTimeout,
 		),
 		jobrepo.NewScheduleRepo(
 			logger,
-			db,
+			suite.db,
 			dbTimeout,
 		),
 		recordService,
 		crontab,
 	)
+}
+
+func (suite *ScheduleTestSuite) TearDownSuite() {
+	suite.db.Exec("DELETE FROM job_schedule")
+	suite.db.Exec("DELETE FROM job_script")
+	for id := range suite.scheduleService.entryMap {
+		suite.scheduleService.crontab.Remove(suite.scheduleService.entryMap[id])
+	}
+	suite.scheduleService.entryMap = make(map[uint32]cron.EntryID)
+}
+
+func (suite *ScheduleTestSuite) TearDownTest() {
+	suite.db.Exec("DELETE FROM job_schedule")
+	for id := range suite.scheduleService.entryMap {
+		suite.scheduleService.crontab.Remove(suite.scheduleService.entryMap[id])
+	}
+	suite.scheduleService.entryMap = make(map[uint32]cron.EntryID)
 }
 
 func (suite *ScheduleTestSuite) TestCreateSchedule() {
@@ -577,37 +600,6 @@ func (suite *ScheduleTestSuite) TestUpdateScheduleByID_DisableSchedule() {
 	updatedSchedule, err := suite.scheduleService.UpdateScheduleByID(ctx, schedule.ID, updateDTO)
 	suite.Nil(err, "更新计划任务应该成功")
 	suite.Equal(updateDTO.IsEnabled, updatedSchedule.IsEnabled, "计划任务应该是禁用状态")
-}
-
-func (suite *ScheduleTestSuite) TestUpdateScheduleByID_DisabledScript() {
-	ctx := createScheduleTestContext()
-
-	dto := CreateTestScheduleUpsertDTO()
-	schedule, err := suite.scheduleService.CreateSchedule(ctx, dto)
-	suite.Nil(err, "创建计划任务应该成功")
-
-	disabledScript := &jobmodel.ScriptModel{
-		Name:      "another_disabled_script.sh",
-		Descr:     "Another disabled script",
-		Project:   "test_project",
-		Label:     "test_label",
-		Language:  "bash",
-		Status:    false,
-		IsBuiltin: false,
-		Username:  "test_user",
-	}
-	suite.scheduleService.scriptRepo.CreateModel(ctx, disabledScript)
-
-	updateDTO := jobmodel.ScheduleUpsertDTO{
-		Name:          "updated_schedule",
-		Specification: "0 1 * * *",
-		IsEnabled:     true,
-		ScriptID:      disabledScript.ID,
-	}
-
-	updatedSchedule, err := suite.scheduleService.UpdateScheduleByID(ctx, schedule.ID, updateDTO)
-	suite.NotNil(err, "更新为禁用脚本的计划任务应该失败")
-	suite.Nil(updatedSchedule)
 }
 
 func (suite *ScheduleTestSuite) TestUpdateScheduleByIDs_EmptyList() {

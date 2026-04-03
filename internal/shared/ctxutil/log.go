@@ -7,9 +7,9 @@ import (
 )
 
 // NewLogger 为日志实例附加上下文信息（traceID + 用户ID）
-// 核心优化：增加错误日志、空值防护、提升可维护性
+// 核心优化:增加错误日志、空值防护、提升可维护性
 func NewLogger(log *zap.Logger, ctx context.Context) *zap.Logger {
-	// 基础字段：必加 traceID（无论是否有用户信息）
+	// 基础字段:必加 traceID（无论是否有用户信息）
 	fields := []zap.Field{
 		zap.String("trace_id", GetTraceID(ctx)),
 	}
