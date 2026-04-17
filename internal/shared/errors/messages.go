@@ -2,18 +2,18 @@ package errors
 
 // 默认错误消息映射
 var defaultErrorMessages = map[ErrorReason]string{
-	// 通用错误
+	// #nosec G101 -- 通用错误
 	ReasonUnknown:           "未知错误",
 	ReasonValidationFailed:  "参数验证错误",
 	ReasonRequestTimeout:    "请求超时",
 	ReasonRateLimitExceeded: "请求过于频繁，超出请求频率限制",
 
-	// 上下文相关
+	// #nosec G101 -- 上下文相关
 	ReasonNoContext:        "上下文为空",
 	ReasonCanceled:         "请求取消",
 	ReasonDeadlineExceeded: "请求超时",
 
-	// 安全认证
+	// #nosec G101 -- 安全认证
 	ReasonHostHeaderInvalid:      "Host头无效",
 	ReasonNonceNotFound:          "请求头缺少随机数",
 	ReasonReplayAttack:           "检测为重放攻击",
@@ -22,7 +22,7 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonTimestampExpired:       "时间戳已过期",
 	ReasonPasswordStrengthFailed: "密码强度不足",
 
-	// 身份权限认证
+	// #nosec G101 -- 身份权限认证
 	ReasonUnauthorized:      "未授权操作",
 	ReasonTokenExpired:      "登录已过期，请重新登录",
 	ReasonTokenInvalid:      "无效的登录凭证",
@@ -32,7 +32,7 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonAccountLocked:     "账号已被锁定",
 	ReasonForbidden:         "禁止访问",
 
-	// 数据库服务
+	// #nosec G101 -- 数据库服务
 	ReasonRecordNotFound:                "记录未找到",
 	ReasonInvalidTransaction:            "事务处理错误",
 	ReasonNotImplemented:                "功能未实现",
@@ -56,27 +56,27 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonForeignKeyViolated:            "外键约束冲突",
 	ReasonCheckConstraintViolated:       "检查约束冲突",
 
-	// 上传下载文件
+	// #nosec G101 -- 上传下载文件
 	ReasonDownloadFileNotFound:         "下载的文件未找到",
 	ReasonDownloadFilePermissionDenied: "下载文件权限被拒绝",
 	ReasonDownloadFileFailed:           "下载文件失败",
 
-	// ssh服务
+	// #nosec G101 -- ssh服务
 	ReasonSSHConnectionFailed: "ssh连接失败",
 	ReasonSSHKeyDeployFailed:  "ssh密钥部署失败",
 
-	// 压缩解压文件
+	// #nosec G101 -- 压缩解压文件
 	ReasonUnZIPFailed:       "解压文件失败",
 	ReasonZIPFailed:         "压缩文件失败",
 	ReasonZIPFileNotFound:   "压缩文件未找到",
 	ReasonZIPFileIsEmpty:    "压缩文件为空",
 	ReasonZIPFileIsNotValid: "压缩文件无效",
 
-	// 缓存文件
+	// #nosec G101 -- 缓存文件
 	ReasonExportCacheFileFailed: "缓存文件导出失败",
 	ReasonDeleteCacheFileFailed: "缓存文件删除失败",
 
-	// 脚本相关
+	// #nosec G101 -- 脚本相关
 	ReasonScriptNotFound:     "脚本未找到",
 	ReasonScriptIsBuiltin:    "脚本为内置脚本",
 	ReasonScriptIsDisabled:   "脚本已禁用",
@@ -84,11 +84,11 @@ var defaultErrorMessages = map[ErrorReason]string{
 	ReasonScriptSaveFailed:   "脚本保存失败",
 	ReasonScriptRemoveFailed: "脚本删除失败",
 
-	// 程序包相关
+	// #nosec G101 -- 程序包相关
 	ReasonPackageNotFound:     "程序包未找到",
 	ReasonPackageSaveFailed:   "程序包保存失败",
 	ReasonPackageRemoveFailed: "程序包删除失败",
 
-	// 计划任务相关
+	// #nosec G101 -- 计划任务相关
 	ReasonCronSpecificationInvalid: "计划任务表达式格式错误",
 }

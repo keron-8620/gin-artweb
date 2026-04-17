@@ -28,9 +28,9 @@ type UserInfo struct {
 }
 
 func (u *UserInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("user_id", u.UserID)
+	enc.AddUint32("uid", u.UserID)
 	enc.AddString("username", u.Username)
-	enc.AddUint32("role_id", u.RoleID)
+	enc.AddUint32("rid", u.RoleID)
 	enc.AddBool("is_staff", u.IsStaff)
 	return nil
 }

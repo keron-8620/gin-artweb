@@ -15,12 +15,16 @@ import (
 )
 
 // CreateTestLoginRecordModel 创建测试用的登录记录模型
-func CreateTestLoginRecordModel(ip string) *sysmodel.LoginRecordModel {
+func CreateTestLoginRecordModel(ip string, status ...bool) *sysmodel.LoginRecordModel {
+	isSuccess := true
+	if len(status) > 0 {
+		isSuccess = status[0]
+	}
 	return &sysmodel.LoginRecordModel{
 		Username:  "test_user",
 		IPAddress: ip,
 		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-		Status:    true,
+		Status:    isSuccess,
 	}
 }
 
@@ -31,16 +35,20 @@ type RecordTestSuite struct {
 
 func (suite *RecordTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.LoginRecordModel{})
+	if err := db.AutoMigrate(&sysmodel.LoginRecordModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 	suite.recordRepo = &LoginRecordRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		cache:    cache.New(5*time.Minute, 10*time.Minute),
-		maxNum:   5,
-		ttl:      5 * time.Minute,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
+		cache:         cache.New(5*time.Minute, 10*time.Minute),
+		maxNum:        5,
+		ttl:           5 * time.Minute,
 	}
 }
 
@@ -60,18 +68,9 @@ func (suite *RecordTestSuite) TestCreateModelWithNil() {
 	suite.Error(err, "创建登录记录时传入nil应该返回错误")
 }
 
-func (suite *RecordTestSuite) TestCreateModelWithCanceledContext() {
-	// 测试异常场景:上下文已取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	sm := CreateTestLoginRecordModel("192.168.1.1")
-	err := suite.recordRepo.CreateModel(ctx, sm)
-	suite.Error(err, "上下文已取消时创建登录记录应该返回错误")
-}
-
-func (suite *RecordTestSuite) TestListModel() {
+func (suite *RecordTestSuite) TestListAndCountModel() {
 	// 清理可能存在的数据并创建测试数据
+	testIP := "192.168.1.100"
 	for i := range 10 {
 		// 使用不同的ID范围，避免与其他测试冲突
 		sm := CreateTestLoginRecordModel(fmt.Sprintf("192.168.1.%d", i+1))
@@ -121,60 +120,60 @@ func (suite *RecordTestSuite) TestListModel() {
 			prevID = record.ID
 		}
 	}
+
+	// 测试带过滤条件的查询
+	sm := CreateTestLoginRecordModel(testIP)
+	err = suite.recordRepo.CreateModel(context.Background(), sm)
+	suite.NoError(err, "创建登录记录应该成功")
+
+	qpFiltered := database.QueryParams{
+		Query: map[string]any{
+			"ip_address": testIP,
+		},
+	}
+	fMs, err := suite.recordRepo.ListModel(context.Background(), qpFiltered)
+	suite.NoError(err, "按IP过滤查询应该成功")
+	suite.NotNil(fMs, "登录记录列表不应该为nil")
+	for _, record := range fMs {
+		suite.Equal(testIP, record.IPAddress, "登录记录应该按IP过滤")
+	}
+
+	// 测试带过滤条件的CountModel
+	filterIP := "192.168.1.1"
+	count, err = suite.recordRepo.CountModel(context.Background(), map[string]any{"ip_address": filterIP})
+	suite.NoError(err, "带过滤条件的登录记录总数查询应该成功")
+	suite.GreaterOrEqual(count, int64(1), "带过滤条件的登录记录总数应该至少为1")
+
+	count, err = suite.recordRepo.CountModel(context.Background(), map[string]any{"ip_address": "192.168.1.999"})
+	suite.NoError(err, "带不存在的过滤条件的登录记录总数查询应该成功")
+	suite.Equal(int64(0), count, "带不存在的过滤条件的登录记录总数应该为0")
 }
 
-func (suite *RecordTestSuite) TestGetLoginFailNum() {
+func (suite *RecordTestSuite) TestLoginFailNum() {
 	// 测试正常场景:获取不存在IP的登录失败次数，应该返回maxNum
 	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), "192.168.1.100")
-	suite.NoError(err, "获取登录失败次数应该成功")
-	suite.Equal(5, num, "获取不存在IP的登录失败次数应该返回maxNum")
-}
+	suite.NoError(err, "获取不存在IP的登录失败次数应该成功")
+	suite.Equal(suite.recordRepo.maxNum, num, "获取不存在IP的登录失败次数应该返回maxNum")
 
-func (suite *RecordTestSuite) TestGetLoginFailNumWithEmptyIP() {
 	// 测试异常场景:传入空IP地址
-	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), "")
+	num, err = suite.recordRepo.GetLoginFailNum(context.Background(), "")
 	suite.Error(err, "获取登录失败次数时传入空IP应该返回错误")
 	suite.Equal(0, num, "传入空IP时应该返回0")
-}
 
-func (suite *RecordTestSuite) TestSetLoginFailNum() {
 	// 测试正常场景:设置登录失败次数
 	ip := "192.168.1.100"
 	failNum := 3
-	err := suite.recordRepo.SetLoginFailNum(context.Background(), ip, failNum)
+	err = suite.recordRepo.SetLoginFailNum(context.Background(), ip, failNum)
 	suite.NoError(err, "设置登录失败次数应该成功")
 
 	// 验证设置是否成功
-	num, err := suite.recordRepo.GetLoginFailNum(context.Background(), ip)
+	num, err = suite.recordRepo.GetLoginFailNum(context.Background(), ip)
 	suite.NoError(err, "获取登录失败次数应该成功")
 	suite.Equal(failNum, num, "获取的登录失败次数应该等于设置的值")
-}
 
-func (suite *RecordTestSuite) TestSetLoginFailNumWithEmptyIP() {
-	// 测试异常场景:传入空IP地址
-	err := suite.recordRepo.SetLoginFailNum(context.Background(), "", 3)
+	// 测试异常场景:设置时传入空IP地址
+	err = suite.recordRepo.SetLoginFailNum(context.Background(), "", 3)
 	suite.Error(err, "设置登录失败次数时传入空IP应该返回错误")
-}
-
-func (suite *RecordTestSuite) TestGetLoginFailNumWithCanceledContext() {
-	// 测试异常场景:上下文被取消
-	testCtx := context.Background()
-	ctx, cancel := context.WithCancel(testCtx)
-	cancel()
-
-	num, err := suite.recordRepo.GetLoginFailNum(ctx, "192.168.1.100")
-	suite.Error(err, "获取登录失败次数时上下文被取消应该返回错误")
-	suite.Equal(0, num, "上下文被取消时应该返回0")
-}
-
-func (suite *RecordTestSuite) TestSetLoginFailNumWithCanceledContext() {
-	// 测试异常场景:上下文被取消
-	testCtx := context.Background()
-	ctx, cancel := context.WithCancel(testCtx)
-	cancel()
-
-	err := suite.recordRepo.SetLoginFailNum(ctx, "192.168.1.100", 3)
-	suite.Error(err, "设置登录失败次数时上下文被取消应该返回错误")
 }
 
 func (suite *RecordTestSuite) TestCacheExpiration() {
@@ -208,63 +207,35 @@ func (suite *RecordTestSuite) TestCacheExpiration() {
 	suite.Equal(tempRepo.maxNum, num, "缓存过期后应该返回maxNum")
 }
 
-func (suite *RecordTestSuite) TestCountModel() {
-	for i := range 5 {
-		sm := CreateTestLoginRecordModel(fmt.Sprintf("192.168.1.%d", i+1))
-		err := suite.recordRepo.CreateModel(context.Background(), sm)
-		suite.NoError(err, "创建登录记录应该成功")
-	}
-
-	count, err := suite.recordRepo.CountModel(context.Background(), nil)
-	suite.NoError(err, "获取登录记录总数应该成功")
-	suite.GreaterOrEqual(count, int64(5), "登录记录总数应该至少有5条")
-
-	filterIP := "192.168.1.1"
-	count, err = suite.recordRepo.CountModel(context.Background(), map[string]any{"ip_address": filterIP})
-	suite.NoError(err, "带过滤条件的登录记录总数查询应该成功")
-	suite.GreaterOrEqual(count, int64(1), "带过滤条件的登录记录总数应该至少为1")
-
-	count, err = suite.recordRepo.CountModel(context.Background(), map[string]any{"ip_address": "192.168.1.999"})
-	suite.NoError(err, "带不存在的过滤条件的登录记录总数查询应该成功")
-	suite.Equal(int64(0), count, "带不存在的过滤条件的登录记录总数应该为0")
-}
-
-func (suite *RecordTestSuite) TestListModelWithFiltering() {
-	testIP := "192.168.1.100"
-	sm := CreateTestLoginRecordModel(testIP)
-	err := suite.recordRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建登录记录应该成功")
-
-	qp := database.QueryParams{
-		Query: map[string]any{
-			"ip_address": testIP,
-		},
-	}
-	ms, err := suite.recordRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "按IP过滤查询应该成功")
-	suite.NotNil(ms, "登录记录列表不应该为nil")
-	for _, record := range ms {
-		suite.Equal(testIP, record.IPAddress, "登录记录应该按IP过滤")
-	}
-}
-
-func (suite *RecordTestSuite) TestListModelWithCanceledContext() {
+func (suite *RecordTestSuite) TestWithCanceledContext() {
+	// 测试上下文取消场景
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
+	// 测试CreateModel
+	sm := CreateTestLoginRecordModel("192.168.1.1")
+	err := suite.recordRepo.CreateModel(ctx, sm)
+	suite.Error(err, "上下文已取消时创建登录记录应该返回错误")
+
+	// 测试GetLoginFailNum
+	num, err := suite.recordRepo.GetLoginFailNum(ctx, "192.168.1.100")
+	suite.Error(err, "获取登录失败次数时上下文被取消应该返回错误")
+	suite.Equal(0, num, "上下文被取消时应该返回0")
+
+	// 测试SetLoginFailNum
+	err = suite.recordRepo.SetLoginFailNum(ctx, "192.168.1.100", 3)
+	suite.Error(err, "设置登录失败次数时上下文被取消应该返回错误")
+
+	// 测试ListModel
 	qp := database.QueryParams{
 		Limit:  10,
 		Offset: 0,
 	}
-	_, err := suite.recordRepo.ListModel(ctx, qp)
+	_, err = suite.recordRepo.ListModel(ctx, qp)
 	suite.Error(err, "上下文已取消时列出登录记录应该返回错误")
-}
 
-func (suite *RecordTestSuite) TestCountModelWithCanceledContext() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	_, err := suite.recordRepo.CountModel(ctx, nil)
+	// 测试CountModel
+	_, err = suite.recordRepo.CountModel(ctx, nil)
 	suite.Error(err, "上下文已取消时获取登录记录总数应该返回错误")
 }
 
@@ -272,4 +243,38 @@ func (suite *RecordTestSuite) TestCountModelWithCanceledContext() {
 func TestRecordTestSuite(t *testing.T) {
 	pts := &RecordTestSuite{}
 	suite.Run(t, pts)
+}
+
+// TestNewLoginRecordRepo 测试创建登录记录仓库实例
+func TestNewLoginRecordRepo(t *testing.T) {
+	db := test.NewTestGormDBWithConfig(nil)
+	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
+	logger := test.NewTestZapLogger()
+	lockTime := 5 * time.Minute
+	clearTime := 10 * time.Minute
+	maxNum := 5
+
+	repo := NewLoginRecordRepo(logger, db, dbTimeout, slowThreshold, lockTime, clearTime, maxNum)
+	if repo == nil {
+		t.Fatal("NewLoginRecordRepo should return a non-nil repository")
+	}
+	if repo.log == nil {
+		t.Fatal("Repo log should not be nil")
+	}
+	if repo.gormDB == nil {
+		t.Fatal("Repo gormDB should not be nil")
+	}
+	if repo.timeouts == nil {
+		t.Fatal("Repo timeouts should not be nil")
+	}
+	if repo.slowThreshold == nil {
+		t.Fatal("Repo slowThreshold should not be nil")
+	}
+	if repo.cache == nil {
+		t.Fatal("Repo cache should not be nil")
+	}
+	if repo.maxNum != maxNum {
+		t.Fatal("Repo maxNum should be set correctly")
+	}
 }

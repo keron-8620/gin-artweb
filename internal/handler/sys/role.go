@@ -46,44 +46,27 @@ func NewRoleHandler(
 func (h *RoleHandler) CreateRole(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req sysmodel.RoleUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"新增角色:绑定新增角色请求参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "新增角色:绑定新增角色请求参数失败") {
 		return
 	}
 
-	log.Info("创建角色:开始执行")
-
-	log.Debug(
-		"创建角色:入参详情",
-		zap.Object("role_upsert_dto", &req),
-	)
-
-	createStepStart := time.Now()
 	m, err := h.roleSvc.CreateRole(ctx, req)
-	createStepDuration := time.Since(createStepStart)
 	if err != nil {
 		log.Error(
 			"创建角色:执行失败",
 			zap.Error(err),
 			zap.Object("role_upsert_dto", &req),
-			zap.Duration("create_step_duration", createStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	log.Debug(
-		"创建角色:创建的角色模型详情",
-		zap.Object("role_model", m),
-		zap.Duration("create_step_duration", createStepDuration),
-	)
 
 	log.Info(
 		"创建角色:执行成功",
 		zap.Uint32("role_id", m.ID),
-		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -109,55 +92,33 @@ func (h *RoleHandler) CreateRole(ctx *gin.Context) {
 func (h *RoleHandler) UpdateRole(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"更新角色:绑定角色ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "更新角色:绑定角色ID参数失败") {
 		return
 	}
+
 	var req sysmodel.RoleUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"更新角色:绑定更新角色请求参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "更新角色:绑定更新角色请求参数失败") {
 		return
 	}
 
-	log.Info(
-		"更新角色:开始执行",
-		zap.Uint32("role_id", uri.ID),
-	)
-
-	log.Debug(
-		"更新角色:入参详情",
-		zap.Uint32("role_id", uri.ID),
-		zap.Object("role_upsert_dto", &req),
-	)
-
-	updateStepStart := time.Now()
 	m, err := h.roleSvc.UpdateRoleByID(ctx, uri.ID, req)
-	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
 			"更新角色:执行失败",
 			zap.Error(err),
 			zap.Uint32("role_id", uri.ID),
 			zap.Object("role_upsert_dto", &req),
-			zap.Duration("update_step_duration", updateStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	log.Debug(
-		"更新角色:更新后的角色模型详情",
-		zap.Object("role_model", m),
-		zap.Duration("update_step_duration", updateStepDuration),
-	)
 
 	log.Info(
 		"更新角色:执行成功",
 		zap.Uint32("role_id", uri.ID),
-		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -182,41 +143,26 @@ func (h *RoleHandler) UpdateRole(ctx *gin.Context) {
 func (h *RoleHandler) DeleteRole(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"删除角色:绑定角色ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "删除角色:绑定角色ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"删除角色:开始执行",
-		zap.Uint32("role_id", uri.ID),
-	)
-
-	deleteStepStart := time.Now()
 	if err := h.roleSvc.DeleteRoleByID(ctx, uri.ID); err != nil {
 		log.Error(
 			"删除角色:执行失败",
 			zap.Error(err),
 			zap.Uint32("role_id", uri.ID),
-			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	deleteStepDuration := time.Since(deleteStepStart)
-	log.Debug(
-		"删除角色:删除角色成功",
-		zap.Uint32("role_id", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
-	)
 
 	log.Info(
 		"删除角色:执行成功",
 		zap.Uint32("role_id", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -238,43 +184,27 @@ func (h *RoleHandler) DeleteRole(ctx *gin.Context) {
 func (h *RoleHandler) GetRole(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"查询角色:绑定角色ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "查询角色:绑定角色ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询角色:开始执行",
-		zap.Uint32("role_id", uri.ID),
-	)
-
-	findStepStart := time.Now()
 	m, err := h.roleSvc.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, uri.ID)
-	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
 			"查询角色:执行失败",
 			zap.Error(err),
 			zap.Uint32("role_id", uri.ID),
-			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	log.Debug(
-		"查询角色:查询到的角色详情",
-		zap.Object("role_model", m),
-		zap.Duration("find_step_duration", findStepDuration),
-	)
-
 	log.Info(
 		"查询角色:执行成功",
 		zap.Uint32("role_id", uri.ID),
-		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -298,24 +228,14 @@ func (h *RoleHandler) GetRole(ctx *gin.Context) {
 func (h *RoleHandler) ListRole(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req sysmodel.ListRoleDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询角色列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询角色列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询角色列表:开始执行")
-
-	log.Debug(
-		"查询角色列表:入参详情",
-		zap.Object("list_role_dto", &req),
-	)
-
-	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, err := h.roleSvc.ListRole(ctx, page, size, req)
-	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
 			"查询角色列表:执行失败",
@@ -323,18 +243,17 @@ func (h *RoleHandler) ListRole(ctx *gin.Context) {
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_role_dto", &req),
-			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+
 	log.Info(
 		"查询角色列表:执行成功",
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
-		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -360,17 +279,12 @@ func (h *RoleHandler) GetRoleMenuTree(ctx *gin.Context) {
 	log := ctxutil.NewLogger(h.log, ctx)
 	claims := ctxutil.MustGetJwtClaims(ctx)
 
-	log.Info("查询个人角色菜单树:开始执行")
-
-	treeStepStart := time.Now()
 	menuTrees, err := h.roleSvc.GetRoleMenuTree(ctx, claims.RoleID)
-	treeStepDuration := time.Since(treeStepStart)
 	if err != nil {
 		log.Error(
 			"查询个人角色菜单树:执行失败",
 			zap.Error(err),
 			zap.Uint32("role_id", claims.RoleID),
-			zap.Duration("tree_step_duration", treeStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
@@ -380,7 +294,6 @@ func (h *RoleHandler) GetRoleMenuTree(ctx *gin.Context) {
 	log.Info(
 		"查询个人角色菜单树:执行成功",
 		zap.Uint32("role_id", claims.RoleID),
-		zap.Duration("tree_step_duration", treeStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 

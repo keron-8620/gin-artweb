@@ -45,19 +45,11 @@ func NewScheduleHandler(
 func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req jobmodel.ScheduleUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"创建计划任务:绑定请求参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "创建计划任务:绑定请求参数失败") {
 		return
 	}
-
-	log.Info("创建计划任务:开始执行")
-
-	log.Debug(
-		"创建计划任务:入参详情",
-		zap.Object("schedule_upsert_dto", &req),
-	)
 
 	if ok, err := crontab.ValidateCronExpression(req.Specification, false); !ok || err != nil {
 		log.Error(
@@ -69,30 +61,21 @@ func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 		return
 	}
 
-	createStepStart := time.Now()
 	m, rErr := h.scheduleSvc.CreateSchedule(ctx, req)
-	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
 			"创建计划任务:执行失败",
 			zap.Error(rErr),
 			zap.Object("schedule_upsert_dto", &req),
-			zap.Duration("create_step_duration", createStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	log.Debug(
-		"创建计划任务:创建的计划任务模型详情",
-		zap.Object("schedule_model", m),
-		zap.Duration("create_step_duration", createStepDuration),
-	)
 
 	log.Info(
 		"创建计划任务:执行成功",
 		zap.Uint32("schedule_id", m.ID),
-		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -118,30 +101,16 @@ func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"更新计划任务:绑定更新计划任务ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "更新计划任务:绑定更新计划任务ID参数失败") {
 		return
 	}
 
 	var req jobmodel.ScheduleUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"更新计划任务:绑定更新计划任务请求参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "更新计划任务:绑定更新计划任务请求参数失败") {
 		return
 	}
-
-	log.Info(
-		"更新计划任务:开始执行",
-		zap.Uint32("schedule_id", uri.ID),
-	)
-
-	log.Debug(
-		"更新计划任务:入参详情",
-		zap.Uint32("schedule_id", uri.ID),
-		zap.Object("schedule_upsert_dto", &req),
-	)
 
 	if ok, err := crontab.ValidateCronExpression(req.Specification, false); !ok || err != nil {
 		log.Error(
@@ -153,32 +122,22 @@ func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 		return
 	}
 
-	updateStepStart := time.Now()
 	m, err := h.scheduleSvc.UpdateScheduleByID(ctx, uri.ID, req)
-	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
 			"更新计划任务:执行失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", uri.ID),
 			zap.Object("schedule_upsert_dto", &req),
-			zap.Duration("update_step_duration", updateStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
 
-	log.Debug(
-		"更新计划任务:更新后的计划任务模型详情",
-		zap.Object("schedule_model", m),
-		zap.Duration("update_step_duration", updateStepDuration),
-	)
-
 	log.Info(
 		"更新计划任务:执行成功",
 		zap.Uint32("schedule_id", uri.ID),
-		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -203,27 +162,18 @@ func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"删除计划任务:绑定删除计划任务ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "删除计划任务:绑定删除计划任务ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"删除计划任务:开始执行",
-		zap.Uint32("schedule_id", uri.ID),
-	)
-
-	deleteStepStart := time.Now()
 	err := h.scheduleSvc.DeleteScheduleByID(ctx, uri.ID)
-	deleteStepDuration := time.Since(deleteStepStart)
 	if err != nil {
 		log.Error(
 			"删除计划任务:执行失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", uri.ID),
-			zap.Duration("delete_step_duration", deleteStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
@@ -233,7 +183,6 @@ func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
 	log.Info(
 		"删除计划任务:删除计划任务成功",
 		zap.Uint32("schedule_id", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -255,42 +204,27 @@ func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
 func (h *ScheduleHandler) GetSchedule(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"查询计划任务:绑定计划任务ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "查询计划任务:绑定计划任务ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询计划任务:开始执行",
-		zap.Uint32("schedule_id", uri.ID),
-	)
-
-	findStepStart := time.Now()
 	m, err := h.scheduleSvc.FindScheduleByID(ctx, []string{"Script"}, uri.ID)
-	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
 			"查询计划任务:执行失败",
 			zap.Error(err),
 			zap.Uint32("schedule_id", uri.ID),
-			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	log.Debug(
-		"查询计划任务:查询到的计划任务模型详情",
-		zap.Object("schedule_model", m),
-		zap.Duration("find_step_duration", findStepDuration),
-	)
 
 	log.Info(
 		"查询计划任务:执行成功",
 		zap.Uint32("schedule_id", uri.ID),
-		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -315,24 +249,14 @@ func (h *ScheduleHandler) GetSchedule(ctx *gin.Context) {
 func (h *ScheduleHandler) ListSchedule(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req jobmodel.ListScheduleDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询计划任务列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询计划任务列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询计划任务列表:开始执行")
-
-	log.Debug(
-		"查询计划任务列表:参数详情",
-		zap.Object("list_schedule_dto", &req),
-	)
-
-	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, err := h.scheduleSvc.ListSchedule(ctx, page, size, req)
-	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
 			"查询计划任务列表:查询计划任务列表失败",
@@ -340,7 +264,6 @@ func (h *ScheduleHandler) ListSchedule(ctx *gin.Context) {
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_schedule_dto", &req),
-			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
@@ -352,7 +275,6 @@ func (h *ScheduleHandler) ListSchedule(ctx *gin.Context) {
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
-		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 

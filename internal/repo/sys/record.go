@@ -20,12 +20,13 @@ import (
 // 使用GORM进行数据库操作，使用cache进行登录失败次数的缓存
 
 type LoginRecordRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
-	cache    *cache.Cache      // 缓存，用于存储登录失败次数
-	maxNum   int               // 最大允许的登录失败次数
-	ttl      time.Duration     // 缓存过期时间
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
+	cache         *cache.Cache            // 缓存，用于存储登录失败次数
+	maxNum        int                     // 最大允许的登录失败次数
+	ttl           time.Duration           // 缓存过期时间
 }
 
 // NewLoginRecordRepo 创建登录记录仓库实例
@@ -46,17 +47,19 @@ func NewLoginRecordRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 	lockTime time.Duration,
 	clearTime time.Duration,
 	num int,
 ) *LoginRecordRepo {
 	return &LoginRecordRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
-		cache:    cache.New(lockTime, clearTime),
-		maxNum:   num,
-		ttl:      lockTime,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
+		cache:         cache.New(lockTime, clearTime),
+		maxNum:        num,
+		ttl:           lockTime,
 	}
 }
 
@@ -85,41 +88,45 @@ func (r *LoginRecordRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建登录记录模型:模型为空")
+		err := errors.New("创建登录记录模型:模型不能为空")
 		log.Error(
-			"创建登录记录模型:模型为空",
+			"创建登录记录模型:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	m.LoginAt = startTime
 
 	log.Debug(
 		"创建登录记录模型:开始执行",
 		zap.Object("login_record_model", m),
 	)
 
-	m.LoginAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createLoginRecordStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, m, nil)
-	createLoginRecordDuration := time.Since(createLoginRecordStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建登录记录模型:数据库创建失败",
 			zap.Object("login_record_model", m),
 			zap.Error(err),
-			zap.Duration("create_login_record_duration", createLoginRecordDuration),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建登录记录模型:数据库创建失败")
 	}
-	log.Debug(
-		"创建登录记录模型:执行成功",
-		zap.Object("login_record_model", m),
-		zap.Duration("create_login_record_duration", createLoginRecordDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建登录记录模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -149,32 +156,40 @@ func (r *LoginRecordRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询登录记录模型列表:开始执行",
+		"查询登录记录模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
 
 	var ms []sysmodel.LoginRecordModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	listLoginRecordStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, &ms, qp)
-	listLoginRecordDuration := time.Since(listLoginRecordStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询登录记录模型列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_login_record_duration", listLoginRecordDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询登录记录模型列表:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询登录记录模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_login_record_duration", listLoginRecordDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询登录记录模型列表:查询到的登录记录模型列表",
+		zap.Uint32s("login_record_ids", sysmodel.ListLoginRecordModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询登录记录模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -186,31 +201,38 @@ func (r *LoginRecordRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询登录记录模型总数:开始执行",
+		"查询登录记录模型总数:查询条件",
 		zap.Any("query", query),
 	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countLoginRecordStartTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, query)
-	countLoginRecordDuration := time.Since(countLoginRecordStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询登录记录模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_login_record_duration", countLoginRecordDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询登录记录模型总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询登录记录模型总数:执行成功",
-		zap.Any("query", query),
+		"查询登录记录模型总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_login_record_duration", countLoginRecordDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询登录记录模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }
 
@@ -251,7 +273,7 @@ func (r *LoginRecordRepo) GetLoginFailNum(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"获取登录失败次数:开始执行",
+		"获取登录失败次数:查询条件",
 		zap.String("ip", ip),
 	)
 

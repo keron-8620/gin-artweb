@@ -37,6 +37,18 @@ func (m *LoginRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListLoginRecordModelToUint32s(ms []LoginRecordModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 // ListLoginRecordDTO 用于获取用户登陆记录的请求结构体
 // 支持分页查询和多种筛选条件
 //

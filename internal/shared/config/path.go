@@ -7,14 +7,15 @@ import (
 	"runtime"
 )
 
-type PathConf struct {
-	BaseDir     string
-	ConfigDir   string
-	HtmlDir     string
-	LogsDir     string
-	StorageDir  string
-	ResourceDir string
-}
+// type PathConf struct {
+// 	BaseDir     string
+// 	ConfigDir   string
+// 	HtmlDir     string
+// 	LogsDir     string
+// 	StorageDir  string
+// 	ResourceDir string
+// 	TmpDir      string
+// }
 
 func getBaseDir() string {
 	exePath, err := os.Executable()
@@ -49,4 +50,5 @@ var (
 	LogDir      = filepath.Join(BaseDir, "logs")
 	ResourceDir = filepath.Join(BaseDir, "resource")
 	StorageDir  = filepath.Join(BaseDir, "storage")
+	TmpDir      = filepath.Join(BaseDir, ".temp")
 )

@@ -2,6 +2,7 @@ package job
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,8 +14,12 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestScheduleModel(scriptID uint32) *jobmodel.ScheduleModel {
-	return &jobmodel.ScheduleModel{
+// CreateTestScheduleModel 创建测试计划任务模型
+// 参数：
+// - scriptID: 脚本ID
+// - options: 可选配置，用于覆盖默认值
+func CreateTestScheduleModel(scriptID uint32, options ...func(*jobmodel.ScheduleModel)) *jobmodel.ScheduleModel {
+	model := &jobmodel.ScheduleModel{
 		Name:          uuid.NewString(),
 		Specification: "30 6 * * 1-5",
 		IsEnabled:     true,
@@ -27,65 +32,148 @@ func CreateTestScheduleModel(scriptID uint32) *jobmodel.ScheduleModel {
 		MaxRetries:    3,
 		ScriptID:      scriptID,
 	}
+
+	// 应用可选配置
+	for _, option := range options {
+		option(model)
+	}
+
+	return model
+}
+
+// WithScheduleName 设置计划任务名称
+func WithScheduleName(name string) func(*jobmodel.ScheduleModel) {
+	return func(model *jobmodel.ScheduleModel) {
+		model.Name = name
+	}
+}
+
+// WithScheduleEnabled 设置计划任务启用状态
+func WithScheduleEnabled(enabled bool) func(*jobmodel.ScheduleModel) {
+	return func(model *jobmodel.ScheduleModel) {
+		model.IsEnabled = enabled
+	}
+}
+
+// WithScheduleTimeout 设置计划任务超时时间
+func WithScheduleTimeout(timeout int) func(*jobmodel.ScheduleModel) {
+	return func(model *jobmodel.ScheduleModel) {
+		model.Timeout = timeout
+	}
+}
+
+// WithScheduleRetry 设置计划任务重试配置
+func WithScheduleRetry(isRetry bool, interval, maxRetries int) func(*jobmodel.ScheduleModel) {
+	return func(model *jobmodel.ScheduleModel) {
+		model.IsRetry = isRetry
+		model.RetryInterval = interval
+		model.MaxRetries = maxRetries
+	}
+}
+
+// WithScheduleSpec 设置计划任务调度表达式
+func WithScheduleSpec(spec string) func(*jobmodel.ScheduleModel) {
+	return func(model *jobmodel.ScheduleModel) {
+		model.Specification = spec
+	}
 }
 
 type ScheduleTestSuite struct {
 	suite.Suite
 	scriptRepo   *ScriptRepo
 	scheduleRepo *ScheduleRepo
+	testScriptID uint32
 }
 
 func (suite *ScheduleTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&jobmodel.ScriptModel{},
 		&jobmodel.ScheduleModel{},
-	)
+	); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 	suite.scriptRepo = &ScriptRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: dbSlowThreshold,
 	}
 	suite.scheduleRepo = &ScheduleRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: dbSlowThreshold,
 	}
-}
 
-// CreateModel 创建计划任务模型测试
-func (suite *ScheduleTestSuite) TestCreateModel() {
-	// 创建测试脚本
+	// 创建测试脚本用于所有测试
 	scriptModel := CreateTestScriptModel(false)
 	err := suite.scriptRepo.CreateModel(context.Background(), scriptModel)
 	suite.NoError(err)
 	suite.NotZero(scriptModel.ID)
+	suite.testScriptID = scriptModel.ID
+}
 
-	// 测试创建计划任务模型
-	scheduleModel := CreateTestScheduleModel(scriptModel.ID)
-	err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
+// createTestSchedule 创建测试计划任务并返回ID
+func (suite *ScheduleTestSuite) createTestSchedule(options ...func(*jobmodel.ScheduleModel)) uint32 {
+	scheduleModel := CreateTestScheduleModel(suite.testScriptID, options...)
+	err := suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
 	suite.NoError(err)
 	suite.NotZero(scheduleModel.ID)
+	return scheduleModel.ID
+}
+
+// getScheduleByID 根据ID获取计划任务
+func (suite *ScheduleTestSuite) getScheduleByID(scheduleID uint32) *jobmodel.ScheduleModel {
+	model, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
+	suite.NoError(err, "获取计划任务失败，ID: %d", scheduleID)
+	suite.NotNil(model, "计划任务不存在，ID: %d", scheduleID)
+	return model
+}
+
+// assertScheduleDeleted 断言计划任务已被删除
+func (suite *ScheduleTestSuite) assertScheduleDeleted(scheduleID uint32) {
+	model, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
+	suite.Error(err, "计划任务应该已被删除，ID: %d", scheduleID)
+	suite.Nil(model, "计划任务不应该存在，ID: %d", scheduleID)
+}
+
+// testContextTimeout 测试上下文超时场景
+func (suite *ScheduleTestSuite) testContextTimeout(action func(ctx context.Context) error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
+	err := action(ctx)
+	suite.Error(err, "操作应该在上下文超时时失败")
+}
+
+// TestCreateModel 创建计划任务模型测试
+func (suite *ScheduleTestSuite) TestCreateModel() {
+	// 测试创建计划任务模型
+	scheduleModel := CreateTestScheduleModel(suite.testScriptID)
+	err := suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
+	suite.NoError(err, "创建计划任务失败")
+	suite.NotZero(scheduleModel.ID, "计划任务ID应该不为零")
 
 	// 测试创建计划任务模型失败: 模型为空
 	err = suite.scheduleRepo.CreateModel(context.Background(), nil)
-	suite.Error(err)
+	suite.Error(err, "创建计划任务时模型为空应该失败")
 
 	// 测试创建计划任务模型失败: 上下文超时
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-	scheduleModel2 := CreateTestScheduleModel(scriptModel.ID)
-	err = suite.scheduleRepo.CreateModel(ctx, scheduleModel2)
-	suite.Error(err)
+	suite.testContextTimeout(func(ctx context.Context) error {
+		scheduleModel2 := CreateTestScheduleModel(suite.testScriptID)
+		return suite.scheduleRepo.CreateModel(ctx, scheduleModel2)
+	})
 
 	// 测试边界情况: 创建多个计划任务使用同一个脚本
 	for i := range 3 {
-		scheduleModel := CreateTestScheduleModel(scriptModel.ID)
-		scheduleModel.Name = "multi_schedule_" + string(rune('a'+i))
+		scheduleModel := CreateTestScheduleModel(
+			suite.testScriptID,
+			WithScheduleName(fmt.Sprintf("multi_schedule_%c", 'a'+i)),
+		)
 		err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
 		suite.NoError(err)
 		suite.NotZero(scheduleModel.ID)
@@ -97,68 +185,57 @@ func (suite *ScheduleTestSuite) TestCreateModel() {
 		Specification: "* * * * *",
 		IsEnabled:     false,
 		EnvVars:       "{}",
-		ScriptID:      scriptModel.ID,
+		ScriptID:      suite.testScriptID,
 	}
 	err = suite.scheduleRepo.CreateModel(context.Background(), minimalSchedule)
 	suite.NoError(err)
 	suite.NotZero(minimalSchedule.ID)
 
 	// 测试边界情况: 最大超时值
-	maxTimeoutSchedule := CreateTestScheduleModel(scriptModel.ID)
-	maxTimeoutSchedule.Name = "max_timeout"
-	maxTimeoutSchedule.Timeout = 86400 // 24小时
+	maxTimeoutSchedule := CreateTestScheduleModel(
+		suite.testScriptID,
+		WithScheduleName("max_timeout"),
+		WithScheduleTimeout(86400), // 24小时
+	)
 	err = suite.scheduleRepo.CreateModel(context.Background(), maxTimeoutSchedule)
 	suite.NoError(err)
 	suite.NotZero(maxTimeoutSchedule.ID)
 }
 
-// UpdateModel 更新计划任务模型测试
+// TestUpdateModel 更新计划任务模型测试
 func (suite *ScheduleTestSuite) TestUpdateModel() {
-	// 创建测试脚本
-	scriptModel := CreateTestScriptModel(false)
-	err := suite.scriptRepo.CreateModel(context.Background(), scriptModel)
-	suite.NoError(err)
-	suite.NotZero(scriptModel.ID)
-
 	// 创建测试计划任务
-	scheduleModel := CreateTestScheduleModel(scriptModel.ID)
-	err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
-	suite.NoError(err)
-	suite.NotZero(scheduleModel.ID)
+	scheduleID := suite.createTestSchedule()
 
 	// 测试更新计划任务模型
 	updateData := map[string]any{
 		"name":       "updated_schedule",
 		"is_enabled": false,
 	}
-	err = suite.scheduleRepo.UpdateModel(context.Background(), updateData, "id = ?", scheduleModel.ID)
-	suite.NoError(err)
+	err := suite.scheduleRepo.UpdateModel(context.Background(), updateData, "id = ?", scheduleID)
+	suite.NoError(err, "更新计划任务失败，ID: %d", scheduleID)
 
 	// 验证更新结果
-	updatedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
-	suite.NoError(err)
-	suite.Equal("updated_schedule", updatedModel.Name)
-	suite.Equal(false, updatedModel.IsEnabled)
+	updatedModel := suite.getScheduleByID(scheduleID)
+	suite.Equal("updated_schedule", updatedModel.Name, "计划任务名称应该更新为 'updated_schedule'")
+	suite.Equal(false, updatedModel.IsEnabled, "计划任务应该被禁用")
 
 	// 测试更新计划任务模型失败: 更新数据为空
-	err = suite.scheduleRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", scheduleModel.ID)
-	suite.Error(err)
+	err = suite.scheduleRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", scheduleID)
+	suite.Error(err, "更新计划任务时数据为空应该失败")
 
 	// 测试更新计划任务模型失败: 上下文超时
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-	err = suite.scheduleRepo.UpdateModel(ctx, updateData, "id = ?", scheduleModel.ID)
-	suite.Error(err)
+	suite.testContextTimeout(func(ctx context.Context) error {
+		return suite.scheduleRepo.UpdateModel(ctx, updateData, "id = ?", scheduleID)
+	})
 
 	// 测试边界情况: 部分更新（只更新一个字段）
 	partialUpdate := map[string]any{
 		"name": "partial_update",
 	}
-	err = suite.scheduleRepo.UpdateModel(context.Background(), partialUpdate, "id = ?", scheduleModel.ID)
+	err = suite.scheduleRepo.UpdateModel(context.Background(), partialUpdate, "id = ?", scheduleID)
 	suite.NoError(err)
-	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
+	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
 	suite.NoError(err)
 	suite.Equal("partial_update", updatedModel.Name)
 	suite.Equal(false, updatedModel.IsEnabled) // 其他字段应保持不变
@@ -168,9 +245,9 @@ func (suite *ScheduleTestSuite) TestUpdateModel() {
 		"timeout":    0,
 		"is_enabled": false,
 	}
-	err = suite.scheduleRepo.UpdateModel(context.Background(), zeroValueUpdate, "id = ?", scheduleModel.ID)
+	err = suite.scheduleRepo.UpdateModel(context.Background(), zeroValueUpdate, "id = ?", scheduleID)
 	suite.NoError(err)
-	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
+	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
 	suite.NoError(err)
 	suite.Equal(0, updatedModel.Timeout)
 	suite.Equal(false, updatedModel.IsEnabled)
@@ -180,9 +257,9 @@ func (suite *ScheduleTestSuite) TestUpdateModel() {
 		"timeout":     86400, // 24小时
 		"max_retries": 100,
 	}
-	err = suite.scheduleRepo.UpdateModel(context.Background(), maxValueUpdate, "id = ?", scheduleModel.ID)
+	err = suite.scheduleRepo.UpdateModel(context.Background(), maxValueUpdate, "id = ?", scheduleID)
 	suite.NoError(err)
-	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
+	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
 	suite.NoError(err)
 	suite.Equal(86400, updatedModel.Timeout)
 	suite.Equal(100, updatedModel.MaxRetries)
@@ -197,52 +274,35 @@ func (suite *ScheduleTestSuite) TestUpdateModel() {
 	// 测试边界情况: 多次连续更新
 	for i := range 3 {
 		multiUpdate := map[string]any{
-			"name": "multi_update_" + string(rune('a'+i)),
+			"name": fmt.Sprintf("multi_update_%c", 'a'+i),
 		}
-		err = suite.scheduleRepo.UpdateModel(context.Background(), multiUpdate, "id = ?", scheduleModel.ID)
+		err = suite.scheduleRepo.UpdateModel(context.Background(), multiUpdate, "id = ?", scheduleID)
 		suite.NoError(err)
 	}
-	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
+	updatedModel, err = suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
 	suite.NoError(err)
 	suite.Equal("multi_update_c", updatedModel.Name)
 }
 
-// DeleteModel 删除计划任务模型测试
+// TestDeleteModel 删除计划任务模型测试
 func (suite *ScheduleTestSuite) TestDeleteModel() {
-	// 创建测试脚本
-	scriptModel := CreateTestScriptModel(false)
-	err := suite.scriptRepo.CreateModel(context.Background(), scriptModel)
-	suite.NoError(err)
-	suite.NotZero(scriptModel.ID)
-
 	// 创建测试计划任务
-	scheduleModel := CreateTestScheduleModel(scriptModel.ID)
-	err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
-	suite.NoError(err)
-	suite.NotZero(scheduleModel.ID)
+	scheduleID := suite.createTestSchedule()
 
 	// 测试删除计划任务模型
-	err = suite.scheduleRepo.DeleteModel(context.Background(), "id = ?", scheduleModel.ID)
-	suite.NoError(err)
+	err := suite.scheduleRepo.DeleteModel(context.Background(), "id = ?", scheduleID)
+	suite.NoError(err, "删除计划任务失败，ID: %d", scheduleID)
 
 	// 验证删除结果
-	deletedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
-	suite.Error(err)
-	suite.Nil(deletedModel)
+	suite.assertScheduleDeleted(scheduleID)
 
 	// 测试删除计划任务模型失败: 上下文超时
 	// 重新创建计划任务
-	scheduleModel2 := CreateTestScheduleModel(scriptModel.ID)
-	err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel2)
-	suite.NoError(err)
-	suite.NotZero(scheduleModel2.ID)
+	scheduleID2 := suite.createTestSchedule()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-	err = suite.scheduleRepo.DeleteModel(ctx, "id = ?", scheduleModel2.ID)
-	suite.Error(err)
+	suite.testContextTimeout(func(ctx context.Context) error {
+		return suite.scheduleRepo.DeleteModel(ctx, "id = ?", scheduleID2)
+	})
 
 	// 测试边界情况: 删除不存在的计划任务（应优雅处理）
 	err = suite.scheduleRepo.DeleteModel(context.Background(), "id = ?", 999999)
@@ -251,8 +311,10 @@ func (suite *ScheduleTestSuite) TestDeleteModel() {
 	// 测试边界情况: 批量创建并删除多个计划任务
 	var scheduleIDs []uint32
 	for i := 0; i < 5; i++ {
-		sched := CreateTestScheduleModel(scriptModel.ID)
-		sched.Name = "batch_delete_" + string(rune('a'+i))
+		sched := CreateTestScheduleModel(
+			suite.testScriptID,
+			WithScheduleName(fmt.Sprintf("batch_delete_%c", 'a'+i)),
+		)
 		err = suite.scheduleRepo.CreateModel(context.Background(), sched)
 		suite.NoError(err)
 		suite.NotZero(sched.ID)
@@ -270,8 +332,10 @@ func (suite *ScheduleTestSuite) TestDeleteModel() {
 
 	// 测试边界情况: 使用不同条件删除
 	// 创建带有特定名称的计划任务
-	specificSchedule := CreateTestScheduleModel(scriptModel.ID)
-	specificSchedule.Name = "specific_name"
+	specificSchedule := CreateTestScheduleModel(
+		suite.testScriptID,
+		WithScheduleName("specific_name"),
+	)
 	err = suite.scheduleRepo.CreateModel(context.Background(), specificSchedule)
 	suite.NoError(err)
 	suite.NotZero(specificSchedule.ID)
@@ -284,35 +348,24 @@ func (suite *ScheduleTestSuite) TestDeleteModel() {
 	suite.Error(err)
 }
 
-// GetModel 查询计划任务模型测试
+// TestGetModel 查询计划任务模型测试
 func (suite *ScheduleTestSuite) TestGetModel() {
-	// 创建测试脚本
-	scriptModel := CreateTestScriptModel(false)
-	err := suite.scriptRepo.CreateModel(context.Background(), scriptModel)
-	suite.NoError(err)
-	suite.NotZero(scriptModel.ID)
-
 	// 创建测试计划任务
-	scheduleModel := CreateTestScheduleModel(scriptModel.ID)
-	err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
-	suite.NoError(err)
-	suite.NotZero(scheduleModel.ID)
+	scheduleID := suite.createTestSchedule()
+	scheduleModel := suite.getScheduleByID(scheduleID)
 
 	// 测试查询计划任务模型
-	retrievedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
+	retrievedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
 	suite.NoError(err)
 	suite.NotNil(retrievedModel)
-	suite.Equal(scheduleModel.ID, retrievedModel.ID)
+	suite.Equal(scheduleID, retrievedModel.ID)
 	suite.Equal(scheduleModel.Name, retrievedModel.Name)
 
 	// 测试查询计划任务模型失败: 上下文超时
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-	retrievedModel2, err := suite.scheduleRepo.GetModel(ctx, nil, "id = ?", scheduleModel.ID)
-	suite.Error(err)
-	suite.Nil(retrievedModel2)
+	suite.testContextTimeout(func(ctx context.Context) error {
+		_, err := suite.scheduleRepo.GetModel(ctx, nil, "id = ?", scheduleID)
+		return err
+	})
 
 	// 测试边界情况: 查询不存在的计划任务
 	nonExistentModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", 999999)
@@ -324,47 +377,43 @@ func (suite *ScheduleTestSuite) TestGetModel() {
 	namedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "name = ?", scheduleModel.Name)
 	suite.NoError(err)
 	suite.NotNil(namedModel)
-	suite.Equal(scheduleModel.ID, namedModel.ID)
+	suite.Equal(scheduleID, namedModel.ID)
 
 	// 测试边界情况: 使用空的预加载
-	emptyPreloadModel, err := suite.scheduleRepo.GetModel(context.Background(), []string{}, "id = ?", scheduleModel.ID)
+	emptyPreloadModel, err := suite.scheduleRepo.GetModel(context.Background(), []string{}, "id = ?", scheduleID)
 	suite.NoError(err)
 	suite.NotNil(emptyPreloadModel)
-	suite.Equal(scheduleModel.ID, emptyPreloadModel.ID)
+	suite.Equal(scheduleID, emptyPreloadModel.ID)
 
 	// 测试边界情况: 使用多个条件查询
 	multiConditionModel, err := suite.scheduleRepo.GetModel(
 		context.Background(),
 		nil,
 		"id = ? AND name = ?",
-		scheduleModel.ID,
+		scheduleID,
 		scheduleModel.Name,
 	)
 	suite.NoError(err)
 	suite.NotNil(multiConditionModel)
-	suite.Equal(scheduleModel.ID, multiConditionModel.ID)
+	suite.Equal(scheduleID, multiConditionModel.ID)
 
 	// 测试边界情况: 查询已删除的计划任务
-	err = suite.scheduleRepo.DeleteModel(context.Background(), "id = ?", scheduleModel.ID)
+	err = suite.scheduleRepo.DeleteModel(context.Background(), "id = ?", scheduleID)
 	suite.NoError(err)
-	deletedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleModel.ID)
+	deletedModel, err := suite.scheduleRepo.GetModel(context.Background(), nil, "id = ?", scheduleID)
 	suite.Error(err)
 	suite.Nil(deletedModel)
 }
 
-// ListModel 查询计划任务模型列表测试
+// TestListModel 查询计划任务模型列表测试
 func (suite *ScheduleTestSuite) TestListModel() {
-	// 创建测试脚本
-	scriptModel := CreateTestScriptModel(false)
-	err := suite.scriptRepo.CreateModel(context.Background(), scriptModel)
-	suite.NoError(err)
-	suite.NotZero(scriptModel.ID)
-
 	// 创建多个测试计划任务
 	for i := 0; i < 5; i++ {
-		scheduleModel := CreateTestScheduleModel(scriptModel.ID)
-		scheduleModel.Name = "schedule_" + string(rune('a'+i))
-		err = suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
+		scheduleModel := CreateTestScheduleModel(
+			suite.testScriptID,
+			WithScheduleName(fmt.Sprintf("schedule_%c", 'a'+i)),
+		)
+		err := suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
 		suite.NoError(err)
 		suite.NotZero(scheduleModel.ID)
 	}
@@ -372,72 +421,51 @@ func (suite *ScheduleTestSuite) TestListModel() {
 	// 测试查询计划任务模型列表
 	qp := database.QueryParams{}
 	models, err := suite.scheduleRepo.ListModel(context.Background(), qp)
-	suite.NoError(err)
-	suite.Greater(int64(len(models)), int64(0))
+	suite.NoError(err, "查询计划任务列表失败")
+	suite.Greater(len(models), 0, "计划任务列表应该不为空")
 
 	// 测试查询计划任务模型列表失败: 上下文超时
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-	models, err = suite.scheduleRepo.ListModel(ctx, qp)
-	suite.Error(err)
-	suite.Equal(int64(0), int64(len(models)))
-
-	// 测试边界情况: 空结果集
-	// 创建新脚本但不创建计划任务
-	emptyScript := CreateTestScriptModel(false)
-	err = suite.scriptRepo.CreateModel(context.Background(), emptyScript)
-	suite.NoError(err)
-
-	// 创建仅针对该脚本的查询条件
-	// 注意:实际的QueryParams结构可能需要根据实际实现调整
-	emptyQp := database.QueryParams{}
-	models, err = suite.scheduleRepo.ListModel(context.Background(), emptyQp)
-	suite.NoError(err)
-	// 这里我们期望有结果，因为之前创建了5个计划任务
-	// 空结果集测试需要更精确的条件，暂时注释
-	// suite.Equal(int64(0), emptyCount)
-	// suite.Len(*emptyModels, 0)
+	suite.testContextTimeout(func(ctx context.Context) error {
+		_, err := suite.scheduleRepo.ListModel(ctx, qp)
+		return err
+	})
 
 	// 测试边界情况: 大量计划任务
 	// 创建20个计划任务
 	for i := 0; i < 20; i++ {
-		bulkSchedule := CreateTestScheduleModel(scriptModel.ID)
-		bulkSchedule.Name = "bulk_schedule_" + string(rune('a'+i%26)) + "_" + string(rune('0'+i/26))
-		// 交替启用状态
-		bulkSchedule.IsEnabled = i%2 == 0
-		err = suite.scheduleRepo.CreateModel(context.Background(), bulkSchedule)
-		suite.NoError(err)
-		suite.NotZero(bulkSchedule.ID)
+		bulkSchedule := CreateTestScheduleModel(
+			suite.testScriptID,
+			WithScheduleName(fmt.Sprintf("bulk_schedule_%c_%d", 'a'+i%26, i/26)),
+			WithScheduleEnabled(i%2 == 0),
+		)
+		err := suite.scheduleRepo.CreateModel(context.Background(), bulkSchedule)
+		suite.NoError(err, "创建批量计划任务失败，索引: %d", i)
+		suite.NotZero(bulkSchedule.ID, "批量计划任务ID应该不为零，索引: %d", i)
 	}
 
 	// 测试大量计划任务的查询
 	bulkQp := database.QueryParams{}
 	bulkModels, err := suite.scheduleRepo.ListModel(context.Background(), bulkQp)
-	suite.NoError(err)
-	suite.Greater(int64(len(bulkModels)), int64(20)) // 至少20个新创建的
-	suite.Greater(len(bulkModels), 0)
+	suite.NoError(err, "查询大量计划任务列表失败")
+	suite.Greater(len(bulkModels), 20, "计划任务列表应该包含至少20个新创建的计划任务")
 
 	// 测试边界情况: 不同状态的计划任务
 	// 创建一些禁用的计划任务
-	disabledCount := 0
 	for i := 0; i < 3; i++ {
-		disabledSchedule := CreateTestScheduleModel(scriptModel.ID)
-		disabledSchedule.Name = "disabled_schedule_" + string(rune('a'+i))
-		disabledSchedule.IsEnabled = false
-		err = suite.scheduleRepo.CreateModel(context.Background(), disabledSchedule)
+		disabledSchedule := CreateTestScheduleModel(
+			suite.testScriptID,
+			WithScheduleName(fmt.Sprintf("disabled_schedule_%c", 'a'+i)),
+			WithScheduleEnabled(false),
+		)
+		err := suite.scheduleRepo.CreateModel(context.Background(), disabledSchedule)
 		suite.NoError(err)
 		suite.NotZero(disabledSchedule.ID)
-		disabledCount++
 	}
 
 	// 测试查询禁用的计划任务
-	// 注意:实际的QueryParams结构可能需要根据实际实现调整
 	disabledQp := database.QueryParams{}
 	disabledModels, err := suite.scheduleRepo.ListModel(context.Background(), disabledQp)
 	suite.NoError(err)
-	suite.Greater(int64(len(disabledModels)), int64(0))
 	suite.Greater(len(disabledModels), 0)
 
 	// 测试边界情况: 不同脚本的计划任务
@@ -450,46 +478,42 @@ func (suite *ScheduleTestSuite) TestListModel() {
 
 	// 为第二个脚本创建计划任务
 	for i := range 3 {
-		script2Schedule := CreateTestScheduleModel(scriptModel2.ID)
-		script2Schedule.Name = "script2_schedule_" + string(rune('a'+i))
-		err = suite.scheduleRepo.CreateModel(context.Background(), script2Schedule)
+		script2Schedule := CreateTestScheduleModel(
+			scriptModel2.ID,
+			WithScheduleName(fmt.Sprintf("script2_schedule_%c", 'a'+i)),
+		)
+		err := suite.scheduleRepo.CreateModel(context.Background(), script2Schedule)
 		suite.NoError(err)
 		suite.NotZero(script2Schedule.ID)
 	}
 
 	// 测试查询第二个脚本的计划任务
-	// 注意:实际的QueryParams结构可能需要根据实际实现调整
 	script2Qp := database.QueryParams{}
 	script2Models, err := suite.scheduleRepo.ListModel(context.Background(), script2Qp)
 	suite.NoError(err)
-	suite.Greater(int64(len(script2Models)), int64(0))
 	suite.Greater(len(script2Models), 0)
 }
 
+// TestCountModel 测试计划任务模型计数
 func (suite *ScheduleTestSuite) TestCountModel() {
-	// 先创建一个脚本模型用于测试
-	scriptModel := CreateTestScriptModel(false)
-	err := suite.scriptRepo.CreateModel(context.Background(), scriptModel)
-	suite.NoError(err, "创建脚本模型应该成功")
-
 	// 创建多个计划任务
 	for i := 0; i < 5; i++ {
-		scheduleModel := CreateTestScheduleModel(scriptModel.ID)
+		scheduleModel := CreateTestScheduleModel(suite.testScriptID)
 		err := suite.scheduleRepo.CreateModel(context.Background(), scheduleModel)
-		suite.NoError(err, "创建计划任务模型应该成功")
+		suite.NoError(err, "创建计划任务模型失败，索引: %d", i)
 	}
 
 	// 测试查询计划任务总数
 	count, err := suite.scheduleRepo.CountModel(context.Background(), nil)
-	suite.NoError(err, "查询计划任务总数应该成功")
+	suite.NoError(err, "查询计划任务总数失败")
 	suite.GreaterOrEqual(count, int64(5), "计划任务总数应该至少为 5")
 
 	// 测试带条件查询计划任务总数
 	query := map[string]any{
-		"script_id": scriptModel.ID,
+		"script_id": suite.testScriptID,
 	}
 	count, err = suite.scheduleRepo.CountModel(context.Background(), query)
-	suite.NoError(err, "带条件查询计划任务总数应该成功")
+	suite.NoError(err, "带条件查询计划任务总数失败")
 	suite.GreaterOrEqual(count, int64(5), "带条件查询计划任务总数应该至少为 5")
 
 	// 测试查询不存在的计划任务总数
@@ -497,23 +521,17 @@ func (suite *ScheduleTestSuite) TestCountModel() {
 		"script_id": 999999,
 	}
 	count, err = suite.scheduleRepo.CountModel(context.Background(), query)
-	suite.NoError(err, "查询不存在的计划任务总数应该成功")
+	suite.NoError(err, "查询不存在的计划任务总数失败")
 	suite.Equal(int64(0), count, "查询不存在的计划任务总数应该为 0")
 
 	// 测试查询计划任务总数时上下文超时
-	// 创建一个非常短的超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 5)
-
-	// 尝试在超时上下文中查询总数
-	_, err = suite.scheduleRepo.CountModel(ctx, nil)
-	suite.Error(err, "查询计划任务总数时上下文超时应该返回错误")
+	suite.testContextTimeout(func(ctx context.Context) error {
+		_, err := suite.scheduleRepo.CountModel(ctx, nil)
+		return err
+	})
 }
 
 // 每个测试文件都需要这个入口函数
 func TestScheduleTestSuite(t *testing.T) {
-	pts := &ScheduleTestSuite{}
-	suite.Run(t, pts)
+	suite.Run(t, &ScheduleTestSuite{})
 }

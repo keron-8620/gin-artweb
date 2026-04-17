@@ -47,6 +47,9 @@ func (c *BaseCipher) DecodeString(data string) ([]byte, error) {
 // pkcs7Padding PKCS7填充
 func pkcs7Padding(data []byte, blockSize int) []byte {
 	padding := blockSize - len(data)%blockSize
+	if padding < 1 || padding > 255 {
+		padding = 1
+	}
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(data, padtext...)
 }

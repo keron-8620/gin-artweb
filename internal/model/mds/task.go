@@ -63,16 +63,24 @@ type MdsColonyTaskExecutionInfo struct {
 func (mds MdsColonyTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("colony_num", mds.ColonyNum)
 	if mds.Mon != nil {
-		enc.AddObject("mon", mds.Mon)
+		if err := enc.AddObject("mon", mds.Mon); err != nil {
+			return err
+		}
 	}
 	if mds.Bse != nil {
-		enc.AddObject("bse", mds.Bse)
+		if err := enc.AddObject("bse", mds.Bse); err != nil {
+			return err
+		}
 	}
 	if mds.Sse != nil {
-		enc.AddObject("sse", mds.Sse)
+		if err := enc.AddObject("sse", mds.Sse); err != nil {
+			return err
+		}
 	}
 	if mds.Szse != nil {
-		enc.AddObject("szse", mds.Szse)
+		if err := enc.AddObject("szse", mds.Szse); err != nil {
+			return err
+		}
 	}
 	return nil
 }

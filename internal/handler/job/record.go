@@ -48,7 +48,7 @@ func NewScriptRecordHandler(
 func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
-	var req jobmodel.ExecScriptDTO
+	var req jobmodel.CreateScriptRecordDTO
 	if !common.ShouldBind(
 		ctx, log, &req,
 		"执行脚本:绑定请求参数失败") {
@@ -64,7 +64,7 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 
 	claims := ctxutil.MustGetJwtClaims(ctx)
 	execStepStart := time.Now()
-	m, rErr := h.recordSvc.AsyncExecuteScript(ctx, jobmodel.ExecuteBIZ{
+	m, rErr := h.recordSvc.AsyncExecuteScript(ctx, jobmodel.ExecuteScriptDTO{
 		ScriptID:    req.ScriptID,
 		CommandArgs: req.CommandArgs,
 		EnvVars:     req.EnvVars,
@@ -423,9 +423,19 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 		initialLines := strings.SplitSeq(string(initialBytes[:n]), "\n")
 		for line := range initialLines {
 			if line != "" {
-				sse.Encode(ctx.Writer, sse.Event{
+				if err := sse.Encode(ctx.Writer, sse.Event{
 					Data: []byte(line),
-				})
+				}); err != nil {
+					log.Error(
+						"实时获取脚本执行日志:发送日志行失败",
+						zap.Error(err),
+						zap.Uint32("record_id", uri.ID),
+						zap.Duration("total_duration", time.Since(startTime)),
+					)
+					rErr := errors.FromError(err)
+					errors.RespondWithError(ctx, rErr)
+					return
+				}
 			}
 		}
 		ctx.Writer.Flush()
@@ -514,9 +524,19 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 					newLines := strings.SplitSeq(string(buf[:n]), "\n")
 					for line := range newLines {
 						if line != "" {
-							sse.Encode(ctx.Writer, sse.Event{
+							if err := sse.Encode(ctx.Writer, sse.Event{
 								Data: []byte(line),
-							})
+							}); err != nil {
+								log.Error(
+									"实时获取脚本执行日志:发送日志行失败",
+									zap.Error(err),
+									zap.Uint32("record_id", uri.ID),
+									zap.Duration("total_duration", time.Since(startTime)),
+								)
+								rErr := errors.FromError(err)
+								errors.RespondWithError(ctx, rErr)
+								return
+							}
 						}
 					}
 					ctx.Writer.Flush()
@@ -558,9 +578,19 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 							continue
 						}
 						if line != "" {
-							sse.Encode(ctx.Writer, sse.Event{
+							if err := sse.Encode(ctx.Writer, sse.Event{
 								Data: []byte(line),
-							})
+							}); err != nil {
+								log.Error(
+									"实时获取脚本执行日志:发送日志行失败",
+									zap.Error(err),
+									zap.Uint32("record_id", uri.ID),
+									zap.Duration("total_duration", time.Since(startTime)),
+								)
+								rErr := errors.FromError(err)
+								errors.RespondWithError(ctx, rErr)
+								return
+							}
 						}
 					}
 					ctx.Writer.Flush()

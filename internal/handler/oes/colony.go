@@ -62,39 +62,27 @@ func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
 		return
 	}
 
-	log.Info("创建oes集群:开始执行")
-
-	log.Debug(
-		"创建oes集群:入参详情",
+	log.Info(
+		"创建oes集群:开始执行",
 		zap.Object("oes_colony_dto", &req),
 	)
 
-	createStepStart := time.Now()
-	createStepDuration := time.Since(createStepStart)
 	m, rErr := s.colonySvc.CreateOesColony(ctx, req)
-	createStepDuration = time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
 			"创建oes集群:执行失败",
 			zap.Error(rErr),
 			zap.Object("oes_colony_dto", &req),
-			zap.Duration("create_step_duration", createStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	log.Debug(
-		"创建oes集群:创建后的oes集群模型详情",
-		zap.Object("oes_colony_model", m),
-		zap.Duration("create_step_duration", createStepDuration),
-	)
 
 	log.Info(
 		"创建oes集群:执行成功",
 		zap.Uint32("oes_colony_id", m.ID),
-		zap.Duration("create_step_duration", createStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
@@ -119,46 +107,35 @@ func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
 func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"更新oes集群:绑定更新oes集群ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "更新oes集群:绑定更新oes集群ID参数失败") {
 		return
 	}
 
 	var req oesmodel.OesColonyUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
+	if !common.ShouldBind(ctx, log, &req,
 		"更新oes集群:绑定更新oes集群参数失败") {
 		return
 	}
 
-	updateStepStart := time.Now()
 	m, err := s.colonySvc.UpdateOesColonyByID(ctx, uri.ID, req)
-	updateStepDuration := time.Since(updateStepStart)
 	if err != nil {
 		log.Error(
 			"更新oes集群:执行失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", uri.ID),
 			zap.Object("oes_colony_dto", &req),
-			zap.Duration("update_step_duration", updateStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	log.Debug(
-		"更新oes集群:更新后的oes集群模型详情",
-		zap.Object("oes_colony_model", m),
-		zap.Duration("update_step_duration", updateStepDuration),
-	)
 
 	log.Info(
 		"更新oes集群:执行成功",
 		zap.Uint32("oes_colony_id", uri.ID),
-		zap.Duration("update_step_duration", updateStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
@@ -182,27 +159,19 @@ func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
 func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"删除oes集群:绑定删除oes集群ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "删除oes集群:绑定删除oes集群ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"删除oes集群:开始执行",
-		zap.Uint32("oes_colony_id", uri.ID),
-	)
-	deleteStepStart := time.Now()
 	err := s.colonySvc.DeleteOesColonyByID(ctx, uri.ID)
-	deleteStepDuration := time.Since(deleteStepStart)
 	if err != nil {
 		log.Error(
 			"删除oes集群:执行失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", uri.ID),
-			zap.Duration("delete_step_duration", deleteStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -211,7 +180,7 @@ func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
 	log.Info(
 		"删除oes集群:执行成功",
 		zap.Uint32("oes_colony_id", uri.ID),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
@@ -233,29 +202,19 @@ func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"查询oes集群详情:绑定查询oes集群ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "查询oes集群详情:绑定查询oes集群ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询oes集群详情:开始执行",
-		zap.Uint32("oes_colony_id", uri.ID),
-	)
-
-	findStepStart := time.Now()
 	preloads := []string{"Package", "XCounter", "MonNode"}
 	m, err := s.colonySvc.FindOesColonyByID(ctx, preloads, uri.ID)
-	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
 			"查询oes集群详情:执行失败",
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Uint32("oes_colony_id", uri.ID),
-			zap.Duration("find_step_duration", findStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -264,8 +223,7 @@ func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
 	log.Info(
 		"查询oes集群详情:执行成功",
 		zap.Uint32("oes_colony_id", uri.ID),
-		zap.Duration("find_step_duration", findStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mo := oesmodel.OesColonyToDetailOut(*m)
@@ -289,24 +247,14 @@ func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
 func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询oes集群列表:绑定查询oes集群列表参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询oes集群列表:绑定查询oes集群列表参数失败") {
 		return
 	}
 
-	log.Info("查询oes集群列表:开始执行")
-
-	log.Debug(
-		"查询oes集群列表:入参详情",
-		zap.Object("oes_colony_dto", &req),
-	)
-
-	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, err := s.colonySvc.ListOesColony(ctx, page, size, req)
-	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
 			"查询oes集群列表:执行失败",
@@ -314,8 +262,7 @@ func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("oes_colony_dto", &req),
-			zap.Duration("list_step_duration", listStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -325,8 +272,7 @@ func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
-		zap.Duration("list_step_duration", listStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	mbs := oesmodel.ListOesColonyToDetailOut(ms)
@@ -351,43 +297,28 @@ func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
 func (s *OesColonyHandler) ListOesSchedules(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"查询oes计划任务:绑定查询oes集群ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "查询oes计划任务:绑定查询oes集群ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询oes计划任务:开始执行",
-		zap.Uint32("oes_colony_id", uri.ID),
-	)
-
-	listStepStart := time.Now()
 	schedules, err := s.colonySvc.ListOesSchedules(ctx, uri.ID)
-	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
 			"查询oes计划任务:执行失败",
 			zap.Error(err),
 			zap.Uint32("oes_colony_id", uri.ID),
-			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	log.Debug(
-		"查询oes计划任务:查询到的oes计划任务模型详情",
-		zap.Any("schedules", schedules),
-		zap.Duration("list_step_duration", listStepDuration),
-	)
 
 	log.Info(
 		"查询oes计划任务:执行成功",
 		zap.Uint32("oes_colony_id", uri.ID),
-		zap.Duration("list_step_duration", listStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	num := len(schedules)
@@ -412,31 +343,20 @@ func (s *OesColonyHandler) ListOesSchedules(ctx *gin.Context) {
 func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询oes现货集群列表的任务状态:绑定查询oes现货集群列表参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询oes现货集群列表的任务状态:绑定查询oes现货集群列表参数失败") {
 		return
 	}
 	req.SystemType = "STK"
 
-	log.Info("查询oes现货集群列表的任务状态:开始执行")
-
-	log.Debug(
-		"查询oes现货集群列表的任务状态:入参详情",
-		zap.Object("oes_colony_dto", &req),
-	)
-
-	buildStepStart := time.Now()
 	tasks, err := s.stkTaskSvc.BuildTaskExecutionInfos(ctx, req)
-	buildStepDuration := time.Since(buildStepStart)
 	if err != nil {
 		log.Error(
 			"查询oes现货集群列表的任务状态:执行失败",
 			zap.Error(err),
 			zap.Object("oes_colony_dto", &req),
-			zap.Duration("build_step_duration", buildStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -444,8 +364,7 @@ func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
 
 	log.Info(
 		"查询oes现货集群列表的任务状态:执行成功",
-		zap.Duration("build_step_duration", buildStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
@@ -473,31 +392,20 @@ func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
 func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询oes两融集群列表的任务状态:绑定查询oes两融集群列表参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询oes两融集群列表的任务状态:绑定查询oes两融集群列表参数失败") {
 		return
 	}
 	req.SystemType = "CRD"
 
-	log.Info("查询oes两融集群列表的任务状态:开始执行")
-
-	log.Debug(
-		"查询oes两融集群列表的任务状态:入参详情",
-		zap.Object("oes_colony_dto", &req),
-	)
-
-	buildStepStart := time.Now()
 	tasks, err := s.crdTaskSvc.BuildTaskExecutionInfos(ctx, req)
-	buildStepDuration := time.Since(buildStepStart)
 	if err != nil {
 		log.Error(
 			"查询oes两融集群列表的任务状态:执行失败",
 			zap.Error(err),
 			zap.Object("oes_colony_dto", &req),
-			zap.Duration("build_step_duration", buildStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -505,7 +413,6 @@ func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
 
 	log.Info(
 		"查询oes两融集群列表的任务状态:执行成功",
-		zap.Duration("build_step_duration", buildStepDuration),
 		zap.Duration("total_time", time.Since(startTime)),
 	)
 
@@ -534,31 +441,20 @@ func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
 func (s *OesColonyHandler) ListOptTaskStatus(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询oes期权集群列表的任务状态:绑定查询oes期权集群列表参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询oes期权集群列表的任务状态:绑定查询oes期权集群列表参数失败") {
 		return
 	}
 	req.SystemType = "OPT"
 
-	log.Info("查询oes期权集群列表的任务状态:开始执行")
-
-	log.Debug(
-		"查询oes期权集群列表的任务状态:入参详情",
-		zap.Object("oes_colony_dto", &req),
-	)
-
-	buildStepStart := time.Now()
 	tasks, err := s.optTaskSvc.BuildTaskExecutionInfos(ctx, req)
-	buildStepDuration := time.Since(buildStepStart)
 	if err != nil {
 		log.Error(
 			"查询oes期权集群列表的任务状态:执行失败",
 			zap.Error(err),
 			zap.Object("oes_colony_dto", &req),
-			zap.Duration("build_step_duration", buildStepDuration),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
@@ -566,8 +462,7 @@ func (s *OesColonyHandler) ListOptTaskStatus(ctx *gin.Context) {
 
 	log.Info(
 		"查询oes期权集群列表的任务状态:执行成功",
-		zap.Duration("build_step_duration", buildStepDuration),
-		zap.Duration("total_time", time.Since(startTime)),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))

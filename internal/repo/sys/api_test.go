@@ -17,12 +17,47 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestApiModel() *sysmodel.ApiModel {
-	return &sysmodel.ApiModel{
+func CreateTestApiModel(opts ...func(*sysmodel.ApiModel)) *sysmodel.ApiModel {
+	model := &sysmodel.ApiModel{
 		URL:    fmt.Sprintf("/api/test/%s/", uuid.NewString()),
 		Method: "GET",
 		Label:  "test",
 		Descr:  "这是一个测试接口",
+	}
+
+	// 应用可选配置
+	for _, opt := range opts {
+		opt(model)
+	}
+
+	return model
+}
+
+// WithMethod 设置API方法
+func WithMethod(method string) func(*sysmodel.ApiModel) {
+	return func(m *sysmodel.ApiModel) {
+		m.Method = method
+	}
+}
+
+// WithURL 设置API URL
+func WithURL(url string) func(*sysmodel.ApiModel) {
+	return func(m *sysmodel.ApiModel) {
+		m.URL = url
+	}
+}
+
+// WithLabel 设置API标签
+func WithLabel(label string) func(*sysmodel.ApiModel) {
+	return func(m *sysmodel.ApiModel) {
+		m.Label = label
+	}
+}
+
+// WithDescr 设置API描述
+func WithDescr(descr string) func(*sysmodel.ApiModel) {
+	return func(m *sysmodel.ApiModel) {
+		m.Descr = descr
 	}
 }
 
@@ -33,36 +68,43 @@ type ApiTestSuite struct {
 
 func (suite *ApiTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.ApiModel{})
+	if err := db.AutoMigrate(&sysmodel.ApiModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
+	slowThreshold := test.NewTestDBSlowThreshold()
+	enforcer, err := auth.NewCasbinEnforcer()
+	if err != nil {
+		suite.Error(err, "创建Casbinforcer失败")
+	}
 	suite.apiRepo = &ApiRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		enforcer: enforcer,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 }
 
 func (suite *ApiTestSuite) TestCreateApi() {
 	sm := CreateTestApiModel()
 	err := suite.apiRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建API应该成功")
+	suite.Require().NoError(err, "创建API应该成功")
 
 	fm, err := suite.apiRepo.GetModel(context.Background(), sm.ID)
-	suite.NoError(err, "查询刚创建的API应该成功")
-	suite.Equal(sm.ID, fm.ID)
-	suite.Equal(sm.URL, fm.URL)
-	suite.Equal(sm.Method, fm.Method)
-	suite.Equal(sm.Label, fm.Label)
-	suite.Equal(sm.Descr, fm.Descr)
+	suite.Require().NoError(err, "查询刚创建的API应该成功")
+	suite.Equal(sm.ID, fm.ID, "API ID应该匹配")
+	suite.Equal(sm.URL, fm.URL, "API URL应该匹配")
+	suite.Equal(sm.Method, fm.Method, "API Method应该匹配")
+	suite.Equal(sm.Label, fm.Label, "API Label应该匹配")
+	suite.Equal(sm.Descr, fm.Descr, "API Descr应该匹配")
 }
 
 func (suite *ApiTestSuite) TestUpdateApi() {
 	sm := CreateTestApiModel()
 	err := suite.apiRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建API应该成功")
+	suite.Require().NoError(err, "创建API应该成功")
 
 	updatedURL := fmt.Sprintf("/api/%d", sm.ID)
 	updatedMethod := "POST"
@@ -75,36 +117,33 @@ func (suite *ApiTestSuite) TestUpdateApi() {
 		"label":  updatedLabel,
 		"descr":  updatedDescr,
 	}, "id = ?", sm.ID)
-	suite.NoError(err, "更新API应该成功")
+	suite.Require().NoError(err, "更新API应该成功")
 
 	fm, err := suite.apiRepo.GetModel(context.Background(), "id = ?", sm.ID)
-	suite.NoError(err, "查询更新后的API应该成功")
-	suite.Equal(fm.ID, sm.ID)
-	suite.Equal(updatedURL, fm.URL)
-	suite.Equal(updatedMethod, fm.Method)
-	suite.Equal(updatedLabel, fm.Label)
-	suite.Equal(updatedDescr, fm.Descr)
-	suite.Greater(fm.UpdatedAt, sm.UpdatedAt)
+	suite.Require().NoError(err, "查询更新后的API应该成功")
+	suite.Equal(fm.ID, sm.ID, "API ID应该保持不变")
+	suite.Equal(updatedURL, fm.URL, "API URL应该被更新")
+	suite.Equal(updatedMethod, fm.Method, "API Method应该被更新")
+	suite.Equal(updatedLabel, fm.Label, "API Label应该被更新")
+	suite.Equal(updatedDescr, fm.Descr, "API Descr应该被更新")
+	suite.Greater(fm.UpdatedAt, sm.UpdatedAt, "API UpdatedAt应该被更新")
 }
 
 func (suite *ApiTestSuite) TestDeleteApi() {
 	sm := CreateTestApiModel()
 	err := suite.apiRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建API应该成功")
+	suite.Require().NoError(err, "创建API应该成功")
 
 	fm, err := suite.apiRepo.GetModel(context.Background(), "id = ?", sm.ID)
-	suite.NoError(err, "查询刚创建的API应该成功")
-	suite.Equal(sm.ID, fm.ID)
+	suite.Require().NoError(err, "查询刚创建的API应该成功")
+	suite.Equal(sm.ID, fm.ID, "API ID应该匹配")
 
 	err = suite.apiRepo.DeleteModel(context.Background(), "id = ?", sm.ID)
-	suite.NoError(err, "删除API应该成功")
+	suite.Require().NoError(err, "删除API应该成功")
 
 	_, err = suite.apiRepo.GetModel(context.Background(), "id = ?", sm.ID)
-	if err != nil {
-		suite.True(errors.Is(err, gorm.ErrRecordNotFound), "应该返回记录未找到错误")
-	} else {
-		suite.Fail("应该返回错误，但没有返回")
-	}
+	suite.Error(err, "查询已删除的API应该返回错误")
+	suite.True(errors.Is(err, gorm.ErrRecordNotFound), "应该返回记录未找到错误")
 }
 
 func (suite *ApiTestSuite) TestListApi() {
@@ -120,6 +159,7 @@ func (suite *ApiTestSuite) TestListApi() {
 	suite.NoError(err, "获取API总数应该成功")
 	suite.GreaterOrEqual(count, int64(10), "API总数应该至少有10条")
 
+	// 测试基本列表查询
 	qp := database.QueryParams{
 		Limit:  10,
 		Offset: 0,
@@ -129,6 +169,7 @@ func (suite *ApiTestSuite) TestListApi() {
 	suite.NotNil(ms, "API列表不应该为nil")
 	suite.GreaterOrEqual(len(ms), 10, "API列表应该至少有10条")
 
+	// 测试分页查询
 	qpPaginated := database.QueryParams{
 		Limit:  5,
 		Offset: 0,
@@ -137,6 +178,81 @@ func (suite *ApiTestSuite) TestListApi() {
 	suite.NoError(err, "分页列出API应该成功")
 	suite.NotNil(pMs, "分页API列表不应该为nil")
 	suite.Equal(5, len(pMs), "分页查询应该返回指定数量的记录")
+
+	// 测试空参数查询
+	qpEmpty := database.QueryParams{}
+	msEmpty, err := suite.apiRepo.ListModel(context.Background(), qpEmpty)
+	suite.NoError(err, "列表查询时传入空参数应该成功")
+	suite.NotNil(msEmpty, "API列表不应该为nil")
+
+	// 测试无效分页参数查询
+	qpInvalid := database.QueryParams{
+		Limit:  -1,
+		Offset: -1,
+	}
+	msInvalid, err := suite.apiRepo.ListModel(context.Background(), qpInvalid)
+	suite.NoError(err, "列表查询时传入无效分页参数应该成功")
+	suite.NotNil(msInvalid, "API列表不应该为nil")
+
+	// 测试排序查询
+	// 先创建多个API用于测试
+	for i := 0; i < 5; i++ {
+		sm := CreateTestApiModel(
+			WithURL(fmt.Sprintf("/api/test/%d/", i)),
+			WithLabel(fmt.Sprintf("test_%d", i)),
+			WithDescr(fmt.Sprintf("这是测试接口 %d", i)),
+		)
+		err := suite.apiRepo.CreateModel(context.Background(), sm)
+		suite.NoError(err, "创建API应该成功")
+	}
+
+	// 测试按ID降序排序
+	qpSort := database.QueryParams{
+		OrderBy: []string{"id DESC"},
+	}
+	msSort, err := suite.apiRepo.ListModel(context.Background(), qpSort)
+	suite.NoError(err, "按ID降序排序查询应该成功")
+	suite.NotNil(msSort, "API列表不应该为nil")
+	if len(msSort) > 1 {
+		// 验证排序结果
+		prevID := msSort[0].ID
+		for _, api := range msSort {
+			suite.LessOrEqual(api.ID, prevID, "API应该按ID降序排序")
+			prevID = api.ID
+		}
+	}
+
+	// 测试过滤查询
+	// 创建一个特定标签的API
+	testLabel := "filter_test"
+	smFilter := CreateTestApiModel(
+		WithURL("/api/filter/test/"),
+		WithLabel(testLabel),
+		WithDescr("这是一个用于过滤测试的接口"),
+	)
+	err = suite.apiRepo.CreateModel(context.Background(), smFilter)
+	suite.NoError(err, "创建API应该成功")
+
+	// 测试按标签过滤
+	qpFilter := database.QueryParams{
+		Query: map[string]any{
+			"label": testLabel,
+		},
+	}
+	msFilter, err := suite.apiRepo.ListModel(context.Background(), qpFilter)
+	suite.NoError(err, "按标签过滤查询应该成功")
+	suite.NotNil(msFilter, "API列表不应该为nil")
+	// 验证过滤结果
+	for _, api := range msFilter {
+		suite.Equal(testLabel, api.Label, "API应该按标签过滤")
+	}
+
+	// 测试CountModel带过滤条件
+	countFilter, err := suite.apiRepo.CountModel(context.Background(), map[string]any{
+		"label": testLabel,
+	})
+	suite.NoError(err, "带过滤条件的API总数查询应该成功")
+	suite.GreaterOrEqual(countFilter, int64(1), "带过滤条件的API总数应该至少为1")
 }
 
 func (suite *ApiTestSuite) TestAddPolicy() {
@@ -152,6 +268,152 @@ func (suite *ApiTestSuite) TestAddPolicy() {
 	ok, err := suite.apiRepo.enforcer.Enforce(sub, sm.URL, sm.Method)
 	suite.NoError(err, "检查授权应该成功")
 	suite.True(ok, "添加策略后应该有API")
+
+	// 测试重复添加策略
+	err = suite.apiRepo.AddPolicy(context.Background(), *sm)
+	suite.NoError(err, "重复添加策略应该成功")
+}
+
+func (suite *ApiTestSuite) TestPolicyWithInvalidModel() {
+	// 测试添加策略时传入无效的模型
+	testCases := []struct {
+		name     string
+		model    sysmodel.ApiModel
+		expected string
+	}{
+		{
+			name: "ID为0",
+			model: sysmodel.ApiModel{
+				URL:    "/api/test",
+				Method: "GET",
+			},
+			expected: "添加策略时ID为0应该返回错误",
+		},
+		{
+			name: "URL为空",
+			model: sysmodel.ApiModel{
+				StandardModel: database.StandardModel{
+					BaseModel: database.BaseModel{
+						ID: 1,
+					},
+				},
+				Method: "GET",
+			},
+			expected: "添加策略时URL为空应该返回错误",
+		},
+		{
+			name: "Method为空",
+			model: sysmodel.ApiModel{
+				StandardModel: database.StandardModel{
+					BaseModel: database.BaseModel{
+						ID: 1,
+					},
+				},
+				URL: "/api/test",
+			},
+			expected: "添加策略时Method为空应该返回错误",
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			err := suite.apiRepo.AddPolicy(context.Background(), tc.model)
+			suite.Error(err, tc.expected)
+
+			err = suite.apiRepo.RemovePolicy(context.Background(), tc.model, true)
+			suite.Error(err, "删除策略时"+tc.name+"应该返回错误")
+		})
+	}
+}
+
+func (suite *ApiTestSuite) TestRemovePolicy() {
+	// 创建一个API用于测试策略删除
+	sm := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), sm)
+	suite.NoError(err, "创建API应该成功")
+
+	err = suite.apiRepo.AddPolicy(context.Background(), *sm)
+	suite.NoError(err, "添加策略应该成功")
+
+	sub := auth.ApiToSubject(sm.ID)
+	ok, err := suite.apiRepo.enforcer.Enforce(sub, sm.URL, sm.Method)
+	suite.NoError(err, "检查授权应该成功")
+	suite.True(ok, "添加策略后应该有API")
+
+	// 测试删除策略并删除继承的组策略
+	err = suite.apiRepo.RemovePolicy(context.Background(), *sm, true)
+	suite.NoError(err, "删除策略并删除继承的组策略应该成功")
+
+	// 验证策略已移除
+	ok, err = suite.apiRepo.enforcer.Enforce(sub, sm.URL, sm.Method)
+	suite.NoError(err, "检查授权应该成功")
+	suite.False(ok, "移除策略后不应该有API")
+
+	// 再次尝试删除相同的策略，应该不会报错
+	err = suite.apiRepo.RemovePolicy(context.Background(), *sm, false)
+	suite.NoError(err, "删除不存在的策略应该成功")
+
+	// 重新添加策略并测试不删除继承的组策略
+	err = suite.apiRepo.AddPolicy(context.Background(), *sm)
+	suite.NoError(err, "重新添加策略应该成功")
+
+	err = suite.apiRepo.RemovePolicy(context.Background(), *sm, false)
+	suite.NoError(err, "删除策略但不删除继承的组策略应该成功")
+
+	// 验证策略已移除
+	ok, err = suite.apiRepo.enforcer.Enforce(sub, sm.URL, sm.Method)
+	suite.NoError(err, "检查授权应该成功")
+	suite.False(ok, "移除策略后不应该有API")
+}
+
+func (suite *ApiTestSuite) TestContextTimeout() {
+	// 创建一个会立即超时的上下文
+	testCtx := context.Background()
+	ctx, cancel := context.WithTimeout(testCtx, time.Millisecond*1)
+	defer cancel()
+	// 等待超时
+	time.Sleep(time.Millisecond * 5)
+
+	// 创建API用于测试
+	sm := CreateTestApiModel()
+	err := suite.apiRepo.CreateModel(context.Background(), sm)
+	suite.NoError(err, "创建API应该成功")
+
+	// 测试CreateModel方法
+	sm2 := CreateTestApiModel()
+	err = suite.apiRepo.CreateModel(ctx, sm2)
+	suite.Error(err, "上下文超时后创建API应该返回错误")
+
+	// 测试UpdateModel方法
+	err = suite.apiRepo.UpdateModel(ctx, map[string]any{
+		"url": "/api/test",
+	}, "id = ?", sm.ID)
+	suite.Error(err, "上下文超时后更新API应该返回错误")
+
+	// 测试DeleteModel方法
+	err = suite.apiRepo.DeleteModel(ctx, "id = ?", sm.ID)
+	suite.Error(err, "上下文超时后删除API应该返回错误")
+
+	// 测试GetModel方法
+	_, err = suite.apiRepo.GetModel(ctx, sm.ID)
+	suite.Error(err, "上下文超时后获取API应该返回错误")
+
+	// 测试ListModel方法
+	qp := database.QueryParams{}
+	_, err = suite.apiRepo.ListModel(ctx, qp)
+	suite.Error(err, "上下文超时后查询API列表应该返回错误")
+
+	// 测试CountModel方法
+	_, err = suite.apiRepo.CountModel(ctx, nil)
+	suite.Error(err, "上下文超时后计数查询应该返回错误")
+
+	// 测试AddPolicy方法
+	err = suite.apiRepo.AddPolicy(ctx, *sm)
+	suite.Error(err, "上下文超时后添加策略应该返回错误")
+
+	// 测试RemovePolicy方法
+	err = suite.apiRepo.RemovePolicy(ctx, *sm, true)
+	suite.Error(err, "上下文超时后删除策略应该返回错误")
 }
 
 func (suite *ApiTestSuite) TestCreateApiWithInvalidData() {
@@ -190,295 +452,6 @@ func (suite *ApiTestSuite) TestDeleteNonExistentApi() {
 	// 测试删除不存在的API
 	err := suite.apiRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的API不应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestAddPolicyWithZeroID() {
-	// 测试添加策略时ID为0
-	m := sysmodel.ApiModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{
-				ID: 0,
-			},
-		},
-		URL:    "/api/test",
-		Method: "GET",
-	}
-	err := suite.apiRepo.AddPolicy(context.Background(), m)
-	suite.Error(err, "添加策略时ID为0应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestAddPolicyWithEmptyURL() {
-	// 测试添加策略时URL为空
-	m := sysmodel.ApiModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{
-				ID: 1,
-			},
-		},
-		URL:    "",
-		Method: "GET",
-	}
-	err := suite.apiRepo.AddPolicy(context.Background(), m)
-	suite.Error(err, "添加策略时URL为空应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestAddPolicyWithEmptyMethod() {
-	// 测试添加策略时Method为空
-	m := sysmodel.ApiModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{
-				ID: 1,
-			},
-		},
-		URL:    "/api/test",
-		Method: "",
-	}
-	err := suite.apiRepo.AddPolicy(context.Background(), m)
-	suite.Error(err, "添加策略时Method为空应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestAddPolicyWithCanceledContext() {
-	// 测试添加策略时上下文已取消
-	testCtx := context.Background()
-	ctx, cancel := context.WithCancel(testCtx)
-	cancel()
-	m := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), m)
-	suite.NoError(err, "创建API应该成功")
-	err = suite.apiRepo.AddPolicy(ctx, *m)
-	suite.Error(err, "添加策略时上下文已取消应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithZeroID() {
-	// 测试删除策略时ID为0
-	m := sysmodel.ApiModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{
-				ID: 0,
-			},
-		},
-		URL:    "/api/test",
-		Method: "GET",
-	}
-	err := suite.apiRepo.RemovePolicy(context.Background(), m, true)
-	suite.Error(err, "删除策略时ID为0应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithEmptyURL() {
-	// 测试删除策略时URL为空
-	m := sysmodel.ApiModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{
-				ID: 1,
-			},
-		},
-		URL:    "",
-		Method: "GET",
-	}
-	err := suite.apiRepo.RemovePolicy(context.Background(), m, true)
-	suite.Error(err, "删除策略时URL为空应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithEmptyMethod() {
-	// 测试删除策略时Method为空
-	m := sysmodel.ApiModel{
-		StandardModel: database.StandardModel{
-			BaseModel: database.BaseModel{
-				ID: 1,
-			},
-		},
-		URL:    "/api/test",
-		Method: "",
-	}
-	err := suite.apiRepo.RemovePolicy(context.Background(), m, true)
-	suite.Error(err, "删除策略时Method为空应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithCanceledContext() {
-	// 测试删除策略时上下文已取消
-	testCtx := context.Background()
-	ctx, cancel := context.WithCancel(testCtx)
-	cancel()
-	m := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), m)
-	suite.NoError(err, "创建API应该成功")
-	err = suite.apiRepo.AddPolicy(context.Background(), *m)
-	suite.NoError(err, "添加策略应该成功")
-	err = suite.apiRepo.RemovePolicy(ctx, *m, true)
-	suite.Error(err, "删除策略时上下文已取消应该返回错误")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithRemoveInherited() {
-	// 测试删除策略时设置removeInherited为true
-	m := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), m)
-	suite.NoError(err, "创建API应该成功")
-
-	err = suite.apiRepo.AddPolicy(context.Background(), *m)
-	suite.NoError(err, "添加策略应该成功")
-
-	// 测试删除策略并删除继承的组策略
-	err = suite.apiRepo.RemovePolicy(context.Background(), *m, true)
-	suite.NoError(err, "删除策略并删除继承的组策略应该成功")
-
-	// 验证策略已移除
-	sub := auth.ApiToSubject(m.ID)
-	ok, err := suite.apiRepo.enforcer.Enforce(sub, m.URL, m.Method)
-	suite.NoError(err, "检查授权应该成功")
-	suite.False(ok, "移除策略后不应该有API")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithoutRemoveInherited() {
-	// 测试删除策略时设置removeInherited为false
-	m := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), m)
-	suite.NoError(err, "创建API应该成功")
-
-	err = suite.apiRepo.AddPolicy(context.Background(), *m)
-	suite.NoError(err, "添加策略应该成功")
-
-	// 测试删除策略但不删除继承的组策略
-	err = suite.apiRepo.RemovePolicy(context.Background(), *m, false)
-	suite.NoError(err, "删除策略但不删除继承的组策略应该成功")
-
-	// 验证策略已移除
-	sub := auth.ApiToSubject(m.ID)
-	ok, err := suite.apiRepo.enforcer.Enforce(sub, m.URL, m.Method)
-	suite.NoError(err, "检查授权应该成功")
-	suite.False(ok, "移除策略后不应该有API")
-}
-
-func (suite *ApiTestSuite) TestAddPolicyWithCasbinError() {
-	// 测试添加策略时Casbin操作失败的情况
-	// 这里我们需要模拟Casbin操作失败的情况
-	// 由于我们使用的是实际的Casbin实例，这里我们可以通过其他方式测试
-	// 例如，尝试添加一个无效的策略
-	m := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), m)
-	suite.NoError(err, "创建API应该成功")
-
-	// 验证策略可以正常添加
-	err = suite.apiRepo.AddPolicy(context.Background(), *m)
-	suite.NoError(err, "添加策略应该成功")
-
-	// 再次尝试添加相同的策略，应该不会报错（Casbin会处理重复策略）
-	err = suite.apiRepo.AddPolicy(context.Background(), *m)
-	suite.NoError(err, "重复添加策略应该成功")
-}
-
-func (suite *ApiTestSuite) TestRemovePolicyWithCasbinError() {
-	// 测试删除策略时Casbin操作失败的情况
-	m := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), m)
-	suite.NoError(err, "创建API应该成功")
-
-	// 先添加策略
-	err = suite.apiRepo.AddPolicy(context.Background(), *m)
-	suite.NoError(err, "添加策略应该成功")
-
-	// 验证策略存在
-	sub := auth.ApiToSubject(m.ID)
-	ok, err := suite.apiRepo.enforcer.Enforce(sub, m.URL, m.Method)
-	suite.NoError(err, "检查授权应该成功")
-	suite.True(ok, "添加策略后应该有API")
-
-	// 测试删除策略
-	err = suite.apiRepo.RemovePolicy(context.Background(), *m, false)
-	suite.NoError(err, "删除策略应该成功")
-
-	// 再次尝试删除相同的策略，应该不会报错（Casbin会处理不存在的策略）
-	err = suite.apiRepo.RemovePolicy(context.Background(), *m, false)
-	suite.NoError(err, "删除不存在的策略应该成功")
-}
-
-func (suite *ApiTestSuite) TestListApiWithEmptyParams() {
-	// 测试列表查询时传入空参数
-	qp := database.QueryParams{}
-	ms, err := suite.apiRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "列表查询时传入空参数应该成功")
-	suite.NotNil(ms, "API列表不应该为nil")
-
-	// 测试CountModel
-	count, err := suite.apiRepo.CountModel(context.Background(), nil)
-	suite.NoError(err, "获取API总数应该成功")
-	suite.GreaterOrEqual(count, int64(0), "API总数应该大于等于0")
-}
-
-func (suite *ApiTestSuite) TestListApiWithInvalidPagination() {
-	// 测试列表查询时传入无效分页参数
-	qp := database.QueryParams{
-		Limit:  -1,
-		Offset: -1,
-	}
-	ms, err := suite.apiRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "列表查询时传入无效分页参数应该成功")
-	suite.NotNil(ms, "API列表不应该为nil")
-}
-
-func (suite *ApiTestSuite) TestListApiWithSorting() {
-	// 测试列表查询时传入排序参数
-	// 先创建多个API用于测试
-	for i := 0; i < 5; i++ {
-		sm := &sysmodel.ApiModel{
-			URL:    fmt.Sprintf("/api/test/%d/", i),
-			Method: "GET",
-			Label:  fmt.Sprintf("test_%d", i),
-			Descr:  fmt.Sprintf("这是测试接口 %d", i),
-		}
-		err := suite.apiRepo.CreateModel(context.Background(), sm)
-		suite.NoError(err, "创建API应该成功")
-	}
-
-	// 测试按ID降序排序
-	qp := database.QueryParams{
-		OrderBy: []string{"id DESC"},
-	}
-	ms, err := suite.apiRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "按ID降序排序查询应该成功")
-	suite.NotNil(ms, "API列表不应该为nil")
-	if len(ms) > 1 {
-		// 验证排序结果
-		prevID := ms[0].ID
-		for _, api := range ms {
-			suite.LessOrEqual(api.ID, prevID, "API应该按ID降序排序")
-			prevID = api.ID
-		}
-	}
-}
-
-func (suite *ApiTestSuite) TestListApiWithFiltering() {
-	// 测试列表查询时传入过滤参数
-	// 创建一个特定标签的API
-	testLabel := "filter_test"
-	sm := &sysmodel.ApiModel{
-		URL:    "/api/filter/test/",
-		Method: "GET",
-		Label:  testLabel,
-		Descr:  "这是一个用于过滤测试的接口",
-	}
-	err := suite.apiRepo.CreateModel(context.Background(), sm)
-	suite.NoError(err, "创建API应该成功")
-
-	// 测试按标签过滤
-	qp := database.QueryParams{
-		Query: map[string]any{
-			"label": testLabel,
-		},
-	}
-	ms, err := suite.apiRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "按标签过滤查询应该成功")
-	suite.NotNil(ms, "API列表不应该为nil")
-	// 验证过滤结果
-	for _, api := range ms {
-		suite.Equal(testLabel, api.Label, "API应该按标签过滤")
-	}
-
-	// 测试CountModel带过滤条件
-	count, err := suite.apiRepo.CountModel(context.Background(), map[string]any{
-		"label": testLabel,
-	})
-	suite.NoError(err, "带过滤条件的API总数查询应该成功")
-	suite.GreaterOrEqual(count, int64(1), "带过滤条件的API总数应该至少为1")
 }
 
 func (suite *ApiTestSuite) TestGetApiWithEmptyConditions() {
@@ -629,4 +602,33 @@ func (suite *ApiTestSuite) TestCreateApiWithSameUrlDifferentMethod() {
 func TestApiTestSuite(t *testing.T) {
 	pts := &ApiTestSuite{}
 	suite.Run(t, pts)
+}
+
+// TestNewApiRepo 测试创建API仓库实例
+func TestNewApiRepo(t *testing.T) {
+	db := test.NewTestGormDBWithConfig(nil)
+	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
+	logger := test.NewTestZapLogger()
+	enforcer, _ := auth.NewCasbinEnforcer()
+
+	repo := NewApiRepo(logger, db, dbTimeout, slowThreshold, enforcer)
+	if repo == nil {
+		t.Fatal("NewApiRepo should return a non-nil repository")
+	}
+	if repo.log == nil {
+		t.Fatal("Repo log should not be nil")
+	}
+	if repo.gormDB == nil {
+		t.Fatal("Repo gormDB should not be nil")
+	}
+	if repo.timeouts == nil {
+		t.Fatal("Repo timeouts should not be nil")
+	}
+	if repo.slowThreshold == nil {
+		t.Fatal("Repo slowThreshold should not be nil")
+	}
+	if repo.enforcer == nil {
+		t.Fatal("Repo enforcer should not be nil")
+	}
 }

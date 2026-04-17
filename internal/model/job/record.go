@@ -49,7 +49,19 @@ func (m *ScriptRecordModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-type ExecuteBIZ struct {
+func ListScriptRecordModelToUint32s(ms []ScriptRecordModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
+type ExecuteScriptDTO struct {
 	TriggerType string `json:"trigger_type"`
 	ScriptID    uint32 `json:"script_id"`
 	CommandArgs string `json:"command_args"`
@@ -59,7 +71,7 @@ type ExecuteBIZ struct {
 	Username    string `json:"username"`
 }
 
-func (biz *ExecuteBIZ) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (biz *ExecuteScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("trigger_type", biz.TriggerType)
 	enc.AddUint32("script_id", biz.ScriptID)
 	enc.AddString("command_args", biz.CommandArgs)
@@ -68,6 +80,25 @@ func (biz *ExecuteBIZ) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("work_dir", biz.WorkDir)
 	enc.AddString("username", biz.Username)
 	return nil
+}
+
+func ExecuteScriptDTOToModel(
+	dto ExecuteScriptDTO,
+	logName string,
+) ScriptRecordModel {
+	return ScriptRecordModel{
+		TriggerType:  dto.TriggerType,
+		Status:       1, // 执行中
+		ExitCode:     -1,
+		EnvVars:      dto.EnvVars,
+		CommandArgs:  dto.CommandArgs,
+		WorkDir:      dto.WorkDir,
+		Timeout:      dto.Timeout,
+		LogName:      logName,
+		ErrorMessage: "",
+		Username:     dto.Username,
+		ScriptID:     dto.ScriptID,
+	}
 }
 
 type TaskInfo struct {
@@ -93,10 +124,10 @@ func (t *TaskInfo) ToUpdateMap() map[string]any {
 	}
 }
 
-// ExecScriptDTO 用于创建计划任务的请求结构体
+// CreateScriptRecordDTO 用于创建计划任务的请求结构体
 //
-// swagger:model ExecScriptDTO
-type ExecScriptDTO struct {
+// swagger:model CreateScriptRecordDTO
+type CreateScriptRecordDTO struct {
 	// 脚本ID
 	ScriptID uint32 `json:"script_id" form:"script_id" binding:"required"`
 
@@ -113,7 +144,7 @@ type ExecScriptDTO struct {
 	WorkDir string `json:"work_dir" form:"work_dir" binding:"omitempty"`
 }
 
-func (dto ExecScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (dto CreateScriptRecordDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("script_id", dto.ScriptID)
 	enc.AddString("command_args", dto.CommandArgs)
 	enc.AddString("env_vars", dto.EnvVars)

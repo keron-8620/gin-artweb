@@ -38,6 +38,18 @@ func (m *OesNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListOesNodeModelToUint32s(ms []OesNodeModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type OesNodeVars struct {
 	ID       uint32 `json:"id" yaml:"id"`
 	NodeRole string `json:"node_role" yaml:"node_role"`
@@ -78,6 +90,15 @@ func (dto OesNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("oes_colony_id", dto.OesColonyID)
 	enc.AddUint32("host_id", dto.HostID)
 	return nil
+}
+
+func (dto OesNodeUpsertDTO) ToModel() OesNodeModel {
+	return OesNodeModel{
+		NodeRole:    dto.NodeRole,
+		IsEnable:    dto.IsEnable,
+		OesColonyID: dto.OesColonyID,
+		HostID:      dto.HostID,
+	}
 }
 
 func (dto OesNodeUpsertDTO) ToUpdateMap() map[string]any {

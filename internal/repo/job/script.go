@@ -21,9 +21,10 @@ import (
 // 负责脚本模型的CRUD操作
 // 使用GORM进行数据库操作
 type ScriptRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
 }
 
 // NewScriptRepo 创建脚本仓库实例
@@ -33,6 +34,7 @@ type ScriptRepo struct {
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
 //	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
+//	slowThreshold: 数据库操作慢查询阈值配置
 //
 // 返回值:
 //
@@ -41,11 +43,13 @@ func NewScriptRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 ) *ScriptRepo {
 	return &ScriptRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -76,40 +80,45 @@ func (r *ScriptRepo) CreateModel(
 	if m == nil {
 		err := errors.New("创建脚本模型:模型不能为空")
 		log.Error(
-			"创建脚本模型: 模型不能为空",
+			"创建脚本模型:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
 
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
+
 	log.Debug(
-		"创建脚本模型:开始执行",
+		"创建脚本模型:模型详情",
 		zap.Object("script_model", m),
 	)
 
-	m.CreatedAt = startTime
-	m.UpdatedAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createScriptStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, m, nil)
-	createScriptDuration := time.Since(createScriptStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建脚本模型:数据库操作失败",
 			zap.Error(err),
 			zap.Object("script_model", m),
-			zap.Duration("create_script_duration", createScriptDuration),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建脚本模型:数据库操作失败")
 	}
-	log.Debug(
-		"创建脚本模型:执行成功",
-		zap.Object("script_model", m),
-		zap.Duration("create_script_duration", createScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建脚本模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("script_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -118,7 +127,7 @@ func (r *ScriptRepo) CreateModel(
 // 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
-//	data: 更新数据，包含要更新的字段和值
+//	updateData: 更新数据，包含要更新的字段和值
 //	conds: 查询条件，用于指定要更新的记录
 //
 // 返回值:
@@ -131,52 +140,55 @@ func (r *ScriptRepo) CreateModel(
 //  3. 记录操作日志
 func (r *ScriptRepo) UpdateModel(
 	ctx context.Context,
-	data map[string]any,
+	updateData map[string]any,
 	conds ...any,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	// 检查参数
-	if len(data) == 0 {
-		err := errors.New("更新脚本模型:更新数据不能为空")
+	if len(updateData) == 0 {
+		err := errors.New("更新脚本模型:更新数据为空")
 		log.Error(
-			"更新脚本模型:更新数据不能为空",
+			"更新脚本模型:更新数据为空",
 			zap.Error(err),
-			zap.Any("update_data", data),
-			zap.Any("conds", conds),
+			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	updateData["updated_at"] = startTime
+
 	log.Debug(
-		"更新脚本模型:开始执行",
-		zap.Any("update_data", data),
+		"更新脚本模型:更新数据",
+		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	updateScriptStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, data, nil, conds...)
-	updateScriptDuration := time.Since(updateScriptStartTime)
+
+	updateStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, updateData, nil, conds...)
+	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
 			"更新脚本模型:数据库操作失败",
 			zap.Error(err),
-			zap.Any("update_data", data),
+			zap.Any("update_data", updateData),
 			zap.Any("conds", conds),
-			zap.Duration("update_script_duration", updateScriptDuration),
+			zap.Duration("update_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新脚本模型:数据库操作失败")
 	}
-	log.Debug(
-		"更新脚本模型:执行成功",
-		zap.Any("update_data", data),
-		zap.Any("conds", conds),
-		zap.Duration("update_script_duration", updateScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新脚本模型:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -202,31 +214,33 @@ func (r *ScriptRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除脚本模型:开始执行",
+		"删除脚本模型:删除条件",
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	deleteScriptStartTime := time.Now()
+
+	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, conds...)
-	deleteScriptDuration := time.Since(deleteScriptStartTime)
+	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
 			"删除脚本模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_script_duration", deleteScriptDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除脚本模型:数据库操作失败")
 	}
-	log.Debug(
-		"删除脚本模型:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_script_duration", deleteScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除脚本模型:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -254,33 +268,40 @@ func (r *ScriptRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询脚本模型:开始执行",
+		"查询脚本模型:查询条件",
 		zap.Any("conds", conds),
 	)
 
 	var m jobmodel.ScriptModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	getScriptStartTime := time.Now()
+
+	getStartTime := time.Now()
 	err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...)
-	getScriptDuration := time.Since(getScriptStartTime)
+	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
 			"查询脚本模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_script_duration", getScriptDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询脚本模型:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询脚本模型:执行成功",
+		"查询脚本模型:查询到的模型详情",
 		zap.Object("script_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_script_duration", getScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询脚本模型:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return &m, nil
 }
 
@@ -310,32 +331,40 @@ func (r *ScriptRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询脚本模型列表:开始执行",
+		"查询脚本模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
 
 	var ms []jobmodel.ScriptModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	listScriptStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, &ms, qp)
-	listScriptDuration := time.Since(listScriptStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询脚本模型列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_script_duration", listScriptDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询脚本模型列表:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询脚本模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_script_duration", listScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询脚本模型列表:查询到的模型列表",
+		zap.Uint32s("script_ids", jobmodel.ListScriptModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询脚本模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -347,33 +376,38 @@ func (r *ScriptRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询脚本模型总数:开始执行",
+		"查询API模型总数:查询条件",
 		zap.Any("query", query),
 	)
 
-	var count int64
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countScriptStartTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, query)
-	countScriptDuration := time.Since(countScriptStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询脚本模型总数:数据库操作失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_script_duration", countScriptDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询脚本模型总数:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询脚本模型总数:执行成功",
-		zap.Any("query", query),
+		"查询脚本模型总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_script_duration", countScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询脚本模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }
 
@@ -387,29 +421,24 @@ func (r *ScriptRepo) SaveScriptFile(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"保存脚本文件:开始执行",
+		"保存脚本文件:入参详情",
 		zap.String("script_path", scriptPath),
 		zap.Bool("overwrite", overwrite),
 	)
-	saveScriptStartTime := time.Now()
+
+	saveStartTime := time.Now()
 	err := fileutil.WriteReaderToFile(ctx, fileReader, scriptPath, os.FileMode(0o750), overwrite)
-	saveScriptDuration := time.Since(saveScriptStartTime)
+	saveDuration := time.Since(saveStartTime)
 	if err != nil {
 		log.Error(
 			"保存脚本文件:文件写入失败",
 			zap.Error(err),
 			zap.String("script_path", scriptPath),
-			zap.Duration("save_script_duration", saveScriptDuration),
+			zap.Duration("save_duration", saveDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "保存脚本文件:文件写入失败")
 	}
-	log.Debug(
-		"保存脚本文件:执行成功",
-		zap.String("script_path", scriptPath),
-		zap.Duration("save_script_duration", saveScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 	return nil
 }
 
@@ -421,49 +450,56 @@ func (r *ScriptRepo) RemoveScriptFile(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除脚本文件:开始执行",
+		"删除脚本文件:入参详情",
 		zap.String("script_path", scriptPath),
 	)
 
-	// 检查文件是否存在
-	if _, err := os.Stat(scriptPath); err != nil {
-		if os.IsNotExist(err) {
-			log.Warn(
-				"删除脚本文件:脚本文件不存在",
-				zap.Error(err),
-				zap.String("script_path", scriptPath),
-				zap.Duration("total_duration", time.Since(startTime)),
-			)
-			return nil
-		}
-		log.Error(
-			"删除脚本文件:检查脚本文件失败",
-			zap.Error(err),
-			zap.String("script_path", scriptPath),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		return errors.WrapIf(err, "删除脚本文件:检查脚本文件失败")
-	}
 	// 删除文件
-	removeScriptStartTime := time.Now()
-	err := os.Remove(scriptPath)
-	removeScriptDuration := time.Since(removeScriptStartTime)
+	removeStartTime := time.Now()
+	err := fileutil.Remove(ctx, scriptPath)
+	removeDuration := time.Since(removeStartTime)
 	if err != nil {
 		log.Error(
 			"删除脚本文件:文件删除失败",
 			zap.Error(err),
 			zap.String("script_path", scriptPath),
-			zap.Duration("remove_script_duration", removeScriptDuration),
+			zap.Duration("remove_duration", removeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除脚本文件:文件删除失败")
 	}
+	return nil
+}
+
+func (r *ScriptRepo) MoveScriptFile(
+	ctx context.Context,
+	oldScriptPath string,
+	newScriptPath string,
+) error {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(r.log, ctx)
+
 	log.Debug(
-		"删除脚本文件:文件删除成功",
-		zap.String("script_path", scriptPath),
-		zap.Duration("remove_script_duration", removeScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"移动脚本文件:入参详情",
+		zap.String("old_script_path", oldScriptPath),
+		zap.String("new_script_path", newScriptPath),
 	)
+
+	// 移动文件
+	moveStartTime := time.Now()
+	err := fileutil.Move(ctx, oldScriptPath, newScriptPath)
+	moveDuration := time.Since(moveStartTime)
+	if err != nil {
+		log.Error(
+			"移动脚本文件:文件移动失败",
+			zap.Error(err),
+			zap.String("old_script_path", oldScriptPath),
+			zap.String("new_script_path", newScriptPath),
+			zap.Duration("move_duration", moveDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.WrapIf(err, "移动脚本文件:文件移动失败")
+	}
 	return nil
 }
 
@@ -490,7 +526,7 @@ func (r *ScriptRepo) ListProjects(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询脚本所有的项目名称:开始查询",
+		"查询脚本所有的项目名称:查询条件",
 		zap.Any("query_params", query),
 	)
 
@@ -498,28 +534,32 @@ func (r *ScriptRepo) ListProjects(
 	defer cancel()
 
 	var projects []string
-	countScriptStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := r.gormDB.WithContext(dbCtx).Model(&jobmodel.ScriptModel{}).Where(query).Distinct("project").Pluck("project", &projects).Error
-	countScriptDuration := time.Since(countScriptStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询脚本所有的项目名称:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query_params", query),
-			zap.Duration("count_script_duration", countScriptDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询脚本所有的项目名称:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询脚本所有的项目名称:查询项目名称成功",
-		zap.Any("projects", projects),
-		zap.Any("query_params", query),
-		zap.Duration("count_script_duration", countScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询脚本所有的项目名称:查询到的项目名称列表",
+		zap.Strings("projects", projects),
 	)
 
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询脚本所有的项目名称:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return projects, nil
 }
 
@@ -546,36 +586,41 @@ func (r *ScriptRepo) ListLabels(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询脚本所有的标签名称:开始查询",
+		"查询脚本所有的标签名称:查询条件",
 		zap.Any("query_params", query),
 	)
 
 	var labels []string
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
 
 	// 查询所有唯一的标签名称
-	countScriptStartTime := time.Now()
+	listStartTime := time.Now()
 	err := r.gormDB.WithContext(dbCtx).Model(&jobmodel.ScriptModel{}).Where(query).Distinct("label").Pluck("label", &labels).Error
-	countScriptDuration := time.Since(countScriptStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询脚本所有的标签名称:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query_params", query),
-			zap.Duration("count_script_duration", countScriptDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询脚本所有的标签名称:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询脚本所有的标签名称:查询标签名称成功",
-		zap.Any("labels", labels),
-		zap.Any("query_params", query),
-		zap.Duration("count_script_duration", countScriptDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询脚本所有的标签名称:查询到的标签名称列表",
+		zap.Strings("labels", labels),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询脚本所有的标签名称:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 
 	return labels, nil
 }

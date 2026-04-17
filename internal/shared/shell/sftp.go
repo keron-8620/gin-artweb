@@ -104,7 +104,7 @@ func DownloadFile(
 
 	// 确保本地目标目录存在
 	destDir := filepath.Dir(dest)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0750); err != nil {
 		return errors.WithMessagef(err, "创建本地目录失败，路径: %s", destDir)
 	}
 
@@ -248,7 +248,7 @@ func DownloadDirectory(
 	}
 
 	// 确保本地目标目录存在
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0750); err != nil {
 		return errors.WithMessagef(err, "创建本地目录失败，路径: %s", destDir)
 	}
 

@@ -65,6 +65,12 @@ func main() {
 		return
 	}
 
+	if _, err := os.Stat(config.TmpDir); os.IsNotExist(err) {
+		if mkerr := os.MkdirAll(config.TmpDir, 0750); mkerr != nil {
+			golog.Fatalf("创建临时目录失败: %v", mkerr)
+		}
+	}
+
 	// 加载环境变量
 	if err := godotenv.Load(filepath.Join(config.BaseDir, ".env")); err != nil {
 		golog.Fatalf("加载环境变量失败: %v", err)
@@ -89,7 +95,11 @@ func main() {
 		if err != nil {
 			golog.Fatalf("数据库初始化失败: %v", err)
 		}
-		defer database.CloseGormDB(db)
+		defer func() {
+			if err := database.CloseGormDB(db); err != nil {
+				loggers.Server.Error("数据库关闭失败", zap.Error(err))
+			}
+		}()
 
 		if err := model.DBAutoMigrate(db); err != nil {
 			golog.Panicf("数据库迁移失败: %v", err)
@@ -104,19 +114,19 @@ func main() {
 			golog.Fatalf("SQL文件不存在: %s", execSqlPath)
 		}
 
-		sqlBytes, err := os.ReadFile(execSqlPath)
-		if err != nil {
-			golog.Fatalf("读取SQL文件失败: %v", err)
-		}
 		// 初始化数据库
 		db, err := initGromDB(sysConf)
 		if err != nil {
 			golog.Fatalf("数据库初始化失败: %v", err)
 		}
-		defer database.CloseGormDB(db)
+		defer func() {
+			if err := database.CloseGormDB(db); err != nil {
+				loggers.Server.Error("数据库关闭失败", zap.Error(err))
+			}
+		}()
 
 		// 执行SQL脚本
-		if err := database.ExecSQL(context.Background(), db, string(sqlBytes)); err != nil {
+		if err := database.ExecSQLFile(context.Background(), db, execSqlPath); err != nil {
 			golog.Panicf("执行SQL脚本失败: %v", err)
 		}
 
@@ -146,8 +156,9 @@ func main() {
 
 	// 构建 HTTP 服务器结构体
 	srv := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", i.Conf.Server.Host, i.Conf.Server.Port),
-		Handler: r,
+		Addr:              fmt.Sprintf("%s:%d", i.Conf.Server.Host, i.Conf.Server.Port),
+		Handler:           r,
+		ReadHeaderTimeout: time.Duration(sysConf.Server.Timeout.Request),
 	}
 
 	// 启动一个 goroutine 来异步启动 HTTP/HTTPS 服务

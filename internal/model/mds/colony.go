@@ -42,6 +42,18 @@ func (m *MdsColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListMdsColonyModelToUint32s(ms []MdsColonyModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type MdsColonyVars struct {
 	ID        uint32 `json:"id" yaml:"id"`
 	ColonyNum string `json:"colony_num" yaml:"colony_num"`
@@ -90,6 +102,16 @@ func (vs *MdsColonyUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	enc.AddUint32("package_id", vs.PackageID)
 	enc.AddUint32("mon_node_id", vs.MonNodeID)
 	return nil
+}
+
+func (dto *MdsColonyUpsertDTO) ToModel() MdsColonyModel {
+	return MdsColonyModel{
+		ColonyNum:     dto.ColonyNum,
+		ExtractedName: dto.ExtractedName,
+		IsEnable:      dto.IsEnable,
+		PackageID:     dto.PackageID,
+		MonNodeID:     dto.MonNodeID,
+	}
 }
 
 func (dto *MdsColonyUpsertDTO) ToUpdateMap() map[string]any {

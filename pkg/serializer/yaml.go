@@ -169,21 +169,21 @@ func writeYAMLAtomic(filePath string, data any, options SerializerOptions, start
 
 	if err != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return nil, errors.WithMessagef(err, "写入YAML临时文件失败, 文件路径=%s", filePath)
 	}
 
 	// 检查上下文是否已取消
 	if ctxErr := options.Context.Err(); ctxErr != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 原子重命名
 	if err := os.Rename(tmpFile, filePath); err != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return nil, errors.WithMessagef(err, "将YAML临时文件重命名为指定的文件名失败, 临时文件=%s, 文件路径=%s", tmpFile, filePath)
 	}
 

@@ -8,9 +8,11 @@ import (
 	"gin-artweb/internal/shared/auth"
 )
 
+type ContextKey string
+
 const (
-	UserIDKey    string = "user_id"
-	JwtClaimsKey string = "jwt_claims"
+	UserIDKey    ContextKey = "uid"
+	JwtClaimsKey ContextKey = "jwt_claims"
 )
 
 func GetJwtClaims(ctx context.Context) (*auth.JwtClaims, error) {

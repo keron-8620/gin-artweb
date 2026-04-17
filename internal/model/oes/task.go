@@ -69,25 +69,39 @@ type StkColonyTaskExecutionInfo struct {
 func (stk StkColonyTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("colony_num", stk.ColonyNum)
 	if stk.Mon != nil {
-		enc.AddObject("mon", stk.Mon)
+		if err := enc.AddObject("mon", stk.Mon); err != nil {
+			return err
+		}
 	}
 	if stk.CounterFetch != nil {
-		enc.AddObject("counter_fetch", stk.CounterFetch)
+		if err := enc.AddObject("counter_fetch", stk.CounterFetch); err != nil {
+			return err
+		}
 	}
 	if stk.CounterDistribute != nil {
-		enc.AddObject("counter_distribute", stk.CounterDistribute)
+		if err := enc.AddObject("counter_distribute", stk.CounterDistribute); err != nil {
+			return err
+		}
 	}
 	if stk.Bse != nil {
-		enc.AddObject("bse", stk.Bse)
+		if err := enc.AddObject("bse", stk.Bse); err != nil {
+			return err
+		}
 	}
 	if stk.Sse != nil {
-		enc.AddObject("sse", stk.Sse)
+		if err := enc.AddObject("sse", stk.Sse); err != nil {
+			return err
+		}
 	}
 	if stk.Szse != nil {
-		enc.AddObject("szse", stk.Szse)
+		if err := enc.AddObject("szse", stk.Szse); err != nil {
+			return err
+		}
 	}
 	if stk.Csdc != nil {
-		enc.AddObject("csdc", stk.Csdc)
+		if err := enc.AddObject("csdc", stk.Csdc); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -146,28 +160,44 @@ type CrdColonyTaskExecutionInfo struct {
 func (crd CrdColonyTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("colony_num", crd.ColonyNum)
 	if crd.Mon != nil {
-		enc.AddObject("mon", crd.Mon)
+		if err := enc.AddObject("mon", crd.Mon); err != nil {
+			return err
+		}
 	}
 	if crd.CounterFetch != nil {
-		enc.AddObject("counter_fetch", crd.CounterFetch)
+		if err := enc.AddObject("counter_fetch", crd.CounterFetch); err != nil {
+			return err
+		}
 	}
 	if crd.CounterDistribute != nil {
-		enc.AddObject("counter_distribute", crd.CounterDistribute)
+		if err := enc.AddObject("counter_distribute", crd.CounterDistribute); err != nil {
+			return err
+		}
 	}
 	if crd.Sse != nil {
-		enc.AddObject("sse", crd.Sse)
+		if err := enc.AddObject("sse", crd.Sse); err != nil {
+			return err
+		}
 	}
 	if crd.Szse != nil {
-		enc.AddObject("szse", crd.Szse)
+		if err := enc.AddObject("szse", crd.Szse); err != nil {
+			return err
+		}
 	}
 	if crd.Csdc != nil {
-		enc.AddObject("csdc", crd.Csdc)
+		if err := enc.AddObject("csdc", crd.Csdc); err != nil {
+			return err
+		}
 	}
 	if crd.SseLate != nil {
-		enc.AddObject("sse_late", crd.SseLate)
+		if err := enc.AddObject("sse_late", crd.SseLate); err != nil {
+			return err
+		}
 	}
 	if crd.SzseLate != nil {
-		enc.AddObject("szse_late", crd.SzseLate)
+		if err := enc.AddObject("szse_late", crd.SzseLate); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -220,19 +250,29 @@ type OptColonyTaskExecutionInfo struct {
 func (opt OptColonyTaskExecutionInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("colony_num", opt.ColonyNum)
 	if opt.Mon != nil {
-		enc.AddObject("mon", opt.Mon)
+		if err := enc.AddObject("mon", opt.Mon); err != nil {
+			return err
+		}
 	}
 	if opt.CounterFetch != nil {
-		enc.AddObject("counter_fetch", opt.CounterFetch)
+		if err := enc.AddObject("counter_fetch", opt.CounterFetch); err != nil {
+			return err
+		}
 	}
 	if opt.CounterDistribute != nil {
-		enc.AddObject("counter_distribute", opt.CounterDistribute)
+		if err := enc.AddObject("counter_distribute", opt.CounterDistribute); err != nil {
+			return err
+		}
 	}
 	if opt.Sse != nil {
-		enc.AddObject("sse", opt.Sse)
+		if err := enc.AddObject("sse", opt.Sse); err != nil {
+			return err
+		}
 	}
 	if opt.Szse != nil {
-		enc.AddObject("szse", opt.Szse)
+		if err := enc.AddObject("szse", opt.Szse); err != nil {
+			return err
+		}
 	}
 	return nil
 }

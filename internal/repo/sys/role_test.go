@@ -34,38 +34,48 @@ type RoleTestSuite struct {
 
 func (suite *RoleTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&sysmodel.RoleModel{},
 		&sysmodel.ApiModel{},
 		&sysmodel.MenuModel{},
 		&sysmodel.ButtonModel{},
-	)
+	); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
+	enforcer, err := auth.NewCasbinEnforcer()
+	if err != nil {
+		suite.Error(err, "创建Casbinforcer失败")
+	}
 	suite.roleRepo = &RoleRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		enforcer: enforcer,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 	suite.apiRepo = &ApiRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		enforcer: enforcer,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 	suite.menuRepo = &MenuRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		enforcer: enforcer,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 	suite.buttonRepo = &ButtonRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
-		enforcer: enforcer,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 }
 
@@ -159,46 +169,6 @@ func (suite *RoleTestSuite) TestListRoles() {
 	suite.Equal(2, len(pMs), "分页查询应该返回指定数量的记录")
 }
 
-func (suite *RoleTestSuite) TestAddGroupPolicy() {
-	// 创建API用于测试
-	api := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), api)
-	suite.NoError(err, "创建API应该成功")
-	err = suite.apiRepo.AddPolicy(context.Background(), *api)
-	suite.NoError(err, "添加API策略应该成功")
-
-	// 创建菜单用于测试
-	menu := CreateTestMenuModel(nil)
-	err = suite.menuRepo.CreateModel(context.Background(), menu, nil)
-	suite.NoError(err, "创建菜单应该成功")
-	err = suite.menuRepo.AddGroupPolicy(context.Background(), menu)
-	suite.NoError(err, "添加菜单策略应该成功")
-
-	// 创建按钮用于测试
-	button := CreateTestButtonModel(menu.ID)
-	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
-	suite.NoError(err, "创建按钮应该成功")
-	err = suite.buttonRepo.AddGroupPolicy(context.Background(), button)
-	suite.NoError(err, "添加按钮策略应该成功")
-
-	// 创建角色
-	role := CreateTestRoleModel()
-	apis := []sysmodel.ApiModel{*api}
-	menus := []sysmodel.MenuModel{*menu}
-	buttons := []sysmodel.ButtonModel{*button}
-
-	err = suite.roleRepo.CreateModel(context.Background(), role, apis, menus, buttons)
-	suite.NoError(err, "创建角色并添加策略应该成功")
-	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
-	suite.NoError(err, "添加角色策略应该成功")
-
-	// 验证策略是否添加成功
-	sub := auth.RoleToSubject(role.ID)
-	ok, err := suite.roleRepo.enforcer.Enforce(sub, api.URL, api.Method)
-	suite.NoError(err, "检查授权应该成功")
-	suite.True(ok, "添加策略后应该有API权限")
-}
-
 func (suite *RoleTestSuite) TestCreateRoleWithInvalidData() {
 	// 测试创建角色时传入空数据
 	err := suite.roleRepo.CreateModel(context.Background(), nil, nil, nil, nil)
@@ -250,92 +220,6 @@ func (suite *RoleTestSuite) TestGetRoleWithEmptyConditions() {
 		suite.NotNil(result, "查询时传入空条件应该返回有效的角色模型")
 		suite.Greater(result.ID, uint32(0), "返回的角色模型ID应该大于0")
 	}
-}
-
-func (suite *RoleTestSuite) TestGetRoleWithContextTimeout() {
-	// 测试查询时上下文已取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	_, err := suite.roleRepo.GetModel(ctx, []string{}, 1)
-	suite.Error(err, "查询时上下文已取消应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestCreateRoleWithContextTimeout() {
-	// 测试创建角色时上下文超时
-	// 创建一个非常短的超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 5)
-
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(ctx, role, nil, nil, nil)
-	suite.Error(err, "创建角色时上下文超时应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestUpdateRoleWithContextTimeout() {
-	// 测试更新角色时上下文超时
-	// 先创建一个角色
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
-	suite.NoError(err, "创建角色应该成功")
-
-	// 创建一个非常短的超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 5)
-
-	// 尝试更新角色
-	err = suite.roleRepo.UpdateModel(ctx, map[string]any{
-		"name": fmt.Sprintf("timeout_role_%s", uuid.NewString()),
-	}, nil, nil, nil, "id = ?", role.ID)
-	suite.Error(err, "更新角色时上下文超时应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestDeleteRoleWithContextTimeout() {
-	// 测试删除角色时上下文超时
-	// 先创建一个角色
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
-	suite.NoError(err, "创建角色应该成功")
-
-	// 创建一个非常短的超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 5)
-
-	// 尝试删除角色
-	err = suite.roleRepo.DeleteModel(ctx, "id = ?", role.ID)
-	suite.Error(err, "删除角色时上下文超时应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestListRolesWithContextTimeout() {
-	// 测试列表查询时上下文超时
-	// 创建一个非常短的超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 5)
-
-	// 尝试列表查询
-	qp := database.QueryParams{}
-	_, err := suite.roleRepo.ListModel(ctx, qp)
-	suite.Error(err, "列表查询时上下文超时应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestCountRolesWithContextTimeout() {
-	// 测试计数查询时上下文超时
-	// 创建一个非常短的超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
-	defer cancel()
-	// 等待超时
-	time.Sleep(time.Millisecond * 5)
-
-	// 尝试计数查询
-	_, err := suite.roleRepo.CountModel(ctx, nil)
-	suite.Error(err, "计数查询时上下文超时应该返回错误")
 }
 
 func (suite *RoleTestSuite) TestListRolesWithEmptyParams() {
@@ -414,74 +298,33 @@ func TestRoleTestSuite(t *testing.T) {
 	suite.Run(t, pts)
 }
 
-func (suite *RoleTestSuite) TestRoleAddGroupPolicy() {
-	api := CreateTestApiModel()
-	err := suite.apiRepo.CreateModel(context.Background(), api)
-	suite.NoError(err, "创建API应该成功")
+// TestNewRoleRepo 测试创建角色仓库实例
+func TestNewRoleRepo(t *testing.T) {
+	db := test.NewTestGormDBWithConfig(nil)
+	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
+	logger := test.NewTestZapLogger()
+	enforcer, _ := auth.NewCasbinEnforcer()
 
-	menu := CreateTestMenuModel(nil)
-	err = suite.menuRepo.CreateModel(context.Background(), menu, nil)
-	suite.NoError(err, "创建菜单应该成功")
-
-	button := CreateTestButtonModel(menu.ID)
-	err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
-	suite.NoError(err, "创建按钮应该成功")
-
-	role := CreateTestRoleModel()
-	role.Apis = []sysmodel.ApiModel{*api}
-	role.Menus = []sysmodel.MenuModel{*menu}
-	role.Buttons = []sysmodel.ButtonModel{*button}
-	err = suite.roleRepo.CreateModel(context.Background(), role, role.Apis, role.Menus, role.Buttons)
-	suite.NoError(err, "创建角色应该成功")
-
-	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
-	suite.NoError(err, "添加角色组策略应该成功")
-}
-
-func (suite *RoleTestSuite) TestRoleAddGroupPolicyWithInvalidData() {
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
-	suite.NoError(err, "创建角色应该成功")
-
-	role.Apis = []sysmodel.ApiModel{{URL: "/api/test", Method: "GET"}}
-	role.Menus = []sysmodel.MenuModel{{Name: "test_menu", Path: "/test"}}
-	role.Buttons = []sysmodel.ButtonModel{{Name: "test_button", MenuID: 1}}
-
-	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
-	suite.NoError(err, "添加包含无效数据的角色组策略应该成功")
-}
-
-func (suite *RoleTestSuite) TestRoleRemoveGroupPolicy() {
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
-	suite.NoError(err, "创建角色应该成功")
-
-	err = suite.roleRepo.RemoveGroupPolicy(context.Background(), role)
-	suite.NoError(err, "删除角色组策略应该成功")
-}
-
-func (suite *RoleTestSuite) TestRoleRemoveGroupPolicyWithCanceledContext() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	role := &sysmodel.RoleModel{}
-	role.ID = 1
-
-	err := suite.roleRepo.RemoveGroupPolicy(ctx, role)
-	suite.Error(err, "上下文已取消时删除角色组策略应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestRoleRemoveGroupPolicyWithNilRole() {
-	err := suite.roleRepo.RemoveGroupPolicy(context.Background(), nil)
-	suite.Error(err, "角色为nil时删除组策略应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestRoleRemoveGroupPolicyWithZeroID() {
-	role := &sysmodel.RoleModel{}
-	role.ID = 0
-
-	err := suite.roleRepo.RemoveGroupPolicy(context.Background(), role)
-	suite.Error(err, "角色ID为0时删除组策略应该返回错误")
+	repo := NewRoleRepo(logger, db, dbTimeout, slowThreshold, enforcer)
+	if repo == nil {
+		t.Fatal("NewRoleRepo should return a non-nil repository")
+	}
+	if repo.log == nil {
+		t.Fatal("Repo log should not be nil")
+	}
+	if repo.gormDB == nil {
+		t.Fatal("Repo gormDB should not be nil")
+	}
+	if repo.timeouts == nil {
+		t.Fatal("Repo timeouts should not be nil")
+	}
+	if repo.slowThreshold == nil {
+		t.Fatal("Repo slowThreshold should not be nil")
+	}
+	if repo.enforcer == nil {
+		t.Fatal("Repo enforcer should not be nil")
+	}
 }
 
 func (suite *RoleTestSuite) TestRoleUpdateModelWithAssociations() {
@@ -518,54 +361,291 @@ func (suite *RoleTestSuite) TestRoleUpdateModelWithAssociations() {
 	suite.Equal(1, len(fm.Buttons))
 }
 
-func (suite *RoleTestSuite) TestRoleAddGroupPolicyWithCasbinError() {
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
-	suite.NoError(err, "创建角色应该成功")
+func (suite *RoleTestSuite) TestRoleGroupPolicy() {
+	testCases := []struct {
+		name     string
+		setup    func() (*sysmodel.RoleModel, error)
+		exec     func(role *sysmodel.RoleModel) error
+		expected bool
+		desc     string
+	}{
+		{
+			name: "Add group policy with valid data",
+			setup: func() (*sysmodel.RoleModel, error) {
+				// 创建API用于测试
+				api := CreateTestApiModel()
+				err := suite.apiRepo.CreateModel(context.Background(), api)
+				if err != nil {
+					return nil, err
+				}
+				err = suite.apiRepo.AddPolicy(context.Background(), *api)
+				if err != nil {
+					return nil, err
+				}
 
-	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
-	suite.NoError(err, "添加角色组策略应该成功")
+				// 创建菜单用于测试
+				menu := CreateTestMenuModel(nil)
+				err = suite.menuRepo.CreateModel(context.Background(), menu, nil)
+				if err != nil {
+					return nil, err
+				}
+				err = suite.menuRepo.AddGroupPolicy(context.Background(), *menu)
+				if err != nil {
+					return nil, err
+				}
 
-	err = suite.roleRepo.AddGroupPolicy(context.Background(), role)
-	suite.NoError(err, "重复添加角色组策略应该成功")
+				// 创建按钮用于测试
+				button := CreateTestButtonModel(menu.ID)
+				err = suite.buttonRepo.CreateModel(context.Background(), button, nil)
+				if err != nil {
+					return nil, err
+				}
+				err = suite.buttonRepo.AddGroupPolicy(context.Background(), *button)
+				if err != nil {
+					return nil, err
+				}
+
+				// 创建角色
+				role := CreateTestRoleModel()
+				apis := []sysmodel.ApiModel{*api}
+				menus := []sysmodel.MenuModel{*menu}
+				buttons := []sysmodel.ButtonModel{*button}
+
+				err = suite.roleRepo.CreateModel(context.Background(), role, apis, menus, buttons)
+				if err != nil {
+					return nil, err
+				}
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				return suite.roleRepo.AddGroupPolicy(context.Background(), *role)
+			},
+			expected: false,
+			desc:     "添加角色组策略应该成功",
+		},
+		{
+			name: "Add group policy with invalid data",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := CreateTestRoleModel()
+				err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
+				if err != nil {
+					return nil, err
+				}
+				role.Apis = []sysmodel.ApiModel{{URL: "/api/test", Method: "GET"}}
+				role.Menus = []sysmodel.MenuModel{{Name: "test_menu", Path: "/test"}}
+				role.Buttons = []sysmodel.ButtonModel{{Name: "test_button", MenuID: 1}}
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				return suite.roleRepo.AddGroupPolicy(context.Background(), *role)
+			},
+			expected: false,
+			desc:     "添加包含无效数据的角色组策略应该成功",
+		},
+		{
+			name: "Add group policy with zero ID",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := &sysmodel.RoleModel{}
+				role.ID = 0
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				return suite.roleRepo.AddGroupPolicy(context.Background(), *role)
+			},
+			expected: true,
+			desc:     "角色ID为0时添加组策略应该返回错误",
+		},
+		{
+			name: "Add group policy with canceled context",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := &sysmodel.RoleModel{}
+				role.ID = 1
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return suite.roleRepo.AddGroupPolicy(ctx, *role)
+			},
+			expected: true,
+			desc:     "上下文已取消时添加角色组策略应该返回错误",
+		},
+		{
+			name: "Remove group policy with valid data",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := CreateTestRoleModel()
+				err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
+				if err != nil {
+					return nil, err
+				}
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				return suite.roleRepo.RemoveGroupPolicy(context.Background(), *role)
+			},
+			expected: false,
+			desc:     "删除角色组策略应该成功",
+		},
+		{
+			name: "Remove group policy with zero ID",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := &sysmodel.RoleModel{}
+				role.ID = 0
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				return suite.roleRepo.RemoveGroupPolicy(context.Background(), *role)
+			},
+			expected: true,
+			desc:     "角色ID为0时删除组策略应该返回错误",
+		},
+		{
+			name: "Remove group policy with canceled context",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := &sysmodel.RoleModel{}
+				role.ID = 1
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return suite.roleRepo.RemoveGroupPolicy(ctx, *role)
+			},
+			expected: true,
+			desc:     "上下文已取消时删除角色组策略应该返回错误",
+		},
+		{
+			name: "Add group policy twice (idempotent)",
+			setup: func() (*sysmodel.RoleModel, error) {
+				role := CreateTestRoleModel()
+				err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
+				if err != nil {
+					return nil, err
+				}
+				return role, nil
+			},
+			exec: func(role *sysmodel.RoleModel) error {
+				err := suite.roleRepo.AddGroupPolicy(context.Background(), *role)
+				if err != nil {
+					return err
+				}
+				return suite.roleRepo.AddGroupPolicy(context.Background(), *role)
+			},
+			expected: false,
+			desc:     "重复添加角色组策略应该成功",
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			role, err := tc.setup()
+			suite.NoError(err, "测试设置应该成功")
+
+			err = tc.exec(role)
+			if tc.expected {
+				suite.Error(err, tc.desc)
+			} else {
+				suite.NoError(err, tc.desc)
+			}
+
+			// 验证策略是否添加成功（仅对有效数据测试）
+			if !tc.expected && role != nil && len(role.Apis) > 0 {
+				// 检查是否有有效的API（ID > 0）
+				hasValidApi := false
+				for _, api := range role.Apis {
+					if api.ID > 0 {
+						hasValidApi = true
+						break
+					}
+				}
+
+				// 只有当有有效API时才进行权限验证
+				if hasValidApi {
+					sub := auth.RoleToSubject(role.ID)
+					api := role.Apis[0]
+					ok, err := suite.roleRepo.enforcer.Enforce(sub, api.URL, api.Method)
+					suite.NoError(err, "检查授权应该成功")
+					suite.True(ok, "添加策略后应该有API权限")
+				}
+			}
+		})
+	}
 }
 
-func (suite *RoleTestSuite) TestRoleAddGroupPolicyWithCanceledContext() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+func (suite *RoleTestSuite) TestRoleWithContextTimeout() {
+	testCases := []struct {
+		name string
+		exec func(ctx context.Context) error
+	}{
+		{
+			name: "GetModel with canceled context",
+			exec: func(ctx context.Context) error {
+				_, err := suite.roleRepo.GetModel(ctx, []string{}, 1)
+				return err
+			},
+		},
+		{
+			name: "CreateModel with timeout context",
+			exec: func(ctx context.Context) error {
+				role := CreateTestRoleModel()
+				return suite.roleRepo.CreateModel(ctx, role, nil, nil, nil)
+			},
+		},
+		{
+			name: "UpdateModel with timeout context",
+			exec: func(ctx context.Context) error {
+				role := CreateTestRoleModel()
+				err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
+				if err != nil {
+					return err
+				}
+				return suite.roleRepo.UpdateModel(ctx, map[string]any{
+					"name": fmt.Sprintf("timeout_role_%s", uuid.NewString()),
+				}, nil, nil, nil, "id = ?", role.ID)
+			},
+		},
+		{
+			name: "DeleteModel with timeout context",
+			exec: func(ctx context.Context) error {
+				role := CreateTestRoleModel()
+				err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
+				if err != nil {
+					return err
+				}
+				return suite.roleRepo.DeleteModel(ctx, "id = ?", role.ID)
+			},
+		},
+		{
+			name: "ListModel with timeout context",
+			exec: func(ctx context.Context) error {
+				qp := database.QueryParams{}
+				_, err := suite.roleRepo.ListModel(ctx, qp)
+				return err
+			},
+		},
+		{
+			name: "CountModel with timeout context",
+			exec: func(ctx context.Context) error {
+				_, err := suite.roleRepo.CountModel(ctx, nil)
+				return err
+			},
+		},
+	}
 
-	role := &sysmodel.RoleModel{}
-	role.ID = 1
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			// 测试取消上下文
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			err := tc.exec(ctx)
+			suite.Error(err, "操作时上下文已取消应该返回错误")
 
-	err := suite.roleRepo.AddGroupPolicy(ctx, role)
-	suite.Error(err, "上下文已取消时添加角色组策略应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestRoleAddGroupPolicyWithNilRole() {
-	err := suite.roleRepo.AddGroupPolicy(context.Background(), nil)
-	suite.Error(err, "角色为nil时添加组策略应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestRoleAddGroupPolicyWithZeroID() {
-	role := &sysmodel.RoleModel{}
-	role.ID = 0
-
-	err := suite.roleRepo.AddGroupPolicy(context.Background(), role)
-	suite.Error(err, "角色ID为0时添加组策略应该返回错误")
-}
-
-func (suite *RoleTestSuite) TestRoleUpdateModelWithContextTimeout() {
-	role := CreateTestRoleModel()
-	err := suite.roleRepo.CreateModel(context.Background(), role, nil, nil, nil)
-	suite.NoError(err, "创建角色应该成功")
-
-	testCtx := context.Background()
-	ctx, cancel := context.WithTimeout(testCtx, time.Millisecond*1)
-	defer cancel()
-	time.Sleep(time.Millisecond * 5)
-
-	err = suite.roleRepo.UpdateModel(ctx, map[string]any{
-		"name": fmt.Sprintf("timeout_update_%s", uuid.NewString()),
-	}, nil, nil, nil, "id = ?", role.ID)
-	suite.Error(err, "更新角色时上下文超时应该返回错误")
+			// 测试超时上下文
+			timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
+			defer cancel()
+			time.Sleep(time.Millisecond * 5)
+			err = tc.exec(timeoutCtx)
+			suite.Error(err, "操作时上下文超时应该返回错误")
+		})
+	}
 }

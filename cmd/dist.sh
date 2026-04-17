@@ -97,6 +97,80 @@ verify_extract_structure() {
     rm -rf "$temp_extract_dir"
 }
 
+# 为脚本文件添加可执行权限
+add_executable_permissions() {
+    echo "开始为脚本文件添加可执行权限..."
+    
+    # 检查resource目录是否存在
+    if [ ! -d "resource" ]; then
+        echo "警告：resource目录不存在，跳过权限设置"
+        return 0
+    fi
+    
+    # 遍历resource目录下的所有文件夹
+    local resource_dirs
+    resource_dirs="$(find resource -type d -not -path '*/\.*')"
+    
+    local total_files=0
+    local success_files=0
+    
+    for dir in $resource_dirs; do
+        # 检查script子文件夹是否存在
+        local script_dir="$dir/script"
+        if [ -d "$script_dir" ]; then
+            echo "处理目录：$script_dir"
+            
+            # 递归查找所有脚本文件
+            local script_files
+            script_files="$(find "$script_dir" -type f -not -path '*/\.*')"
+            
+            for file in $script_files; do
+                total_files=$((total_files + 1))
+                
+                # 添加可执行权限
+                chmod +x "$file"
+                
+                if [ $? -eq 0 ]; then
+                    success_files=$((success_files + 1))
+                    echo "  ✓ 为文件添加可执行权限：$file"
+                else
+                    echo "  ✗ 为文件添加可执行权限失败：$file"
+                fi
+            done
+        fi
+    done
+    
+    echo "权限设置完成："
+    echo "  总文件数：$total_files"
+    echo "  成功设置：$success_files"
+    
+    # 验证权限设置
+    echo "验证权限设置..."
+    local verify_failed=0
+    
+    for dir in $resource_dirs; do
+        local script_dir="$dir/script"
+        if [ -d "$script_dir" ]; then
+            local script_files
+            script_files="$(find "$script_dir" -type f -not -path '*/\.*')"
+            
+            for file in $script_files; do
+                if [ ! -x "$file" ]; then
+                    echo "  ✗ 权限验证失败：$file"
+                    verify_failed=1
+                fi
+            done
+        fi
+    done
+    
+    if [ $verify_failed -eq 0 ]; then
+        echo "权限验证成功！"
+    else
+        echo "权限验证失败，部分文件未设置可执行权限"
+        exit 1
+    fi
+}
+
 # 主函数
 main() {
     echo "开始打包项目..."
@@ -104,6 +178,9 @@ main() {
     # 切换到项目根目录
     cd "$PROJECT_ROOT"
     echo "当前工作目录：$(pwd)"
+    
+    # 执行预处理步骤：为脚本文件添加可执行权限
+    add_executable_permissions
     
     # 提取版本号
     echo "正在获取版本号..."

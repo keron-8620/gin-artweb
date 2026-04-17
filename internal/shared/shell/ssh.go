@@ -69,7 +69,7 @@ func NewSSHClient(
 	// 检查上下文是否已取消
 	select {
 	case <-ctx.Done():
-		conn.Close()
+		_ = conn.Close()
 		return nil, errors.WithMessage(ctx.Err(), "上下文已取消")
 	default:
 	}
@@ -77,7 +77,7 @@ func NewSSHClient(
 	// 协商SSH连接
 	clientConn, chans, reqs, err := ssh.NewClientConn(conn, addr, &sshConfig)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, errors.WithMessagef(err, "SSH协商失败 (%s@%s:%d)", sshUser, sshIP, sshPort)
 	}
 
@@ -94,7 +94,7 @@ func getHostKeyCallback(ctx context.Context, useKnownHosts bool) (ssh.HostKeyCal
 	}
 
 	if !useKnownHosts {
-		// 不使用known_hosts，返回不安全的回调（仅用于开发环境）
+		// #nosec G106 -- 不使用known_hosts，返回不安全的回调（仅用于开发环境）
 		return ssh.InsecureIgnoreHostKey(), nil
 	}
 

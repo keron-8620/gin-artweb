@@ -40,6 +40,7 @@ func (s *OptTaskService) BuildTaskExecutionInfos(
 	ctx context.Context,
 	dto oesmodel.ListOesColonyDTO,
 ) ([]oesmodel.OptColonyTaskExecutionInfo, *errors.Error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
@@ -51,12 +52,24 @@ func (s *OptTaskService) BuildTaskExecutionInfos(
 	}
 	ms, err := s.colonyRepo.ListModel(ctx, qp)
 	if err != nil {
-		return nil, errors.NewGormError(err, qp.Query)
+		log.Error(
+			"查询oes期权集群列表:查询数据库模型列表失败",
+			zap.Error(err),
+			zap.Object("query_params", &qp),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, errors.NewGormError(err, nil)
 	}
 	trs := make([]oesmodel.OptColonyTaskRecordIDs, len(ms))
 	for i, m := range ms {
 		tr, err := loadOptTaskRecordCacheFromFiles(log, m.ColonyNum)
 		if err != nil {
+			log.Error(
+				"查询oes期权集群列表:查询执行记录失败",
+				zap.Error(err),
+				zap.String("colony_num", m.ColonyNum),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
 			return nil, errors.FromError(err)
 		}
 		if tr != nil {
@@ -69,6 +82,12 @@ func (s *OptTaskService) BuildTaskExecutionInfos(
 	}
 	records, rErr := s.recordSvc.ListScriptRecordByIDs(ctx, nil, recordIDs)
 	if rErr != nil {
+		log.Error(
+			"查询oes期权集群列表:查询脚本记录失败",
+			zap.Error(rErr),
+			zap.Uint32s("record_ids", recordIDs),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
 		return nil, rErr
 	}
 	cache := make(map[uint32]jobmodel.ScriptRecordModel, len(records))
@@ -99,11 +118,6 @@ func loadOptTaskRecordCacheFromFiles(
 ) (*oesmodel.OptColonyTaskRecordIDs, *errors.Error) {
 	startTime := time.Now()
 
-	log.Info(
-		"读取opt任务状态对应的执行记录id:开始执行",
-		zap.String("colony_num", colonyNum),
-	)
-
 	flagDir := filepath.Join(config.StorageDir, "oes", "flags", colonyNum)
 	mc := oesmodel.OptColonyTaskRecordIDs{
 		ColonyNum: colonyNum,
@@ -128,17 +142,12 @@ func loadOptTaskRecordCacheFromFiles(
 				zap.String("colony_num", colonyNum),
 				zap.String("task_name", taskName),
 				zap.String("flag_path", flagPath),
+				zap.Duration("total_duration", time.Since(startTime)),
 			)
 			return nil, errors.FromError(err)
 		} else {
 			*fieldPtr = value
 		}
 	}
-
-	log.Debug(
-		"读取opt任务状态对应的执行记录id:任务状态读取成功",
-		zap.Object("opt_task_record_ids", &mc),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 	return &mc, nil
 }

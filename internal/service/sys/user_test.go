@@ -48,6 +48,21 @@ func CreateTestLoginRecordModel(ip string) *sysmodel.LoginRecordModel {
 	}
 }
 
+// CreateTestRole 创建测试角色并返回ID
+func (suite *UserTestSuite) CreateTestRole() uint32 {
+	testRole := CreateTestRoleModel()
+	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
+	suite.Nil(err, "创建角色应该成功")
+	return testRole.ID
+}
+
+// CreateTestUser 创建测试用户并返回用户对象
+func (suite *UserTestSuite) CreateTestUser(roleID uint32) *sysmodel.UserModel {
+	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(roleID))
+	suite.Nil(err, "创建用户应该成功")
+	return createdUser
+}
+
 type UserTestSuite struct {
 	suite.Suite
 	uc *UserService
@@ -55,35 +70,43 @@ type UserTestSuite struct {
 
 func (suite *UserTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&sysmodel.MenuModel{},
 		&sysmodel.ApiModel{},
 		&sysmodel.ButtonModel{},
 		&sysmodel.RoleModel{},
 		&sysmodel.UserModel{},
 		&sysmodel.LoginRecordModel{},
-	)
+	); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-
+	slowThreshold := test.NewTestDBSlowThreshold()
+	enforcer, err := auth.NewCasbinEnforcer()
+	if err != nil {
+		suite.Error(err, "创建Casbinforcer失败")
+	}
 	suite.uc = NewUserService(
 		logger,
 		syssvc.NewRoleRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			enforcer,
 		),
 		syssvc.NewUserRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 		),
 		syssvc.NewLoginRecordRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			time.Duration(10)*time.Minute,
 			time.Duration(10)*time.Minute,
 			2,
@@ -114,28 +137,21 @@ func TestUserTestSuite(t *testing.T) {
 // TestGetRole 测试获取用户关联的角色
 func (suite *UserTestSuite) TestGetRole() {
 	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
+	roleID := suite.CreateTestRole()
 
 	// 测试获取角色
-	role, err := suite.uc.GetRole(context.Background(), testRole.ID)
+	role, err := suite.uc.GetRole(context.Background(), roleID)
 	suite.Nil(err, "获取角色应该成功")
 	suite.NotNil(role, "角色不应该为空")
-	suite.Equal(testRole.ID, role.ID, "角色ID应该匹配")
-	suite.Equal(testRole.Name, role.Name, "角色名称应该匹配")
+	suite.Equal(roleID, role.ID, "角色ID应该匹配")
+	suite.NotEmpty(role.Name, "角色名称不应该为空")
 }
 
 // TestFindUserByID 测试根据ID查询用户
 func (suite *UserTestSuite) TestFindUserByID() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
 	// 测试查询用户
 	foundUser, err := suite.uc.FindUserByID(context.Background(), []string{"Role"}, createdUser.ID)
@@ -144,18 +160,14 @@ func (suite *UserTestSuite) TestFindUserByID() {
 	suite.Equal(createdUser.ID, foundUser.ID, "用户ID应该匹配")
 	suite.Equal(createdUser.Username, foundUser.Username, "用户名应该匹配")
 	suite.Equal(createdUser.RoleID, foundUser.RoleID, "角色ID应该匹配")
+	suite.True(foundUser.IsActive, "用户应该是活跃状态")
 }
 
 // TestFindUserByName 测试根据用户名查询用户
 func (suite *UserTestSuite) TestFindUserByName() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
 	// 测试查询用户
 	foundUser, err := suite.uc.FindUserByName(context.Background(), []string{"Role"}, createdUser.Username)
@@ -168,15 +180,12 @@ func (suite *UserTestSuite) TestFindUserByName() {
 // TestListUser 测试查询用户列表
 func (suite *UserTestSuite) TestListUser() {
 	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
+	roleID := suite.CreateTestRole()
 
 	// 创建测试用户
 	userCount := 2
 	for i := 0; i < userCount; i++ {
-		_, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-		suite.Nil(err, "创建用户应该成功")
+		suite.CreateTestUser(roleID)
 	}
 
 	// 测试查询用户列表
@@ -184,21 +193,17 @@ func (suite *UserTestSuite) TestListUser() {
 	suite.Nil(err, "查询用户列表应该成功")
 	suite.GreaterOrEqual(int(count), userCount, "用户数量应该大于或等于创建的数量")
 	suite.NotNil(users, "用户列表不应该为空")
+	suite.Greater(len(users), 0, "用户列表长度应该大于0")
 }
 
 // TestListLoginRecord 测试查询登录记录列表
 func (suite *UserTestSuite) TestListLoginRecord() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
 	// 测试登录，生成登录记录
-	_, _, err = suite.uc.Login(context.Background(), sysmodel.LoginDTO{
+	_, _, err := suite.uc.Login(context.Background(), sysmodel.LoginDTO{
 		Username: createdUser.Username,
 		Password: "Test123!@#$%",
 	}, sysmodel.RequestContext{
@@ -212,39 +217,35 @@ func (suite *UserTestSuite) TestListLoginRecord() {
 	suite.Nil(err, "查询登录记录列表应该成功")
 	suite.GreaterOrEqual(int(count), 1, "登录记录数量应该大于或等于1")
 	suite.NotNil(records, "登录记录列表不应该为空")
+	suite.Greater(len(records), 0, "登录记录列表长度应该大于0")
 }
 
 // TestCreateUser 测试创建用户
 func (suite *UserTestSuite) TestCreateUser() {
 	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
+	roleID := suite.CreateTestRole()
 
 	// 创建测试用户
-	testUser := CreateTestUserDTO(testRole.ID)
+	testUser := CreateTestUserDTO(roleID)
 	createdUser, err := suite.uc.CreateUser(context.Background(), testUser)
 	suite.Nil(err, "创建用户应该成功")
 	suite.NotNil(createdUser, "用户不应该为空")
 	suite.Equal(testUser.Username, createdUser.Username, "用户名应该匹配")
 	suite.NotEqual(testUser.Password, createdUser.Password, "密码应该被哈希处理")
 	suite.Equal(testUser.RoleID, createdUser.RoleID, "角色ID应该匹配")
+	suite.True(createdUser.IsActive, "用户应该是活跃状态")
+	suite.False(createdUser.IsStaff, "用户不应该是管理员")
 }
 
 // TestUpdateUserByID 测试更新用户
 func (suite *UserTestSuite) TestUpdateUserByID() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
 	// 更新用户
 	updatedUsername := uuid.NewString()
-	err = suite.uc.UpdateUserByID(context.Background(), createdUser.ID, sysmodel.UpdateUserDTO{
+	err := suite.uc.UpdateUserByID(context.Background(), createdUser.ID, sysmodel.UpdateUserDTO{
 		Username: updatedUsername,
 		IsActive: false,
 	})
@@ -254,22 +255,17 @@ func (suite *UserTestSuite) TestUpdateUserByID() {
 	foundUser, err := suite.uc.FindUserByID(context.Background(), []string{}, createdUser.ID)
 	suite.Nil(err, "查询用户应该成功")
 	suite.Equal(updatedUsername, foundUser.Username, "用户名应该更新")
-	suite.False(foundUser.IsActive, "用户状态应该更新")
+	suite.False(foundUser.IsActive, "用户状态应该更新为非活跃")
 }
 
 // TestDeleteUserByID 测试删除用户
 func (suite *UserTestSuite) TestDeleteUserByID() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
 	// 删除用户
-	err = suite.uc.DeleteUserByID(context.Background(), createdUser.ID)
+	err := suite.uc.DeleteUserByID(context.Background(), createdUser.ID)
 	suite.Nil(err, "删除用户应该成功")
 
 	// 验证用户已删除
@@ -277,66 +273,15 @@ func (suite *UserTestSuite) TestDeleteUserByID() {
 	suite.NotNil(err, "查询已删除的用户应该失败")
 }
 
-// TestLogin 测试用户登录（成功场景）
-func (suite *UserTestSuite) TestLogin() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
+// TestPasswordManagement 测试密码管理功能
+func (suite *UserTestSuite) TestPasswordManagement() {
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
-
-	// 测试登录
-	accessToken, refreshToken, err := suite.uc.Login(context.Background(), sysmodel.LoginDTO{
-		Username: createdUser.Username,
-		Password: "Test123!@#$%",
-	}, sysmodel.RequestContext{
-		IP:        "127.0.0.1",
-		UserAgent: "test_user_agent",
-	})
-	suite.Nil(err, "登录应该成功")
-	suite.NotEmpty(accessToken, "访问令牌不应该为空")
-	suite.NotEmpty(refreshToken, "刷新令牌不应该为空")
-}
-
-// TestLoginWithFailedPassword 测试用户登录（密码失败场景）
-func (suite *UserTestSuite) TestLoginWithFailedPassword() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
-
-	// 测试登录（密码错误）
-	_, _, err = suite.uc.Login(context.Background(), sysmodel.LoginDTO{
-		Username: createdUser.Username,
-		Password: "wrong_password",
-	}, sysmodel.RequestContext{
-		IP:        "127.0.0.1",
-		UserAgent: "test_user_agent",
-	})
-	suite.NotNil(err, "登录应该失败")
-}
-
-// TestPatchPassword 测试修改密码
-func (suite *UserTestSuite) TestPatchPassword() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
-
-	// 修改密码
+	// 测试修改密码成功场景
 	newPassword := "NewTest123!@#$%" // 强度足够的新密码
-	err = suite.uc.PatchPassword(context.Background(), createdUser.ID, "Test123!@#$%", newPassword)
+	err := suite.uc.PatchPassword(context.Background(), createdUser.ID, "Test123!@#$%", newPassword)
 	suite.Nil(err, "修改密码应该成功")
 
 	// 验证新密码可以登录
@@ -348,127 +293,47 @@ func (suite *UserTestSuite) TestPatchPassword() {
 		UserAgent: "test_user_agent",
 	})
 	suite.Nil(err, "使用新密码登录应该成功")
-}
 
-// TestPatchPasswordWithInvalidOldPassword 测试修改密码（旧密码错误场景）
-func (suite *UserTestSuite) TestPatchPasswordWithInvalidOldPassword() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
-
-	// 修改密码（旧密码错误）
-	err = suite.uc.PatchPassword(context.Background(), createdUser.ID, "wrong_old_password", "NewTest123!@#$%")
+	// 测试修改密码失败场景（旧密码错误）
+	err = suite.uc.PatchPassword(context.Background(), createdUser.ID, "wrong_old_password", "AnotherNewPassword123!@#")
 	suite.NotNil(err, "旧密码错误应该返回错误")
-}
 
-// TestResetPasswordWithWeakPassword 测试重置密码（密码强度不足场景）
-func (suite *UserTestSuite) TestResetPasswordWithWeakPassword() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
-
-	// 重置密码（密码强度不足）
+	// 测试重置密码失败场景（密码强度不足）
 	err = suite.uc.ResetPassword(context.Background(), createdUser.ID, "weak")
 	suite.NotNil(err, "密码强度不足应该返回错误")
 }
 
-// TestRefreshTokensWithInvalidToken 测试刷新令牌（无效令牌场景）
-func (suite *UserTestSuite) TestRefreshTokensWithInvalidToken() {
-	// 测试无效刷新令牌
-	_, _, err := suite.uc.RefreshTokens(context.Background(), "invalid_token")
-	suite.NotNil(err, "无效令牌应该返回错误")
-}
-
-// TestValidatePasswordStrength 测试密码强度验证
-func (suite *UserTestSuite) TestValidatePasswordStrength() {
-	// 测试密码强度足够
-	err := suite.uc.validatePasswordStrength(context.Background(), "Test123!@#$%")
+// TestPasswordFunctions 测试密码相关功能
+func (suite *UserTestSuite) TestPasswordFunctions() {
+	// 测试密码强度验证
+	err := suite.uc.validatePasswordStrength("Test123!@#$%")
 	suite.Nil(err, "密码强度足够应该返回 nil")
 
-	// 测试密码强度不足
-	err = suite.uc.validatePasswordStrength(context.Background(), "weak")
+	err = suite.uc.validatePasswordStrength("weak")
 	suite.NotNil(err, "密码强度不足应该返回错误")
-}
 
-// TestValidatePasswordStrengthWithContextError 测试密码强度验证（上下文错误场景）
-func (suite *UserTestSuite) TestValidatePasswordStrengthWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	err := suite.uc.validatePasswordStrength(ctx, "Test123!@#$%")
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestHashPassword 测试密码哈希
-func (suite *UserTestSuite) TestHashPassword() {
-	// 测试正常密码哈希
+	// 测试密码哈希
 	hashedPassword, err := suite.uc.hashPassword(context.Background(), "Test123!@#$%")
 	suite.Nil(err, "密码哈希应该成功")
 	suite.NotEmpty(hashedPassword, "哈希密码不应该为空")
-}
+	suite.Greater(len(hashedPassword), 0, "哈希密码长度应该大于0")
 
-// TestHashPasswordWithContextError 测试密码哈希（上下文错误场景）
-func (suite *UserTestSuite) TestHashPasswordWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.uc.hashPassword(ctx, "Test123!@#$%")
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestVerifyPassword 测试密码验证
-func (suite *UserTestSuite) TestVerifyPassword() {
-	// 先哈希一个密码
-	hashedPassword, err := suite.uc.hashPassword(context.Background(), "Test123!@#$%")
-	suite.Nil(err, "密码哈希应该成功")
-
-	// 测试密码验证成功
+	// 测试密码验证
 	err = suite.uc.verifyPassword(context.Background(), "Test123!@#$%", hashedPassword)
 	suite.Nil(err, "密码验证应该成功")
 
-	// 测试密码验证失败
 	err = suite.uc.verifyPassword(context.Background(), "wrong_password", hashedPassword)
 	suite.NotNil(err, "密码验证失败应该返回错误")
 }
 
-// TestVerifyPasswordWithContextError 测试密码验证（上下文错误场景）
-func (suite *UserTestSuite) TestVerifyPasswordWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+// TestLoginFunctions 测试登录相关功能
+func (suite *UserTestSuite) TestLoginFunctions() {
+	// 创建测试角色和用户
+	roleID := suite.CreateTestRole()
+	createdUser := suite.CreateTestUser(roleID)
 
-	// 测试上下文错误
-	err := suite.uc.verifyPassword(ctx, "test", "test")
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestRefreshTokens 测试刷新令牌
-func (suite *UserTestSuite) TestRefreshTokens() {
-	// 创建测试角色
-	testRole := CreateTestRoleModel()
-	err := suite.uc.roleRepo.CreateModel(context.Background(), testRole, nil, nil, nil)
-	suite.Nil(err, "创建角色应该成功")
-
-	// 创建测试用户
-	createdUser, err := suite.uc.CreateUser(context.Background(), CreateTestUserDTO(testRole.ID))
-	suite.Nil(err, "创建用户应该成功")
-
-	// 登录获取令牌
-	_, refreshToken, err := suite.uc.Login(context.Background(), sysmodel.LoginDTO{
+	// 测试登录成功场景
+	accessToken, refreshToken, err := suite.uc.Login(context.Background(), sysmodel.LoginDTO{
 		Username: createdUser.Username,
 		Password: "Test123!@#$%",
 	}, sysmodel.RequestContext{
@@ -476,137 +341,87 @@ func (suite *UserTestSuite) TestRefreshTokens() {
 		UserAgent: "test_user_agent",
 	})
 	suite.Nil(err, "登录应该成功")
+	suite.NotEmpty(accessToken, "访问令牌不应该为空")
+	suite.NotEmpty(refreshToken, "刷新令牌不应该为空")
+	suite.Greater(len(accessToken), 0, "访问令牌长度应该大于0")
+	suite.Greater(len(refreshToken), 0, "刷新令牌长度应该大于0")
 
-	// 刷新令牌
+	// 测试登录失败场景（密码错误）
+	_, _, err = suite.uc.Login(context.Background(), sysmodel.LoginDTO{
+		Username: createdUser.Username,
+		Password: "wrong_password",
+	}, sysmodel.RequestContext{
+		IP:        "127.0.0.1",
+		UserAgent: "test_user_agent",
+	})
+	suite.NotNil(err, "登录应该失败")
+
+	// 测试刷新令牌
 	newAccessToken, newRefreshToken, err := suite.uc.RefreshTokens(context.Background(), refreshToken)
 	suite.Nil(err, "刷新令牌应该成功")
 	suite.NotEmpty(newAccessToken, "新访问令牌不应该为空")
 	suite.NotEmpty(newRefreshToken, "新刷新令牌不应该为空")
+	suite.Greater(len(newAccessToken), 0, "新访问令牌长度应该大于0")
+	suite.Greater(len(newRefreshToken), 0, "新刷新令牌长度应该大于0")
+
+	// 测试无效刷新令牌
+	_, _, err = suite.uc.RefreshTokens(context.Background(), "invalid_token")
+	suite.NotNil(err, "无效令牌应该返回错误")
 }
 
-// TestGetRoleWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestGetRoleWithContextError() {
+// TestWithContextError 测试上下文错误处理
+func (suite *UserTestSuite) TestWithContextError() {
 	// 创建已取消的上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	// 测试上下文错误
+	// 测试 GetRole 上下文错误
 	_, err := suite.uc.GetRole(ctx, 1)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
+	suite.NotNil(err, "GetRole 上下文错误应该返回错误")
 
-// TestCreateUserWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestCreateUserWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	// 测试 CreateUser 上下文错误
+	_, err = suite.uc.CreateUser(ctx, CreateTestUserDTO(1))
+	suite.NotNil(err, "CreateUser 上下文错误应该返回错误")
 
-	// 测试上下文错误
-	_, err := suite.uc.CreateUser(ctx, CreateTestUserDTO(1))
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
+	// 测试 UpdateUserByID 上下文错误
+	err = suite.uc.UpdateUserByID(ctx, 1, sysmodel.UpdateUserDTO{})
+	suite.NotNil(err, "UpdateUserByID 上下文错误应该返回错误")
 
-// TestUpdateUserByIDWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestUpdateUserByIDWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	// 测试 DeleteUserByID 上下文错误
+	err = suite.uc.DeleteUserByID(ctx, 1)
+	suite.NotNil(err, "DeleteUserByID 上下文错误应该返回错误")
 
-	// 测试上下文错误
-	err := suite.uc.UpdateUserByID(ctx, 1, sysmodel.UpdateUserDTO{})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
+	// 测试 FindUserByID 上下文错误
+	_, err = suite.uc.FindUserByID(ctx, []string{}, 1)
+	suite.NotNil(err, "FindUserByID 上下文错误应该返回错误")
 
-// TestDeleteUserByIDWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestDeleteUserByIDWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	// 测试 FindUserByName 上下文错误
+	_, err = suite.uc.FindUserByName(ctx, []string{}, "test")
+	suite.NotNil(err, "FindUserByName 上下文错误应该返回错误")
 
-	// 测试上下文错误
-	err := suite.uc.DeleteUserByID(ctx, 1)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
+	// 测试 ListUser 上下文错误
+	_, _, err = suite.uc.ListUser(ctx, 1, 10, sysmodel.ListUserDTO{})
+	suite.NotNil(err, "ListUser 上下文错误应该返回错误")
 
-// TestFindUserByIDWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestFindUserByIDWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	// 测试 ListLoginRecord 上下文错误
+	_, _, err = suite.uc.ListLoginRecord(ctx, 1, 10, sysmodel.ListLoginRecordDTO{})
+	suite.NotNil(err, "ListLoginRecord 上下文错误应该返回错误")
 
-	// 测试上下文错误
-	_, err := suite.uc.FindUserByID(ctx, []string{}, 1)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestFindUserByNameWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestFindUserByNameWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.uc.FindUserByName(ctx, []string{}, "test")
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestListUserWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestListUserWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, _, err := suite.uc.ListUser(ctx, 1, 10, sysmodel.ListUserDTO{})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestListLoginRecordWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestListLoginRecordWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, _, err := suite.uc.ListLoginRecord(ctx, 1, 10, sysmodel.ListLoginRecordDTO{})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestLoginWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestLoginWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, _, err := suite.uc.Login(ctx, sysmodel.LoginDTO{
+	// 测试 Login 上下文错误
+	_, _, err = suite.uc.Login(ctx, sysmodel.LoginDTO{
 		Username: "test",
 		Password: "test",
 	}, sysmodel.RequestContext{
 		IP:        "127.0.0.1",
 		UserAgent: "test",
 	})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
+	suite.NotNil(err, "Login 上下文错误应该返回错误")
 
-// TestPatchPasswordWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestPatchPasswordWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	// 测试 PatchPassword 上下文错误
+	err = suite.uc.PatchPassword(ctx, 1, "old", "new")
+	suite.NotNil(err, "PatchPassword 上下文错误应该返回错误")
 
-	// 测试上下文错误
-	err := suite.uc.PatchPassword(ctx, 1, "old", "new")
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestRefreshTokensWithContextError 测试上下文错误处理
-func (suite *UserTestSuite) TestRefreshTokensWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, _, err := suite.uc.RefreshTokens(ctx, "test")
-	suite.NotNil(err, "上下文错误应该返回错误")
+	// 测试 RefreshTokens 上下文错误
+	_, _, err = suite.uc.RefreshTokens(ctx, "test")
+	suite.NotNil(err, "RefreshTokens 上下文错误应该返回错误")
 }

@@ -72,10 +72,10 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 		return nil, errors.Wrap(err, "获取数据库连接失败")
 	}
 	// 设置连接池参数
-	sqlDB.SetMaxIdleConns(c.MaxIdleConns)                                    // 最大空闲连接数
-	sqlDB.SetMaxOpenConns(c.MaxOpenConns)                                    // 最大打开连接数
-	sqlDB.SetConnMaxLifetime(time.Duration(c.ConnMaxLifetime) * time.Second) // 连接最大生命周期
-	sqlDB.SetConnMaxIdleTime(time.Duration(c.ConnMaxIdleTime) * time.Second) // 空闲连接最大存活时间
+	sqlDB.SetMaxIdleConns(c.MaxIdleConns)       // 最大空闲连接数
+	sqlDB.SetMaxOpenConns(c.MaxOpenConns)       // 最大打开连接数
+	sqlDB.SetConnMaxLifetime(c.ConnMaxLifetime) // 连接最大生命周期
+	sqlDB.SetConnMaxIdleTime(c.ConnMaxIdleTime) // 空闲连接最大存活时间
 	return db, nil
 }
 

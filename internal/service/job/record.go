@@ -73,10 +73,7 @@ func (s *RecordService) Execute(
 	record *jobmodel.ScriptRecordModel,
 ) *jobmodel.TaskInfo {
 	startTime := time.Now()
-
 	log := ctxutil.NewLogger(s.log, ctx)
-
-	log.Info("脚本执行:开始执行")
 
 	log.Debug(
 		"脚本执行:参数详情",
@@ -84,7 +81,7 @@ func (s *RecordService) Execute(
 	)
 
 	// 初始化执行任务
-	exCtx, cancel := context.WithCancel(context.Background())
+	exCtx, cancel := context.WithCancel(ctx)
 	s.StoreCancel(record.ID, cancel)
 
 	// 创建带超时的上下文
@@ -120,7 +117,8 @@ func (s *RecordService) Execute(
 				taskinfo.ErrMSG = fmt.Sprintf("%v", v)
 			}
 
-			log.Error("脚本执行:发生panic",
+			log.Error(
+				"脚本执行:发生panic",
 				zap.String("error", taskinfo.ErrMSG),
 				zap.Any("panic", r),
 				zap.String("stack", string(stack)),
@@ -153,14 +151,14 @@ func (s *RecordService) Execute(
 
 		// 关闭日志文件句柄
 		if taskinfo.LogFile != nil {
-			taskinfo.LogFile.Close()
+			_ = taskinfo.LogFile.Close()
 		}
 
 		// 清理执行完成的上下文
 		s.DeleteCancel(record.ID)
 
 		// 输出日志
-		log.Info(
+		log.Debug(
 			"脚本执行:执行完成",
 			zap.Int("status", taskinfo.Status),
 			zap.Int("exit_code", taskinfo.ExitCode),
@@ -172,7 +170,7 @@ func (s *RecordService) Execute(
 	// 生成日志路径并创建日志目录
 	logPath := s.GenerateScriptLogPath(record.CreatedAt, record.LogName)
 	logDir := filepath.Dir(logPath)
-	if taskinfo.Error = os.MkdirAll(logDir, 0755); taskinfo.Error != nil {
+	if taskinfo.Error = os.MkdirAll(logDir, 0750); taskinfo.Error != nil {
 		taskinfo.Status = 5
 		taskinfo.ErrMSG = fmt.Sprintf("创建日志目录失败: %v", taskinfo.Error)
 		log.Error(
@@ -235,6 +233,7 @@ func (s *RecordService) Execute(
 		zap.Strings("parsed_args", cmdArgs),
 	)
 
+	// #nosec G204 -- 创建命令执行上下文
 	cmd := exec.CommandContext(exCtx, scriptPath, cmdArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
@@ -249,20 +248,22 @@ func (s *RecordService) Execute(
 		process := cmd.Process
 		pid := process.Pid
 
-		log.Debug("脚本执行:开始终止进程", zap.Int("pid", pid))
-
 		// 尝试获取进程组ID
 		pgid, err := syscall.Getpgid(pid)
 		if err != nil {
-			log.Debug("脚本执行:获取进程组ID失败, 将直接终止单个进程",
+			log.Debug(
+				"脚本执行:获取进程组ID失败, 将直接终止单个进程",
 				zap.Error(err),
-				zap.Int("pid", pid))
+				zap.Int("pid", pid),
+			)
 
 			// 先尝试优雅终止单个进程
 			if err := process.Signal(syscall.SIGTERM); err != nil {
-				log.Debug("脚本执行:发送SIGTERM信号失败, 尝试强制终止",
+				log.Debug(
+					"脚本执行:发送SIGTERM信号失败, 尝试强制终止",
 					zap.Error(err),
-					zap.Int("pid", pid))
+					zap.Int("pid", pid),
+				)
 				return process.Kill()
 			}
 
@@ -271,26 +272,36 @@ func (s *RecordService) Execute(
 			for time.Now().Before(deadline) {
 				if err := process.Signal(syscall.Signal(0)); err != nil {
 					// 进程已终止
-					log.Debug("脚本执行:进程已成功终止", zap.Int("pid", pid))
+					log.Debug(
+						"脚本执行:进程已成功终止",
+						zap.Int("pid", pid),
+					)
 					return nil
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
 
 			// 超时后强制终止
-			log.Debug("脚本执行:进程终止超时, 尝试强制终止", zap.Int("pid", pid))
+			log.Debug(
+				"脚本执行:进程终止超时, 尝试强制终止",
+				zap.Int("pid", pid),
+			)
 			return process.Kill()
 		}
 
 		// 向整个进程组发送SIGTERM信号
-		log.Debug("脚本执行:向进程组发送SIGTERM信号",
+		log.Debug(
+			"脚本执行:向进程组发送SIGTERM信号",
 			zap.Int("pgid", pgid),
-			zap.Int("pid", pid))
+			zap.Int("pid", pid),
+		)
 
 		if err := syscall.Kill(-pgid, syscall.SIGTERM); err != nil {
-			log.Debug("脚本执行:发送SIGTERM信号到进程组失败, 尝试发送SIGKILL",
+			log.Debug(
+				"脚本执行:发送SIGTERM信号到进程组失败, 尝试发送SIGKILL",
 				zap.Error(err),
-				zap.Int("pgid", pgid))
+				zap.Int("pgid", pgid),
+			)
 			return syscall.Kill(-pgid, syscall.SIGKILL)
 		}
 
@@ -299,28 +310,38 @@ func (s *RecordService) Execute(
 		for time.Now().Before(deadline) {
 			if err := process.Signal(syscall.Signal(0)); err != nil {
 				// 进程已终止
-				log.Debug("脚本执行:进程组已成功终止",
+				log.Debug(
+					"脚本执行:进程组已成功终止",
 					zap.Int("pgid", pgid),
-					zap.Int("pid", pid))
+					zap.Int("pid", pid),
+				)
 				return nil
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
 		// 超时后强制终止整个进程组
-		log.Debug("脚本执行:进程组终止超时, 尝试强制终止",
+		log.Debug(
+			"脚本执行:进程组终止超时, 尝试强制终止",
 			zap.Int("pgid", pgid),
-			zap.Int("pid", pid))
+			zap.Int("pid", pid),
+		)
 		return syscall.Kill(-pgid, syscall.SIGKILL)
 	}
 
 	// 设置工作目录
 	if record.WorkDir != "" {
-		log.Debug("脚本执行:设置工作目录", zap.String("work_dir", record.WorkDir))
+		log.Debug(
+			"脚本执行:设置工作目录",
+			zap.String("work_dir", record.WorkDir),
+		)
 		if _, err := os.Stat(record.WorkDir); os.IsNotExist(err) {
 			fmt.Fprintf(taskinfo.LogFile, "工作目录不存在, 尝试创建: %s\n", record.WorkDir)
-			log.Debug("脚本执行:工作目录不存在, 尝试创建", zap.String("work_dir", record.WorkDir))
-			if err := os.MkdirAll(record.WorkDir, 0755); err != nil {
+			log.Debug(
+				"脚本执行:工作目录不存在, 尝试创建",
+				zap.String("work_dir", record.WorkDir),
+			)
+			if err := os.MkdirAll(record.WorkDir, 0750); err != nil {
 				taskinfo.Status = 5
 				taskinfo.ErrMSG = fmt.Sprintf("创建工作目录失败: %v", err)
 				fmt.Fprintf(taskinfo.LogFile, "创建工作目录失败: %s\n", err)
@@ -332,10 +353,16 @@ func (s *RecordService) Execute(
 				)
 				return taskinfo
 			}
-			log.Debug("脚本执行:工作目录创建成功", zap.String("work_dir", record.WorkDir))
+			log.Debug(
+				"脚本执行:工作目录创建成功",
+				zap.String("work_dir", record.WorkDir),
+			)
 		}
 		cmd.Dir = record.WorkDir
-		log.Debug("脚本执行:工作目录设置成功", zap.String("work_dir", record.WorkDir))
+		log.Debug(
+			"脚本执行:工作目录设置成功",
+			zap.String("work_dir", record.WorkDir),
+		)
 	}
 
 	// 设置环境变量
@@ -436,7 +463,6 @@ func (s *RecordService) Cancel(ctx context.Context, recordID uint32) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		cancel()
-		s.DeleteCancel(recordID)
 		log.Info(
 			"取消脚本执行成功",
 			zap.Uint32("script_record_id", recordID),
@@ -451,97 +477,59 @@ func (s *RecordService) GenerateScriptLogPath(data time.Time, logName string) st
 
 func (s *RecordService) CreateScriptRecord(
 	ctx context.Context,
-	execBiz jobmodel.ExecuteBIZ,
+	dto jobmodel.ExecuteScriptDTO,
 ) (*jobmodel.ScriptRecordModel, *errors.Error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
-
-	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info("创建脚本执行记录:开始执行")
-
-	log.Debug(
-		"创建脚本执行记录:参数详情",
-		zap.Object("execute_biz", &execBiz),
+	log.Info(
+		"创建脚本执行记录:开始执行",
+		zap.Object("execute_script_dto", &dto),
 	)
 
-	getScriptStartTime := time.Now()
-	script, err := s.scriptRepo.GetModel(ctx, execBiz.ScriptID)
-	getScriptDuration := time.Since(getScriptStartTime)
+	script, err := s.scriptRepo.GetModel(ctx, dto.ScriptID)
 	if err != nil {
 		log.Error(
 			"创建脚本执行记录:查询脚本失败",
 			zap.Error(err),
-			zap.Uint32("script_id", execBiz.ScriptID),
-			zap.Duration("get_script_duration", getScriptDuration),
+			zap.Uint32("script_id", dto.ScriptID),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.NewGormError(err, map[string]any{"id": execBiz.ScriptID})
+		return nil, errors.NewGormError(err, map[string]any{"id": dto.ScriptID})
 	}
-	log.Debug(
-		"创建脚本执行记录:查询到的脚本详情",
-		zap.Object("script_model", script),
-		zap.Duration("get_script_duration", getScriptDuration),
-	)
 
 	if !script.Status {
 		log.Error(
 			"创建脚本执行记录:脚本已禁用",
-			zap.Uint32("script_id", execBiz.ScriptID),
+			zap.Uint32("script_id", dto.ScriptID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.FromReason(errors.ReasonScriptIsDisabled).WithField("script_id", execBiz.ScriptID)
+		return nil, errors.FromReason(errors.ReasonScriptIsDisabled).WithField("script_id", dto.ScriptID)
 	}
 
-	now := time.Now()
-	record := &jobmodel.ScriptRecordModel{
-		StandardModel: database.StandardModel{
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-		TriggerType:  execBiz.TriggerType,
-		Status:       1, // 执行中
-		ExitCode:     -1,
-		EnvVars:      execBiz.EnvVars,
-		CommandArgs:  execBiz.CommandArgs,
-		WorkDir:      execBiz.WorkDir,
-		Timeout:      execBiz.Timeout,
-		LogName:      fmt.Sprintf("%s.log", uuid.NewString()),
-		ErrorMessage: "",
-		Username:     execBiz.Username,
-		ScriptID:     execBiz.ScriptID,
-	}
-
-	createStepStart := time.Now()
-	if err := s.recordRepo.CreateModel(ctx, record); err != nil {
+	record := jobmodel.ExecuteScriptDTOToModel(dto, fmt.Sprintf("%s.log", uuid.NewString()))
+	if err := s.recordRepo.CreateModel(ctx, &record); err != nil {
 		log.Error(
 			"创建脚本执行记录:创建执行记录失败",
 			zap.Error(err),
-			zap.Uint32("script_id", execBiz.ScriptID),
-			zap.Duration("create_step_duration", time.Since(createStepStart)),
+			zap.Uint32("script_id", dto.ScriptID),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
-	createStepDuration := time.Since(createStepStart)
-	log.Debug(
-		"创建脚本执行记录:创建执行记录成功",
-		zap.Uint32("script_record_id", record.ID),
-		zap.Uint32("script_id", execBiz.ScriptID),
-		zap.Duration("create_step_duration", createStepDuration),
-	)
 
 	record.Script = *script
 
 	log.Info(
 		"创建脚本执行记录:执行成功",
 		zap.Uint32("script_record_id", record.ID),
-		zap.Uint32("script_id", execBiz.ScriptID),
-		zap.Duration("get_script_duration", getScriptDuration),
-		zap.Duration("create_step_duration", createStepDuration),
+		zap.Uint32("script_id", dto.ScriptID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return record, nil
+	return &record, nil
 }
 
 func (s *RecordService) UpdateScriptRecord(
@@ -549,42 +537,33 @@ func (s *RecordService) UpdateScriptRecord(
 	recordID uint32,
 	taskinfo *jobmodel.TaskInfo,
 ) *errors.Error {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return errors.FromError(ctx.Err())
 	}
-
-	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Info(
 		"更新脚本执行记录:开始执行",
 		zap.Uint32("script_record_id", recordID),
-	)
-
-	log.Debug(
-		"更新脚本执行记录:参数详情",
 		zap.Object("taskinfo", taskinfo),
 	)
 
 	updateData := taskinfo.ToUpdateMap()
-	updateStepStart := time.Now()
 	if err := s.recordRepo.UpdateModel(ctx, updateData, "id = ?", recordID); err != nil {
 		log.Error(
 			"更新脚本执行记录:更新脚本记录失败",
 			zap.Error(err),
 			zap.Uint32("script_record_id", recordID),
 			zap.Any("update_data", updateData),
-			zap.Duration("update_step_duration", time.Since(updateStepStart)),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.NewGormError(err, updateData)
 	}
-	updateStepDuration := time.Since(updateStepStart)
 
 	log.Info(
 		"更新脚本执行记录:执行成功",
 		zap.Uint32("script_record_id", recordID),
-		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return nil
@@ -595,34 +574,27 @@ func (s *RecordService) FindScriptRecordByID(
 	preloads []string,
 	recordID uint32,
 ) (*jobmodel.ScriptRecordModel, *errors.Error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
-
-	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
-
-	log.Info(
-		"查询脚本执行记录:开始执行",
-		zap.Uint32("script_record_id", recordID),
-		zap.Strings("preloads", preloads),
-	)
 
 	m, err := s.recordRepo.GetModel(ctx, preloads, recordID)
 	if err != nil {
 		log.Error(
 			"查询脚本执行记录:查询脚本执行记录失败",
 			zap.Error(err),
-			zap.Uint32("script_record_id", recordID),
 			zap.Strings("preloads", preloads),
+			zap.Uint32("script_record_id", recordID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.NewGormError(err, map[string]any{"id": recordID})
 	}
 
-	log.Info(
-		"查询脚本执行记录:执行成功",
-		zap.Uint32("script_record_id", recordID),
+	log.Debug(
+		"查询脚本执行记录:查询脚本执行记录详情",
+		zap.Object("record_model", m),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 	return m, nil
@@ -633,14 +605,11 @@ func (s *RecordService) ListScriptRecord(
 	page, size int,
 	dto *jobmodel.ListScriptRecordDTO,
 ) (int64, []jobmodel.ScriptRecordModel, *errors.Error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
 	}
-
-	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
-
-	log.Info("查询脚本执行记录列表:开始执行")
 
 	log.Debug(
 		"查询脚本执行记录列表:参数详情",
@@ -658,39 +627,23 @@ func (s *RecordService) ListScriptRecord(
 		Query:    dto.ToQueryMap(),
 	}
 
-	log.Debug(
-		"查询脚本执行记录列表:数据库查询参数",
-		zap.Object("query_params", &qp),
-	)
-
-	countStepStart := time.Now()
-	log.Debug(
-		"查询脚本执行记录列表:开始查询数据库模型总数",
-		zap.Object("query_params", &qp),
-	)
 	count, err := s.recordRepo.CountModel(ctx, qp.Query)
-	countStepDuration := time.Since(countStepStart)
 	if err != nil {
 		log.Error(
 			"查询脚本执行记录列表:查询数据库模型总数失败",
 			zap.Error(err),
-			zap.Object("query_params", &qp),
-			zap.Duration("count_step_duration", countStepDuration),
+			zap.Any("query", qp.Query),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, nil, errors.NewGormError(err, nil)
 	}
-	log.Debug(
-		"查询脚本执行记录列表:查询数据库模型总数成功",
-		zap.Int64("total_count", count),
-		zap.Duration("count_step_duration", countStepDuration),
-	)
+
 	if count == 0 {
 		log.Warn(
 			"查询脚本执行记录列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return count, nil, nil
+		return 0, nil, nil
 	}
 
 	ms, err := s.recordRepo.ListModel(ctx, qp)
@@ -703,29 +656,27 @@ func (s *RecordService) ListScriptRecord(
 		)
 		return 0, nil, errors.NewGormError(err, nil)
 	}
-
-	log.Info(
-		"查询脚本执行记录列表:执行成功",
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 	return count, ms, nil
 }
 
 func (s *RecordService) AsyncExecuteScript(
 	ctx context.Context,
-	req jobmodel.ExecuteBIZ,
+	req jobmodel.ExecuteScriptDTO,
 ) (*jobmodel.ScriptRecordModel, *errors.Error) {
 	record, err := s.CreateScriptRecord(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	go s.Execute(ctx, record)
+
+	traceID := ctxutil.GetTraceID(ctx)
+	bgCtx := context.WithValue(context.Background(), ctxutil.TraceIDKey, traceID)
+	go s.Execute(bgCtx, record)
 	return record, nil
 }
 
 func (s *RecordService) SyncExecuteScript(
 	ctx context.Context,
-	req jobmodel.ExecuteBIZ,
+	req jobmodel.ExecuteScriptDTO,
 ) (*jobmodel.TaskInfo, *errors.Error) {
 	record, err := s.CreateScriptRecord(ctx, req)
 	if err != nil {
@@ -739,15 +690,14 @@ func (s *RecordService) ListScriptRecordByIDs(
 	preloads []string,
 	recordIDs []uint32,
 ) ([]jobmodel.ScriptRecordModel, *errors.Error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
-
-	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info(
-		"查询指定的脚本执行记录列表:开始执行",
+	log.Debug(
+		"查询指定的脚本执行记录列表:参数详情",
 		zap.Strings("preloads", preloads),
 		zap.Uint32s("script_record_ids", recordIDs),
 	)
@@ -756,11 +706,6 @@ func (s *RecordService) ListScriptRecordByIDs(
 		Preloads: preloads,
 		Query:    map[string]any{"id in ?": recordIDs},
 	}
-
-	log.Debug(
-		"查询指定的脚本执行记录列表:数据库查询参数",
-		zap.Object("query_params", &qp),
-	)
 
 	ms, err := s.recordRepo.ListModel(ctx, qp)
 	if err != nil {
@@ -772,15 +717,37 @@ func (s *RecordService) ListScriptRecordByIDs(
 		)
 		return nil, errors.NewGormError(err, nil)
 	}
-	log.Info(
-		"查询指定的脚本执行记录列表:执行成功",
-		zap.Strings("preloads", preloads),
-		zap.Uint32s("script_record_ids", recordIDs),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 	return ms, nil
 }
 
 func GetScriptLogStoragePath(data time.Time, logname string) string {
 	return filepath.Join(config.StorageDir, "logs", data.Format(time.DateOnly), logname)
+}
+
+func GetRecordIDByMap(
+	cache map[uint32]jobmodel.ScriptRecordModel,
+	recordID uint32,
+) *jobmodel.ScriptRecordModel {
+	task, exists := cache[recordID]
+	if !exists {
+		return nil
+	}
+	return &task
+}
+
+func BuildTaskInfoFromScriptRecord(
+	taskName string,
+	m *jobmodel.ScriptRecordModel,
+) jobmodel.BizTaskInfo {
+	result := jobmodel.BizTaskInfo{
+		TaskName: taskName,
+	}
+	if m != nil {
+		result.RecordID = m.ID
+		result.Status = m.Status
+		result.StartTime = m.CreatedAt.Format(time.DateTime)
+		result.EndTime = m.UpdatedAt.Format(time.DateTime)
+		result.TriggerType = m.TriggerType
+	}
+	return result
 }

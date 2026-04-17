@@ -55,6 +55,36 @@ func (m *ScheduleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (m *ScheduleModel) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"name":           m.Name,
+		"specification":  m.Specification,
+		"is_enabled":     m.IsEnabled,
+		"env_vars":       m.EnvVars,
+		"command_args":   m.CommandArgs,
+		"work_dir":       m.WorkDir,
+		"timeout":        m.Timeout,
+		"is_retry":       m.IsRetry,
+		"retry_interval": m.RetryInterval,
+		"max_retries":    m.MaxRetries,
+		"create_type":    m.CreateType,
+		"username":       m.Username,
+		"script_id":      m.ScriptID,
+	}
+}
+
+func ListScheduleModelToUint32s(ms []ScheduleModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type ScheduleJobInfo struct {
 	EntryID    cron.EntryID `json:"entry_id"`
 	ScheduleID uint32       `json:"schedule_id"`
@@ -128,6 +158,24 @@ func (dto *ScheduleUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	enc.AddInt8("create_type", dto.CreateType)
 	enc.AddUint32("script_id", dto.ScriptID)
 	return nil
+}
+
+func (dto *ScheduleUpsertDTO) ToModel(username string) ScheduleModel {
+	return ScheduleModel{
+		Name:          dto.Name,
+		Specification: dto.Specification,
+		IsEnabled:     dto.IsEnabled,
+		EnvVars:       dto.EnvVars,
+		CommandArgs:   dto.CommandArgs,
+		WorkDir:       dto.WorkDir,
+		Timeout:       dto.Timeout,
+		IsRetry:       dto.IsRetry,
+		RetryInterval: dto.RetryInterval,
+		MaxRetries:    dto.MaxRetries,
+		CreateType:    dto.CreateType,
+		Username:      username,
+		ScriptID:      dto.ScriptID,
+	}
 }
 
 func (dto *ScheduleUpsertDTO) ToUpdateMap(username string) map[string]any {

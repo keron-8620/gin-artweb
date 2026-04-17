@@ -23,6 +23,6 @@ func NewLogger(log *zap.Logger, ctx context.Context) *zap.Logger {
 	}
 
 	// 附加用户ID字段
-	fields = append(fields, zap.Uint32("user_id", claims.UserID))
+	fields = append(fields, zap.Uint32("uid", claims.UserID))
 	return log.With(fields...)
 }

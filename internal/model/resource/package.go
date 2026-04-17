@@ -40,9 +40,21 @@ func (m *PackageModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListPackageModelToUint32s(ms []PackageModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type UploadPackageDTO struct {
 	// 标签
-	Label string `form:"label" binding:"required,oneof=mds oes xcounter"`
+	Label string `form:"label" binding:"required,oneof=mds stk crd opt xcounter"`
 
 	// 版本号
 	Version string `form:"version" binding:"required"`
@@ -57,21 +69,21 @@ func (req *UploadPackageDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-type UploadPackageBiz struct {
+type CreatePackageDTO struct {
 	Filename string    // 文件名
 	File     io.Reader // 文件内容
 	Label    string    // 标签
 	Version  string    // 版本号
 }
 
-func (dto *UploadPackageBiz) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (dto *CreatePackageDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("origin_filename", dto.Filename)
 	enc.AddString("label", dto.Label)
 	enc.AddString("version", dto.Version)
 	return nil
 }
 
-func (dto *UploadPackageBiz) ToUpdateMap() map[string]any {
+func (dto *CreatePackageDTO) ToUpdateMap() map[string]any {
 	return map[string]any{
 		"origin_filename": dto.Filename,
 		"label":           dto.Label,

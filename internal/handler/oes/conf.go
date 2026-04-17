@@ -3,6 +3,7 @@ package oes
 import (
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -46,7 +47,9 @@ func NewOesConfHandler(
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name} [post]
 // @Security ApiKeyAuth
 func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	// 1. 绑定URL路径参数
 	var pathReq oesmodel.GetOesConfDTO
 	if err := ctx.ShouldBindUri(&pathReq); err != nil {
@@ -77,9 +80,20 @@ func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
 	dirName := oessvc.GetOesColonyConfigDir(pathReq.ColonyNum)
 	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
 	if err := common.UploadFile(ctx, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
+		log.Error(
+			"上传oes配置文件:执行失败",
+			zap.Error(err),
+			zap.String("save_path", savePath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+
+	log.Info(
+		"上传oes配置文件:执行成功",
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 
 	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
@@ -99,6 +113,7 @@ func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name}/{filename} [get]
 // @Security ApiKeyAuth
 func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req oesmodel.OesConfFileDTO
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -115,8 +130,20 @@ func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
 	dirName := oessvc.GetOesColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := common.DownloadFile(ctx, log, filePath, ""); err != nil {
+		log.Error(
+			"下载oes配置文件:执行失败",
+			zap.Error(err),
+			zap.String("save_path", filePath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
 		errors.RespondWithError(ctx, err)
+		return
 	}
+
+	log.Info(
+		"下载oes配置文件:执行成功",
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 }
 
 // DeleteOesConf 删除oes配置文件
@@ -134,6 +161,7 @@ func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name}/{filename} [delete]
 // @Security ApiKeyAuth
 func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	var req oesmodel.OesConfFileDTO
 	if err := ctx.ShouldBindUri(&req); err != nil {
@@ -153,7 +181,8 @@ func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
 		log.Error(
 			"删除oes配置文件失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("save_path", savePath),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
 		errors.RespondWithError(ctx, rErr)
@@ -176,7 +205,9 @@ func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
 // @Router /api/v1/oes/{colony_num}/conf [get]
 // @Security ApiKeyAuth
 func (s *OesConfHandler) ListOesConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req oesmodel.ListOesConfDTO
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		log.Error(
@@ -195,12 +226,19 @@ func (s *OesConfHandler) ListOesConf(ctx *gin.Context) {
 		log.Error(
 			"获取oes配置文件列表失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("dir_name", dirName),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+
+	log.Info(
+		"获取oes配置文件列表:执行成功",
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
 	ctx.JSON(http.StatusOK, oesmodel.PagOesConfResp{
 		Code: http.StatusOK,
 		Data: info,

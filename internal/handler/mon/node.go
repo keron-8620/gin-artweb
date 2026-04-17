@@ -46,45 +46,27 @@ func NewNodeHandler(
 func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req monmodel.MonNodeUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"新增mon节点:绑定创建mon节点参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "新增mon节点:绑定创建mon节点参数失败") {
 		return
 	}
 
-	log.Info("创建mon节点:开始执行")
-
-	log.Debug(
-		"创建mon节点:入参详情",
-		zap.Object("mon_node_upsert_dto", &req),
-	)
-
-	createStepStart := time.Now()
 	m, rErr := h.nodeSvc.CreateMonNode(ctx, req)
-	createStepDuration := time.Since(createStepStart)
 	if rErr != nil {
 		log.Error(
 			"创建mon节点:执行失败",
 			zap.Error(rErr),
 			zap.Object("mon_node_upsert_dto", &req),
-			zap.Duration("create_step_duration", createStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	log.Debug(
-		"创建mon节点:创建的mon节点模型详情",
-		zap.Object("mon_node_model", m),
-		zap.Duration("create_step_duration", createStepDuration),
-	)
 
 	log.Info(
 		"创建mon节点:执行成功",
 		zap.Uint32("node_id", m.ID),
-		zap.String("name", m.Name),
-		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -110,56 +92,33 @@ func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
 func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"更新mon节点:绑定更新mon节点ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "更新mon节点:绑定更新mon节点ID参数失败") {
 		return
 	}
 
 	var req monmodel.MonNodeUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"更新mon节点:绑定更新mon节点参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "更新mon节点:绑定更新mon节点参数失败") {
 		return
 	}
 
-	log.Info(
-		"更新mon节点:开始执行",
-		zap.Uint32("node_id", uri.ID),
-	)
-
-	log.Debug(
-		"更新mon节点:入参详情",
-		zap.Uint32("node_id", uri.ID),
-		zap.Object("mon_node_upsert_dto", &req),
-	)
-
-	updateStepStart := time.Now()
 	m, rErr := h.nodeSvc.UpdateMonNodeByID(ctx, uri.ID, req)
-	updateStepDuration := time.Since(updateStepStart)
 	if rErr != nil {
 		log.Error(
 			"更新mon节点:执行失败",
 			zap.Error(rErr),
 			zap.Uint32("node_id", uri.ID),
 			zap.Object("mon_node_upsert_dto", &req),
-			zap.Duration("update_step_duration", updateStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	log.Debug(
-		"更新mon节点:更新后的mon节点模型详情",
-		zap.Object("mon_node_model", m),
-		zap.Duration("update_step_duration", updateStepDuration),
-	)
 
 	log.Info(
 		"更新mon节点:执行成功",
 		zap.Uint32("node_id", uri.ID),
-		zap.Duration("update_step_duration", updateStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -184,27 +143,18 @@ func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
 func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"删除mon节点:绑定删除mon节点ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "删除mon节点:绑定删除mon节点ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"删除mon节点:开始执行",
-		zap.Uint32("node_id", uri.ID),
-	)
-
-	deleteStepStart := time.Now()
 	err := h.nodeSvc.DeleteMonNodeByID(ctx, uri.ID)
-	deleteStepDuration := time.Since(deleteStepStart)
 	if err != nil {
 		log.Error(
 			"删除mon节点:执行失败",
 			zap.Error(err),
 			zap.Uint32("node_id", uri.ID),
-			zap.Duration("delete_step_duration", time.Since(deleteStepStart)),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
@@ -214,7 +164,6 @@ func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
 	log.Info(
 		"删除mon节点:执行成功",
 		zap.Uint32("node_id", uri.ID),
-		zap.Duration("delete_step_duration", deleteStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -236,42 +185,27 @@ func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
 func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"查询mon节点:绑定查询mon节点ID参数失败") {
+	if !common.ShouldBindUri(ctx, log, &uri, "查询mon节点:绑定查询mon节点ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询mon节点:开始执行",
-		zap.Uint32("node_id", uri.ID),
-	)
-
-	findStepStart := time.Now()
 	m, rErr := h.nodeSvc.FindMonNodeByID(ctx, []string{"Host"}, uri.ID)
-	findStepDuration := time.Since(findStepStart)
 	if rErr != nil {
 		log.Error(
 			"查询mon节点:执行失败",
 			zap.Error(rErr),
 			zap.Uint32("node_id", uri.ID),
-			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
-	log.Debug(
-		"查询mon节点:查询到的mon节点模型详情",
-		zap.Object("mon_node_model", m),
-		zap.Duration("find_step_duration", findStepDuration),
-	)
 
 	log.Info(
 		"查询mon节点:执行成功",
 		zap.Uint32("node_id", uri.ID),
-		zap.Duration("find_step_duration", findStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
@@ -296,24 +230,14 @@ func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
 func (h *NodeHandler) ListMonNode(ctx *gin.Context) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req monmodel.ListMonNodeDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询mon节点列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(ctx, log, &req, "查询mon节点列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询mon节点列表:开始执行")
-
-	log.Debug(
-		"查询mon节点列表:入参详情",
-		zap.Object("list_mon_node_dto", &req),
-	)
-
-	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, rErr := h.nodeSvc.ListMonNode(ctx, page, size, req)
-	listStepDuration := time.Since(listStepStart)
 	if rErr != nil {
 		log.Error(
 			"查询mon节点列表:执行失败",
@@ -321,7 +245,6 @@ func (h *NodeHandler) ListMonNode(ctx *gin.Context) {
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_mon_node_dto", &req),
-			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, rErr)
@@ -333,7 +256,6 @@ func (h *NodeHandler) ListMonNode(ctx *gin.Context) {
 		zap.Int("page", page),
 		zap.Int("size", size),
 		zap.Int64("total", total),
-		zap.Duration("list_step_duration", listStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 

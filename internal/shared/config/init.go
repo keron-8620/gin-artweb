@@ -11,13 +11,14 @@ import (
 )
 
 type SystemInit struct {
-	Conf      *SystemConf
-	DB        *gorm.DB
-	DBTimeout *DBTimeout
-	Enforcer  *casbin.Enforcer
-	Crontab   *cron.Cron
-	JwtConf   *JWTConfig
-	Loggers   *Loggers
+	Conf            *SystemConf
+	DB              *gorm.DB
+	DBTimeout       *DBTimeout
+	DBSlowThreshold *DBSlowThreshold
+	Enforcer        *casbin.Enforcer
+	Crontab         *cron.Cron
+	JwtConf         *JWTConfig
+	Loggers         *Loggers
 }
 
 // DBTimeout 数据库操作超时参数
@@ -25,6 +26,13 @@ type DBTimeout struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	ListTimeout  time.Duration
+}
+
+// DBSlowThreshold 数据库操作【慢查询阈值】—— 只用于日志告警，不控制逻辑
+type DBSlowThreshold struct {
+	ReadSlow  time.Duration // 单条慢查询阈值
+	WriteSlow time.Duration // 写入慢查询阈值
+	ListSlow  time.Duration // 列表慢查询阈值
 }
 
 type Loggers struct {

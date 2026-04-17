@@ -30,3 +30,15 @@ func (m *MdsCronModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("schedule_id", m.ScheduleID)
 	return nil
 }
+
+func ListMdsCronModelToUint32s(ms []MdsCronModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}

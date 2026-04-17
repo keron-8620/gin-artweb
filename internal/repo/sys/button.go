@@ -20,10 +20,11 @@ import (
 // 负责按钮模型的CRUD操作和按钮权限策略的管理
 // 使用GORM进行数据库操作，使用Casbin进行权限策略管理
 type ButtonRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
-	enforcer *casbin.Enforcer  // Casbin权限管理器
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
+	enforcer      *casbin.Enforcer        // Casbin权限管理器
 }
 
 // NewButtonRepo 创建按钮仓库实例
@@ -33,6 +34,7 @@ type ButtonRepo struct {
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
 //	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
+//	slowThreshold: 数据库操作慢查询阈值配置
 //	enforcer: Casbin权限管理器，用于管理权限策略
 //
 // 返回值:
@@ -42,13 +44,15 @@ func NewButtonRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 	enforcer *casbin.Enforcer,
 ) *ButtonRepo {
 	return &ButtonRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
-		enforcer: enforcer,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 }
 
@@ -80,18 +84,14 @@ func (r *ButtonRepo) CreateModel(
 
 	// 检查参数
 	if m == nil {
-		err := errors.New("创建按钮模型: 模型不能为空")
+		err := errors.New("创建按钮模型:模型不能为空")
 		log.Error(
-			"创建按钮模型: 模型不能为空",
+			"创建按钮模型:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
-
-	log.Debug(
-		"创建按钮模型:开始执行",
-		zap.Object("button_model", m),
-	)
 
 	m.CreatedAt = startTime
 	m.UpdatedAt = startTime
@@ -100,8 +100,16 @@ func (r *ButtonRepo) CreateModel(
 	if len(apis) > 0 {
 		upmap["Apis"] = apis
 	}
+
+	log.Debug(
+		"创建按钮模型:模型详情",
+		zap.Object("button_model", m),
+		zap.Uint32s("apis", sysmodel.ListApiModelToUint32s(apis)),
+	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
+
 	createTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.ButtonModel{}, m, upmap)
 	createDuration := time.Since(createTime)
@@ -110,18 +118,20 @@ func (r *ButtonRepo) CreateModel(
 			"创建按钮模型:数据库创建失败",
 			zap.Error(err),
 			zap.Object("button_model", m),
-			zap.Duration("create_button_duration", createDuration),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建按钮模型:数据库创建失败")
 	}
 
-	log.Debug(
-		"创建按钮模型:执行成功",
-		zap.Object("button_model", m),
-		zap.Duration("create_button_duration", createDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建按钮模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("button_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
+
 	return nil
 }
 
@@ -145,61 +155,66 @@ func (r *ButtonRepo) CreateModel(
 //  4. 记录操作日志
 func (r *ButtonRepo) UpdateModel(
 	ctx context.Context,
-	data map[string]any,
+	updateData map[string]any,
 	apis []sysmodel.ApiModel,
 	conds ...any,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	if len(data) == 0 {
-		err := errors.New("更新按钮模型: 更新数据不能为空")
+	if len(updateData) == 0 {
+		err := errors.New("更新按钮模型:更新数据为空")
 		log.Error(
-			"更新按钮模型: 更新数据不能为空",
+			"更新按钮模型:更新数据为空",
 			zap.Error(err),
-			zap.Any("update_data", data),
+			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
 
+	updateData["updated_at"] = startTime
 	apiIDs := sysmodel.ListApiModelToUint32s(apis)
-	log.Debug(
-		"更新按钮模型:开始执行",
-		zap.Any("update_data", data),
-		zap.Any("conds", conds),
-		zap.Uint32s("apis", apiIDs),
-	)
 
+	// 构建关联关系映射
 	var upmap map[string]any
 	if len(apis) > 0 {
 		upmap = map[string]any{"Apis": apis}
 	}
+
+	log.Debug(
+		"更新按钮模型:更新数据",
+		zap.Any("conds", conds),
+		zap.Any("update_data", updateData),
+		zap.Uint32s("apis", apiIDs),
+	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
+
 	updateTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.ButtonModel{}, data, upmap, conds...)
+	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.ButtonModel{}, updateData, upmap, conds...)
 	updateDuration := time.Since(updateTime)
 	if err != nil {
 		log.Error(
 			"更新按钮模型:数据库更新失败",
 			zap.Error(err),
-			zap.Any("update_data", data),
+			zap.Any("update_data", updateData),
 			zap.Uint32s("apis", apiIDs),
 			zap.Any("conds", conds),
-			zap.Duration("update_button_duration", updateDuration),
+			zap.Duration("update_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新按钮模型:数据库更新失败")
 	}
 
-	log.Debug(
-		"更新按钮模型:执行成功",
-		zap.Any("update_data", data),
-		zap.Uint32s("apis", apiIDs),
-		zap.Any("conds", conds),
-		zap.Duration("update_button_duration", updateDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新按钮模型:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
+
 	return nil
 }
 
@@ -225,12 +240,13 @@ func (r *ButtonRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除按钮模型:开始执行",
+		"删除按钮模型:删除条件",
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
+
 	deleteTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.ButtonModel{}, conds...)
 	deleteDuration := time.Since(deleteTime)
@@ -239,18 +255,18 @@ func (r *ButtonRepo) DeleteModel(
 			"删除按钮模型:数据库删除失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_button_duration", deleteDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除按钮模型:数据库删除失败")
 	}
 
-	log.Debug(
-		"删除按钮模型:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_button_duration", deleteDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除按钮模型:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -281,14 +297,16 @@ func (r *ButtonRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询按钮模型:开始执行",
+		"查询按钮模型:查询条件",
 		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
 	)
 
 	var m sysmodel.ButtonModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
+
 	getTime := time.Now()
 	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
 	getDuration := time.Since(getTime)
@@ -298,20 +316,24 @@ func (r *ButtonRepo) GetModel(
 			zap.Error(err),
 			zap.Strings("preloads", preloads),
 			zap.Any("conds", conds),
-			zap.Duration("get_button_duration", getDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询按钮模型:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询按钮模型:执行成功",
+		"查询按钮模型:查询到的按钮模型详情",
 		zap.Object("button_model", &m),
-		zap.Strings("preloads", preloads),
-		zap.Any("conds", conds),
-		zap.Duration("get_button_duration", getDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询按钮模型:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
+
 	return &m, nil
 }
 
@@ -341,13 +363,15 @@ func (r *ButtonRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询按钮模型列表:开始执行",
+		"查询按钮模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
 
 	var ms []sysmodel.ButtonModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
+
 	listTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &sysmodel.ButtonModel{}, &ms, qp)
 	listDuration := time.Since(listTime)
@@ -356,18 +380,23 @@ func (r *ButtonRepo) ListModel(
 			"查询按钮模型列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_button_duration", listDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询按钮模型列表:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询按钮模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_button_duration", listDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询按钮模型列表:查询到的按钮模型列表",
+		zap.Uint32s("button_ids", sysmodel.ListButtonModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询按钮模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -379,33 +408,38 @@ func (r *ButtonRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询按钮模型总数:开始执行",
+		"查询按钮模型总数:查询条件",
 		zap.Any("query", query),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.ButtonModel{}, query)
-	countDuration := time.Since(countTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询按钮模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_button_duration", countDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询按钮模型总数:数据库查询失败")
 	}
 
 	log.Debug(
-		"查询按钮模型总数:执行成功",
-		zap.Any("query", query),
+		"查询按钮模型总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_button_duration", countDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询按钮模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }
 
@@ -414,7 +448,7 @@ func (r *ButtonRepo) CountModel(
 // 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
-//	button: 按钮模型，包含按钮的详细信息
+//	m: 按钮模型，包含按钮的关联关系
 //
 // 返回值:
 //
@@ -429,7 +463,7 @@ func (r *ButtonRepo) CountModel(
 //  6. 记录操作日志
 func (r *ButtonRepo) AddGroupPolicy(
 	ctx context.Context,
-	button *sysmodel.ButtonModel,
+	m sysmodel.ButtonModel,
 ) error {
 	startTime := time.Now()
 
@@ -437,13 +471,6 @@ func (r *ButtonRepo) AddGroupPolicy(
 	if ctx.Err() != nil {
 		return errors.WrapIf(ctx.Err(), "添加按钮关联策略:上下文错误")
 	}
-
-	// 检查参数
-	if button == nil {
-		return errors.New("添加按钮关联策略:按钮模型不能为空")
-	}
-
-	m := *button
 
 	// 检查必要字段
 	if m.ID == 0 {
@@ -456,20 +483,20 @@ func (r *ButtonRepo) AddGroupPolicy(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"添加按钮关联策略:开始执行",
-		zap.Object("button_model", button),
+		"添加按钮关联策略:入参详情",
+		zap.Object("button_model", &m),
 	)
 
 	sub := auth.ButtonToSubject(m.ID)
 	menuObj := auth.MenuToSubject(m.MenuID)
 	rules := [][]string{{sub, menuObj}}
-	for i, o := range m.Apis {
+
+	for _, o := range m.Apis {
 		// 检查API模型的有效性
 		if o.ID == 0 {
 			log.Warn(
-				"添加按钮关联策略:跳过无效API",
-				zap.Object("button_model", button),
-				zap.Int("Api_index", i),
+				"添加按钮关联策略:跳过API模型ID为0的关联策略",
+				zap.Object("api_model", &o),
 			)
 			continue
 		}
@@ -477,29 +504,19 @@ func (r *ButtonRepo) AddGroupPolicy(
 		obj := auth.ApiToSubject(o.ID)
 		rules = append(rules, []string{sub, obj})
 	}
-	addTime := time.Now()
-	err := auth.AddGroupPolicies(ctx, r.enforcer, rules)
-	addDuration := time.Since(addTime)
-	if err != nil {
+
+	if err := auth.AddGroupPolicies(ctx, r.enforcer, rules); err != nil {
 		log.Error(
 			"添加按钮关联策略:Casbin添加策略失败",
 			zap.Error(err),
-			zap.Object("button_model", button),
+			zap.Object("button_model", &m),
 			zap.String("sub", sub),
 			zap.String("obj", menuObj),
-			zap.Duration("add_button_policy_duration", addDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "添加按钮关联策略:Casbin添加策略失败")
 	}
-	log.Debug(
-		"添加按钮关联策略:Casbin添加策略成功",
-		zap.Object("button_model", button),
-		zap.String("sub", sub),
-		zap.String("obj", menuObj),
-		zap.Duration("add_button_policy_duration", addDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
 	return nil
 }
 
@@ -508,7 +525,7 @@ func (r *ButtonRepo) AddGroupPolicy(
 // 参数:
 //
 //	ctx: 上下文，用于传递请求信息和控制超时
-//	button: 按钮模型，包含按钮的详细信息
+//	m: 按钮模型，包含按钮的关联关系
 //	removeInherited: 是否删除继承该按钮的组策略
 //
 // 返回值:
@@ -524,7 +541,7 @@ func (r *ButtonRepo) AddGroupPolicy(
 //  6. 记录操作日志
 func (r *ButtonRepo) RemoveGroupPolicy(
 	ctx context.Context,
-	button *sysmodel.ButtonModel,
+	m sysmodel.ButtonModel,
 	removeInherited bool,
 ) error {
 	startTime := time.Now()
@@ -534,13 +551,6 @@ func (r *ButtonRepo) RemoveGroupPolicy(
 		return errors.WrapIf(ctx.Err(), "删除按钮关联策略:上下文错误")
 	}
 
-	// 检查参数
-	if button == nil {
-		return errors.New("删除按钮关联策略:按钮模型不能为空")
-	}
-
-	m := *button
-
 	// 检查必要字段
 	if m.ID == 0 {
 		return errors.New("删除按钮关联策略:按钮ID不能为0")
@@ -549,69 +559,39 @@ func (r *ButtonRepo) RemoveGroupPolicy(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除按钮关联策略:开始执行",
-		zap.Object("button_model", button),
+		"删除按钮关联策略:入参详情",
+		zap.Object("button_model", &m),
+		zap.Bool("removeInherited", removeInherited),
 	)
 
 	sub := auth.ButtonToSubject(m.ID)
 
 	// 删除该按钮作为父级的策略（被其他菜单或权限继承）
 	if removeInherited {
-		log.Debug(
-			"删除按钮关联策略:开始删除该按钮作为父级的组策略",
-			zap.Object("button_model", button),
-			zap.Int("index", 1),
-			zap.String("value", sub),
-		)
-		rmObjStartTime := time.Now()
-		err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 1, sub)
-		rmObjDuration := time.Since(rmObjStartTime)
-		if err != nil {
+		if err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 1, sub); err != nil {
 			log.Error(
 				"删除按钮关联策略:删除按钮作为父级策略失败(该策略被其他策略继承)",
 				zap.Error(err),
-				zap.Object("button_model", button),
+				zap.Object("button_model", &m),
 				zap.Int("index", 1),
 				zap.String("value", sub),
-				zap.Duration("remove_group_policy_duration", rmObjDuration),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
 			return errors.WrapIf(err, "删除按钮关联策略:删除按钮作为父级策略失败(该策略被其他策略继承)")
 		}
-		log.Debug(
-			"删除按钮关联策略:删除该按钮作为父级的组策略成功",
-			zap.Object("button_model", button),
-			zap.Int("index", 1),
-			zap.String("value", sub),
-			zap.Duration("remove_group_policy_duration", rmObjDuration),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
 	}
 
 	// 删除该按钮作为子级的策略（被其他策略继承）
-	rmSubStartTime := time.Now()
-	err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 0, sub)
-	rmSubDuration := time.Since(rmSubStartTime)
-	if err != nil {
+	if err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 0, sub); err != nil {
 		log.Error(
 			"删除按钮关联策略:删除按钮作为子级策略失败(该策略继承自其他策略)",
 			zap.Error(err),
-			zap.Object("button_model", button),
+			zap.Object("button_model", &m),
 			zap.Int("index", 0),
 			zap.String("value", sub),
-			zap.Duration("remove_policy_duration", rmSubDuration),
-			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除按钮关联策略:删除按钮作为子级策略失败(该策略继承自其他策略)")
 	}
-	log.Debug(
-		"删除按钮关联策略:执行成功",
-		zap.Object("button_model", button),
-		zap.Int("index", 0),
-		zap.String("value", sub),
-		zap.Duration("remove_policy_duration", rmSubDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 
 	return nil
 }

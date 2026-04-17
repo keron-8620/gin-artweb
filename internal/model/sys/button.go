@@ -36,13 +36,25 @@ func (m *ButtonModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_active", m.IsActive)
 	enc.AddString("descr", m.Descr)
 	enc.AddUint32("menu_id", m.MenuID)
-	enc.AddArray("apis", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("apis", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, api := range m.Apis {
 			ae.AppendUint32(api.ID)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (m *ButtonModel) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"name":      m.Name,
+		"sort":      m.Sort,
+		"is_active": m.IsActive,
+		"descr":     m.Descr,
+		"menu_id":   m.MenuID,
+	}
 }
 
 func ListButtonModelToUint32s(ms []ButtonModel) []uint32 {
@@ -90,13 +102,28 @@ func (dto *CreateButtonDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_active", dto.IsActive)
 	enc.AddString("descr", dto.Descr)
 	enc.AddUint32("menu_id", dto.MenuID)
-	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (dto *CreateButtonDTO) ToModel() ButtonModel {
+	return ButtonModel{
+		StandardModel: database.StandardModel{
+			BaseModel: database.BaseModel{ID: dto.ID},
+		},
+		Name:     dto.Name,
+		Sort:     dto.Sort,
+		IsActive: dto.IsActive,
+		Descr:    dto.Descr,
+		MenuID:   dto.MenuID,
+	}
 }
 
 // UpdateButtonDTO 用于更新按钮的请求结构体
@@ -128,12 +155,14 @@ func (dto *UpdateButtonDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_active", dto.IsActive)
 	enc.AddString("descr", dto.Descr)
 	enc.AddUint32("menu_id", dto.MenuID)
-	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
 }
 

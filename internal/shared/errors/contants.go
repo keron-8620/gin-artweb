@@ -3,18 +3,18 @@ package errors
 type ErrorReason string
 
 const (
-	// 通用错误
+	// #nosec G101 -- 通用错误
 	ReasonUnknown           ErrorReason = "ERROR_UNKNOWN"             // 未知错误
 	ReasonValidationFailed  ErrorReason = "ERROR_VALIDATION_FAILED"   // 参数验证错误
 	ReasonRequestTimeout    ErrorReason = "ERROR_REQUEST_TIMEOUT"     // 请求超时
 	ReasonRateLimitExceeded ErrorReason = "ERROR_RATE_LIMIT_EXCEEDED" // 请求过于频繁
 
-	// 上下文
+	// #nosec G101 -- 上下文
 	ReasonNoContext        ErrorReason = "ERROR_CTX_NO_CONTEXT"        // 上下文为空
 	ReasonCanceled         ErrorReason = "ERROR_CTX_CANCELED"          // ctx取消
 	ReasonDeadlineExceeded ErrorReason = "ERROR_CTX_DEADLINE_EXCEEDED" // ctx超时
 
-	// 安全认证
+	// #nosec G101 -- 安全认证
 	ReasonHostHeaderInvalid      ErrorReason = "SEC_HOST_HEADER_INVALID"      // Host头无效
 	ReasonNonceNotFound          ErrorReason = "SEC_NONCE_NOT_FOUND"          // 请求头缺少随机数
 	ReasonReplayAttack           ErrorReason = "SEC_REPLAY_ATTACK"            // 检测为重放攻击
@@ -23,17 +23,24 @@ const (
 	ReasonTimestampExpired       ErrorReason = "SEC_TIMESTAMP_EXPIRED"        // 时间戳已过期
 	ReasonPasswordStrengthFailed ErrorReason = "SEC_PASSWORD_STRENGTH_FAILED" // 密码强度不足
 
-	// 身份权限认证
-	ReasonUnauthorized      ErrorReason = "AUTH_UNAUTHORIZED"        // 未授权操作
-	ReasonTokenExpired      ErrorReason = "AUTH_TOKEN_EXPIRED"       // 登录已过期，请重新登录
-	ReasonTokenInvalid      ErrorReason = "AUTH_TOKEN_INVALID"       // 无效的登录凭证
-	ReasonMissingAuth       ErrorReason = "AUTH_MISSING_AUTH"        // 缺少认证信息
+	// #nosec G101 -- 身份权限认证
+	ReasonUnauthorized ErrorReason = "AUTH_UNAUTHORIZED" // 未授权操作
+	// #nosec G101 -- 身份权限认证
+	ReasonTokenExpired ErrorReason = "AUTH_TOKEN_EXPIRED" // 登录已过期，请重新登录
+	// #nosec G101 -- 身份权限认证
+	ReasonTokenInvalid ErrorReason = "AUTH_TOKEN_INVALID" // 无效的登录凭证
+	// #nosec G101 -- 身份权限认证
+	ReasonMissingAuth ErrorReason = "AUTH_MISSING_AUTH" // 缺少认证信息
+	// #nosec G101 -- 身份权限认证
 	ReasonTokenTypeMismatch ErrorReason = "AUTH_TOKEN_TYPE_MISMATCH" // 令牌类型不匹配
-	ReasonAuthFailed        ErrorReason = "AUTH_FAILED"              // 身份认证失败
-	ReasonAccountLocked     ErrorReason = "AUTH_ACCOUNT_LOCKED"      // 账号已被锁定
-	ReasonForbidden         ErrorReason = "AUTH_FORBIDDEN"           // 禁止访问
+	// #nosec G101 -- 身份权限认证
+	ReasonAuthFailed ErrorReason = "AUTH_FAILED" // 身份认证失败
+	// #nosec G101 -- 身份权限认证
+	ReasonAccountLocked ErrorReason = "AUTH_ACCOUNT_LOCKED" // 账号已被锁定
+	// #nosec G101 -- 身份权限认证
+	ReasonForbidden ErrorReason = "AUTH_FORBIDDEN" // 禁止访问
 
-	// 数据库服务
+	// #nosec G101 -- 数据库服务
 	ReasonRecordNotFound                ErrorReason = "GORM_RECORD_NOT_FOUND"                 // 记录未找到
 	ReasonInvalidTransaction            ErrorReason = "GORM_INVALID_TRANSACTION"              // 事务处理错误
 	ReasonNotImplemented                ErrorReason = "GORM_NOT_IMPLEMENTED"                  // 功能未实现
@@ -57,27 +64,27 @@ const (
 	ReasonForeignKeyViolated            ErrorReason = "GORM_FOREIGN_KEY_VIOLATED"             // 外键约束冲突
 	ReasonCheckConstraintViolated       ErrorReason = "GORM_CHECK_CONSTRAINT_VIOLATED"        // 检查约束冲突
 
-	// ssh服务
+	// #nosec G101 -- ssh服务
 	ReasonSSHConnectionFailed ErrorReason = "SSH_CONNECTION_FAILED"     // ssh连接失败
 	ReasonSSHKeyDeployFailed  ErrorReason = "SSH_KEY_DEPLOYMENT_FAILED" // ssh密钥部署失败
 
-	// 上传下载文件
+	// #nosec G101 -- 上传下载文件
 	ReasonDownloadFileNotFound         ErrorReason = "DOWNLOAD_FILE_NOT_FOUND"         // 下载的文件未找到
 	ReasonDownloadFilePermissionDenied ErrorReason = "DOWNLOAD_FILE_PERMISSION_DENIED" // 下载文件权限被拒绝
 	ReasonDownloadFileFailed           ErrorReason = "DOWNLOAD_FILE_FAILED"            // 下载文件失败
 
-	// 压缩解压文件
+	// #nosec G101 -- 压缩解压文件
 	ReasonUnZIPFailed       ErrorReason = "UNZIP_FAILED"          // 解压文件失败
 	ReasonZIPFailed         ErrorReason = "ZIP_FAILED"            // 压缩文件失败
 	ReasonZIPFileNotFound   ErrorReason = "ZIP_FILE_NOT_FOUND"    // 压缩文件未找到
 	ReasonZIPFileIsEmpty    ErrorReason = "ZIP_FILE_IS_EMPTY"     // 压缩文件为空
 	ReasonZIPFileIsNotValid ErrorReason = "ZIP_FILE_IS_NOT_VALID" // 压缩文件无效
 
-	// 缓存文件相关
+	// #nosec G101 -- 缓存文件相关
 	ReasonExportCacheFileFailed ErrorReason = "EXPORT_CACHE_FILE_FAILED" // 导出缓存文件失败
 	ReasonDeleteCacheFileFailed ErrorReason = "DELETE_CACHE_FILE_FAILED" // 删除缓存文件失败
 
-	// 脚本相关
+	// #nosec G101 -- 脚本相关
 	ReasonScriptNotFound     ErrorReason = "SCRIPT_NOT_FOUND"     // 脚本未找到
 	ReasonScriptIsBuiltin    ErrorReason = "SCRIPT_IS_BUILTIN"    // 脚本为内置脚本
 	ReasonScriptIsDisabled   ErrorReason = "SCRIPT_IS_DISABLED"   // 脚本已禁用
@@ -85,10 +92,11 @@ const (
 	ReasonScriptSaveFailed   ErrorReason = "SCRIPT_SAVE_FAILED"   // 脚本保存失败
 	ReasonScriptRemoveFailed ErrorReason = "SCRIPT_REMOVE_FAILED" // 脚本删除失败
 
+	// #nosec G101 -- 程序包相关
 	ReasonPackageNotFound     ErrorReason = "PACKAGE_NOT_FOUND"     // 程序包未找到
 	ReasonPackageSaveFailed   ErrorReason = "PACKAGE_SAVE_FAILED"   // 程序包保存失败
 	ReasonPackageRemoveFailed ErrorReason = "PACKAGE_REMOVE_FAILED" // 程序包删除失败
 
-	// 计划任务相关
+	// #nosec G101 -- 计划任务相关
 	ReasonCronSpecificationInvalid ErrorReason = "CRON_SPECIFICATION_INVALID" // 计划任务表达式格式错误
 )

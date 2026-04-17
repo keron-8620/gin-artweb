@@ -35,6 +35,15 @@ func (m *ApiModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (m *ApiModel) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"url":    m.URL,
+		"method": m.Method,
+		"label":  m.Label,
+		"descr":  m.Descr,
+	}
+}
+
 func ListApiModelToUint32s(ms []ApiModel) []uint32 {
 	if len(ms) == 0 {
 		return []uint32{}
@@ -74,6 +83,18 @@ func (dto *CreateApiDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("label", dto.Label)
 	enc.AddString("descr", dto.Descr)
 	return nil
+}
+
+func (dto *CreateApiDTO) ToModel() ApiModel {
+	return ApiModel{
+		StandardModel: database.StandardModel{
+			BaseModel: database.BaseModel{ID: dto.ID},
+		},
+		URL:    dto.URL,
+		Method: dto.Method,
+		Label:  dto.Label,
+		Descr:  dto.Descr,
+	}
 }
 
 // UpdateApiDTO 用于更新权限的请求结构体

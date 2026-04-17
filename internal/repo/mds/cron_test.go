@@ -15,11 +15,18 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestMdsCronModel() *mdsmodel.MdsCronModel {
+func CreateTestMdsCronModel(mdsColonyID, scheduleID uint32) *mdsmodel.MdsCronModel {
 	return &mdsmodel.MdsCronModel{
-		MdsColonyID: 1, // 假设mds集群ID为1
-		ScheduleID:  1, // 假设计划任务ID为1
+		MdsColonyID: mdsColonyID,
+		ScheduleID:  scheduleID,
 	}
+}
+
+func (suite *MdsCronTestSuite) createTestMdsCron() *mdsmodel.MdsCronModel {
+	cm := CreateTestMdsCronModel(1, 1)
+	err := suite.cronRepo.CreateModel(context.Background(), cm)
+	suite.NoError(err, "创建测试MdsCron应该成功")
+	return cm
 }
 
 type MdsCronTestSuite struct {
@@ -29,7 +36,9 @@ type MdsCronTestSuite struct {
 
 func (suite *MdsCronTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &mdsmodel.MdsColonyModel{}, &jobmodel.ScriptModel{}, &mdsmodel.MdsCronModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &mdsmodel.MdsColonyModel{}, &jobmodel.ScriptModel{}, &mdsmodel.MdsCronModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
@@ -86,17 +95,19 @@ func (suite *MdsCronTestSuite) SetupSuite() {
 	db.Create(scriptModel)
 
 	dbTimeout := test.NewTestDBTimeouts()
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 	suite.cronRepo = &MdsCronRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: dbSlowThreshold,
 	}
 }
 
 func (suite *MdsCronTestSuite) TestCreateModel() {
 	// 测试正常创建
-	cm := CreateTestMdsCronModel()
+	cm := CreateTestMdsCronModel(1, 1)
 	err := suite.cronRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建MdsCron应该成功")
 	suite.NotZero(cm.ID, "MdsCron ID应该不为零")
@@ -107,14 +118,12 @@ func (suite *MdsCronTestSuite) TestCreateModel() {
 }
 
 func (suite *MdsCronTestSuite) TestUpdateModel() {
-	cm := CreateTestMdsCronModel()
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsCron用于更新测试应该成功")
+	cm := suite.createTestMdsCron()
 
 	updateData := map[string]any{
 		"mds_colony_id": 1,
 	}
-	err = suite.cronRepo.UpdateModel(context.Background(), updateData, "id = ?", cm.ID)
+	err := suite.cronRepo.UpdateModel(context.Background(), updateData, "id = ?", cm.ID)
 	suite.NoError(err, "更新MdsCron应该成功")
 
 	fm, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
@@ -129,13 +138,10 @@ func (suite *MdsCronTestSuite) TestUpdateModel() {
 }
 
 func (suite *MdsCronTestSuite) TestDeleteModel() {
-	// 创建测试数据
-	cm := CreateTestMdsCronModel()
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsCron用于删除测试应该成功")
+	cm := suite.createTestMdsCron()
 
 	// 测试正常删除
-	err = suite.cronRepo.DeleteModel(context.Background(), "id = ?", cm.ID)
+	err := suite.cronRepo.DeleteModel(context.Background(), "id = ?", cm.ID)
 	suite.NoError(err, "删除MdsCron应该成功")
 
 	// 验证删除结果
@@ -149,17 +155,14 @@ func (suite *MdsCronTestSuite) TestDeleteModel() {
 }
 
 func (suite *MdsCronTestSuite) TestGetModel() {
-	// 创建测试数据
-	cm := CreateTestMdsCronModel()
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsCron用于查询测试应该成功")
+	cm := suite.createTestMdsCron()
 
 	// 测试正常查询
 	fm, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
 	suite.NoError(err, "查询MdsCron应该成功")
-	suite.Equal(cm.ID, fm.ID)
-	suite.Equal(cm.MdsColonyID, fm.MdsColonyID)
-	suite.Equal(cm.ScheduleID, fm.ScheduleID)
+	suite.Equal(cm.ID, fm.ID, "MdsCron ID应该匹配")
+	suite.Equal(cm.MdsColonyID, fm.MdsColonyID, "MdsColonyID应该匹配")
+	suite.Equal(cm.ScheduleID, fm.ScheduleID, "ScheduleID应该匹配")
 
 	// 测试边界情况:查询不存在的MdsCron
 	fm, err = suite.cronRepo.GetModel(context.Background(), nil, "id = ?", 999999)
@@ -169,14 +172,12 @@ func (suite *MdsCronTestSuite) TestGetModel() {
 	// 测试边界情况:使用预加载
 	fm, err = suite.cronRepo.GetModel(context.Background(), []string{"MdsColony", "Schedule"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询MdsCron应该成功")
-	suite.Equal(cm.ID, fm.ID)
+	suite.Equal(cm.ID, fm.ID, "使用预加载查询时MdsCron ID应该匹配")
 }
 
 func (suite *MdsCronTestSuite) TestListModel() {
 	for i := 0; i < 3; i++ {
-		cm := CreateTestMdsCronModel()
-		err := suite.cronRepo.CreateModel(context.Background(), cm)
-		suite.NoError(err, "创建MdsCron用于列表测试应该成功")
+		suite.createTestMdsCron()
 	}
 
 	qp := database.QueryParams{
@@ -186,23 +187,20 @@ func (suite *MdsCronTestSuite) TestListModel() {
 	}
 	models, err := suite.cronRepo.ListModel(context.Background(), qp)
 	suite.NoError(err, "查询MdsCron列表应该成功")
-	suite.Greater(int64(len(models)), int64(0), "MdsCron列表数量应该大于0")
 	suite.NotNil(models, "MdsCron列表应该不为nil")
+	suite.Greater(len(models), 0, "MdsCron列表数量应该大于0")
 
 	qp2 := database.QueryParams{
 		Query: map[string]any{"mds_colony_id": 999999},
 	}
 	models2, err := suite.cronRepo.ListModel(context.Background(), qp2)
 	suite.NoError(err, "查询不存在的MdsCron列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的MdsCron列表数量应该为0")
 	suite.NotNil(models2, "不存在的MdsCron列表应该不为nil")
 	suite.Len(models2, 0, "不存在的MdsCron列表长度应该为0")
 }
 
 func (suite *MdsCronTestSuite) TestCountModel() {
-	cm := CreateTestMdsCronModel()
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsCron用于计数测试应该成功")
+	suite.createTestMdsCron()
 
 	count, err := suite.cronRepo.CountModel(context.Background(), map[string]any{"mds_colony_id": 1})
 	suite.NoError(err, "计数MdsCron应该成功")
@@ -214,10 +212,7 @@ func (suite *MdsCronTestSuite) TestCountModel() {
 }
 
 func (suite *MdsCronTestSuite) TestContextTimeout() {
-	// 创建测试数据
-	cm := CreateTestMdsCronModel()
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsCron用于超时测试应该成功")
+	cm := suite.createTestMdsCron()
 
 	// 测试上下文超时情况
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
@@ -227,7 +222,7 @@ func (suite *MdsCronTestSuite) TestContextTimeout() {
 	time.Sleep(time.Millisecond * 2)
 
 	// 测试超时后的操作
-	_, err = suite.cronRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
+	_, err := suite.cronRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
 	suite.Error(err, "上下文超时后查询MdsCron应该返回错误")
 }
 

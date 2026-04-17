@@ -47,7 +47,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) (resultErr error) {
 
 	// 创建目标文件前检查父目录是否存在
 	dstDir := filepath.Dir(cleanDst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0750); err != nil {
 		return errors.Wrapf(err, "创建目标目录失败, dir=%s", dstDir)
 	}
 
@@ -234,7 +234,9 @@ func processTarEntry(filePath, baseDir string, info os.FileInfo, tarWriter *tar.
 		if err != nil {
 			return errors.Wrapf(err, "打开文件失败, filepath=%s", filePath)
 		}
-		defer closeWithError(file, "关闭文件失败")
+		defer func() {
+			_ = closeWithError(file, "关闭文件失败")
+		}()
 
 		written, err := safeCopy(options.Context, tarWriter, file, options.MaxFileSize, options.BufferSize)
 		if err != nil {
@@ -265,19 +267,23 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	if err != nil {
 		return errors.Wrapf(err, "打开源文件失败, src=%s", src)
 	}
-	defer closeWithError(srcFile, "关闭源文件失败")
+	defer func() {
+		_ = closeWithError(srcFile, "关闭源文件失败")
+	}()
 
 	// 初始化解压读取器
 	gzReader, err := gzip.NewReader(srcFile)
 	if err != nil {
 		return errors.Wrapf(err, "创建gzip读取器失败, src=%s", src)
 	}
-	defer closeWithError(gzReader, "关闭gzip读取器失败")
+	defer func() {
+		_ = closeWithError(gzReader, "关闭gzip读取器失败")
+	}()
 
 	tarReader := tar.NewReader(gzReader)
 
 	// 创建目标目录
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0750); err != nil {
 		return errors.Wrapf(err, "创建目标目录失败, dst=%s", dst)
 	}
 
@@ -327,7 +333,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 	switch header.Typeflag {
 	case tar.TypeDir:
 		// 设置合适的目录权限
-		dirMode := os.FileMode(header.Mode)
+		dirMode := os.FileMode(header.Mode & 07777) // 只取权限位，避免整数溢出
 		if dirMode == 0 {
 			dirMode = 0755
 		}
@@ -346,12 +352,12 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 		}
 
 		// 创建父目录
-		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(target), 0750); err != nil {
 			return 0, errors.WrapIf(err, "创建父目录失败")
 		}
 
 		// 写入文件
-		fileMode := os.FileMode(header.Mode)
+		fileMode := os.FileMode(header.Mode & 07777) // 只取权限位，避免整数溢出
 		if fileMode == 0 {
 			fileMode = 0644
 		}
@@ -364,7 +370,9 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 		if err != nil {
 			return 0, errors.WrapIf(err, "创建目标文件失败")
 		}
-		defer closeWithError(file, "关闭目标文件失败")
+		defer func() {
+			_ = closeWithError(file, "关闭目标文件失败")
+		}()
 
 		written, err := safeCopy(options.Context, file, tarReader, options.MaxFileSize, options.BufferSize)
 		if err != nil {
@@ -385,7 +393,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 		}
 
 		// 确保父目录存在
-		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(target), 0750); err != nil {
 			return 0, errors.WrapIf(err, "创建符号链接父目录失败")
 		}
 
@@ -416,13 +424,17 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "打开源文件失败, src=%s", src)
 	}
-	defer closeWithError(srcFile, "关闭源文件失败")
+	defer func() {
+		_ = closeWithError(srcFile, "关闭源文件失败")
+	}()
 
 	gzReader, err := gzip.NewReader(srcFile)
 	if err != nil {
 		return "", errors.Wrapf(err, "创建gzip读取器失败, src=%s", src)
 	}
-	defer closeWithError(gzReader, "关闭gzip读取器失败")
+	defer func() {
+		_ = closeWithError(gzReader, "关闭gzip读取器失败")
+	}()
 
 	tarReader := tar.NewReader(gzReader)
 	topLevelEntries := make(map[string]bool, 1) // 初始容量1，减少扩容
@@ -508,11 +520,11 @@ func TarGzStream(src io.Reader, dst io.Writer, fileName string, opts ...ArchiveO
 	defer func() {
 		// 先关闭tar写入器
 		if tarWriter != nil {
-			closeWithError(tarWriter, "关闭tar写入器失败")
+			_ = closeWithError(tarWriter, "关闭tar写入器失败")
 		}
 		// 再关闭gzip写入器
 		if gzWriter != nil {
-			closeWithError(gzWriter, "关闭gzip写入器失败")
+			_ = closeWithError(gzWriter, "关闭gzip写入器失败")
 		}
 	}()
 
@@ -555,7 +567,9 @@ func UntarGzStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error {
 	if err != nil {
 		return errors.WrapIf(err, "创建gzip读取器失败")
 	}
-	defer closeWithError(gzReader, "关闭gzip读取器失败")
+	defer func() {
+		_ = closeWithError(gzReader, "关闭gzip读取器失败")
+	}()
 
 	// 创建tar读取器
 	tarReader := tar.NewReader(gzReader)

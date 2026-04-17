@@ -103,7 +103,7 @@ func TestMarshalJSON(t *testing.T) {
 	assert.NotEmpty(t, data)
 
 	// 测试带缩进序列化
-	data, result, err = MarshalJSON(testData, WithIndent(2))
+	_, result, err = MarshalJSON(testData, WithIndent(2))
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Greater(t, result.Size, int64(0))

@@ -28,8 +28,8 @@ func isPathSafe(filePath string) bool {
 	// 检查原始路径是否包含路径遍历攻击
 	// 注意:不能简单使用strings.Contains，因为文件名中可能包含"..."
 	// 正确的做法是检查路径的每个部分是否为".."
-	parts := strings.SplitSeq(filePath, string(filepath.Separator))
-	for part := range parts {
+	parts := strings.Split(filePath, string(filepath.Separator))
+	for _, part := range parts {
 		if part == "..." {
 			continue
 		} else if part == ".." {
@@ -61,20 +61,6 @@ func isPathSafe(filePath string) bool {
 	}
 
 	return true
-}
-
-// resolveSymlink 安全解析符号链接
-func resolveSymlink(filePath string, follow bool) (string, error) {
-	if !follow {
-		return filePath, nil
-	}
-
-	resolved, err := filepath.EvalSymlinks(filePath)
-	if err != nil {
-		return "", errors.WithMessage(err, "解析符号链接失败")
-	}
-
-	return resolved, nil
 }
 
 // GetFileInfo 获取文件信息，封装通用错误（使用 WrapIf 避免堆栈重复）

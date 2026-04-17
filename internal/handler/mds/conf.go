@@ -3,6 +3,7 @@ package mds
 import (
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -47,18 +48,16 @@ func NewMdsConfHandler(
 // @Security ApiKeyAuth
 // UploadMdsConf 上传mds配置文件
 func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var pathReq mdsmodel.GetMdsConfDTO
-	if !common.ShouldBindUri(
-		ctx, log, &pathReq,
-		"上传mds配置文件:绑定上传的mds配置文件路径参数失败") {
+	if !common.ShouldBindUri(ctx, log, &pathReq, "上传mds配置文件:绑定上传的mds配置文件路径参数失败") {
 		return
 	}
 
 	var formReq mdsmodel.UploadMdsConfDTO
-	if !common.ShouldBind(
-		ctx, log, &formReq,
-		"上传mds配置文件:绑定上传的mds配置文件表单参数失败") {
+	if !common.ShouldBind(ctx, log, &formReq, "上传mds配置文件:绑定上传的mds配置文件表单参数失败") {
 		return
 	}
 
@@ -69,6 +68,14 @@ func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
 		errors.RespondWithError(ctx, err)
 		return
 	}
+
+	log.Info(
+		"上传mds配置文件:执行成功",
+		zap.String("colony_num", pathReq.ColonyNum),
+		zap.String("dir_name", pathReq.DirName),
+		zap.String("filename", formReq.File.Filename),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 
 	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
@@ -88,20 +95,32 @@ func (s *MdsConfHandler) UploadMdsConf(ctx *gin.Context) {
 // @Router /api/v1/mds/{colony_num}/conf/{dir_name}/{filename} [get]
 // @Security ApiKeyAuth
 func (s *MdsConfHandler) DownloadMdsConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if !common.ShouldBindUri(
-		ctx, log, &req,
-		"下载mds配置文件:绑定下载的mds配置文件路径参数失败") {
+	if !common.ShouldBindUri(ctx, log, &req, "下载mds配置文件:绑定下载的mds配置文件路径参数失败") {
 		return
 	}
 
 	dirName := mdsvc.GetMdsColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
 	if err := common.DownloadFile(ctx, log, filePath, ""); err != nil {
+		log.Error(
+			"下载mds配置文件:执行失败",
+			zap.Error(err),
+			zap.String("file_path", filePath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
+
+	log.Info(
+		"下载mds配置文件:执行成功",
+		zap.String("file_path", filePath),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 }
 
 // DeleteMdsConf 删除mds配置文件
@@ -119,11 +138,11 @@ func (s *MdsConfHandler) DownloadMdsConf(ctx *gin.Context) {
 // @Router /api/v1/mds/{colony_num}/conf/{dir_name}/{filename} [delete]
 // @Security ApiKeyAuth
 func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if !common.ShouldBindUri(
-		ctx, log, &req,
-		"删除mds配置文件:绑定删除的mds配置文件路径参数失败") {
+	if !common.ShouldBindUri(ctx, log, &req, "删除mds配置文件:绑定删除的mds配置文件路径参数失败") {
 		return
 	}
 
@@ -133,12 +152,19 @@ func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 		log.Error(
 			"删除mds配置文件:执行失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("file_path", savePath),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+
+	log.Info(
+		"删除mds配置文件:执行成功",
+		zap.String("file_path", savePath),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 
 	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
@@ -156,11 +182,11 @@ func (s *MdsConfHandler) DeleteMdsConf(ctx *gin.Context) {
 // @Router /api/v1/mds/{colony_num}/conf [get]
 // @Security ApiKeyAuth
 func (s *MdsConfHandler) ListMdsConf(ctx *gin.Context) {
+	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var req mdsmodel.ListMdsConfDTO
-	if !common.ShouldBindUri(
-		ctx, log, &req,
-		"获取mds配置文件列表:绑定mds配置文件路径参数失败") {
+	if !common.ShouldBindUri(ctx, log, &req, "获取mds配置文件列表:绑定mds配置文件路径参数失败") {
 		return
 	}
 
@@ -171,12 +197,18 @@ func (s *MdsConfHandler) ListMdsConf(ctx *gin.Context) {
 			"获取mds配置文件列表:执行失败",
 			zap.Error(err),
 			zap.String("dirname", dirName),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
 		errors.RespondWithError(ctx, rErr)
 		return
 	}
+
+	log.Info(
+		"获取mds配置文件列表:执行成功",
+		zap.String("dirname", dirName),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 	ctx.JSON(http.StatusOK, mdsmodel.PagMdsConfResp{
 		Code: http.StatusOK,
 		Data: info,

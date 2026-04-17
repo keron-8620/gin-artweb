@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net"
 	"os/exec"
 	"strings"
 	"testing"
@@ -21,22 +20,42 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestHostModel() *resomodel.HostModel {
+// 测试数据管理
+const (
+	// 测试默认值
+	DefaultTestLabel     = "test"
+	DefaultTestSSHIP     = "127.0.0.1"
+	DefaultTestPyPath    = "/usr/bin/python3"
+	DefaultTestPortStart = 2222
+	DefaultTestPortRange = 1000
+)
+
+// CreateTestHostModel 创建测试用的Host模型
+// 可选参数用于覆盖默认值
+func CreateTestHostModel(overrides ...func(*resomodel.HostModel)) *resomodel.HostModel {
 	// 生成唯一的端口号，避免唯一约束冲突
 	uuidStr := uuid.NewString()
 	// 取UUID的后4位作为端口号的一部分
 	portSuffix := uuidStr[len(uuidStr)-4:]
 	// 转换为数字并确保在有效端口范围内
-	port := 2222 + (len(uuidStr) % 1000)
-	return &resomodel.HostModel{
+	port := DefaultTestPortStart + (len(uuidStr) % DefaultTestPortRange)
+
+	host := &resomodel.HostModel{
 		Name:    fmt.Sprintf("host-%s", uuidStr),
-		Label:   "test",
-		SSHIP:   "127.0.0.1",
+		Label:   DefaultTestLabel,
+		SSHIP:   DefaultTestSSHIP,
 		SSHPort: uint16(port),
 		SSHUser: fmt.Sprintf("root-%s", portSuffix),
-		PyPath:  "/usr/bin/python3",
+		PyPath:  DefaultTestPyPath,
 		Remark:  "",
 	}
+
+	// 应用覆盖函数
+	for _, override := range overrides {
+		override(host)
+	}
+
+	return host
 }
 
 type SSHDContainer struct {
@@ -69,7 +88,7 @@ func setupSSHContainer(t *testing.T) (*SSHDContainer, func(), error) {
 	portCmd := exec.Command("podman", "port", cleanID, "2222/tcp")
 	portOutput, err := portCmd.Output()
 	if err != nil {
-		cleanupContainer(cleanID)
+		_ = cleanupContainer(cleanID)
 		return nil, nil, errors.Wrapf(err, "failed to get port")
 	}
 
@@ -84,7 +103,7 @@ func setupSSHContainer(t *testing.T) (*SSHDContainer, func(), error) {
 	ipCmd := exec.Command("podman", "inspect", "--format", "{{.NetworkSettings.IPAddress}}", cleanID)
 	ipOutput, err := ipCmd.Output()
 	if err != nil {
-		cleanupContainer(cleanID)
+		_ = cleanupContainer(cleanID)
 		return nil, nil, errors.Wrapf(err, "failed to get IP")
 	}
 
@@ -97,32 +116,15 @@ func setupSSHContainer(t *testing.T) (*SSHDContainer, func(), error) {
 	}
 
 	cleanup := func() {
-		cleanupContainer(container.ID)
+		_ = cleanupContainer(container.ID)
 	}
 
 	return container, cleanup, nil
 }
 
-func cleanupContainer(id string) {
+func cleanupContainer(id string) error {
 	cmd := exec.Command("podman", "rm", "-f", id)
-	cmd.Run()
-}
-
-func createSSHClient(t *testing.T, container *SSHDContainer) (*ssh.Client, error) {
-	config := &ssh.ClientConfig{
-		User:            container.User,
-		Auth:            []ssh.AuthMethod{ssh.Password(container.Password)},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
-	}
-
-	addr := net.JoinHostPort(container.IP, fmt.Sprintf("%d", container.Port))
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to dial SSH at %s", addr)
-	}
-
-	return client, nil
+	return cmd.Run()
 }
 
 type HostTestSuite struct {
@@ -132,31 +134,58 @@ type HostTestSuite struct {
 
 func (suite *HostTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&resomodel.HostModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}); err != nil {
+		suite.Error(err, "failed to migrate HostModel")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 	suite.hostRepo = &HostRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
 	}
 }
 
-func (suite *HostTestSuite) TestCreateHost() {
+func (suite *HostTestSuite) TestCreateModel() {
+	// 测试正常创建
 	hm := CreateTestHostModel()
 	err := suite.hostRepo.CreateModel(context.Background(), hm)
 	suite.NoError(err, "创建Host应该成功")
 
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, hm.ID)
+	// 验证模型字段
+	suite.NotZero(hm.ID, "Host ID应该被设置")
+	suite.NotZero(hm.CreatedAt, "Host CreatedAt应该被设置")
+	suite.NotZero(hm.UpdatedAt, "Host UpdatedAt应该被设置")
+
+	// 验证创建的模型可以被正确查询
+	fm, err := suite.hostRepo.GetModel(context.Background(), "id = ?", hm.ID)
 	suite.NoError(err, "查询刚创建的Host应该成功")
-	suite.Equal(hm.ID, fm.ID)
-	suite.Equal(hm.Name, fm.Name)
-	suite.Equal(hm.Label, fm.Label)
-	suite.Equal(hm.SSHIP, fm.SSHIP)
-	suite.Equal(hm.SSHPort, fm.SSHPort)
-	suite.Equal(hm.SSHUser, fm.SSHUser)
-	suite.Equal(hm.PyPath, fm.PyPath)
-	suite.Equal(hm.Remark, fm.Remark)
+	suite.NotNil(fm, "查询结果不应该为nil")
+
+	// 验证所有字段都被正确保存
+	suite.Equal(hm.ID, fm.ID, "ID字段应该匹配")
+	suite.Equal(hm.Name, fm.Name, "Name字段应该匹配")
+	suite.Equal(hm.Label, fm.Label, "Label字段应该匹配")
+	suite.Equal(hm.SSHIP, fm.SSHIP, "SSHIP字段应该匹配")
+	suite.Equal(hm.SSHPort, fm.SSHPort, "SSHPort字段应该匹配")
+	suite.Equal(hm.SSHUser, fm.SSHUser, "SSHUser字段应该匹配")
+	suite.Equal(hm.PyPath, fm.PyPath, "PyPath字段应该匹配")
+	suite.Equal(hm.Remark, fm.Remark, "Remark字段应该匹配")
+
+	// 测试边界情况:创建空模型
+	err = suite.hostRepo.CreateModel(context.Background(), nil)
+	suite.Error(err, "创建空Host模型应该返回错误")
+
+	// 测试上下文超时情况
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
+
+	hm2 := CreateTestHostModel()
+	err = suite.hostRepo.CreateModel(timeoutCtx, hm2)
+	suite.Error(err, "上下文超时后创建Host应该返回错误")
 }
 
 func (suite *HostTestSuite) TestUpdateModel() {
@@ -166,20 +195,22 @@ func (suite *HostTestSuite) TestUpdateModel() {
 	suite.NoError(err, "创建Host用于更新测试应该成功")
 
 	// 测试正常更新
+	uniqueName := fmt.Sprintf("updated-host-%s", uuid.NewString()[:8])
 	updateData := map[string]any{
-		"Name":    "updated-host",
-		"SSHPort": 2222,
+		"Name":    uniqueName,
+		"SSHPort": 3322,
 		"Remark":  "updated remark",
 	}
 	err = suite.hostRepo.UpdateModel(context.Background(), updateData, "id = ?", hm.ID)
 	suite.NoError(err, "更新Host应该成功")
 
 	// 验证更新结果
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", hm.ID)
+	fm, err := suite.hostRepo.GetModel(context.Background(), "id = ?", hm.ID)
 	suite.NoError(err, "查询更新后的Host应该成功")
-	suite.Equal("updated-host", fm.Name)
-	suite.Equal(uint16(2222), fm.SSHPort)
-	suite.Equal("updated remark", fm.Remark)
+	suite.NotNil(fm, "查询结果不应该为nil")
+	suite.Equal(uniqueName, fm.Name, "Name字段应该被更新")
+	suite.Equal(uint16(3322), fm.SSHPort, "SSHPort字段应该被更新")
+	suite.Equal("updated remark", fm.Remark, "Remark字段应该被更新")
 
 	// 测试边界情况:更新数据为空
 	err = suite.hostRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", hm.ID)
@@ -188,6 +219,14 @@ func (suite *HostTestSuite) TestUpdateModel() {
 	// 测试边界情况:更新不存在的Host
 	err = suite.hostRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
 	suite.NoError(err, "更新不存在的Host应该成功（无操作）")
+
+	// 测试上下文超时情况
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
+
+	err = suite.hostRepo.UpdateModel(timeoutCtx, updateData, "id = ?", 1)
+	suite.Error(err, "上下文超时后更新Host应该返回错误")
 }
 
 func (suite *HostTestSuite) TestDeleteModel() {
@@ -201,13 +240,21 @@ func (suite *HostTestSuite) TestDeleteModel() {
 	suite.NoError(err, "删除Host应该成功")
 
 	// 验证删除结果
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", hm.ID)
+	fm, err := suite.hostRepo.GetModel(context.Background(), "id = ?", hm.ID)
 	suite.Error(err, "查询已删除的Host应该返回错误")
 	suite.Nil(fm, "已删除的Host应该为nil")
 
 	// 测试边界情况:删除不存在的Host
 	err = suite.hostRepo.DeleteModel(context.Background(), "id = ?", 999999)
 	suite.NoError(err, "删除不存在的Host应该成功（无操作）")
+
+	// 测试上下文超时情况
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
+
+	err = suite.hostRepo.DeleteModel(timeoutCtx, "id = ?", 1)
+	suite.Error(err, "上下文超时后删除Host应该返回错误")
 }
 
 func (suite *HostTestSuite) TestGetModel() {
@@ -217,27 +264,31 @@ func (suite *HostTestSuite) TestGetModel() {
 	suite.NoError(err, "创建Host用于查询测试应该成功")
 
 	// 测试正常查询
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", hm.ID)
+	fm, err := suite.hostRepo.GetModel(context.Background(), "id = ?", hm.ID)
 	suite.NoError(err, "查询Host应该成功")
 	suite.Equal(hm.ID, fm.ID)
 	suite.Equal(hm.Name, fm.Name)
 
 	// 测试边界情况:查询不存在的Host
-	fm, err = suite.hostRepo.GetModel(context.Background(), nil, "id = ?", 999999)
+	fm, err = suite.hostRepo.GetModel(context.Background(), "id = ?", 999999)
 	suite.Error(err, "查询不存在的Host应该返回错误")
 	suite.Nil(fm, "查询不存在的Host应该返回nil")
 
-	// 测试边界情况:使用预加载（虽然HostModel可能没有关联关系，但测试方法调用）
-	fm, err = suite.hostRepo.GetModel(context.Background(), []string{}, "id = ?", hm.ID)
-	suite.NoError(err, "使用空预加载查询Host应该成功")
-	suite.Equal(hm.ID, fm.ID)
+	// 测试上下文超时情况
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
+
+	_, err = suite.hostRepo.GetModel(timeoutCtx, "id = ?", hm.ID)
+	suite.Error(err, "上下文超时后查询Host应该返回错误")
 }
 
 func (suite *HostTestSuite) TestListModel() {
 	// 创建多个测试数据
 	for i := 0; i < 5; i++ {
-		hm := CreateTestHostModel()
-		hm.Name = fmt.Sprintf("host-%d", i)
+		hm := CreateTestHostModel(func(h *resomodel.HostModel) {
+			h.Name = fmt.Sprintf("host-%d", i)
+		})
 		err := suite.hostRepo.CreateModel(context.Background(), hm)
 		suite.NoError(err, "创建Host用于列表测试应该成功")
 	}
@@ -248,145 +299,92 @@ func (suite *HostTestSuite) TestListModel() {
 	suite.NoError(err, "查询Host列表应该成功")
 	suite.Greater(int64(len(models)), int64(0), "Host列表数量应该大于0")
 	suite.NotNil(models, "Host列表应该不为nil")
-	suite.Greater(int64(len(models)), int64(0), "Host列表长度应该大于0")
 
-	// 测试边界情况:空列表（如果之前没有数据）
-	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
+	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"name": "non-existent-host"},
 	}
 	models2, err := suite.hostRepo.ListModel(context.Background(), qp2)
 	suite.NoError(err, "查询不存在的Host列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的Host列表数量应该为0")
-	suite.NotNil(models2, "不存在的Host列表应该不为nil")
 	suite.Len(models2, 0, "不存在的Host列表长度应该为0")
-}
 
-func (suite *HostTestSuite) TestCreateModelWithEmpty() {
-	// 测试边界情况:创建空模型
-	err := suite.hostRepo.CreateModel(context.Background(), nil)
-	suite.Error(err, "创建空Host模型应该返回错误")
-}
+	// 测试带查询条件的列表
+	specialHM := CreateTestHostModel(func(h *resomodel.HostModel) {
+		h.Label = "special-label"
+	})
+	err = suite.hostRepo.CreateModel(context.Background(), specialHM)
+	suite.NoError(err)
 
-func (suite *HostTestSuite) TestContextTimeout() {
-	// 创建测试数据
-	hm := CreateTestHostModel()
-	err := suite.hostRepo.CreateModel(context.Background(), hm)
-	suite.NoError(err, "创建Host用于超时测试应该成功")
+	qp3 := database.QueryParams{
+		Query: map[string]any{"label": "special-label"},
+	}
+	models3, err := suite.hostRepo.ListModel(context.Background(), qp3)
+	suite.NoError(err)
+	suite.Len(models3, 1)
+	suite.Equal(specialHM.Label, models3[0].Label)
+
+	// 测试带排序的列表
+	qp4 := database.QueryParams{
+		OrderBy: []string{"id asc"},
+	}
+	models4, err := suite.hostRepo.ListModel(context.Background(), qp4)
+	suite.NoError(err)
+	suite.GreaterOrEqual(len(models4), 3)
 
 	// 测试上下文超时情况
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
-
-	// 等待超时
 	time.Sleep(time.Millisecond * 2)
 
-	// 测试超时后的操作
-	_, err = suite.hostRepo.GetModel(timeoutCtx, nil, "id = ?", hm.ID)
-	suite.Error(err, "上下文超时后查询Host应该返回错误")
-}
-
-func (suite *HostTestSuite) TestCreateModelWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
-
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的创建操作
-	hm := CreateTestHostModel()
-	err := suite.hostRepo.CreateModel(timeoutCtx, hm)
-	suite.Error(err, "上下文超时后创建Host应该返回错误")
-}
-
-func (suite *HostTestSuite) TestUpdateModelWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
-
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的更新操作
-	updateData := map[string]any{"Name": "updated-host"}
-	err := suite.hostRepo.UpdateModel(timeoutCtx, updateData, "id = ?", 1)
-	suite.Error(err, "上下文超时后更新Host应该返回错误")
-}
-
-func (suite *HostTestSuite) TestDeleteModelWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
-
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的删除操作
-	err := suite.hostRepo.DeleteModel(timeoutCtx, "id = ?", 1)
-	suite.Error(err, "上下文超时后删除Host应该返回错误")
-}
-
-func (suite *HostTestSuite) TestListModelWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
-
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的列表操作
-	qp := database.QueryParams{}
-	_, err := suite.hostRepo.ListModel(timeoutCtx, qp)
+	_, err = suite.hostRepo.ListModel(timeoutCtx, qp)
 	suite.Error(err, "上下文超时后查询Host列表应该返回错误")
 }
 
-func (suite *HostTestSuite) TestCountModelWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
+func (suite *HostTestSuite) TestListModelWithPagination() {
+	// 使用唯一的标签来避免数据残留的影响
+	uniqueLabel := fmt.Sprintf("pagination-label-%s", uuid.NewString()[:8])
 
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
+	// 清理之前的测试数据
+	err := suite.hostRepo.DeleteModel(context.Background(), "label = ?", uniqueLabel)
+	suite.NoError(err, "删除Host用于分页测试应该成功")
 
-	// 测试超时后的计数操作
-	_, err := suite.hostRepo.CountModel(timeoutCtx, map[string]any{"label": "test"})
-	suite.Error(err, "上下文超时后计数Host应该返回错误")
-}
+	// 创建多个测试数据
+	for i := 0; i < 10; i++ {
+		hm := CreateTestHostModel(
+			func(h *resomodel.HostModel) {
+				h.Name = fmt.Sprintf("host-%d-%s", i, uuid.NewString()[:4])
+				h.Label = uniqueLabel
+				h.SSHPort = uint16(2200 + i)
+				h.SSHUser = fmt.Sprintf("user-%d", i)
+			},
+		)
+		err := suite.hostRepo.CreateModel(context.Background(), hm)
+		suite.NoError(err)
+	}
 
-func (suite *HostTestSuite) TestNewSSHClientWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
+	qp := database.QueryParams{
+		Query:   map[string]any{"label": uniqueLabel},
+		OrderBy: []string{"id desc"},
+		Limit:   5,
+		Offset:  0,
+	}
+	models, err := suite.hostRepo.ListModel(context.Background(), qp)
+	suite.NoError(err)
+	suite.Len(models, 5)
 
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的SSH客户端创建
-	client, err := suite.hostRepo.NewSSHClient(timeoutCtx, "127.0.0.1", 22, "root", nil, time.Second)
-	suite.Error(err, "上下文超时后创建SSH客户端应该返回错误")
-	suite.Nil(client, "上下文超时后创建的SSH客户端应该为nil")
-}
-
-func (suite *HostTestSuite) TestExecuteCommandWithTimeout() {
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
-
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的命令执行
-	err := suite.hostRepo.ExecuteCommand(timeoutCtx, nil, "echo test")
-	suite.Error(err, "上下文超时后执行命令应该返回错误")
+	qp.Offset = 5
+	models, err = suite.hostRepo.ListModel(context.Background(), qp)
+	suite.NoError(err)
+	suite.Len(models, 5)
 }
 
 func (suite *HostTestSuite) TestCountModel() {
 	// 使用唯一的标签来避免数据残留的影响
 	uniqueLabel := fmt.Sprintf("test-label-%s", uuid.NewString()[:8])
 
-	hm := CreateTestHostModel()
-	hm.Label = uniqueLabel
+	hm := CreateTestHostModel(func(h *resomodel.HostModel) {
+		h.Label = uniqueLabel
+	})
 	err := suite.hostRepo.CreateModel(context.Background(), hm)
 	suite.NoError(err)
 
@@ -397,45 +395,55 @@ func (suite *HostTestSuite) TestCountModel() {
 	count, err = suite.hostRepo.CountModel(context.Background(), map[string]any{"label": "nonexistent"})
 	suite.NoError(err)
 	suite.Equal(int64(0), count)
+
+	// 测试多个记录的计数
+	for i := 0; i < 4; i++ {
+		hm := CreateTestHostModel(func(h *resomodel.HostModel) {
+			h.Label = "count-label"
+		})
+		err := suite.hostRepo.CreateModel(context.Background(), hm)
+		suite.NoError(err)
+	}
+
+	count, err = suite.hostRepo.CountModel(context.Background(), map[string]any{"label": "count-label"})
+	suite.NoError(err)
+	suite.Equal(int64(4), count)
+
+	// 测试上下文超时情况
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
+
+	_, err = suite.hostRepo.CountModel(timeoutCtx, map[string]any{"label": "test"})
+	suite.Error(err, "上下文超时后计数Host应该返回错误")
 }
 
-func (suite *HostTestSuite) TestNewSSHClientSuccess() {
-	container, cleanup, err := setupSSHContainer(suite.T())
-	if err != nil || container == nil {
-		suite.T().Skip("SSH container not available, skipping integration test")
-		return
-	}
-	defer cleanup()
+func (suite *HostTestSuite) TestNewSSHClient() {
+	// 测试上下文取消情况
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	passwordAuth := ssh.Password(container.Password)
-	sshClient, err := suite.hostRepo.NewSSHClient(
-		context.Background(),
-		container.IP,
-		container.Port,
-		container.User,
-		[]ssh.AuthMethod{passwordAuth},
-		10*time.Second,
+	client, err := suite.hostRepo.NewSSHClient(
+		ctx,
+		"127.0.0.1",
+		22,
+		"root",
+		[]ssh.AuthMethod{ssh.Password("test")},
+		time.Second,
 	)
+	suite.Error(err)
+	suite.Nil(client)
 
-	if err != nil {
-		suite.T().Logf("SSH connection failed (container may not be fully ready): %v", err)
-		suite.T().Skip("SSH container not fully ready")
-		return
-	}
+	// 测试上下文超时情况
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	time.Sleep(time.Millisecond * 2)
 
-	suite.NoError(err)
-	suite.NotNil(sshClient)
-	defer sshClient.Close()
+	client, err = suite.hostRepo.NewSSHClient(timeoutCtx, "127.0.0.1", 22, "root", nil, time.Second)
+	suite.Error(err, "上下文超时后创建SSH客户端应该返回错误")
+	suite.Nil(client, "上下文超时后创建的SSH客户端应该为nil")
 
-	session, err := sshClient.NewSession()
-	suite.NoError(err)
-	defer session.Close()
-
-	err = session.Run("echo 'hello'")
-	suite.NoError(err)
-}
-
-func (suite *HostTestSuite) TestNewSSHClientInvalidParams() {
+	// 测试无效参数
 	tests := []struct {
 		name    string
 		ip      string
@@ -505,20 +513,104 @@ func (suite *HostTestSuite) TestNewSSHClientInvalidParams() {
 	}
 }
 
-func (suite *HostTestSuite) TestNewSSHClientContextCanceled() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+func (suite *HostTestSuite) TestNewSSHClientSuccess() {
+	container, cleanup, err := setupSSHContainer(suite.T())
+	if err != nil || container == nil {
+		suite.T().Skip("SSH container not available, skipping integration test")
+		return
+	}
+	defer cleanup()
 
-	client, err := suite.hostRepo.NewSSHClient(
-		ctx,
-		"127.0.0.1",
-		22,
-		"root",
-		[]ssh.AuthMethod{ssh.Password("test")},
-		time.Second,
+	passwordAuth := ssh.Password(container.Password)
+	sshClient, err := suite.hostRepo.NewSSHClient(
+		context.Background(),
+		container.IP,
+		container.Port,
+		container.User,
+		[]ssh.AuthMethod{passwordAuth},
+		10*time.Second,
 	)
-	suite.Error(err)
-	suite.Nil(client)
+
+	if err != nil {
+		suite.T().Logf("SSH connection failed (container may not be fully ready): %v", err)
+		suite.T().Skip("SSH container not fully ready")
+		return
+	}
+
+	suite.NoError(err)
+	suite.NotNil(sshClient)
+	defer sshClient.Close()
+
+	session, err := sshClient.NewSession()
+	suite.NoError(err)
+	defer session.Close()
+
+	err = session.Run("echo 'hello'")
+	suite.NoError(err)
+}
+
+func (suite *HostTestSuite) TestExecuteCommand() {
+	// 表格驱动测试不同场景
+	tests := []struct {
+		name     string
+		ctx      context.Context
+		session  *ssh.Session
+		command  string
+		wantErr  bool
+		errorMsg string
+	}{
+		{
+			name:     "session为nil",
+			ctx:      context.Background(),
+			session:  nil,
+			command:  "echo test",
+			wantErr:  true,
+			errorMsg: "session为nil时执行命令应该返回错误",
+		},
+		{
+			name:     "空命令",
+			ctx:      context.Background(),
+			session:  nil,
+			command:  "",
+			wantErr:  true,
+			errorMsg: "session为nil时即使命令为空也应该返回错误",
+		},
+		{
+			name:     "上下文取消",
+			ctx:      func() context.Context { ctx, cancel := context.WithCancel(context.Background()); cancel(); return ctx }(),
+			session:  nil,
+			command:  "echo test",
+			wantErr:  true,
+			errorMsg: "上下文取消时执行命令应该返回错误",
+		},
+		{
+			name: "上下文超时",
+			ctx: func() context.Context {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+				cancel()
+				return ctx
+			}(),
+			session:  nil,
+			command:  "echo test",
+			wantErr:  true,
+			errorMsg: "上下文超时后执行命令应该返回错误",
+		},
+	}
+
+	for _, tt := range tests {
+		suite.T().Run(tt.name, func(t *testing.T) {
+			// 对于超时测试，需要等待超时
+			if tt.name == "上下文超时" {
+				time.Sleep(time.Millisecond * 2)
+			}
+			err := suite.hostRepo.ExecuteCommand(tt.ctx, tt.session, tt.command)
+			if tt.wantErr {
+				suite.Error(err, tt.errorMsg)
+			} else {
+				suite.NoError(err, tt.errorMsg)
+			}
+		})
+	}
 }
 
 func (suite *HostTestSuite) TestExecuteCommandSuccess() {
@@ -552,15 +644,6 @@ func (suite *HostTestSuite) TestExecuteCommandSuccess() {
 	suite.NoError(err)
 }
 
-func (suite *HostTestSuite) TestExecuteCommandContextCanceled() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	var session *ssh.Session
-	err := suite.hostRepo.ExecuteCommand(ctx, session, "echo test")
-	suite.Error(err)
-}
-
 func (suite *HostTestSuite) TestExecuteCommandCommandFailed() {
 	container, cleanup, err := setupSSHContainer(suite.T())
 	if err != nil || container == nil {
@@ -592,224 +675,18 @@ func (suite *HostTestSuite) TestExecuteCommandCommandFailed() {
 	suite.Error(err)
 }
 
-func (suite *HostTestSuite) TestExecuteCommandNilSession() {
-	// 测试session为nil的情况
-	err := suite.hostRepo.ExecuteCommand(context.Background(), nil, "echo test")
-	suite.Error(err, "session为nil时执行命令应该返回错误")
-}
-
-func (suite *HostTestSuite) TestExecuteCommandWithContextCanceled() {
-	// 测试ExecuteCommand函数的上下文取消情况
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	err := suite.hostRepo.ExecuteCommand(ctx, nil, "echo test")
-	suite.Error(err, "上下文取消时执行命令应该返回错误")
-}
-
-func (suite *HostTestSuite) TestExecuteCommandWithValidSession() {
-	// 测试ExecuteCommand函数的基本逻辑
-	// 由于ssh.Session需要真实的连接，我们无法完全模拟
-	// 但我们可以测试函数的基本结构和错误处理
-
-	// 测试正常上下文
-	ctx := context.Background()
-
-	// 测试session为nil的情况（应该返回错误）
-	err := suite.hostRepo.ExecuteCommand(ctx, nil, "echo test")
-	suite.Error(err, "session为nil时应该返回错误")
-
-	// 测试空命令
-	err = suite.hostRepo.ExecuteCommand(ctx, nil, "")
-	suite.Error(err, "session为nil时即使命令为空也应该返回错误")
-
-	suite.T().Log("ExecuteCommand函数的基本逻辑测试完成")
-}
-
-func (suite *HostTestSuite) TestListModelWithPagination() {
-	// 使用唯一的标签来避免数据残留的影响
-	uniqueLabel := fmt.Sprintf("pagination-label-%s", uuid.NewString()[:8])
-
-	// 清理之前的测试数据
-	suite.hostRepo.DeleteModel(context.Background(), "label = ?", uniqueLabel)
-
-	for i := 0; i < 10; i++ {
-		hm := &resomodel.HostModel{
-			Name:    fmt.Sprintf("host-%d-%s", i, uuid.NewString()[:4]),
-			Label:   uniqueLabel,
-			SSHIP:   "127.0.0.1",
-			SSHPort: uint16(2200 + i),
-			SSHUser: fmt.Sprintf("user-%d", i),
-			PyPath:  "/usr/bin/python3",
-		}
-		err := suite.hostRepo.CreateModel(context.Background(), hm)
-		suite.NoError(err)
-	}
-
-	qp := database.QueryParams{
-		Query:   map[string]any{"label": uniqueLabel},
-		OrderBy: []string{"id desc"},
-		Limit:   5,
-		Offset:  0,
-	}
-	models, err := suite.hostRepo.ListModel(context.Background(), qp)
-	suite.NoError(err)
-	suite.Len(models, 5)
-
-	qp.Offset = 5
-	models, err = suite.hostRepo.ListModel(context.Background(), qp)
-	suite.NoError(err)
-	suite.Len(models, 5)
-}
-
 func (suite *HostTestSuite) TestNewHostRepo() {
 	logger := zap.NewNop()
 	db := test.NewTestGormDBWithConfig(nil)
 	timeouts := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
 
-	repo := NewHostRepo(logger, db, timeouts)
+	repo := NewHostRepo(logger, db, timeouts, slowThreshold)
 	suite.NotNil(repo)
 	suite.Equal(logger, repo.log)
 	suite.Equal(db, repo.gormDB)
 	suite.Equal(timeouts, repo.timeouts)
-}
-
-func (suite *HostTestSuite) TestUpdateModelNotFound() {
-	updateData := map[string]any{"Name": "updated-name"}
-	err := suite.hostRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
-	suite.NoError(err)
-}
-
-func (suite *HostTestSuite) TestListModelEmptyResult() {
-	qp := database.QueryParams{
-		Query: map[string]any{"name": "totally-nonexistent-host-name-xyz"},
-	}
-	models, err := suite.hostRepo.ListModel(context.Background(), qp)
-	suite.NoError(err)
-	suite.Len(models, 0)
-}
-
-func (suite *HostTestSuite) TestGetModelWithPreloads() {
-	hm := CreateTestHostModel()
-	err := suite.hostRepo.CreateModel(context.Background(), hm)
-	suite.NoError(err)
-
-	fm, err := suite.hostRepo.GetModel(context.Background(), []string{}, "id = ?", hm.ID)
-	suite.NoError(err)
-	suite.Equal(hm.ID, fm.ID)
-}
-
-func (suite *HostTestSuite) TestListModelWithQuery() {
-	hm := CreateTestHostModel()
-	hm.Label = "special-label"
-	err := suite.hostRepo.CreateModel(context.Background(), hm)
-	suite.NoError(err)
-
-	qp := database.QueryParams{
-		Query: map[string]any{"label": "special-label"},
-	}
-	models, err := suite.hostRepo.ListModel(context.Background(), qp)
-	suite.NoError(err)
-	suite.Len(models, 1)
-	suite.Equal(hm.Label, models[0].Label)
-}
-
-func (suite *HostTestSuite) TestDeleteModelNotFound() {
-	err := suite.hostRepo.DeleteModel(context.Background(), "id = ?", 999999)
-	suite.NoError(err)
-}
-
-func (suite *HostTestSuite) TestGetModelNotFound() {
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", 999999)
-	suite.Error(err)
-	suite.Nil(fm)
-}
-
-func (suite *HostTestSuite) TestDeleteModelSuccess() {
-	hm := CreateTestHostModel()
-	err := suite.hostRepo.CreateModel(context.Background(), hm)
-	suite.NoError(err)
-
-	err = suite.hostRepo.DeleteModel(context.Background(), "id = ?", hm.ID)
-	suite.NoError(err)
-
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", hm.ID)
-	suite.Error(err)
-	suite.Nil(fm)
-}
-
-func (suite *HostTestSuite) TestCreateModelSuccess() {
-	hm := CreateTestHostModel()
-	err := suite.hostRepo.CreateModel(context.Background(), hm)
-	suite.NoError(err)
-	suite.NotZero(hm.ID)
-	suite.NotZero(hm.CreatedAt)
-	suite.NotZero(hm.UpdatedAt)
-
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", hm.ID)
-	suite.NoError(err)
-	suite.Equal(hm.ID, fm.ID)
-}
-
-func (suite *HostTestSuite) TestCreateModelNilModel() {
-	err := suite.hostRepo.CreateModel(context.Background(), nil)
-	suite.Error(err)
-}
-
-func (suite *HostTestSuite) TestUpdateModelSuccess() {
-	hm := CreateTestHostModel()
-	err := suite.hostRepo.CreateModel(context.Background(), hm)
-	suite.NoError(err)
-
-	// 使用唯一的名称来避免唯一约束冲突
-	uniqueName := fmt.Sprintf("updated-host-%s", uuid.NewString()[:8])
-	updateData := map[string]any{
-		"Name":    uniqueName,
-		"SSHPort": 3322,
-		"Remark":  "updated remark",
-	}
-	err = suite.hostRepo.UpdateModel(context.Background(), updateData, "id = ?", hm.ID)
-	suite.NoError(err)
-
-	fm, err := suite.hostRepo.GetModel(context.Background(), nil, "id = ?", hm.ID)
-	suite.NoError(err)
-	suite.Equal(uniqueName, fm.Name)
-	suite.Equal(uint16(3322), fm.SSHPort)
-	suite.Equal("updated remark", fm.Remark)
-}
-
-func (suite *HostTestSuite) TestUpdateModelEmptyData() {
-	err := suite.hostRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", 1)
-	suite.Error(err)
-}
-
-func (suite *HostTestSuite) TestCountModelMultipleRecords() {
-	for i := 0; i < 5; i++ {
-		hm := CreateTestHostModel()
-		hm.Label = "count-label"
-		err := suite.hostRepo.CreateModel(context.Background(), hm)
-		suite.NoError(err)
-	}
-
-	count, err := suite.hostRepo.CountModel(context.Background(), map[string]any{"label": "count-label"})
-	suite.NoError(err)
-	suite.Equal(int64(5), count)
-}
-
-func (suite *HostTestSuite) TestListModelWithOrderBy() {
-	for i := 0; i < 3; i++ {
-		hm := CreateTestHostModel()
-		hm.Name = fmt.Sprintf("host-ordered-%d", i)
-		err := suite.hostRepo.CreateModel(context.Background(), hm)
-		suite.NoError(err)
-	}
-
-	qp := database.QueryParams{
-		OrderBy: []string{"id asc"},
-	}
-	models, err := suite.hostRepo.ListModel(context.Background(), qp)
-	suite.NoError(err)
-	suite.GreaterOrEqual(len(models), 3)
+	suite.Equal(slowThreshold, repo.slowThreshold)
 }
 
 func TestHostTestSuite(t *testing.T) {

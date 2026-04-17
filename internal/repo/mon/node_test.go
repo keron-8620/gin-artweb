@@ -11,6 +11,7 @@ import (
 
 	monmodel "gin-artweb/internal/model/mon"
 	resomodel "gin-artweb/internal/model/resource"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/test"
 )
@@ -26,6 +27,27 @@ func CreateTestMonNodeModel() *monmodel.MonNodeModel {
 	}
 }
 
+// createTestMonNode 创建并保存测试MonNode到数据库
+func (suite *MonNodeTestSuite) createTestMonNode() *monmodel.MonNodeModel {
+	nm := CreateTestMonNodeModel()
+	err := suite.nodeRepo.CreateModel(context.Background(), nm)
+	suite.NoError(err, "创建测试MonNode应该成功")
+	return nm
+}
+
+// createMultipleTestMonNodes 创建多个测试MonNode到数据库
+func (suite *MonNodeTestSuite) createMultipleTestMonNodes(count int, namePrefix string) []*monmodel.MonNodeModel {
+	nodes := make([]*monmodel.MonNodeModel, 0, count)
+	for i := 0; i < count; i++ {
+		nm := CreateTestMonNodeModel()
+		nm.Name = fmt.Sprintf("%s-%d", namePrefix, i)
+		err := suite.nodeRepo.CreateModel(context.Background(), nm)
+		suite.NoError(err, "创建测试MonNode应该成功")
+		nodes = append(nodes, nm)
+	}
+	return nodes
+}
+
 type MonNodeTestSuite struct {
 	suite.Suite
 	nodeRepo *MonNodeRepo
@@ -33,7 +55,9 @@ type MonNodeTestSuite struct {
 
 func (suite *MonNodeTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	// 创建一个测试主机，因为MonNodeModel需要关联HostID
 	hostModel := &resomodel.HostModel{
@@ -49,10 +73,15 @@ func (suite *MonNodeTestSuite) SetupSuite() {
 
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
+	slowThreshold := &config.DBSlowThreshold{
+		WriteSlow: 100 * time.Millisecond,
+		ReadSlow:  50 * time.Millisecond,
+	}
 	suite.nodeRepo = &MonNodeRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -70,87 +99,188 @@ func (suite *MonNodeTestSuite) TestCreateModel() {
 
 func (suite *MonNodeTestSuite) TestUpdateModel() {
 	// 创建测试数据
-	nm := CreateTestMonNodeModel()
-	err := suite.nodeRepo.CreateModel(context.Background(), nm)
-	suite.NoError(err, "创建MonNode用于更新测试应该成功")
+	nm := suite.createTestMonNode()
 
-	// 测试正常更新
-	updateData := map[string]any{
-		"Name":       "updated-mon-node",
-		"DeployPath": "/opt/mon-updated",
-		"JavaHome":   "/usr/lib/jvm/java-17-openjdk-amd64",
+	// 表格驱动测试
+	testCases := []struct {
+		name        string
+		updateData  map[string]any
+		condition   string
+		args        []any
+		expectError bool
+		verifyFunc  func()
+	}{
+		{
+			name: "正常更新",
+			updateData: map[string]any{
+				"Name":       "updated-mon-node",
+				"DeployPath": "/opt/mon-updated",
+				"JavaHome":   "/usr/lib/jvm/java-17-openjdk-amd64",
+			},
+			condition:   "id = ?",
+			args:        []any{nm.ID},
+			expectError: false,
+			verifyFunc: func() {
+				fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", nm.ID)
+				suite.NoError(err, "查询更新后的MonNode应该成功")
+				suite.Equal("updated-mon-node", fm.Name)
+				suite.Equal("/opt/mon-updated", fm.DeployPath)
+				suite.Equal("/usr/lib/jvm/java-17-openjdk-amd64", fm.JavaHome)
+			},
+		},
+		{
+			name:        "更新数据为空",
+			updateData:  map[string]any{},
+			condition:   "id = ?",
+			args:        []any{nm.ID},
+			expectError: true,
+			verifyFunc:  nil,
+		},
+		{
+			name: "更新不存在的MonNode",
+			updateData: map[string]any{
+				"Name": "updated-mon-node",
+			},
+			condition:   "id = ?",
+			args:        []any{999999},
+			expectError: false,
+			verifyFunc:  nil,
+		},
 	}
-	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", nm.ID)
-	suite.NoError(err, "更新MonNode应该成功")
 
-	// 验证更新结果
-	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", nm.ID)
-	suite.NoError(err, "查询更新后的MonNode应该成功")
-	suite.Equal("updated-mon-node", fm.Name)
-	suite.Equal("/opt/mon-updated", fm.DeployPath)
-	suite.Equal("/usr/lib/jvm/java-17-openjdk-amd64", fm.JavaHome)
-
-	// 测试边界情况:更新数据为空
-	err = suite.nodeRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", nm.ID)
-	suite.Error(err, "更新数据为空时应该返回错误")
-
-	// 测试边界情况:更新不存在的MonNode
-	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
-	suite.NoError(err, "更新不存在的MonNode应该成功（无操作）")
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			// 构建参数，将condition和args合并
+			params := append([]any{tc.condition}, tc.args...)
+			err := suite.nodeRepo.UpdateModel(context.Background(), tc.updateData, params...)
+			if tc.expectError {
+				suite.Error(err, tc.name+"应该返回错误")
+			} else {
+				suite.NoError(err, tc.name+"应该成功")
+				if tc.verifyFunc != nil {
+					tc.verifyFunc()
+				}
+			}
+		})
+	}
 }
 
 func (suite *MonNodeTestSuite) TestDeleteModel() {
 	// 创建测试数据
-	nm := CreateTestMonNodeModel()
-	err := suite.nodeRepo.CreateModel(context.Background(), nm)
-	suite.NoError(err, "创建MonNode用于删除测试应该成功")
+	nm := suite.createTestMonNode()
 
-	// 测试正常删除
-	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", nm.ID)
-	suite.NoError(err, "删除MonNode应该成功")
+	// 表格驱动测试
+	testCases := []struct {
+		name        string
+		condition   string
+		args        []any
+		expectError bool
+		verifyFunc  func()
+	}{
+		{
+			name:        "正常删除",
+			condition:   "id = ?",
+			args:        []any{nm.ID},
+			expectError: false,
+			verifyFunc: func() {
+				fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", nm.ID)
+				suite.Error(err, "查询已删除的MonNode应该返回错误")
+				suite.Nil(fm, "已删除的MonNode应该为nil")
+			},
+		},
+		{
+			name:        "删除不存在的MonNode",
+			condition:   "id = ?",
+			args:        []any{999999},
+			expectError: false,
+			verifyFunc:  nil,
+		},
+	}
 
-	// 验证删除结果
-	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", nm.ID)
-	suite.Error(err, "查询已删除的MonNode应该返回错误")
-	suite.Nil(fm, "已删除的MonNode应该为nil")
-
-	// 测试边界情况:删除不存在的MonNode
-	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", 999999)
-	suite.NoError(err, "删除不存在的MonNode应该成功（无操作）")
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			// 构建参数，将condition和args合并
+			params := append([]any{tc.condition}, tc.args...)
+			err := suite.nodeRepo.DeleteModel(context.Background(), params...)
+			if tc.expectError {
+				suite.Error(err, tc.name+"应该返回错误")
+			} else {
+				suite.NoError(err, tc.name+"应该成功")
+				if tc.verifyFunc != nil {
+					tc.verifyFunc()
+				}
+			}
+		})
+	}
 }
 
 func (suite *MonNodeTestSuite) TestGetModel() {
 	// 创建测试数据
-	nm := CreateTestMonNodeModel()
-	err := suite.nodeRepo.CreateModel(context.Background(), nm)
-	suite.NoError(err, "创建MonNode用于查询测试应该成功")
+	nm := suite.createTestMonNode()
 
-	// 测试正常查询
-	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", nm.ID)
-	suite.NoError(err, "查询MonNode应该成功")
-	suite.Equal(nm.ID, fm.ID)
-	suite.Equal(nm.Name, fm.Name)
-	suite.Equal(nm.URL, fm.URL)
+	// 表格驱动测试
+	testCases := []struct {
+		name        string
+		preload     []string
+		condition   string
+		args        []any
+		expectError bool
+		verifyFunc  func(*monmodel.MonNodeModel)
+	}{
+		{
+			name:        "正常查询",
+			preload:     nil,
+			condition:   "id = ?",
+			args:        []any{nm.ID},
+			expectError: false,
+			verifyFunc: func(fm *monmodel.MonNodeModel) {
+				suite.Equal(nm.ID, fm.ID)
+				suite.Equal(nm.Name, fm.Name)
+				suite.Equal(nm.URL, fm.URL)
+			},
+		},
+		{
+			name:        "查询不存在的MonNode",
+			preload:     nil,
+			condition:   "id = ?",
+			args:        []any{999999},
+			expectError: true,
+			verifyFunc:  nil,
+		},
+		{
+			name:        "使用预加载",
+			preload:     []string{"Host"},
+			condition:   "id = ?",
+			args:        []any{nm.ID},
+			expectError: false,
+			verifyFunc: func(fm *monmodel.MonNodeModel) {
+				suite.Equal(nm.ID, fm.ID)
+			},
+		},
+	}
 
-	// 测试边界情况:查询不存在的MonNode
-	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", 999999)
-	suite.Error(err, "查询不存在的MonNode应该返回错误")
-	suite.Nil(fm, "查询不存在的MonNode应该返回nil")
-
-	// 测试边界情况:使用预加载
-	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"Host"}, "id = ?", nm.ID)
-	suite.NoError(err, "使用预加载查询MonNode应该成功")
-	suite.Equal(nm.ID, fm.ID)
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			// 构建参数，将condition和args合并
+			params := append([]any{tc.condition}, tc.args...)
+			fm, err := suite.nodeRepo.GetModel(context.Background(), tc.preload, params...)
+			if tc.expectError {
+				suite.Error(err, tc.name+"应该返回错误")
+				suite.Nil(fm, tc.name+"应该返回nil")
+			} else {
+				suite.NoError(err, tc.name+"应该成功")
+				suite.NotNil(fm, tc.name+"应该返回非nil")
+				if tc.verifyFunc != nil {
+					tc.verifyFunc(fm)
+				}
+			}
+		})
+	}
 }
 
 func (suite *MonNodeTestSuite) TestListModel() {
 	// 创建多个测试数据
-	for i := 0; i < 5; i++ {
-		nm := CreateTestMonNodeModel()
-		nm.Name = fmt.Sprintf("mon-node-%d", i)
-		err := suite.nodeRepo.CreateModel(context.Background(), nm)
-		suite.NoError(err, "创建MonNode用于列表测试应该成功")
-	}
+	suite.createMultipleTestMonNodes(5, "mon-node")
 
 	// 测试正常查询列表
 	qp := database.QueryParams{
@@ -160,8 +290,8 @@ func (suite *MonNodeTestSuite) TestListModel() {
 	}
 	models, err := suite.nodeRepo.ListModel(context.Background(), qp)
 	suite.NoError(err, "查询MonNode列表应该成功")
-	suite.Greater(int64(len(models)), int64(0), "MonNode列表数量应该大于0")
 	suite.NotNil(models, "MonNode列表应该不为nil")
+	suite.Greater(len(models), 0, "MonNode列表数量应该大于0")
 
 	// 测试边界情况:空列表（如果之前没有数据）
 	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
@@ -170,37 +300,13 @@ func (suite *MonNodeTestSuite) TestListModel() {
 	}
 	models2, err := suite.nodeRepo.ListModel(context.Background(), qp2)
 	suite.NoError(err, "查询不存在的MonNode列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的MonNode列表数量应该为0")
 	suite.NotNil(models2, "不存在的MonNode列表应该不为nil")
 	suite.Len(models2, 0, "不存在的MonNode列表长度应该为0")
 }
 
-func (suite *MonNodeTestSuite) TestContextTimeout() {
-	// 创建测试数据
-	nm := CreateTestMonNodeModel()
-	err := suite.nodeRepo.CreateModel(context.Background(), nm)
-	suite.NoError(err, "创建MonNode用于超时测试应该成功")
-
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
-
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的操作
-	_, err = suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", nm.ID)
-	suite.Error(err, "上下文超时后查询MonNode应该返回错误")
-}
-
 func (suite *MonNodeTestSuite) TestCountModel() {
 	// 创建多个测试数据
-	for i := 0; i < 3; i++ {
-		nm := CreateTestMonNodeModel()
-		nm.Name = fmt.Sprintf("count-test-%d", i)
-		err := suite.nodeRepo.CreateModel(context.Background(), nm)
-		suite.NoError(err, "创建MonNode用于计数测试应该成功")
-	}
+	suite.createMultipleTestMonNodes(3, "count-test")
 
 	// 测试正常计数
 	count, err := suite.nodeRepo.CountModel(context.Background(), nil)
@@ -215,16 +321,14 @@ func (suite *MonNodeTestSuite) TestCountModel() {
 	// 测试计数不存在的MonNode
 	countNonExistent, err := suite.nodeRepo.CountModel(context.Background(), map[string]any{"name": "non-existent-mon-node"})
 	suite.NoError(err, "计数不存在的MonNode应该成功")
-	suite.Equal(int64(0), countNonExistent, "不存在的MonNode计数应该为0")
+	suite.Zero(countNonExistent, "不存在的MonNode计数应该为0")
 }
 
 func (suite *MonNodeTestSuite) TestDatabaseErrorScenarios() {
 	// 测试上下文超时导致的数据库操作失败
 	testTimeoutError := func() {
 		// 创建测试数据
-		nm := CreateTestMonNodeModel()
-		err := suite.nodeRepo.CreateModel(context.Background(), nm)
-		suite.NoError(err, "创建MonNode用于超时测试应该成功")
+		nm := suite.createTestMonNode()
 
 		// 创建一个已经超时的上下文
 		timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
@@ -234,7 +338,7 @@ func (suite *MonNodeTestSuite) TestDatabaseErrorScenarios() {
 		time.Sleep(time.Millisecond)
 
 		// 测试各种操作在超时上下文下的行为
-		_, err = suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", nm.ID)
+		_, err := suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", nm.ID)
 		suite.Error(err, "超时上下文下查询MonNode应该返回错误")
 
 		err = suite.nodeRepo.UpdateModel(timeoutCtx, map[string]any{"name": "test"}, "id = ?", nm.ID)

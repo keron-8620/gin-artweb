@@ -47,6 +47,18 @@ func (m *OesColonyModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListOesColonyModelToUint32s(ms []OesColonyModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type OesColonyVars struct {
 	ID         uint32 `json:"id" yaml:"id"`
 	SystemType string `json:"system_type" yaml:"system_type"`
@@ -107,6 +119,18 @@ func (dto *OesColonyUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error
 	enc.AddUint32("xcounter_id", dto.XCounterID)
 	enc.AddUint32("mon_node_id", dto.MonNodeID)
 	return nil
+}
+
+func (dto *OesColonyUpsertDTO) ToModel() OesColonyModel {
+	return OesColonyModel{
+		SystemType:    dto.SystemType,
+		ColonyNum:     dto.ColonyNum,
+		ExtractedName: dto.ExtractedName,
+		IsEnable:      dto.IsEnable,
+		PackageID:     dto.PackageID,
+		XCounterID:    dto.XCounterID,
+		MonNodeID:     dto.MonNodeID,
+	}
 }
 
 func (dto *OesColonyUpsertDTO) ToUpdateMap() map[string]any {

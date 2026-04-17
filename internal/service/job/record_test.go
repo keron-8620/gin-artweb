@@ -38,16 +38,19 @@ type RecordServiceTestSuite struct {
 
 func (suite *RecordServiceTestSuite) SetupSuite() {
 	suite.db = test.NewTestGormDBWithConfig(nil)
-	suite.db.AutoMigrate(&jobmodel.ScriptModel{}, &jobmodel.ScriptRecordModel{})
+	if err := suite.db.AutoMigrate(&jobmodel.ScriptModel{}, &jobmodel.ScriptRecordModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	suite.db.Exec("DELETE FROM job_script_record")
 	suite.db.Exec("DELETE FROM job_script")
 
 	dbTimeout := test.NewTestDBTimeouts()
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 
-	scriptRepo := jobrepo.NewScriptRepo(logger, suite.db, dbTimeout)
-	recordRepo := jobrepo.NewRecordRepo(logger, suite.db, dbTimeout)
+	scriptRepo := jobrepo.NewScriptRepo(logger, suite.db, dbTimeout, dbSlowThreshold)
+	recordRepo := jobrepo.NewRecordRepo(logger, suite.db, dbTimeout, dbSlowThreshold)
 
 	suite.recordService = NewScriptRecordService(logger, scriptRepo, recordRepo)
 
@@ -104,7 +107,7 @@ func (suite *RecordServiceTestSuite) TestGenerateScriptLogPath() {
 func (suite *RecordServiceTestSuite) TestCreateScriptRecord() {
 	ctx := createRecordTestContext()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		CommandArgs: "arg1 arg2",
@@ -132,7 +135,7 @@ func (suite *RecordServiceTestSuite) TestCreateScriptRecord_ContextError() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		Timeout:     300,
@@ -147,7 +150,7 @@ func (suite *RecordServiceTestSuite) TestCreateScriptRecord_ContextError() {
 func (suite *RecordServiceTestSuite) TestUpdateScriptRecord() {
 	ctx := createRecordTestContext()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		Timeout:     300,
@@ -188,7 +191,7 @@ func (suite *RecordServiceTestSuite) TestUpdateScriptRecord_ContextError() {
 func (suite *RecordServiceTestSuite) TestFindScriptRecordByID() {
 	ctx := createRecordTestContext()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		Timeout:     300,
@@ -217,7 +220,7 @@ func (suite *RecordServiceTestSuite) TestListScriptRecord() {
 	ctx := createRecordTestContext()
 
 	for i := 0; i < 3; i++ {
-		execBiz := jobmodel.ExecuteBIZ{
+		execBiz := jobmodel.ExecuteScriptDTO{
 			TriggerType: "api",
 			ScriptID:    suite.scriptID,
 			Timeout:     300,
@@ -252,7 +255,7 @@ func (suite *RecordServiceTestSuite) TestListScriptRecordByIDs() {
 
 	var recordIDs []uint32
 	for i := 0; i < 3; i++ {
-		execBiz := jobmodel.ExecuteBIZ{
+		execBiz := jobmodel.ExecuteScriptDTO{
 			TriggerType: "api",
 			ScriptID:    suite.scriptID,
 			Timeout:     300,
@@ -304,7 +307,7 @@ func (suite *RecordServiceTestSuite) TestCreateScriptRecord_DisabledScript() {
 	}
 	suite.db.Create(disabledScript)
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    disabledScript.ID,
 		Timeout:     300,
@@ -330,7 +333,7 @@ func (suite *RecordServiceTestSuite) TestGetScriptLogStoragePath() {
 func (suite *RecordServiceTestSuite) TestAsyncExecuteScript() {
 	ctx := createRecordTestContext()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		Timeout:     300,
@@ -346,7 +349,7 @@ func (suite *RecordServiceTestSuite) TestAsyncExecuteScript() {
 func (suite *RecordServiceTestSuite) TestSyncExecuteScript() {
 	ctx := createRecordTestContext()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		Timeout:     300,
@@ -371,7 +374,7 @@ func (suite *RecordServiceTestSuite) TestCancel_NotFound() {
 func (suite *RecordServiceTestSuite) TestCancel() {
 	ctx := createRecordTestContext()
 
-	execBiz := jobmodel.ExecuteBIZ{
+	execBiz := jobmodel.ExecuteScriptDTO{
 		TriggerType: "api",
 		ScriptID:    suite.scriptID,
 		Timeout:     300,

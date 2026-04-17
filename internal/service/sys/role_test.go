@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
@@ -33,48 +32,92 @@ func CreateTestRoleDTO(apiIDs, menuIDs, buttonIDs []uint32) sysmodel.RoleUpsertD
 	}
 }
 
+// CreateTestApis 创建多个测试API
+func (suite *RoleTestSuite) CreateTestApis(count int) []uint32 {
+	apiIDs := make([]uint32, 0, count)
+	for i := 0; i < count; i++ {
+		testApi := CreateTestApiModel()
+		err := suite.roleservice.apiRepo.CreateModel(context.Background(), testApi)
+		suite.Nil(err, "创建API应该成功")
+		apiIDs = append(apiIDs, testApi.ID)
+	}
+	return apiIDs
+}
+
+// CreateTestMenus 创建多个测试菜单
+func (suite *RoleTestSuite) CreateTestMenus(count int) []uint32 {
+	menuIDs := make([]uint32, 0, count)
+	for i := 0; i < count; i++ {
+		testMenu := CreateTestMenuModel(nil)
+		err := suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
+		suite.Nil(err, "创建菜单应该成功")
+		menuIDs = append(menuIDs, testMenu.ID)
+	}
+	return menuIDs
+}
+
+// CreateTestButtons 创建多个测试按钮
+func (suite *RoleTestSuite) CreateTestButtons(menuID uint32, count int) []uint32 {
+	buttonIDs := make([]uint32, 0, count)
+	for i := 0; i < count; i++ {
+		testButton := CreateTestButtonModel(menuID)
+		err := suite.roleservice.buttonRepo.CreateModel(context.Background(), testButton, nil)
+		suite.Nil(err, "创建按钮应该成功")
+		buttonIDs = append(buttonIDs, testButton.ID)
+	}
+	return buttonIDs
+}
+
 type RoleTestSuite struct {
 	suite.Suite
-	enforcer    *casbin.Enforcer
 	roleservice *RoleService
 }
 
 func (suite *RoleTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&sysmodel.MenuModel{},
 		&sysmodel.ApiModel{},
 		&sysmodel.ButtonModel{},
 		&sysmodel.RoleModel{},
-	)
+	); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	suite.enforcer = enforcer
+	slowThreshold := test.NewTestDBSlowThreshold()
+	enforcer, err := auth.NewCasbinEnforcer()
+	if err != nil {
+		suite.Error(err, "创建Casbinforcer失败")
+	}
 	suite.roleservice = NewRoleService(
 		logger,
 		syssvc.NewApiRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			enforcer,
 		),
 		syssvc.NewMenuRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			enforcer,
 		),
 		syssvc.NewButtonRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			enforcer,
 		),
 		syssvc.NewRoleRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			enforcer,
 		),
 	)
@@ -89,60 +132,37 @@ func TestRoleTestSuite(t *testing.T) {
 // TestGetApis 测试获取API列表
 func (suite *RoleTestSuite) TestGetApis() {
 	// 创建测试API
-	apiCount := 2
-	apiIDs := make([]uint32, 0, apiCount)
-	for i := 0; i < apiCount; i++ {
-		testApi := CreateTestApiModel()
-		err := suite.roleservice.apiRepo.CreateModel(context.Background(), testApi)
-		suite.Nil(err, "创建API应该成功")
-		apiIDs = append(apiIDs, testApi.ID)
-	}
+	apiIDs := suite.CreateTestApis(2)
 
 	// 测试获取API列表
 	apis, err := suite.roleservice.GetApis(context.Background(), apiIDs)
 	suite.Nil(err, "获取API列表应该成功")
-	suite.Len(apis, apiCount, "API列表数量应该正确")
+	suite.Len(apis, 2, "API列表数量应该正确")
 }
 
 // TestGetMenus 测试获取菜单列表
 func (suite *RoleTestSuite) TestGetMenus() {
 	// 创建测试菜单
-	menuCount := 2
-	menuIDs := make([]uint32, 0, menuCount)
-	for i := 0; i < menuCount; i++ {
-		testMenu := CreateTestMenuModel(nil)
-		err := suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-		suite.Nil(err, "创建菜单应该成功")
-		menuIDs = append(menuIDs, testMenu.ID)
-	}
+	menuIDs := suite.CreateTestMenus(2)
 
 	// 测试获取菜单列表
 	menus, err := suite.roleservice.GetMenus(context.Background(), menuIDs)
 	suite.Nil(err, "获取菜单列表应该成功")
-	suite.Len(menus, menuCount, "菜单列表数量应该正确")
+	suite.Len(menus, 2, "菜单列表数量应该正确")
 }
 
 // TestGetButtons 测试获取按钮列表
 func (suite *RoleTestSuite) TestGetButtons() {
 	// 创建测试菜单
-	testMenu := CreateTestMenuModel(nil)
-	err := suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-	suite.Nil(err, "创建菜单应该成功")
+	menuIDs := suite.CreateTestMenus(1)
 
 	// 创建测试按钮
-	buttonCount := 2
-	buttonIDs := make([]uint32, 0, buttonCount)
-	for i := 0; i < buttonCount; i++ {
-		testButton := CreateTestButtonModel(testMenu.ID)
-		err := suite.roleservice.buttonRepo.CreateModel(context.Background(), testButton, nil)
-		suite.Nil(err, "创建按钮应该成功")
-		buttonIDs = append(buttonIDs, testButton.ID)
-	}
+	buttonIDs := suite.CreateTestButtons(menuIDs[0], 2)
 
 	// 测试获取按钮列表
 	buttons, err := suite.roleservice.GetButtons(context.Background(), buttonIDs)
 	suite.Nil(err, "获取按钮列表应该成功")
-	suite.Len(buttons, buttonCount, "按钮列表数量应该正确")
+	suite.Len(buttons, 2, "按钮列表数量应该正确")
 }
 
 // TestFindRoleByID 测试根据ID查询角色
@@ -178,23 +198,21 @@ func (suite *RoleTestSuite) TestListRole() {
 // TestLoadRolePolicy 测试加载角色策略
 func (suite *RoleTestSuite) TestLoadRolePolicy() {
 	// 创建测试角色
-	_, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{}, []uint32{}, []uint32{}))
-	suite.Nil(err, "创建角色应该成功")
+	_, rErr := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{}, []uint32{}, []uint32{}))
+	suite.Nil(rErr, "创建角色应该成功")
 
 	// 测试加载角色策略
-	err = suite.roleservice.LoadRolePolicy(context.Background())
-	suite.Nil(err, "加载角色策略应该成功")
+	loadErr := suite.roleservice.LoadRolePolicy(context.Background())
+	suite.Nil(loadErr, "加载角色策略应该成功")
 }
 
 // TestGetRoleMenuTree 测试获取角色菜单树
 func (suite *RoleTestSuite) TestGetRoleMenuTree() {
 	// 创建测试菜单
-	testMenu := CreateTestMenuModel(nil)
-	err := suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-	suite.Nil(err, "创建菜单应该成功")
+	menuIDs := suite.CreateTestMenus(1)
 
 	// 创建测试角色并关联菜单
-	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{}, []uint32{testMenu.ID}, []uint32{}))
+	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{}, menuIDs, []uint32{}))
 	suite.Nil(err, "创建角色应该成功")
 
 	// 测试获取角色菜单树
@@ -216,16 +234,14 @@ func (suite *RoleTestSuite) TestGetRoleMenuTreeWithNestedMenus() {
 	suite.Nil(err, "创建子菜单应该成功")
 
 	// 创建按钮，关联到子菜单
-	childButton := CreateTestButtonModel(childMenu.ID)
-	err = suite.roleservice.buttonRepo.CreateModel(context.Background(), childButton, nil)
-	suite.Nil(err, "创建按钮应该成功")
+	buttonIDs := suite.CreateTestButtons(childMenu.ID, 1)
 
 	// 创建测试角色并关联所有菜单和按钮
 	createdRole, err := suite.roleservice.CreateRole(context.Background(),
 		CreateTestRoleDTO(
 			[]uint32{},
 			[]uint32{parentMenu.ID, childMenu.ID},
-			[]uint32{childButton.ID},
+			buttonIDs,
 		),
 	)
 	suite.Nil(err, "创建角色应该成功")
@@ -258,23 +274,13 @@ func (suite *RoleTestSuite) TestCreateRole() {
 
 // TestCreateRoleWithRelations 测试创建角色（关联 API、菜单、按钮）
 func (suite *RoleTestSuite) TestCreateRoleWithRelations() {
-	// 创建测试API
-	testApi := CreateTestApiModel()
-	err := suite.roleservice.apiRepo.CreateModel(context.Background(), testApi)
-	suite.Nil(err, "创建API应该成功")
-
-	// 创建测试菜单
-	testMenu := CreateTestMenuModel(nil)
-	err = suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-	suite.Nil(err, "创建菜单应该成功")
-
-	// 创建测试按钮
-	testButton := CreateTestButtonModel(testMenu.ID)
-	err = suite.roleservice.buttonRepo.CreateModel(context.Background(), testButton, nil)
-	suite.Nil(err, "创建按钮应该成功")
+	// 创建测试资源
+	apiIDs := suite.CreateTestApis(1)
+	menuIDs := suite.CreateTestMenus(1)
+	buttonIDs := suite.CreateTestButtons(menuIDs[0], 1)
 
 	// 创建测试角色并关联API、菜单、按钮
-	testRole := CreateTestRoleDTO([]uint32{testApi.ID}, []uint32{testMenu.ID}, []uint32{testButton.ID})
+	testRole := CreateTestRoleDTO(apiIDs, menuIDs, buttonIDs)
 	createdRole, err := suite.roleservice.CreateRole(context.Background(), testRole)
 	suite.Nil(err, "创建角色应该成功")
 	suite.NotNil(createdRole, "角色不应该为空")
@@ -325,211 +331,86 @@ func (suite *RoleTestSuite) TestDeleteRoleByID() {
 	suite.NotNil(err, "查询已删除的角色应该失败")
 }
 
-// TestGetApisWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestGetApisWithContextError() {
+// TestWithContextError 测试上下文错误处理
+func (suite *RoleTestSuite) TestWithContextError() {
 	// 创建已取消的上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	// 测试上下文错误
+	// 测试GetApis上下文错误
 	_, err := suite.roleservice.GetApis(ctx, []uint32{1})
-	suite.NotNil(err, "上下文错误应该返回错误")
+	suite.NotNil(err, "GetApis上下文错误应该返回错误")
+
+	// 测试GetMenus上下文错误
+	_, err = suite.roleservice.GetMenus(ctx, []uint32{1})
+	suite.NotNil(err, "GetMenus上下文错误应该返回错误")
+
+	// 测试GetButtons上下文错误
+	_, err = suite.roleservice.GetButtons(ctx, []uint32{1})
+	suite.NotNil(err, "GetButtons上下文错误应该返回错误")
+
+	// 测试CreateRole上下文错误
+	_, err = suite.roleservice.CreateRole(ctx, CreateTestRoleDTO([]uint32{}, []uint32{}, []uint32{}))
+	suite.NotNil(err, "CreateRole上下文错误应该返回错误")
+
+	// 测试UpdateRoleByID上下文错误
+	_, err = suite.roleservice.UpdateRoleByID(ctx, 1, sysmodel.RoleUpsertDTO{})
+	suite.NotNil(err, "UpdateRoleByID上下文错误应该返回错误")
+
+	// 测试DeleteRoleByID上下文错误
+	err = suite.roleservice.DeleteRoleByID(ctx, 1)
+	suite.NotNil(err, "DeleteRoleByID上下文错误应该返回错误")
+
+	// 测试FindRoleByID上下文错误
+	_, err = suite.roleservice.FindRoleByID(ctx, []string{}, 1)
+	suite.NotNil(err, "FindRoleByID上下文错误应该返回错误")
+
+	// 测试ListRole上下文错误
+	_, _, err = suite.roleservice.ListRole(ctx, 1, 10, sysmodel.ListRoleDTO{})
+	suite.NotNil(err, "ListRole上下文错误应该返回错误")
+
+	// 测试LoadRolePolicy上下文错误
+	loadErr := suite.roleservice.LoadRolePolicy(ctx)
+	suite.NotNil(loadErr, "LoadRolePolicy上下文错误应该返回错误")
+
+	// 测试GetRoleMenuTree上下文错误
+	_, err = suite.roleservice.GetRoleMenuTree(ctx, 1)
+	suite.NotNil(err, "GetRoleMenuTree上下文错误应该返回错误")
 }
 
-// TestGetMenusWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestGetMenusWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+// TestRoleResourceRelations 测试角色与资源的多对多关系
+func (suite *RoleTestSuite) TestRoleResourceRelations() {
+	// 创建测试资源
+	apiIDs := suite.CreateTestApis(3)
+	menuIDs := suite.CreateTestMenus(3)
+	buttonIDs := suite.CreateTestButtons(menuIDs[0], 3)
 
-	// 测试上下文错误
-	_, err := suite.roleservice.GetMenus(ctx, []uint32{1})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestGetButtonsWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestGetButtonsWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.roleservice.GetButtons(ctx, []uint32{1})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestCreateRoleWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestCreateRoleWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.roleservice.CreateRole(ctx, CreateTestRoleDTO([]uint32{}, []uint32{}, []uint32{}))
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestUpdateRoleByIDWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestUpdateRoleByIDWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.roleservice.UpdateRoleByID(ctx, 1, sysmodel.RoleUpsertDTO{})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestDeleteRoleByIDWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestDeleteRoleByIDWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	err := suite.roleservice.DeleteRoleByID(ctx, 1)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestFindRoleByIDWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestFindRoleByIDWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.roleservice.FindRoleByID(ctx, []string{}, 1)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestListRoleWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestListRoleWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, _, err := suite.roleservice.ListRole(ctx, 1, 10, sysmodel.ListRoleDTO{})
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestLoadRolePolicyWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestLoadRolePolicyWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	err := suite.roleservice.LoadRolePolicy(ctx)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestGetRoleMenuTreeWithContextError 测试上下文错误处理
-func (suite *RoleTestSuite) TestGetRoleMenuTreeWithContextError() {
-	// 创建已取消的上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 测试上下文错误
-	_, err := suite.roleservice.GetRoleMenuTree(ctx, 1)
-	suite.NotNil(err, "上下文错误应该返回错误")
-}
-
-// TestRoleApiRelations 测试角色与API的多对多关系
-func (suite *RoleTestSuite) TestRoleApiRelations() {
-	// 创建多个测试API
-	apiCount := 3
-	apiIDs := make([]uint32, 0, apiCount)
-	for i := 0; i < apiCount; i++ {
-		testApi := CreateTestApiModel()
-		err := suite.roleservice.apiRepo.CreateModel(context.Background(), testApi)
-		suite.Nil(err, "创建API应该成功")
-		apiIDs = append(apiIDs, testApi.ID)
-	}
-
-	// 创建角色并关联API
-	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO(apiIDs, []uint32{}, []uint32{}))
+	// 创建角色并关联所有资源
+	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO(apiIDs, menuIDs, buttonIDs))
 	suite.Nil(err, "创建角色应该成功")
 
 	// 验证关联关系
-	foundRole, err := suite.roleservice.FindRoleByID(context.Background(), []string{"Apis"}, createdRole.ID)
+	foundRole, err := suite.roleservice.FindRoleByID(context.Background(), []string{"Apis", "Menus", "Buttons"}, createdRole.ID)
 	suite.Nil(err, "查询角色应该成功")
-	suite.Len(foundRole.Apis, apiCount, "角色关联的API数量应该正确")
-}
-
-// TestRoleMenuRelations 测试角色与菜单的多对多关系
-func (suite *RoleTestSuite) TestRoleMenuRelations() {
-	// 创建多个测试菜单
-	menuCount := 3
-	menuIDs := make([]uint32, 0, menuCount)
-	for i := 0; i < menuCount; i++ {
-		testMenu := CreateTestMenuModel(nil)
-		err := suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-		suite.Nil(err, "创建菜单应该成功")
-		menuIDs = append(menuIDs, testMenu.ID)
-	}
-
-	// 创建角色并关联菜单
-	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{}, menuIDs, []uint32{}))
-	suite.Nil(err, "创建角色应该成功")
-
-	// 验证关联关系
-	foundRole, err := suite.roleservice.FindRoleByID(context.Background(), []string{"Menus"}, createdRole.ID)
-	suite.Nil(err, "查询角色应该成功")
-	suite.Len(foundRole.Menus, menuCount, "角色关联的菜单数量应该正确")
-}
-
-// TestRoleButtonRelations 测试角色与按钮的多对多关系
-func (suite *RoleTestSuite) TestRoleButtonRelations() {
-	// 创建测试菜单
-	testMenu := CreateTestMenuModel(nil)
-	err := suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-	suite.Nil(err, "创建菜单应该成功")
-
-	// 创建多个测试按钮
-	buttonCount := 3
-	buttonIDs := make([]uint32, 0, buttonCount)
-	for i := 0; i < buttonCount; i++ {
-		testButton := CreateTestButtonModel(testMenu.ID)
-		err := suite.roleservice.buttonRepo.CreateModel(context.Background(), testButton, nil)
-		suite.Nil(err, "创建按钮应该成功")
-		buttonIDs = append(buttonIDs, testButton.ID)
-	}
-
-	// 创建角色并关联按钮
-	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{}, []uint32{testMenu.ID}, buttonIDs))
-	suite.Nil(err, "创建角色应该成功")
-
-	// 验证关联关系
-	foundRole, err := suite.roleservice.FindRoleByID(context.Background(), []string{"Buttons"}, createdRole.ID)
-	suite.Nil(err, "查询角色应该成功")
-	suite.Len(foundRole.Buttons, buttonCount, "角色关联的按钮数量应该正确")
+	suite.Len(foundRole.Apis, 3, "角色关联的API数量应该正确")
+	suite.Len(foundRole.Menus, 3, "角色关联的菜单数量应该正确")
+	suite.Len(foundRole.Buttons, 3, "角色关联的按钮数量应该正确")
 }
 
 // TestRoleCasbinInheritance 测试角色对 API、菜单、按钮的权限继承
 func (suite *RoleTestSuite) TestRoleCasbinInheritance() {
-	// 创建测试API
-	testApi := CreateTestApiModel()
-	err := suite.roleservice.apiRepo.CreateModel(context.Background(), testApi)
-	suite.Nil(err, "创建API应该成功")
-
-	// 创建测试菜单
-	testMenu := CreateTestMenuModel(nil)
-	err = suite.roleservice.menuRepo.CreateModel(context.Background(), testMenu, nil)
-	suite.Nil(err, "创建菜单应该成功")
-
-	// 创建测试按钮
-	testButton := CreateTestButtonModel(testMenu.ID)
-	err = suite.roleservice.buttonRepo.CreateModel(context.Background(), testButton, nil)
-	suite.Nil(err, "创建按钮应该成功")
+	// 创建测试资源
+	apiIDs := suite.CreateTestApis(1)
+	menuIDs := suite.CreateTestMenus(1)
+	buttonIDs := suite.CreateTestButtons(menuIDs[0], 1)
 
 	// 创建角色并关联API、菜单、按钮
-	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO([]uint32{testApi.ID}, []uint32{testMenu.ID}, []uint32{testButton.ID}))
+	createdRole, err := suite.roleservice.CreateRole(context.Background(), CreateTestRoleDTO(apiIDs, menuIDs, buttonIDs))
 	suite.Nil(err, "创建角色应该成功")
 
 	// 加载角色策略
-	err = suite.roleservice.LoadRolePolicy(context.Background())
-	suite.Nil(err, "加载角色策略应该成功")
+	loadErr := suite.roleservice.LoadRolePolicy(context.Background())
+	suite.Nil(loadErr, "加载角色策略应该成功")
 
 	// 验证策略添加成功（通过查询角色及其关联资源）
 	foundRole, err := suite.roleservice.FindRoleByID(context.Background(), []string{"Apis", "Menus", "Buttons"}, createdRole.ID)

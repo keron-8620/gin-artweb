@@ -38,6 +38,18 @@ func (m *MonNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListMonNodeModelToUint32s(ms []MonNodeModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type MonNodeVars struct {
 	ID          uint32 `json:"id" yaml:"id"`
 	Name        string `json:"name" yaml:"name"`
@@ -57,6 +69,18 @@ func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("url", vs.URL)
 	enc.AddUint32("host_id", vs.HostID)
 	return nil
+}
+
+func MonNodeModelToNodeVars(m MonNodeModel) MonNodeVars {
+	return MonNodeVars{
+		ID:          m.ID,
+		Name:        m.Name,
+		DeployPath:  m.DeployPath,
+		OutportPath: m.OutportPath,
+		JavaHome:    m.JavaHome,
+		URL:         m.URL,
+		HostID:      m.HostID,
+	}
 }
 
 // MonNodeUpsertDTO 用于创建mon节点的请求结构体
@@ -90,6 +114,17 @@ func (dto *MonNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("url", dto.URL)
 	enc.AddUint32("host_id", dto.HostID)
 	return nil
+}
+
+func (dto *MonNodeUpsertDTO) ToModel() MonNodeModel {
+	return MonNodeModel{
+		Name:        dto.Name,
+		DeployPath:  dto.DeployPath,
+		OutportPath: dto.OutportPath,
+		JavaHome:    dto.JavaHome,
+		URL:         dto.URL,
+		HostID:      dto.HostID,
+	}
 }
 
 func (dto *MonNodeUpsertDTO) ToUpdateMap() map[string]any {

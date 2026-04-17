@@ -38,6 +38,18 @@ func (m *MdsNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListMdsNodeModelToUint32s(ms []MdsNodeModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type MdsNodeVars struct {
 	ID       uint32 `json:"id" yaml:"id"`
 	NodeRole string `json:"node_role" yaml:"node_role"`
@@ -78,6 +90,15 @@ func (dto *MdsNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("mds_colony_id", dto.MdsColonyID)
 	enc.AddUint32("host_id", dto.HostID)
 	return nil
+}
+
+func (dto *MdsNodeUpsertDTO) ToModel() MdsNodeModel {
+	return MdsNodeModel{
+		NodeRole:    dto.NodeRole,
+		IsEnable:    dto.IsEnable,
+		MdsColonyID: dto.MdsColonyID,
+		HostID:      dto.HostID,
+	}
 }
 
 func (dto *MdsNodeUpsertDTO) ToUpdateMap() map[string]any {

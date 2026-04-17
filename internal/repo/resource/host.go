@@ -20,9 +20,10 @@ import (
 // 负责主机模型的CRUD操作和SSH连接管理
 // 使用GORM进行数据库操作，使用SSH进行远程主机连接
 type HostRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
 }
 
 // NewHostRepo 创建主机仓库实例
@@ -32,6 +33,7 @@ type HostRepo struct {
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
 //	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
+//	slowThreshold: 数据库操作慢查询阈值配置
 //
 // 返回值:
 //
@@ -40,11 +42,13 @@ func NewHostRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 ) *HostRepo {
 	return &HostRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -77,37 +81,43 @@ func (r *HostRepo) CreateModel(
 		log.Error(
 			"创建主机模型:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
+
 	log.Debug(
 		"创建主机模型:开始执行",
 		zap.Object("host_model", m),
 	)
 
-	m.CreatedAt = startTime
-	m.UpdatedAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createHostStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.HostModel{}, m, nil)
-	createHostDuration := time.Since(createHostStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建主机模型:数据库操作失败",
 			zap.Error(err),
 			zap.Object("host_model", m),
-			zap.Duration("create_host_duration", createHostDuration),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建主机模型:数据库操作失败")
 	}
-	log.Debug(
-		"创建主机模型:执行成功",
-		zap.Object("host_model", m),
-		zap.Duration("create_host_duration", createHostDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建主机模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("host_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -129,52 +139,55 @@ func (r *HostRepo) CreateModel(
 //  3. 记录操作日志
 func (r *HostRepo) UpdateModel(
 	ctx context.Context,
-	data map[string]any,
+	updateData map[string]any,
 	conds ...any,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	// 检查参数
-	if len(data) == 0 {
-		err := errors.New("更新主机模型:更新数据不能为空")
+	if len(updateData) == 0 {
+		err := errors.New("更新主机模型:更新数据为空")
 		log.Error(
-			"更新主机模型:更新数据不能为空",
+			"更新主机模型:更新数据为空",
 			zap.Error(err),
-			zap.Any("update_data", data),
-			zap.Any("conds", conds),
+			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	updateData["updated_at"] = startTime
+
 	log.Debug(
-		"更新主机模型:开始执行",
-		zap.Any("update_data", data),
+		"更新计划任务模型:更新数据",
+		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	updateHostStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &resomodel.HostModel{}, data, nil, conds...)
-	updateHostDuration := time.Since(updateHostStartTime)
+
+	updateStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &resomodel.HostModel{}, updateData, nil, conds...)
+	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
 			"更新主机模型:数据库操作失败",
 			zap.Error(err),
-			zap.Any("update_data", data),
+			zap.Any("update_data", updateData),
 			zap.Any("conds", conds),
-			zap.Duration("update_host_duration", updateHostDuration),
+			zap.Duration("update_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新主机模型:数据库操作失败")
 	}
-	log.Debug(
-		"更新主机模型:执行成功",
-		zap.Any("update_data", data),
-		zap.Any("conds", conds),
-		zap.Duration("update_host_duration", updateHostDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新主机模型:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -200,30 +213,33 @@ func (r *HostRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除主机模型:开始执行",
+		"删除主机模型:删除条件",
 		zap.Any("conds", conds),
 	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	deleteHostStartTime := time.Now()
+
+	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &resomodel.HostModel{}, conds...)
-	deleteHostDuration := time.Since(deleteHostStartTime)
+	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
 			"删除主机模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_host_duration", deleteHostDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除主机模型:数据库操作失败")
 	}
-	log.Debug(
-		"删除主机模型:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_host_duration", deleteHostDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除主机模型:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -247,39 +263,46 @@ func (r *HostRepo) DeleteModel(
 //  4. 记录操作日志
 func (r *HostRepo) GetModel(
 	ctx context.Context,
-	preloads []string,
 	conds ...any,
 ) (*resomodel.HostModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询主机模型:开始执行",
+		"查询主机模型:查询条件",
 		zap.Any("conds", conds),
 	)
+
 	var m resomodel.HostModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	getHostStartTime := time.Now()
-	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
-	getHostDuration := time.Since(getHostStartTime)
+
+	getStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...)
+	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
 			"查询主机模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_host_duration", getHostDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询主机模型:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询主机模型:执行成功",
+		"查询主机模型:查询到的模型详情",
 		zap.Object("host_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_host_duration", getHostDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询主机模型:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return &m, nil
 }
 
@@ -309,31 +332,40 @@ func (r *HostRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询主机模型列表:开始执行",
+		"查询主机模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
+
 	var ms []resomodel.HostModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	listHostStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &resomodel.HostModel{}, &ms, qp)
-	listHostDuration := time.Since(listHostStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询主机模型列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_host_duration", listHostDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询主机模型列表:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询主机模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_host_duration", listHostDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询主机模型列表:查询到的模型列表",
+		zap.Uint32s("host_ids", resomodel.ListHostModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询主机模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -345,32 +377,39 @@ func (r *HostRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询主机模型总数:开始执行",
+		"查询主机模型总数:查询条件",
 		zap.Any("query", query),
 	)
+
 	// 开启数据库事务
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countHostStartTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &resomodel.HostModel{}, query)
-	countHostDuration := time.Since(countHostStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询主机模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_host_duration", countHostDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询主机模型总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询主机模型总数:执行成功",
-		zap.Any("query", query),
+		"查询主机模型总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_host_duration", countHostDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询主机模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }
 
@@ -410,11 +449,12 @@ func (r *HostRepo) NewSSHClient(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"创建ssh连接:开始执行",
+		"创建ssh连接:入参详情",
 		zap.String("ssh_ip", sshIP),
 		zap.Uint16("ssh_port", sshPort),
 		zap.String("ssh_user", sshUser),
 	)
+
 	connectsshStartTime := time.Now()
 	client, err := shell.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, false, timeout)
 	connectsshDuration := time.Since(connectsshStartTime)
@@ -430,14 +470,7 @@ func (r *HostRepo) NewSSHClient(
 		)
 		return nil, errors.WrapIf(err, "创建ssh连接:ssh连接失败")
 	}
-	log.Debug(
-		"创建ssh连接:执行成功",
-		zap.String("ssh_ip", sshIP),
-		zap.Uint16("ssh_port", sshPort),
-		zap.String("ssh_user", sshUser),
-		zap.Duration("ssh_connect_duration", connectsshDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
 	return client, nil
 }
 
@@ -492,13 +525,6 @@ func (r *HostRepo) ExecuteCommand(
 		)
 		return errors.WrapIf(err, "执行命令:命令执行失败")
 	}
-
-	log.Debug(
-		"执行命令:执行成功",
-		zap.String("command", command),
-		zap.Duration("execute_duration", executeCommandDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 
 	return nil
 }

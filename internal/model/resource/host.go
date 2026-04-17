@@ -41,6 +41,30 @@ func (m *HostModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (m *HostModel) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"name":     m.Name,
+		"label":    m.Label,
+		"ssh_ip":   m.SSHIP,
+		"ssh_port": m.SSHPort,
+		"ssh_user": m.SSHUser,
+		"py_path":  m.PyPath,
+		"remark":   m.Remark,
+	}
+}
+
+func ListHostModelToUint32s(ms []HostModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type AnsibleHostVars struct {
 	HostID                   uint32 `json:"host_id" yaml:"host_id"`
 	AnsibleHost              string `json:"ansible_host" yaml:"ansible_host"`
@@ -56,6 +80,16 @@ func (vs *AnsibleHostVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ansible_user", vs.AnsibleUser)
 	enc.AddString("ansible_python_interpreter", vs.AnsiblePythonInterpreter)
 	return nil
+}
+
+func HostModelToAnsibleHostVars(m HostModel) AnsibleHostVars {
+	return AnsibleHostVars{
+		HostID:                   m.ID,
+		AnsibleHost:              m.SSHIP,
+		AnsiblePort:              m.SSHPort,
+		AnsibleUser:              m.SSHUser,
+		AnsiblePythonInterpreter: m.PyPath,
+	}
 }
 
 // HostUpsertDTO 用于创建主机的请求结构体
@@ -87,15 +121,39 @@ type HostUpsertDTO struct {
 	Remark string `json:"remark" form:"remark" binding:"max=254"`
 }
 
-func (req *HostUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("name", req.Name)
-	enc.AddString("label", req.Label)
-	enc.AddString("ssh_ip", req.SSHIP)
-	enc.AddUint16("ssh_port", req.SSHPort)
-	enc.AddString("ssh_user", req.SSHUser)
-	enc.AddString("py_path", req.PyPath)
-	enc.AddString("remark", req.Remark)
+func (dto *HostUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", dto.Name)
+	enc.AddString("label", dto.Label)
+	enc.AddString("ssh_ip", dto.SSHIP)
+	enc.AddUint16("ssh_port", dto.SSHPort)
+	enc.AddString("ssh_user", dto.SSHUser)
+	enc.AddString("py_path", dto.PyPath)
+	enc.AddString("remark", dto.Remark)
 	return nil
+}
+
+func (dto *HostUpsertDTO) ToModel() HostModel {
+	return HostModel{
+		Name:    dto.Name,
+		Label:   dto.Label,
+		SSHIP:   dto.SSHIP,
+		SSHPort: dto.SSHPort,
+		SSHUser: dto.SSHUser,
+		PyPath:  dto.PyPath,
+		Remark:  dto.Remark,
+	}
+}
+
+func (dto *HostUpsertDTO) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"name":     dto.Name,
+		"label":    dto.Label,
+		"ssh_ip":   dto.SSHIP,
+		"ssh_port": dto.SSHPort,
+		"ssh_user": dto.SSHUser,
+		"py_path":  dto.PyPath,
+		"remark":   dto.Remark,
+	}
 }
 
 // ListHostDTO 用于获取主机列表的请求结构体

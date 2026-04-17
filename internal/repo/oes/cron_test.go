@@ -17,13 +17,6 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestOesCronModel(oesColonyID, scheduleID uint32) *oesmodel.OesCronModel {
-	return &oesmodel.OesCronModel{
-		OesColonyID: oesColonyID,
-		ScheduleID:  scheduleID,
-	}
-}
-
 type OesCronTestSuite struct {
 	suite.Suite
 	cronRepo    *OesCronRepo
@@ -36,7 +29,9 @@ type OesCronTestSuite struct {
 
 func (suite *OesCronTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&jobmodel.ScriptModel{}, &jobmodel.ScheduleModel{}, &oesmodel.OesColonyModel{}, &oesmodel.OesCronModel{})
+	if err := db.AutoMigrate(&jobmodel.ScriptModel{}, &jobmodel.ScheduleModel{}, &oesmodel.OesColonyModel{}, &oesmodel.OesCronModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	// 创建测试数据:Script
 	scriptModel := &jobmodel.ScriptModel{
@@ -77,102 +72,116 @@ func (suite *OesCronTestSuite) SetupSuite() {
 	suite.timeouts = test.NewTestDBTimeouts()
 	suite.log = test.NewTestZapLogger()
 	suite.gormDB = db
+	slowThreshold := test.NewTestDBSlowThreshold()
 	suite.cronRepo = &OesCronRepo{
-		log:      suite.log,
-		gormDB:   suite.gormDB,
-		timeouts: suite.timeouts,
+		log:           suite.log,
+		gormDB:        suite.gormDB,
+		timeouts:      suite.timeouts,
+		slowThreshold: slowThreshold,
 	}
 
 	suite.oesColonyID = esColonyModel.ID
 	suite.scheduleID = scheduleModel.ID
 }
 
+// SetupTest 在每个测试方法运行前执行
+func (suite *OesCronTestSuite) SetupTest() {
+	// 可以在这里添加每个测试前的初始化逻辑
+}
+
+// createTestOesCronModel 创建测试用的 OesCronModel
+func (suite *OesCronTestSuite) createTestOesCronModel() *oesmodel.OesCronModel {
+	return &oesmodel.OesCronModel{
+		OesColonyID: suite.oesColonyID,
+		ScheduleID:  suite.scheduleID,
+	}
+}
+
+// createTestOesCron 创建并保存测试用的 OesCronModel
+func (suite *OesCronTestSuite) createTestOesCron() *oesmodel.OesCronModel {
+	model := suite.createTestOesCronModel()
+	err := suite.cronRepo.CreateModel(context.Background(), model)
+	suite.NoError(err, "创建测试 OesCron 应该成功")
+	suite.NotZero(model.ID, "OesCron ID 应该不为零")
+	return model
+}
+
 func (suite *OesCronTestSuite) TestCreateModel() {
 	// 测试正常创建
-	cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesCron应该成功")
-	suite.NotZero(cm.ID, "OesCron ID应该不为零")
+	model := suite.createTestOesCron()
+	suite.NotZero(model.ID, "OesCron ID 应该不为零")
 
 	// 测试边界情况:创建空模型
-	err = suite.cronRepo.CreateModel(context.Background(), nil)
-	suite.Error(err, "创建空OesCron模型应该返回错误")
+	err := suite.cronRepo.CreateModel(context.Background(), nil)
+	suite.Error(err, "创建空 OesCron 模型应该返回错误")
 }
 
 func (suite *OesCronTestSuite) TestUpdateModel() {
 	// 创建测试数据
-	cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesCron用于更新测试应该成功")
+	model := suite.createTestOesCron()
 
 	// 测试正常更新
 	updateData := map[string]any{
 		"oes_colony_id": 2,
 		"schedule_id":   2,
 	}
-	err = suite.cronRepo.UpdateModel(context.Background(), updateData, "id = ?", cm.ID)
-	suite.NoError(err, "更新OesCron应该成功")
+	err := suite.cronRepo.UpdateModel(context.Background(), updateData, "id = ?", model.ID)
+	suite.NoError(err, "更新 OesCron 应该成功")
 
 	// 验证更新结果
-	fm, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
-	suite.NoError(err, "查询更新后的OesCron应该成功")
-	suite.Equal(uint32(2), fm.OesColonyID)
-	suite.Equal(uint32(2), fm.ScheduleID)
+	updatedModel, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", model.ID)
+	suite.NoError(err, "查询更新后的 OesCron 应该成功")
+	suite.Equal(uint32(2), updatedModel.OesColonyID)
+	suite.Equal(uint32(2), updatedModel.ScheduleID)
 
 	// 测试边界情况:更新数据为空
-	err = suite.cronRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
+	err = suite.cronRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", model.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
-	// 测试边界情况:更新不存在的OesCron
+	// 测试边界情况:更新不存在的 OesCron
 	err = suite.cronRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
-	suite.NoError(err, "更新不存在的OesCron应该成功（无操作）")
+	suite.NoError(err, "更新不存在的 OesCron 应该成功（无操作）")
 }
 
 func (suite *OesCronTestSuite) TestDeleteModel() {
 	// 创建测试数据
-	cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesCron用于删除测试应该成功")
+	model := suite.createTestOesCron()
 
 	// 测试正常删除
-	err = suite.cronRepo.DeleteModel(context.Background(), "id = ?", cm.ID)
-	suite.NoError(err, "删除OesCron应该成功")
+	err := suite.cronRepo.DeleteModel(context.Background(), "id = ?", model.ID)
+	suite.NoError(err, "删除 OesCron 应该成功")
 
 	// 验证删除结果
-	fm, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
-	suite.Error(err, "查询已删除的OesCron应该返回错误")
-	suite.Nil(fm, "已删除的OesCron应该为nil")
+	deletedModel, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", model.ID)
+	suite.Error(err, "查询已删除的 OesCron 应该返回错误")
+	suite.Nil(deletedModel, "已删除的 OesCron 应该为 nil")
 
-	// 测试边界情况:删除不存在的OesCron
+	// 测试边界情况:删除不存在的 OesCron
 	err = suite.cronRepo.DeleteModel(context.Background(), "id = ?", 999999)
-	suite.NoError(err, "删除不存在的OesCron应该成功（无操作）")
+	suite.NoError(err, "删除不存在的 OesCron 应该成功（无操作）")
 }
 
 func (suite *OesCronTestSuite) TestGetModel() {
 	// 创建测试数据
-	cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesCron用于查询测试应该成功")
+	model := suite.createTestOesCron()
 
 	// 测试正常查询
-	fm, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
-	suite.NoError(err, "查询OesCron应该成功")
-	suite.Equal(cm.ID, fm.ID)
-	suite.Equal(cm.OesColonyID, fm.OesColonyID)
-	suite.Equal(cm.ScheduleID, fm.ScheduleID)
+	retrievedModel, err := suite.cronRepo.GetModel(context.Background(), nil, "id = ?", model.ID)
+	suite.NoError(err, "查询 OesCron 应该成功")
+	suite.Equal(model.ID, retrievedModel.ID)
+	suite.Equal(model.OesColonyID, retrievedModel.OesColonyID)
+	suite.Equal(model.ScheduleID, retrievedModel.ScheduleID)
 
-	// 测试边界情况:查询不存在的OesCron
-	fm, err = suite.cronRepo.GetModel(context.Background(), nil, "id = ?", 999999)
-	suite.Error(err, "查询不存在的OesCron应该返回错误")
-	suite.Nil(fm, "查询不存在的OesCron应该返回nil")
+	// 测试边界情况:查询不存在的 OesCron
+	retrievedModel, err = suite.cronRepo.GetModel(context.Background(), nil, "id = ?", 999999)
+	suite.Error(err, "查询不存在的 OesCron 应该返回错误")
+	suite.Nil(retrievedModel, "查询不存在的 OesCron 应该返回 nil")
 }
 
 func (suite *OesCronTestSuite) TestListModel() {
 	// 创建多个测试数据
 	for i := 0; i < 5; i++ {
-		cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-		err := suite.cronRepo.CreateModel(context.Background(), cm)
-		suite.NoError(err, "创建OesCron用于列表测试应该成功")
+		suite.createTestOesCron()
 	}
 
 	// 测试正常查询列表
@@ -182,51 +191,45 @@ func (suite *OesCronTestSuite) TestListModel() {
 		Offset:  0,
 	}
 	models, err := suite.cronRepo.ListModel(context.Background(), qp)
-	suite.NoError(err, "查询OesCron列表应该成功")
-	suite.Greater(int64(len(models)), int64(0), "OesCron列表数量应该大于0")
-	suite.NotNil(models, "OesCron列表应该不为nil")
-	suite.Greater(len(models), 0, "OesCron列表长度应该大于0")
+	suite.NoError(err, "查询 OesCron 列表应该成功")
+	suite.NotNil(models, "OesCron 列表应该不为 nil")
+	suite.Greater(len(models), 0, "OesCron 列表长度应该大于 0")
 
 	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"oes_colony_id": 999999},
 	}
 	models2, err := suite.cronRepo.ListModel(context.Background(), qp2)
-	suite.NoError(err, "查询不存在的OesCron列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的OesCron列表数量应该为0")
-	suite.NotNil(models2, "不存在的OesCron列表应该不为nil")
-	suite.Len(models2, 0, "不存在的OesCron列表长度应该为0")
+	suite.NoError(err, "查询不存在的 OesCron 列表应该成功")
+	suite.NotNil(models2, "不存在的 OesCron 列表应该不为 nil")
+	suite.Len(models2, 0, "不存在的 OesCron 列表长度应该为 0")
 }
 
 func (suite *OesCronTestSuite) TestCountModel() {
 	// 创建测试数据
 	for i := 0; i < 3; i++ {
-		cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-		err := suite.cronRepo.CreateModel(context.Background(), cm)
-		suite.NoError(err, "创建OesCron用于计数测试应该成功")
+		suite.createTestOesCron()
 	}
 
 	// 测试正常计数
 	count, err := suite.cronRepo.CountModel(context.Background(), nil)
-	suite.NoError(err, "查询OesCron总数应该成功")
-	suite.Greater(count, int64(0), "OesCron总数应该大于0")
+	suite.NoError(err, "查询 OesCron 总数应该成功")
+	suite.Greater(count, int64(0), "OesCron 总数应该大于 0")
 
 	// 测试带条件计数
 	count2, err := suite.cronRepo.CountModel(context.Background(), map[string]any{"oes_colony_id": suite.oesColonyID})
-	suite.NoError(err, "带条件查询OesCron总数应该成功")
-	suite.GreaterOrEqual(count2, int64(3), "带条件的OesCron总数应该大于等于3")
+	suite.NoError(err, "带条件查询 OesCron 总数应该成功")
+	suite.GreaterOrEqual(count2, int64(3), "带条件的 OesCron 总数应该大于等于 3")
 
 	// 测试边界情况:查询不存在的类型
 	count3, err := suite.cronRepo.CountModel(context.Background(), map[string]any{"oes_colony_id": 999999})
-	suite.NoError(err, "查询不存在类型的OesCron总数应该成功")
-	suite.Equal(int64(0), count3, "不存在类型的OesCron总数应该为0")
+	suite.NoError(err, "查询不存在类型的 OesCron 总数应该成功")
+	suite.Equal(int64(0), count3, "不存在类型的 OesCron 总数应该为 0")
 }
 
 func (suite *OesCronTestSuite) TestContextTimeout() {
 	// 创建测试数据
-	cm := CreateTestOesCronModel(suite.oesColonyID, suite.scheduleID)
-	err := suite.cronRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesCron用于超时测试应该成功")
+	model := suite.createTestOesCron()
 
 	// 测试上下文超时情况
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
@@ -236,19 +239,20 @@ func (suite *OesCronTestSuite) TestContextTimeout() {
 	time.Sleep(time.Millisecond * 2)
 
 	// 测试超时后的操作
-	_, err = suite.cronRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
-	suite.Error(err, "上下文超时后查询OesCron应该返回错误")
+	_, err := suite.cronRepo.GetModel(timeoutCtx, nil, "id = ?", model.ID)
+	suite.Error(err, "上下文超时后查询 OesCron 应该返回错误")
 }
 
 func (suite *OesCronTestSuite) TestNewOesCronRepo() {
-	repo := NewOesCronRepo(suite.log, suite.gormDB, suite.timeouts)
+	slowThreshold := test.NewTestDBSlowThreshold()
+	repo := NewOesCronRepo(suite.log, suite.gormDB, suite.timeouts, slowThreshold)
 	suite.NotNil(repo, "NewOesCronRepo 应该返回非空实例")
 	suite.Equal(suite.log, repo.log, "日志实例应该正确设置")
 	suite.Equal(suite.gormDB, repo.gormDB, "数据库实例应该正确设置")
 	suite.Equal(suite.timeouts, repo.timeouts, "超时设置应该正确设置")
+	suite.Equal(slowThreshold, repo.slowThreshold, "慢查询阈值设置应该正确设置")
 }
 
 func TestOesCronTestSuite(t *testing.T) {
-	pts := &OesCronTestSuite{}
-	suite.Run(t, pts)
+	suite.Run(t, &OesCronTestSuite{})
 }

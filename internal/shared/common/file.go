@@ -108,7 +108,7 @@ func UploadFile(
 		)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(savePath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(savePath), 0750); err != nil {
 		logger.Error(
 			"创建上传文件目录失败",
 			zap.Error(err),

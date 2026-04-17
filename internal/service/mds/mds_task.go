@@ -2,6 +2,7 @@ package mds
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -40,14 +41,15 @@ func (s *MdsTaskService) BuildTaskExecutionInfos(
 	ctx context.Context,
 	dto mdsmodel.ListMdsColonyDTO,
 ) ([]mdsmodel.MdsColonyTaskExecutionInfo, *errors.Error) {
+	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info(
-		"开始构建mds任务执行信息",
-		zap.String("colony_num", dto.ColonyNum),
+	log.Debug(
+		"构建mds任务执行信息:入参详情",
+		zap.Object("mds_colony_dto", &dto),
 	)
 
 	qp := database.QueryParams{
@@ -58,6 +60,12 @@ func (s *MdsTaskService) BuildTaskExecutionInfos(
 
 	ms, err := s.colonyRepo.ListModel(ctx, qp)
 	if err != nil {
+		log.Error(
+			"查询mds集群列表:查询数据库模型总数失败",
+			zap.Error(err),
+			zap.Object("query_params", &qp),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
 		return nil, errors.NewGormError(err, qp.Query)
 	}
 
@@ -65,6 +73,12 @@ func (s *MdsTaskService) BuildTaskExecutionInfos(
 	for i, m := range ms {
 		tr, err := loadMdsTaskRecordCacheFromFiles(log, m.ColonyNum)
 		if err != nil {
+			log.Error(
+				fmt.Sprintf("读取mds任务状态对应的执行记录id:获取%s任务状态失败", m.ColonyNum),
+				zap.Error(err),
+				zap.String("colony_num", m.ColonyNum),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
 			return nil, errors.FromError(err)
 		}
 		if tr != nil {
@@ -77,6 +91,12 @@ func (s *MdsTaskService) BuildTaskExecutionInfos(
 	}
 	records, rErr := s.recordSvc.ListScriptRecordByIDs(ctx, nil, recordIDs)
 	if rErr != nil {
+		log.Error(
+			"查询mds任务执行记录:查询数据库模型失败",
+			zap.Error(rErr),
+			zap.Object("query_params", &qp),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
 		return nil, rErr
 	}
 	cache := make(map[uint32]jobmodel.ScriptRecordModel, len(records))
@@ -106,7 +126,7 @@ func loadMdsTaskRecordCacheFromFiles(
 ) (*mdsmodel.MdsColonyTaskRecordIDs, *errors.Error) {
 	startTime := time.Now()
 
-	log.Info(
+	log.Debug(
 		"读取mds任务状态对应的执行记录id:开始执行",
 		zap.String("colony_num", colonyNum),
 	)

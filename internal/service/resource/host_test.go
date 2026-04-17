@@ -47,9 +47,12 @@ func newHostServiceTestContext(t *testing.T) *hostServiceTestContext {
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
-	db.AutoMigrate(&resomodel.HostModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}); err != nil {
+		t.Fatalf("failed to migrate host model: %v", err)
+	}
 	dbTimeout := test.NewTestDBTimeouts()
-	hostRepo := resourcerepo.NewHostRepo(testLogger, db, dbTimeout)
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
+	hostRepo := resourcerepo.NewHostRepo(testLogger, db, dbTimeout, dbSlowThreshold)
 	hostService := NewHostService(
 		testLogger,
 		hostRepo,

@@ -52,7 +52,7 @@ func WriteReaderToFile(
 	}
 
 	if err := tempFile.Sync(); err != nil {
-		tempFile.Close()
+		_ = tempFile.Close()
 		return errors.WithMessagef(err, "同步临时文件失败: %s", tempPath)
 	}
 

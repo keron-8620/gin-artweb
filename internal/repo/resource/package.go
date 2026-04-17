@@ -21,9 +21,10 @@ import (
 // 负责程序包模型的CRUD操作
 // 使用GORM进行数据库操作
 type PackageRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
 }
 
 // NewPackageRepo 创建程序包仓库实例
@@ -33,6 +34,7 @@ type PackageRepo struct {
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
 //	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
+//	slowThreshold: 数据库操作慢查询阈值配置
 //
 // 返回值:
 //
@@ -41,11 +43,13 @@ func NewPackageRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 ) *PackageRepo {
 	return &PackageRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -78,36 +82,42 @@ func (r *PackageRepo) CreateModel(
 		log.Error(
 			"创建程序包模型:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	m.UploadedAt = startTime
+
 	log.Debug(
 		"创建程序包模型:开始执行",
 		zap.Object("package_model", m),
 	)
 
-	m.UploadedAt = startTime
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createPackageStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.PackageModel{}, m, nil)
-	createPackageDuration := time.Since(createPackageStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建程序包模型:数据库操作失败",
 			zap.Error(err),
 			zap.Object("package_model", m),
-			zap.Duration("create_duration", createPackageDuration),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建程序包模型:数据库操作失败")
 	}
-	log.Debug(
-		"创建程序包模型:执行成功",
-		zap.Object("package_model", m),
-		zap.Duration("create_duration", createPackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建程序包模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("package_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -133,30 +143,33 @@ func (r *PackageRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除程序包模型:开始执行",
+		"删除程序包模型:删除条件",
 		zap.Any("conds", conds),
 	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	deletePackageStartTime := time.Now()
+
+	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &resomodel.PackageModel{}, conds...)
-	deletePackageDuration := time.Since(deletePackageStartTime)
+	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
 			"删除程序包模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_duration", deletePackageDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除程序包模型:数据库操作失败")
 	}
-	log.Debug(
-		"删除程序包模型:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_duration", deletePackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除程序包模型:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -180,40 +193,46 @@ func (r *PackageRepo) DeleteModel(
 //  4. 记录操作日志
 func (r *PackageRepo) GetModel(
 	ctx context.Context,
-	preloads []string,
 	conds ...any,
 ) (*resomodel.PackageModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询程序包模型:开始执行",
+		"查询程序包模型:查询条件",
 		zap.Any("conds", conds),
 	)
 
 	var m resomodel.PackageModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	getPackageStartTime := time.Now()
-	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
-	getPackageDuration := time.Since(getPackageStartTime)
+
+	getStartTime := time.Now()
+	err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...)
+	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
 			"查询程序包模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_duration", getPackageDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询程序包模型:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询程序包模型:执行成功",
+		"查询程序包模型:查询到的模型详情",
 		zap.Object("package_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_duration", getPackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询程序包模型:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return &m, nil
 }
 
@@ -243,32 +262,40 @@ func (r *PackageRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询程序包模型列表:开始执行",
+		"查询程序包模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
 
 	var ms []resomodel.PackageModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	listPackageStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &resomodel.PackageModel{}, &ms, qp)
-	listPackageDuration := time.Since(listPackageStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询程序包模型列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_package_duration", listPackageDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询程序包模型列表:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询程序包模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_package_duration", listPackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询程序包模型列表:查询到的模型列表",
+		zap.Uint32s("package_ids", resomodel.ListPackageModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询程序包模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -280,32 +307,39 @@ func (r *PackageRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询程序包模型总数:开始执行",
+		"查询程序包模型总数:查询条件",
 		zap.Any("query", query),
 	)
+
 	// 开启数据库事务
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countPackageStartTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &resomodel.PackageModel{}, query)
-	countPackageDuration := time.Since(countPackageStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询程序包模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_package_duration", countPackageDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询程序包模型总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询程序包模型总数:执行成功",
-		zap.Any("query", query),
-		zap.Int64("total_count", count),
-		zap.Duration("count_package_duration", countPackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询程序包模型总数:查询到的记录数",
+		zap.Int64("count", count),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询程序包模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }
 
@@ -319,32 +353,25 @@ func (r *PackageRepo) SavePackageFile(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"保存程序包:开始执行",
+		"保存程序包:入参详情",
 		zap.String("pkg_path", pkgPath),
 		zap.Bool("overwrite", overwrite),
 	)
 
-	savePackageStartTime := time.Now()
+	saveStartTime := time.Now()
 	err := fileutil.WriteReaderToFile(ctx, fileReader, pkgPath, os.FileMode(0o644), overwrite)
-	savePackageDuration := time.Since(savePackageStartTime)
+	saveDuration := time.Since(saveStartTime)
 	if err != nil {
 		log.Error(
 			"保存程序包:文件流写入失败",
 			zap.Error(err),
 			zap.String("pkg_path", pkgPath),
 			zap.Bool("overwrite", overwrite),
-			zap.Duration("save_package_duration", savePackageDuration),
+			zap.Duration("save_duration", saveDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "保存程序包:文件流写入失败")
 	}
-	log.Debug(
-		"保存程序包:执行成功",
-		zap.String("pkg_path", pkgPath),
-		zap.Bool("overwrite", overwrite),
-		zap.Duration("save_package_duration", savePackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 	return nil
 }
 
@@ -356,28 +383,22 @@ func (r *PackageRepo) RemovePackageFile(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除程序包文件:开始执行",
+		"删除程序包文件:入参详情",
 		zap.String("pkg_path", pkgPath),
 	)
 
-	removePackageStartTime := time.Now()
+	removeStartTime := time.Now()
 	err := fileutil.Remove(ctx, pkgPath)
-	removePackageDuration := time.Since(removePackageStartTime)
+	removeDuration := time.Since(removeStartTime)
 	if err != nil {
 		log.Error(
 			"删除程序包文件:文件删除失败",
 			zap.Error(err),
 			zap.String("pkg_path", pkgPath),
-			zap.Duration("remove_package_duration", removePackageDuration),
+			zap.Duration("remove_duration", removeDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除程序包文件:文件删除失败")
 	}
-	log.Debug(
-		"删除程序包文件:执行成功",
-		zap.String("pkg_path", pkgPath),
-		zap.Duration("remove_package_duration", removePackageDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 	return nil
 }

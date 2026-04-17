@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	TraceIDKey     = "request_id"
-	defaultTraceID = "unknown-trace-id"
+	TraceIDKey     ContextKey = "request_id"
+	defaultTraceID string     = "unknown-trace-id"
 )
 
 func GetTraceID(ctx context.Context) string {

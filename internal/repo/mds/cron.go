@@ -15,20 +15,23 @@ import (
 )
 
 type MdsCronRepo struct {
-	log      *zap.Logger
-	gormDB   *gorm.DB
-	timeouts *config.DBTimeout
+	log           *zap.Logger
+	gormDB        *gorm.DB
+	timeouts      *config.DBTimeout
+	slowThreshold *config.DBSlowThreshold
 }
 
 func NewMdsCronRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 ) *MdsCronRepo {
 	return &MdsCronRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -45,85 +48,96 @@ func (r *MdsCronRepo) CreateModel(
 		log.Error(
 			"创建mds计划任务:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
+
 	log.Debug(
-		"创建mds计划任务:开始执行",
-		zap.Object("model", m),
+		"创建mds计划任务:模型详情",
+		zap.Object("mds_cron_model", m),
 	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createMdsCronStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, m, nil)
-	createMdsCronDuration := time.Since(createMdsCronStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建mds计划任务:数据库操作失败",
 			zap.Error(err),
-			zap.Object("cron_model", m),
-			zap.Duration("create_mds_cron_duration", createMdsCronDuration),
+			zap.Object("mds_cron_model", m),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建mds计划任务:数据库操作失败")
 	}
-	log.Debug(
-		"创建mds计划任务:执行成功",
-		zap.Object("cron_model", m),
-		zap.Duration("create_mds_cron_duration", createMdsCronDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建mds计划任务模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
 func (r *MdsCronRepo) UpdateModel(
 	ctx context.Context,
-	data map[string]any,
+	updateData map[string]any,
 	conds ...any,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	// 检查参数
-	if len(data) == 0 {
-		err := errors.New("更新mds计划任务:更新数据不能为空")
+	if len(updateData) == 0 {
+		err := errors.New("更新mds计划任务:更新数据为空")
 		log.Error(
-			"更新mds计划任务:更新数据不能为空",
+			"更新mds计划任务:更新数据为空",
 			zap.Error(err),
-			zap.Any("update_data", data),
-			zap.Any("conds", conds),
+			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
 
+	updateData["updated_at"] = startTime
+
 	log.Debug(
-		"更新mds计划任务:开始执行",
-		zap.Any("update_data", data),
+		"更新mds集群:更新数据",
+		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	updateMdsCronStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, data, nil, conds...)
-	updateMdsCronDuration := time.Since(updateMdsCronStartTime)
+
+	updateStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, updateData, nil, conds...)
+	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
 			"更新mds计划任务:数据库操作失败",
 			zap.Error(err),
-			zap.Any("update_data", data),
+			zap.Any("update_data", updateData),
 			zap.Any("conds", conds),
-			zap.Duration("update_mds_cron_duration", updateMdsCronDuration),
+			zap.Duration("update_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新mds计划任务:数据库操作失败")
 	}
-	log.Debug(
-		"更新mds计划任务:执行成功",
-		zap.Any("update_data", data),
-		zap.Any("conds", conds),
-		zap.Duration("update_mds_cron_duration", updateMdsCronDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新mds计划任务:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -135,30 +149,33 @@ func (r *MdsCronRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除mds计划任务:开始执行",
+		"删除mds计划任务:删除条件",
 		zap.Any("conds", conds),
 	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	deleteMdsCronStartTime := time.Now()
+
+	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, conds...)
-	deleteMdsCronDuration := time.Since(deleteMdsCronStartTime)
+	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
 			"删除mds计划任务:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_mds_cron_duration", deleteMdsCronDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除mds计划任务:数据库操作失败")
 	}
-	log.Debug(
-		"删除mds计划任务:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_mds_cron_duration", deleteMdsCronDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除mds计划任务:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -169,33 +186,42 @@ func (r *MdsCronRepo) GetModel(
 ) (*mdsmodel.MdsCronModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
+
 	log.Debug(
-		"查询mds计划任务:开始执行",
+		"查询mds计划任务:查询条件",
 		zap.Any("conds", conds),
 	)
+
 	var m mdsmodel.MdsCronModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	getMdsCronStartTime := time.Now()
+
+	getStartTime := time.Now()
 	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
-	getMdsCronDuration := time.Since(getMdsCronStartTime)
+	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
 			"查询mds计划任务:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_mds_cron_duration", getMdsCronDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询mds计划任务:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询mds计划任务:执行成功",
-		zap.Object("cron_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_mds_cron_duration", getMdsCronDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询mds节点:查询到的模型详情",
+		zap.Object("mds_cron_model", &m),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询mds计划任务:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return &m, nil
 }
 
@@ -205,32 +231,42 @@ func (r *MdsCronRepo) ListModel(
 ) ([]mdsmodel.MdsCronModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
+
 	log.Debug(
-		"查询mds计划任务列表:开始执行",
+		"查询mds计划任务列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
+
 	var ms []mdsmodel.MdsCronModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	listMdsCronStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, &ms, qp)
-	listMdsCronDuration := time.Since(listMdsCronStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询mds计划任务列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_mds_cron_duration", listMdsCronDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询mds计划任务列表:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询mds计划任务列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_mds_cron_duration", listMdsCronDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询mds计划任务列表:查询到的模型列表",
+		zap.Uint32s("cron_ids", mdsmodel.ListMdsCronModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询mds计划任务列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -242,31 +278,37 @@ func (r *MdsCronRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mds计划任务总数:开始执行",
+		"查询mds计划任务总数:查询条件",
 		zap.Any("query", query),
 	)
-	countMdsCronStartTime := time.Now()
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countMdsCronStartTime = time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, query)
-	countMdsCronDuration := time.Since(countMdsCronStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询mds计划任务总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_mds_cron_duration", countMdsCronDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询mds计划任务总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询mds计划任务总数:执行成功",
-		zap.Any("query", query),
+		"查询mds计划任务总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_mds_cron_duration", countMdsCronDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询mds计划任务总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }

@@ -82,7 +82,9 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any, upmap map[stri
 	}
 
 	// 设置panic处理
-	defer DBPanic(ctx, tx)
+	defer func() {
+		_ = DBPanic(ctx, tx)
+	}()
 
 	// 创建主表数据
 	if err := tx.Model(model).Create(value).Error; err != nil {
@@ -138,7 +140,9 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 	}
 
 	// 设置panic处理
-	defer DBPanic(ctx, tx)
+	defer func() {
+		_ = DBPanic(ctx, tx)
+	}()
 
 	// 更新主表数据
 	if len(data) > 0 {
@@ -148,14 +152,17 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, upma
 		}
 	}
 
+	// 先查询出具体的记录
+	if err := tx.Where(conds[0], conds[1:]...).First(m).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.WrapIf(err, "记录不存在")
+		}
+		return errors.WrapIf(err, "查询记录失败")
+	}
+
 	// 遍历关联关系映射，逐个更新关联字段
 	for k, v := range upmap {
-		// 先查询出具体的记录
-		if err := tx.Where(conds[0], conds[1:]...).First(m).Error; err != nil {
-			tx.Rollback()
-			return errors.WrapIf(err, "查询记录失败")
-		}
-		// 再更新关联关系
 		if err := tx.Model(m).Association(k).Replace(v); err != nil {
 			tx.Rollback()
 			return errors.WrapIf(err, "更新关联关系失败")
@@ -303,7 +310,9 @@ func (q *QueryParams) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 
 	// 记录查询条件
-	enc.AddReflected("query", q.Query)
+	if err := enc.AddReflected("query", q.Query); err != nil {
+		return err
+	}
 
 	// 记录排序字段
 	if len(q.OrderBy) > 0 {

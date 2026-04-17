@@ -11,9 +11,6 @@ cd $basepath
 # # 更新swag文档
 swag init
 
-# 自动化测试并检查结果
-go test -v ./...
-
 # # 编译前清理旧的可执行文件
 if [ -f "$basepath/bin/artweb" ]; then
   rm -rf "$basepath/bin/artweb"

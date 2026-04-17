@@ -46,43 +46,25 @@ func (s *MdsNodeHandler) CreateMdsNode(ctx *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req mdsmodel.MdsNodeUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"创建mds节点:绑定参数失败") {
+	if !common.ShouldBind(ctx, log, &req, "创建mds节点:绑定参数失败") {
 		return
 	}
 
-	log.Info("创建mds节点:开始执行")
-
-	log.Debug(
-		"创建mds节点:入参详情",
-		zap.Object("mds_node_dto", &req),
-	)
-
-	createStepStart := time.Now()
 	m, err := s.nodeSvc.CreateMdsNode(ctx, req)
-	createStepDuration := time.Since(createStepStart)
 	if err != nil {
 		log.Error(
 			"创建mds节点:执行失败",
 			zap.Error(err),
 			zap.Object("mds_node_dto", &req),
-			zap.Duration("create_step_duration", createStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		errors.RespondWithError(ctx, err)
 		return
 	}
-	log.Debug(
-		"创建mds节点:创建后的mds节点模型详情",
-		zap.Object("mds_node_model", m),
-		zap.Duration("create_step_duration", createStepDuration),
-	)
 
 	log.Info(
 		"创建mds节点:执行成功",
 		zap.Uint32("mds_node_id", m.ID),
-		zap.Duration("create_step_duration", createStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 

@@ -13,13 +13,26 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestMdsNodeModel(mdsColonyID, hostID uint32) *mdsmodel.MdsNodeModel {
+// 测试常量
+const (
+	testHostID     = 1
+	testColonyID   = 1
+	testNonExistID = 999999
+)
+
+// CreateTestMdsNodeModel 创建测试用的MdsNode模型
+func CreateTestMdsNodeModel(mdsColonyID, hostID uint32, nodeRole string, isEnable bool) *mdsmodel.MdsNodeModel {
 	return &mdsmodel.MdsNodeModel{
-		NodeRole:    "master",
-		IsEnable:    true,
+		NodeRole:    nodeRole,
+		IsEnable:    isEnable,
 		MdsColonyID: mdsColonyID,
 		HostID:      hostID,
 	}
+}
+
+// CreateDefaultTestMdsNodeModel 创建默认测试用的MdsNode模型
+func CreateDefaultTestMdsNodeModel() *mdsmodel.MdsNodeModel {
+	return CreateTestMdsNodeModel(testColonyID, testHostID, "master", true)
 }
 
 type MdsNodeTestSuite struct {
@@ -29,7 +42,9 @@ type MdsNodeTestSuite struct {
 
 func (suite *MdsNodeTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&resomodel.HostModel{}, &mdsmodel.MdsColonyModel{}, &mdsmodel.MdsNodeModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}, &mdsmodel.MdsColonyModel{}, &mdsmodel.MdsNodeModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
@@ -55,16 +70,18 @@ func (suite *MdsNodeTestSuite) SetupSuite() {
 
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
+	slowThreshold := test.NewTestDBSlowThreshold()
 	suite.nodeRepo = &MdsNodeRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
 	}
 }
 
 func (suite *MdsNodeTestSuite) TestCreateModel() {
 	// 测试正常创建
-	cm := CreateTestMdsNodeModel(1, 1) // 使用已创建的集群和主机ID
+	cm := CreateDefaultTestMdsNodeModel()
 	err := suite.nodeRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建MdsNode应该成功")
 	suite.NotZero(cm.ID, "MdsNode ID应该不为零")
@@ -76,7 +93,7 @@ func (suite *MdsNodeTestSuite) TestCreateModel() {
 
 func (suite *MdsNodeTestSuite) TestUpdateModel() {
 	// 创建测试数据
-	cm := CreateTestMdsNodeModel(1, 1)
+	cm := CreateDefaultTestMdsNodeModel()
 	err := suite.nodeRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建MdsNode用于更新测试应该成功")
 
@@ -91,7 +108,7 @@ func (suite *MdsNodeTestSuite) TestUpdateModel() {
 	// 验证更新结果
 	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
 	suite.NoError(err, "查询更新后的MdsNode应该成功")
-	suite.Equal("follow", fm.NodeRole)
+	suite.Equal("follow", fm.NodeRole, "NodeRole应该被更新为follow")
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
 	// 测试边界情况:更新数据为空
@@ -99,13 +116,13 @@ func (suite *MdsNodeTestSuite) TestUpdateModel() {
 	suite.Error(err, "更新数据为空时应该返回错误")
 
 	// 测试边界情况:更新不存在的MdsNode
-	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", 999999)
+	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", testNonExistID)
 	suite.NoError(err, "更新不存在的MdsNode应该成功（无操作）")
 }
 
 func (suite *MdsNodeTestSuite) TestDeleteModel() {
 	// 创建测试数据
-	cm := CreateTestMdsNodeModel(1, 1)
+	cm := CreateDefaultTestMdsNodeModel()
 	err := suite.nodeRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建MdsNode用于删除测试应该成功")
 
@@ -119,38 +136,38 @@ func (suite *MdsNodeTestSuite) TestDeleteModel() {
 	suite.Nil(fm, "已删除的MdsNode应该为nil")
 
 	// 测试边界情况:删除不存在的MdsNode
-	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", 999999)
+	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", testNonExistID)
 	suite.NoError(err, "删除不存在的MdsNode应该成功（无操作）")
 }
 
 func (suite *MdsNodeTestSuite) TestGetModel() {
 	// 创建测试数据
-	cm := CreateTestMdsNodeModel(1, 1)
+	cm := CreateDefaultTestMdsNodeModel()
 	err := suite.nodeRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建MdsNode用于查询测试应该成功")
 
 	// 测试正常查询
 	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
 	suite.NoError(err, "查询MdsNode应该成功")
-	suite.Equal(cm.ID, fm.ID)
-	suite.Equal(cm.NodeRole, fm.NodeRole)
-	suite.Equal(cm.IsEnable, fm.IsEnable)
+	suite.Equal(cm.ID, fm.ID, "ID应该匹配")
+	suite.Equal(cm.NodeRole, fm.NodeRole, "NodeRole应该匹配")
+	suite.Equal(cm.IsEnable, fm.IsEnable, "IsEnable应该匹配")
 
 	// 测试边界情况:查询不存在的MdsNode
-	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", 999999)
+	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", testNonExistID)
 	suite.Error(err, "查询不存在的MdsNode应该返回错误")
 	suite.Nil(fm, "查询不存在的MdsNode应该返回nil")
 
 	// 测试边界情况:使用预加载
 	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"MdsColony", "Host"}, "id = ?", cm.ID)
 	suite.NoError(err, "使用预加载查询MdsNode应该成功")
-	suite.Equal(cm.ID, fm.ID)
+	suite.Equal(cm.ID, fm.ID, "ID应该匹配")
 }
 
 func (suite *MdsNodeTestSuite) TestListModel() {
 	// 创建多个测试数据
 	for i := 0; i < 5; i++ {
-		cm := CreateTestMdsNodeModel(1, 1)
+		cm := CreateDefaultTestMdsNodeModel()
 		err := suite.nodeRepo.CreateModel(context.Background(), cm)
 		suite.NoError(err, "创建MdsNode用于列表测试应该成功")
 	}
@@ -163,8 +180,8 @@ func (suite *MdsNodeTestSuite) TestListModel() {
 	}
 	models, err := suite.nodeRepo.ListModel(context.Background(), qp)
 	suite.NoError(err, "查询MdsNode列表应该成功")
-	suite.Greater(int64(len(models)), int64(0), "MdsNode列表数量应该大于0")
 	suite.NotNil(models, "MdsNode列表应该不为nil")
+	suite.Greater(len(models), 0, "MdsNode列表数量应该大于0")
 
 	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
@@ -172,14 +189,13 @@ func (suite *MdsNodeTestSuite) TestListModel() {
 	}
 	models2, err := suite.nodeRepo.ListModel(context.Background(), qp2)
 	suite.NoError(err, "查询不存在的MdsNode列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的MdsNode列表数量应该为0")
 	suite.NotNil(models2, "不存在的MdsNode列表应该不为nil")
 	suite.Len(models2, 0, "不存在的MdsNode列表长度应该为0")
 }
 
 func (suite *MdsNodeTestSuite) TestContextTimeout() {
 	// 创建测试数据
-	cm := CreateTestMdsNodeModel(1, 1)
+	cm := CreateDefaultTestMdsNodeModel()
 	err := suite.nodeRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建MdsNode用于超时测试应该成功")
 
@@ -198,7 +214,7 @@ func (suite *MdsNodeTestSuite) TestContextTimeout() {
 func (suite *MdsNodeTestSuite) TestCountModel() {
 	// 创建测试数据
 	for i := 0; i < 3; i++ {
-		cm := CreateTestMdsNodeModel(1, 1)
+		cm := CreateDefaultTestMdsNodeModel()
 		err := suite.nodeRepo.CreateModel(context.Background(), cm)
 		suite.NoError(err, "创建MdsNode用于计数测试应该成功")
 	}

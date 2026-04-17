@@ -16,15 +16,15 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestUploadScriptBiz() jobmodel.UploadScriptBiz {
-	return jobmodel.UploadScriptBiz{
-		Filename:  fmt.Sprintf("test_script_%s.sh", uuid.NewString()),
-		Descr:     "测试脚本",
-		Project:   "test_project",
-		Label:     "test_label",
-		Language:  "bash",
-		Status:    true,
-		File:      strings.NewReader("echo 'Hello World'"),
+func CreateTestUploadScriptBiz() jobmodel.ScriptUpsertDTO {
+	return jobmodel.ScriptUpsertDTO{
+		Filename: fmt.Sprintf("test_script_%s.sh", uuid.NewString()),
+		Descr:    "测试脚本",
+		Project:  "test_project",
+		Label:    "test_label",
+		Language: "bash",
+		Status:   true,
+		File:     strings.NewReader("echo 'Hello World'"),
 	}
 }
 
@@ -42,8 +42,6 @@ func createScriptTestContext() context.Context {
 	return ctxutil.SetJwtClaims(ctx, claims)
 }
 
-
-
 type ScriptTestSuite struct {
 	suite.Suite
 	scriptService *ScriptService
@@ -51,8 +49,11 @@ type ScriptTestSuite struct {
 
 func (suite *ScriptTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&jobmodel.ScriptModel{})
+	if err := db.AutoMigrate(&jobmodel.ScriptModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 	suite.scriptService = NewScriptService(
 		logger,
@@ -60,6 +61,7 @@ func (suite *ScriptTestSuite) SetupSuite() {
 			logger,
 			db,
 			dbTimeout,
+			dbSlowThreshold,
 		),
 	)
 }
@@ -67,7 +69,7 @@ func (suite *ScriptTestSuite) SetupSuite() {
 func (suite *ScriptTestSuite) TestCreateScript() {
 	dto := CreateTestUploadScriptBiz()
 	ctx := createScriptTestContext()
-	
+
 	fm, err := suite.scriptService.CreateScript(ctx, dto)
 	suite.Nil(err, "创建脚本应该成功")
 	suite.Greater(fm.ID, uint32(0), "脚本ID应该大于0")
@@ -83,12 +85,12 @@ func (suite *ScriptTestSuite) TestCreateScript() {
 func (suite *ScriptTestSuite) TestFindScriptByID() {
 	dto := CreateTestUploadScriptBiz()
 	ctx := createScriptTestContext()
-	
+
 	// 先创建一个脚本
 	fm, err := suite.scriptService.CreateScript(ctx, dto)
 	suite.Nil(err, "创建脚本应该成功")
 	suite.Greater(fm.ID, uint32(0), "脚本ID应该大于0")
-	
+
 	// 然后查询
 	foundFm, err := suite.scriptService.FindScriptByID(ctx, fm.ID)
 	suite.Nil(err, "查询脚本应该成功")
@@ -104,16 +106,16 @@ func (suite *ScriptTestSuite) TestFindScriptByID() {
 func (suite *ScriptTestSuite) TestDeleteScriptByID() {
 	dto := CreateTestUploadScriptBiz()
 	ctx := createScriptTestContext()
-	
+
 	// 先创建一个脚本
 	fm, err := suite.scriptService.CreateScript(ctx, dto)
 	suite.Nil(err, "创建脚本应该成功")
 	suite.Greater(fm.ID, uint32(0), "脚本ID应该大于0")
-	
+
 	// 然后删除
 	err = suite.scriptService.DeleteScriptByID(ctx, fm.ID)
 	suite.Nil(err, "删除脚本应该成功")
-	
+
 	// 再次查询应该失败
 	_, err = suite.scriptService.FindScriptByID(ctx, fm.ID)
 	suite.NotNil(err, "查询已删除的脚本应该失败")
@@ -123,13 +125,13 @@ func (suite *ScriptTestSuite) TestListScript() {
 	// 创建多个脚本
 	scriptCount := 3
 	ctx := createScriptTestContext()
-	
+
 	for i := 0; i < scriptCount; i++ {
 		dto := CreateTestUploadScriptBiz()
 		_, err := suite.scriptService.CreateScript(ctx, dto)
 		suite.Nil(err, "创建脚本应该成功")
 	}
-	
+
 	// 测试列出所有脚本
 	listDTO := jobmodel.ListScriptDTO{}
 	page, size := 1, 10
@@ -141,23 +143,23 @@ func (suite *ScriptTestSuite) TestListScript() {
 
 func (suite *ScriptTestSuite) TestListScriptsByIDs() {
 	ctx := createScriptTestContext()
-	
+
 	// 创建多个脚本
 	scriptCount := 2
 	createdScripts := make([]uint32, 0, scriptCount)
-	
+
 	for i := 0; i < scriptCount; i++ {
 		dto := CreateTestUploadScriptBiz()
 		fm, err := suite.scriptService.CreateScript(ctx, dto)
 		suite.Nil(err, "创建脚本应该成功")
 		createdScripts = append(createdScripts, fm.ID)
 	}
-	
+
 	// 测试通过ID列表查询
 	scriptList, err := suite.scriptService.ListScriptsByIDs(ctx, createdScripts)
 	suite.Nil(err, "通过ID列表查询脚本应该成功")
 	suite.Len(scriptList, scriptCount, "返回的脚本数量应该等于创建的数量")
-	
+
 	// 测试空ID列表
 	scriptList, err = suite.scriptService.ListScriptsByIDs(ctx, []uint32{})
 	suite.Nil(err, "空ID列表查询应该成功")
@@ -167,11 +169,11 @@ func (suite *ScriptTestSuite) TestListScriptsByIDs() {
 func (suite *ScriptTestSuite) TestListProjects() {
 	dto := CreateTestUploadScriptBiz()
 	ctx := createScriptTestContext()
-	
+
 	// 创建一个脚本
 	_, err := suite.scriptService.CreateScript(ctx, dto)
 	suite.Nil(err, "创建脚本应该成功")
-	
+
 	// 测试列出项目
 	listDTO := jobmodel.ListScriptDTO{}
 	projects, err := suite.scriptService.ListProjects(ctx, listDTO)
@@ -182,11 +184,11 @@ func (suite *ScriptTestSuite) TestListProjects() {
 func (suite *ScriptTestSuite) TestListLabels() {
 	dto := CreateTestUploadScriptBiz()
 	ctx := createScriptTestContext()
-	
+
 	// 创建一个脚本
 	_, err := suite.scriptService.CreateScript(ctx, dto)
 	suite.Nil(err, "创建脚本应该成功")
-	
+
 	// 测试列出标签
 	listDTO := jobmodel.ListScriptDTO{}
 	labels, err := suite.scriptService.ListLabels(ctx, listDTO)
@@ -198,7 +200,7 @@ func (suite *ScriptTestSuite) TestCreateScript_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文创建脚本
 	dto := CreateTestUploadScriptBiz()
 	_, err := suite.scriptService.CreateScript(ctx, dto)
@@ -209,7 +211,7 @@ func (suite *ScriptTestSuite) TestFindScriptByID_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文查找脚本
 	_, err := suite.scriptService.FindScriptByID(ctx, 1)
 	suite.NotNil(err, "上下文错误时查找脚本应该失败")
@@ -219,7 +221,7 @@ func (suite *ScriptTestSuite) TestDeleteScriptByID_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文删除脚本
 	err := suite.scriptService.DeleteScriptByID(ctx, 1)
 	suite.NotNil(err, "上下文错误时删除脚本应该失败")
@@ -229,7 +231,7 @@ func (suite *ScriptTestSuite) TestListScript_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文列出脚本
 	listDTO := jobmodel.ListScriptDTO{}
 	_, _, err := suite.scriptService.ListScript(ctx, 1, 10, listDTO)
@@ -240,7 +242,7 @@ func (suite *ScriptTestSuite) TestListScriptsByIDs_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文通过ID列表查询脚本
 	_, err := suite.scriptService.ListScriptsByIDs(ctx, []uint32{1})
 	suite.NotNil(err, "上下文错误时通过ID列表查询脚本应该失败")
@@ -250,7 +252,7 @@ func (suite *ScriptTestSuite) TestListProjects_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文列出项目
 	listDTO := jobmodel.ListScriptDTO{}
 	_, err := suite.scriptService.ListProjects(ctx, listDTO)
@@ -261,7 +263,7 @@ func (suite *ScriptTestSuite) TestListLabels_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	
+
 	// 尝试使用已取消的上下文列出标签
 	listDTO := jobmodel.ListScriptDTO{}
 	_, err := suite.scriptService.ListLabels(ctx, listDTO)
@@ -275,18 +277,18 @@ func (suite *ScriptTestSuite) TestUpdateScriptByID() {
 	fm, err := suite.scriptService.CreateScript(ctx, dto)
 	suite.Nil(err, "创建脚本应该成功")
 	suite.Greater(fm.ID, uint32(0), "脚本ID应该大于0")
-	
+
 	// 准备更新数据
-	updateDTO := jobmodel.UploadScriptBiz{
-		Filename:  fmt.Sprintf("updated_test_script_%s.sh", uuid.NewString()),
-		Descr:     "更新后的测试脚本",
-		Project:   "updated_test_project",
-		Label:     "updated_test_label",
-		Language:  "python",
-		Status:    false,
-		File:      strings.NewReader("print('Hello Updated World')"),
+	updateDTO := jobmodel.ScriptUpsertDTO{
+		Filename: fmt.Sprintf("updated_test_script_%s.sh", uuid.NewString()),
+		Descr:    "更新后的测试脚本",
+		Project:  "updated_test_project",
+		Label:    "updated_test_label",
+		Language: "python",
+		Status:   false,
+		File:     strings.NewReader("print('Hello Updated World')"),
 	}
-	
+
 	// 执行更新
 	updatedFm, err := suite.scriptService.UpdateScriptByID(ctx, fm.ID, updateDTO)
 	suite.Nil(err, "更新脚本应该成功")
@@ -322,7 +324,7 @@ func (suite *ScriptTestSuite) TestUpdateScriptByID_BuiltinScript() {
 		IsBuiltin: true,
 		Username:  "test_user",
 	}
-	err := suite.scriptService.scriptRepo.CreateModel(context.Background(), builtinScript)
+	err := suite.scriptService.scriptRepo.CreateModel(createScriptTestContext(), builtinScript)
 	suite.Nil(err, "创建内置脚本应该成功")
 
 	// 尝试更新内置脚本
@@ -330,7 +332,7 @@ func (suite *ScriptTestSuite) TestUpdateScriptByID_BuiltinScript() {
 	updateDTO := CreateTestUploadScriptBiz()
 	_, err = suite.scriptService.UpdateScriptByID(ctx, builtinScript.ID, updateDTO)
 	suite.NotNil(err, "更新内置脚本应该失败")
-	suite.Contains(err.Error(), "SCRIPT_IS_BUILTIN", "错误信息应该提到内置脚本")
+	suite.Contains(err.Error(), "脚本为内置脚本", "错误信息应该提到内置脚本")
 }
 
 func (suite *ScriptTestSuite) TestDeleteScriptByID_BuiltinScript() {
@@ -345,14 +347,14 @@ func (suite *ScriptTestSuite) TestDeleteScriptByID_BuiltinScript() {
 		IsBuiltin: true,
 		Username:  "test_user",
 	}
-	err := suite.scriptService.scriptRepo.CreateModel(context.Background(), builtinScript)
+	err := suite.scriptService.scriptRepo.CreateModel(createScriptTestContext(), builtinScript)
 	suite.Nil(err, "创建内置脚本应该成功")
 
 	// 尝试删除内置脚本
 	ctx := createScriptTestContext()
 	err = suite.scriptService.DeleteScriptByID(ctx, builtinScript.ID)
 	suite.NotNil(err, "删除内置脚本应该失败")
-	suite.Contains(err.Error(), "SCRIPT_IS_BUILTIN", "错误信息应该提到内置脚本")
+	suite.Contains(err.Error(), "脚本为内置脚本", "错误信息应该提到内置脚本")
 }
 
 func (suite *ScriptTestSuite) TestUpdateScriptByID_NotFound() {

@@ -20,10 +20,11 @@ import (
 // 负责API模型的CRUD操作和API策略的管理
 // 使用GORM进行数据库操作，使用Casbin进行API策略管理
 type ApiRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
-	enforcer *casbin.Enforcer  // CasbinAPI管理器
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
+	enforcer      *casbin.Enforcer        // CasbinAPI管理器
 }
 
 // NewApiRepo 创建API仓库实例
@@ -42,13 +43,15 @@ func NewApiRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 	enforcer *casbin.Enforcer,
 ) *ApiRepo {
 	return &ApiRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
-		enforcer: enforcer,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
+		enforcer:      enforcer,
 	}
 }
 
@@ -85,16 +88,18 @@ func (r *ApiRepo) CreateModel(
 		)
 		return err
 	}
-	log.Debug(
-		"创建API模型:开始执行",
-		zap.Object("api_model", m),
-	)
 
 	m.CreatedAt = startTime
 	m.UpdatedAt = startTime
 
+	log.Debug(
+		"创建API模型:模型详情",
+		zap.Object("api_model", m),
+	)
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
+
 	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, m, nil)
 	createDuration := time.Since(createStartTime)
@@ -108,12 +113,15 @@ func (r *ApiRepo) CreateModel(
 		)
 		return errors.WrapIf(err, "创建API模型:数据库创建失败")
 	}
-	log.Debug(
-		"创建API模型:执行成功",
-		zap.Object("api_model", m),
-		zap.Duration("create_duration", createDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建API模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("api_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
+
 	return nil
 }
 
@@ -153,16 +161,17 @@ func (r *ApiRepo) UpdateModel(
 		return err
 	}
 
+	updateData["updated_at"] = startTime
+
 	log.Debug(
-		"更新API模型:开始执行",
+		"更新API模型:更新数据",
 		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 	)
 
-	updateData["updated_at"] = startTime
-
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
+
 	updateStartTime := time.Now()
 	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, updateData, nil, conds...)
 	updateDuration := time.Since(updateStartTime)
@@ -178,13 +187,12 @@ func (r *ApiRepo) UpdateModel(
 		return errors.WrapIf(err, "更新API模型:数据库更新失败")
 	}
 
-	log.Debug(
-		"更新API模型:执行成功",
-		zap.Any("update_data", updateData),
-		zap.Any("conds", conds),
-		zap.Duration("update_duration", updateDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新API模型:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -210,13 +218,13 @@ func (r *ApiRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除API模型:开始执行",
+		"删除API模型:删除条件",
 		zap.Any("conds", conds),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
+
 	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.ApiModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
@@ -231,12 +239,13 @@ func (r *ApiRepo) DeleteModel(
 		return errors.WrapIf(err, "删除API模型:数据库删除失败")
 	}
 
-	log.Debug(
-		"删除API模型:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_duration", deleteDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除API模型:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
+
 	return nil
 }
 
@@ -264,34 +273,41 @@ func (r *ApiRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"获取API模型:开始执行",
+		"查询API模型:查询条件",
 		zap.Any("conds", conds),
 	)
 
 	var m sysmodel.ApiModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+
 	getStartTime := time.Now()
 	err := database.DBGet(dbCtx, r.gormDB, nil, &m, conds...)
 	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
-			"获取API模型:数据库查询失败",
+			"查询API模型:数据库查询失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
 			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return nil, errors.WrapIf(err, "获取API模型:数据库查询失败")
+		return nil, errors.WrapIf(err, "查询API模型:数据库查询失败")
 	}
 
 	log.Debug(
-		"获取API模型:执行成功",
+		"查询API模型:查询到的模型详情",
 		zap.Object("api_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_duration", getDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询API模型:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
+
 	return &m, nil
 }
 
@@ -321,19 +337,21 @@ func (r *ApiRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询API模型列表:开始执行",
+		"查询API模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
 
 	var ms []sysmodel.ApiModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
+
 	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &sysmodel.ApiModel{}, &ms, qp)
 	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
-			"查询API模型列表:执行失败",
+			"查询API模型列表:数据库查询失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
 			zap.Duration("list_duration", listDuration),
@@ -343,11 +361,16 @@ func (r *ApiRepo) ListModel(
 	}
 
 	log.Debug(
-		"查询API模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_duration", listDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询API模型列表:查询到的模型列表",
+		zap.Uint32s("api_ids", sysmodel.ListApiModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询API模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -359,12 +382,13 @@ func (r *ApiRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询API模型总数:开始执行",
+		"查询API模型总数:查询条件",
 		zap.Any("query", query),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
+
 	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &sysmodel.ApiModel{}, query)
 	countDuration := time.Since(countStartTime)
@@ -378,13 +402,18 @@ func (r *ApiRepo) CountModel(
 		)
 		return 0, errors.WrapIf(err, "查询API模型总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询API模型总数:执行成功",
-		zap.Any("query", query),
+		"查询API模型总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_duration", countDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询API模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }
 
@@ -430,33 +459,23 @@ func (r *ApiRepo) AddPolicy(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"添加API策略:开始执行",
+		"添加API策略:入参详情",
 		zap.Object("api_model", &m),
 	)
 
 	sub := auth.ApiToSubject(m.ID)
 	rules := [][]string{{sub, m.URL, m.Method}}
-	addPolicyStartTime := time.Now()
-	err := auth.AddPolicies(ctx, r.enforcer, rules)
-	addPolicyDuration := time.Since(addPolicyStartTime)
-	if err != nil {
+
+	if err := auth.AddPolicies(ctx, r.enforcer, rules); err != nil {
 		log.Error(
 			"添加API策略:添加策略缓存失败",
 			zap.Error(err),
 			zap.Object("api_model", &m),
-			zap.Duration("add_policy_duration", addPolicyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "添加API策略: 添加策略缓存失败")
 	}
-	log.Debug(
-		"添加API策略:执行成功",
-		zap.String("sub", sub),
-		zap.String("obj", m.URL),
-		zap.String("act", m.Method),
-		zap.Duration("add_policy_duration", addPolicyDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
 	return nil
 }
 
@@ -505,7 +524,7 @@ func (r *ApiRepo) RemovePolicy(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除API策略:开始执行",
+		"删除API策略:入参详情",
 		zap.Object("api_model", &m),
 		zap.Bool("removeInherited", removeInherited),
 	)
@@ -514,38 +533,20 @@ func (r *ApiRepo) RemovePolicy(
 
 	// 如果需要删除继承该API的组策略
 	if removeInherited {
-		log.Debug(
-			"删除API策略:开始删除继承该API的组策略",
-			zap.Object("api_model", &m),
-			zap.String("sub", sub),
-		)
-		removeGroupPolicyStartTime := time.Now()
-		err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 1, sub)
-		removeGroupPolicyDuration := time.Since(removeGroupPolicyStartTime)
-		if err != nil {
+		if err := auth.RemoveFilteredGroupingPolicy(ctx, r.enforcer, 1, sub); err != nil {
 			log.Error(
 				"删除API策略:删除继承该API的组策略缓存失败",
 				zap.Error(err),
 				zap.Int("index", 1),
 				zap.String("value", sub),
-				zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
 			return errors.WrapIf(err, "删除API策略: 删除继承该API的组策略缓存失败")
 		}
-		log.Debug(
-			"删除API策略:缓存的组策略删除成功",
-			zap.Int("index", 1),
-			zap.String("value", sub),
-			zap.Duration("remove_group_policy_duration", removeGroupPolicyDuration),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
 	}
 
 	rules := [][]string{{sub, m.URL, m.Method}}
-	removePolicyStartTime := time.Now()
 	err := auth.RemovePolicies(ctx, r.enforcer, rules)
-	removePolicyDuration := time.Since(removePolicyStartTime)
 	if err != nil {
 		log.Error(
 			"删除API策略:删除策略缓存失败",
@@ -553,19 +554,10 @@ func (r *ApiRepo) RemovePolicy(
 			zap.String("sub", sub),
 			zap.String("obj", m.URL),
 			zap.String("act", m.Method),
-			zap.Duration("remove_policy_duration", removePolicyDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除API策略: 删除策略缓存失败")
 	}
-	log.Debug(
-		"删除API策略:执行成功",
-		zap.String("sub", sub),
-		zap.String("obj", m.URL),
-		zap.String("act", m.Method),
-		zap.Duration("remove_policy_duration", removePolicyDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 
 	return nil
 }

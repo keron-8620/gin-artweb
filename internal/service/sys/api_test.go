@@ -21,7 +21,7 @@ func CreateTestApiDTO() sysmodel.CreateApiDTO {
 		URL:    fmt.Sprintf("/api/test/%s/", uuid.NewString()),
 		Method: "GET",
 		Label:  "test",
-		Descr:  "这是一个测试接口",
+		Descr:  "test api description",
 	}
 }
 
@@ -30,240 +30,348 @@ func CreateTestApiModel() *sysmodel.ApiModel {
 		URL:    fmt.Sprintf("/api/test/%s/", uuid.NewString()),
 		Method: "GET",
 		Label:  "test",
-		Descr:  "这是一个测试接口",
+		Descr:  "test api description",
 	}
 }
 
-type ApiTestSuite struct {
+type apiTestSuite struct {
 	suite.Suite
 	enforcer   *casbin.Enforcer
-	apiservice *ApiService
+	apiService *ApiService
 }
 
-func (suite *ApiTestSuite) SetupSuite() {
+func (s *apiTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&sysmodel.ApiModel{})
+	if err := db.AutoMigrate(&sysmodel.ApiModel{}); err != nil {
+		s.Error(err, "数据库迁移失败")
+	}
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
-	enforcer, _ := auth.NewCasbinEnforcer()
-	suite.enforcer = enforcer
-	suite.apiservice = NewApiService(
+	slowThreshold := test.NewTestDBSlowThreshold()
+	enforcer, err := auth.NewCasbinEnforcer()
+	if err != nil {
+		s.Error(err, "创建Casbinforcer失败")
+	}
+	s.enforcer = enforcer
+	s.apiService = NewApiService(
 		logger,
 		syssvc.NewApiRepo(
 			logger,
 			db,
 			dbTimeout,
+			slowThreshold,
 			enforcer,
 		),
 	)
 }
 
-func (suite *ApiTestSuite) TestCreateApi() {
-	dto := CreateTestApiDTO()
-	fm, err := suite.apiservice.CreateApi(context.Background(), dto)
-	suite.Nil(err, "创建API应该成功")
-	suite.Greater(fm.ID, uint32(0), "API ID应该大于0")
-	suite.Equal(dto.URL, fm.URL)
-	suite.Equal(dto.Method, fm.Method)
-	suite.Equal(dto.Label, fm.Label)
-	suite.Equal(dto.Descr, fm.Descr)
-	sub := auth.ApiToSubject(fm.ID)
-	ok, enforceErr := suite.enforcer.Enforce(sub, fm.URL, fm.Method)
-	suite.NoError(enforceErr, "Enforce应该成功")
-	suite.True(ok, "Enforce应该返回true")
+func (s *apiTestSuite) newTestApiDTO() sysmodel.CreateApiDTO {
+	return CreateTestApiDTO()
 }
 
-func (suite *ApiTestSuite) TestFindApiByID() {
-	dto := CreateTestApiDTO()
-	fm, err := suite.apiservice.CreateApi(context.Background(), dto)
-	suite.Nil(err, "创建API应该成功")
-	suite.Greater(fm.ID, uint32(0), "API ID应该大于0")
-
-	fm, err = suite.apiservice.FindApiByID(context.Background(), fm.ID)
-	suite.Nil(err, "查询刚创建的API应该成功")
-	suite.Greater(fm.ID, uint32(0), "API ID应该大于0")
-	suite.Equal(dto.URL, fm.URL)
-	suite.Equal(dto.Method, fm.Method)
-	suite.Equal(dto.Label, fm.Label)
-	suite.Equal(dto.Descr, fm.Descr)
-
+func (s *apiTestSuite) createTestApi() *sysmodel.ApiModel {
+	dto := s.newTestApiDTO()
+	api, err := s.apiService.CreateApi(context.Background(), dto)
+	s.Require().Nil(err, "createTestApi: creation should succeed")
+	s.Require().NotNil(api)
+	return api
 }
 
-func (suite *ApiTestSuite) TestFindApiByID_NotFound() {
-	_, err := suite.apiservice.FindApiByID(context.Background(), 0)
-	suite.NotNil(err, "查询不存在的API应该失败")
+func (s *apiTestSuite) verifyApiFieldsEqual(expected, actual *sysmodel.ApiModel) {
+	s.Equal(expected.URL, actual.URL)
+	s.Equal(expected.Method, actual.Method)
+	s.Equal(expected.Label, actual.Label)
+	s.Equal(expected.Descr, actual.Descr)
 }
 
-func (suite *ApiTestSuite) TestDeleteApi() {
-	dto := CreateTestApiDTO()
-	fm, err := suite.apiservice.CreateApi(context.Background(), dto)
-	suite.Nil(err, "创建API应该成功")
-
-	err = suite.apiservice.DeleteApiByID(context.Background(), fm.ID)
-	suite.Nil(err, "删除刚创建的API应该成功")
-
-	_, err = suite.apiservice.FindApiByID(context.Background(), fm.ID)
-	suite.NotNil(err, "查询已删除的API应该失败")
+func (s *apiTestSuite) verifyCasbinPolicy(apiID uint32, url, method string) {
+	sub := auth.ApiToSubject(apiID)
+	ok, err := s.enforcer.Enforce(sub, url, method)
+	s.NoError(err, "Casbin Enforce should succeed")
+	s.True(ok, "Casbin policy should exist")
 }
 
-func (suite *ApiTestSuite) TestDeleteApi_NotFound() {
-	err := suite.apiservice.DeleteApiByID(context.Background(), 0)
-	suite.NotNil(err, "删除不存在的API应该失败")
+func (s *apiTestSuite) TestCreateApi() {
+	dto := s.newTestApiDTO()
+	api, err := s.apiService.CreateApi(context.Background(), dto)
+
+	s.Nil(err)
+	s.NotNil(api)
+	s.Greater(api.ID, uint32(0))
+	s.verifyCasbinPolicy(api.ID, api.URL, api.Method)
 }
 
-func (suite *ApiTestSuite) TestUpdateApiByID() {
-	dto := CreateTestApiDTO()
-	fm, err := suite.apiservice.CreateApi(context.Background(), dto)
-	suite.Nil(err, "创建API应该成功")
+func (s *apiTestSuite) TestFindApiByID() {
+	created := s.createTestApi()
 
-	// 准备更新数据
+	found, err := s.apiService.FindApiByID(context.Background(), created.ID)
+	s.Nil(err)
+	s.NotNil(found)
+	s.Equal(created.ID, found.ID)
+	s.verifyApiFieldsEqual(created, found)
+}
+
+func (s *apiTestSuite) TestFindApiByID_NotFound() {
+	_, err := s.apiService.FindApiByID(context.Background(), 0)
+	s.NotNil(err)
+}
+
+func (s *apiTestSuite) TestDeleteApi() {
+	created := s.createTestApi()
+
+	err := s.apiService.DeleteApiByID(context.Background(), created.ID)
+	s.Nil(err)
+
+	_, err = s.apiService.FindApiByID(context.Background(), created.ID)
+	s.NotNil(err)
+}
+
+func (s *apiTestSuite) TestDeleteApi_NotFound() {
+	err := s.apiService.DeleteApiByID(context.Background(), 0)
+	s.NotNil(err)
+}
+
+func (s *apiTestSuite) TestUpdateApiByID() {
+	created := s.createTestApi()
+
 	updateDTO := sysmodel.UpdateApiDTO{
-		URL:    dto.URL,
-		Method: dto.Method,
-		Label:  "updated_test",
-		Descr:  "这是一个更新后的测试接口",
+		URL:    created.URL,
+		Method: created.Method,
+		Label:  "updated_label",
+		Descr:  "updated description",
 	}
 
-	// 执行更新
-	updatedFm, err := suite.apiservice.UpdateApiByID(context.Background(), fm.ID, updateDTO)
-	suite.Nil(err, "更新API应该成功")
-	suite.Equal(fm.ID, updatedFm.ID)
-	suite.Equal(dto.URL, updatedFm.URL)
-	suite.Equal(dto.Method, updatedFm.Method)
-	suite.Equal(updateDTO.Label, updatedFm.Label)
-	suite.Equal(updateDTO.Descr, updatedFm.Descr)
-
-	// 验证权限策略更新
-	sub := auth.ApiToSubject(updatedFm.ID)
-	ok, enforceErr := suite.enforcer.Enforce(sub, updatedFm.URL, updatedFm.Method)
-	suite.NoError(enforceErr, "Enforce应该成功")
-	suite.True(ok, "Enforce应该返回true")
+	updated, err := s.apiService.UpdateApiByID(context.Background(), created.ID, updateDTO)
+	s.Nil(err)
+	s.NotNil(updated)
+	s.Equal(created.ID, updated.ID)
+	s.Equal(updateDTO.Label, updated.Label)
+	s.Equal(updateDTO.Descr, updated.Descr)
+	s.verifyCasbinPolicy(updated.ID, updated.URL, updated.Method)
 }
 
-func (suite *ApiTestSuite) TestUpdateApiByID_NotFound() {
-	updateDTO := sysmodel.UpdateApiDTO{
-		URL:    "/api/test/",
-		Method: "GET",
-		Label:  "updated_test",
-		Descr:  "测试更新",
-	}
-	_, err := suite.apiservice.UpdateApiByID(context.Background(), 0, updateDTO)
-	suite.NotNil(err, "更新不存在的API应该失败")
-}
-
-func (suite *ApiTestSuite) TestListApi() {
-	// 创建多个API
-	apiCount := 3
-	for i := 0; i < apiCount; i++ {
-		dto := CreateTestApiDTO()
-		_, err := suite.apiservice.CreateApi(context.Background(), dto)
-		suite.Nil(err, "创建API应该成功")
-	}
-
-	// 测试列出所有API
-	listDTO := sysmodel.ListApiDTO{}
-	page, size := listDTO.StandardModelQuery.GetPageParam()
-	count, apiList, err := suite.apiservice.ListApi(context.Background(), page, size, listDTO)
-	suite.Nil(err, "列出API应该成功")
-	suite.GreaterOrEqual(int(count), apiCount, "返回的API数量应该大于等于创建的数量")
-	suite.NotNil(apiList, "返回的API列表不应该为nil")
-}
-
-func (suite *ApiTestSuite) TestLoadApiPolicy() {
-	// 创建几个API
-	apiCount := 2
-	createdApis := make([]sysmodel.ApiModel, 0, apiCount)
-	for range apiCount {
-		dto := CreateTestApiDTO()
-		fm, err := suite.apiservice.CreateApi(context.Background(), dto)
-		suite.Nil(err, "创建API应该成功")
-		createdApis = append(createdApis, *fm)
-	}
-
-	// 加载API策略
-	err := suite.apiservice.LoadApiPolicy(context.Background())
-	suite.Nil(err, "加载API策略应该成功")
-
-	// 验证权限策略是否正确加载
-	for _, api := range createdApis {
-		sub := auth.ApiToSubject(api.ID)
-		ok, enforceErr := suite.enforcer.Enforce(sub, api.URL, api.Method)
-		suite.NoError(enforceErr, "Enforce应该成功")
-		suite.True(ok, "Enforce应该返回true")
-	}
-}
-
-func (suite *ApiTestSuite) TestCreateApi_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文创建API
-	dto := CreateTestApiDTO()
-	_, err := suite.apiservice.CreateApi(ctx, dto)
-	suite.NotNil(err, "上下文错误时创建API应该失败")
-}
-
-func (suite *ApiTestSuite) TestUpdateApiByID_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文更新API
+func (s *apiTestSuite) TestUpdateApiByID_NotFound() {
 	updateDTO := sysmodel.UpdateApiDTO{
 		URL:    "/api/test/",
 		Method: "GET",
 		Label:  "updated_test",
-		Descr:  "测试更新",
+		Descr:  "test update",
 	}
-	_, err := suite.apiservice.UpdateApiByID(ctx, 1, updateDTO)
-	suite.NotNil(err, "上下文错误时更新API应该失败")
+	_, err := s.apiService.UpdateApiByID(context.Background(), 0, updateDTO)
+	s.NotNil(err)
 }
 
-func (suite *ApiTestSuite) TestDeleteApiByID_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+func (s *apiTestSuite) TestListApi() {
+	created := make([]*sysmodel.ApiModel, 3)
+	for i := range created {
+		created[i] = s.createTestApi()
+	}
 
-	// 尝试使用已取消的上下文删除API
-	err := suite.apiservice.DeleteApiByID(ctx, 1)
-	suite.NotNil(err, "上下文错误时删除API应该失败")
-}
-
-func (suite *ApiTestSuite) TestFindApiByID_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文查找API
-	_, err := suite.apiservice.FindApiByID(ctx, 1)
-	suite.NotNil(err, "上下文错误时查找API应该失败")
-}
-
-func (suite *ApiTestSuite) TestListApi_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文列出API
 	listDTO := sysmodel.ListApiDTO{}
 	page, size := listDTO.StandardModelQuery.GetPageParam()
-	_, _, err := suite.apiservice.ListApi(ctx, page, size, listDTO)
-	suite.NotNil(err, "上下文错误时列出API应该失败")
+	count, list, err := s.apiService.ListApi(context.Background(), page, size, listDTO)
+
+	s.Nil(err)
+	s.GreaterOrEqual(int(count), len(created))
+	s.NotNil(list)
 }
 
-func (suite *ApiTestSuite) TestLoadApiPolicy_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
+func (s *apiTestSuite) TestLoadApiPolicy() {
+	created := make([]*sysmodel.ApiModel, 2)
+	for i := range created {
+		created[i] = s.createTestApi()
+	}
+
+	err := s.apiService.LoadApiPolicy(context.Background())
+	s.Nil(err)
+
+	for _, api := range created {
+		s.verifyCasbinPolicy(api.ID, api.URL, api.Method)
+	}
+}
+
+func (s *apiTestSuite) TestLoadApiPolicy_Empty() {
+	err := s.apiService.LoadApiPolicy(context.Background())
+	s.Nil(err)
+}
+
+func (s *apiTestSuite) TestNotFoundCases() {
+	tests := []struct {
+		name   string
+		method func() error
+	}{
+		{"FindApiByID", func() error {
+			_, err := s.apiService.FindApiByID(context.Background(), 0)
+			return err
+		}},
+		{"DeleteApiByID", func() error {
+			return s.apiService.DeleteApiByID(context.Background(), 0)
+		}},
+		{"UpdateApiByID", func() error {
+			updateDTO := sysmodel.UpdateApiDTO{
+				URL:    "/api/test/",
+				Method: "GET",
+				Label:  "updated_test",
+				Descr:  "test update",
+			}
+			_, err := s.apiService.UpdateApiByID(context.Background(), 0, updateDTO)
+			return err
+		}},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name+"_NotFound", func() {
+			err := tt.method()
+			s.NotNil(err)
+		})
+	}
+}
+
+func (s *apiTestSuite) TestContextCancelledCases() {
+	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	// 尝试使用已取消的上下文加载API策略
-	err := suite.apiservice.LoadApiPolicy(ctx)
-	suite.NotNil(err, "上下文错误时加载API策略应该失败")
+	tests := []struct {
+		name   string
+		method func(ctx context.Context) error
+	}{
+		{
+			"CreateApi",
+			func(ctx context.Context) error {
+				_, err := s.apiService.CreateApi(ctx, s.newTestApiDTO())
+				return err
+			},
+		},
+		{
+			"FindApiByID",
+			func(ctx context.Context) error {
+				_, err := s.apiService.FindApiByID(ctx, 1)
+				return err
+			},
+		},
+		{
+			"UpdateApiByID",
+			func(ctx context.Context) error {
+				updateDTO := sysmodel.UpdateApiDTO{
+					URL:    "/api/test/",
+					Method: "GET",
+					Label:  "updated_test",
+					Descr:  "test update",
+				}
+				_, err := s.apiService.UpdateApiByID(ctx, 1, updateDTO)
+				return err
+			},
+		},
+		{
+			"DeleteApiByID",
+			func(ctx context.Context) error {
+				return s.apiService.DeleteApiByID(ctx, 1)
+			},
+		},
+		{
+			"ListApi",
+			func(ctx context.Context) error {
+				listDTO := sysmodel.ListApiDTO{}
+				page, size := listDTO.StandardModelQuery.GetPageParam()
+				_, _, err := s.apiService.ListApi(ctx, page, size, listDTO)
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name+"_ContextError", func() {
+			err := tt.method(cancelledCtx)
+			s.NotNil(err)
+		})
+	}
 }
 
-// 每个测试文件都需要这个入口函数
+func (s *apiTestSuite) TestUpdateApiByID_VerifyOldPolicyRemoved() {
+	created := s.createTestApi()
+	oldURL := created.URL
+	oldMethod := created.Method
+	sub := auth.ApiToSubject(created.ID)
+	ok, _ := s.enforcer.Enforce(sub, oldURL, oldMethod)
+	s.True(ok, "Old policy should exist before update")
+
+	updateDTO := sysmodel.UpdateApiDTO{
+		URL:    created.URL + "updated/",
+		Method: "POST",
+		Label:  "updated_label",
+		Descr:  "updated description",
+	}
+
+	updated, err := s.apiService.UpdateApiByID(context.Background(), created.ID, updateDTO)
+	s.Nil(err)
+	s.NotNil(updated)
+
+	ok, _ = s.enforcer.Enforce(sub, oldURL, oldMethod)
+	s.False(ok, "Old policy should be removed after update")
+
+	s.verifyCasbinPolicy(updated.ID, updated.URL, updated.Method)
+}
+
+func (s *apiTestSuite) TestDeleteApi_VerifyPolicyRemoved() {
+	created := s.createTestApi()
+	sub := auth.ApiToSubject(created.ID)
+	ok, _ := s.enforcer.Enforce(sub, created.URL, created.Method)
+	s.True(ok, "Policy should exist before delete")
+
+	err := s.apiService.DeleteApiByID(context.Background(), created.ID)
+	s.Nil(err)
+
+	ok, _ = s.enforcer.Enforce(sub, created.URL, created.Method)
+	s.False(ok, "Policy should be removed after delete")
+}
+
+func (s *apiTestSuite) TestUpdateApiByID_MultipleFields() {
+	created := s.createTestApi()
+
+	originalLabel := created.Label
+	originalDescr := created.Descr
+
+	updateDTO := sysmodel.UpdateApiDTO{
+		URL:    created.URL,
+		Method: created.Method,
+		Label:  "new_label",
+		Descr:  "new description",
+	}
+
+	updated, err := s.apiService.UpdateApiByID(context.Background(), created.ID, updateDTO)
+	s.Nil(err)
+	s.NotNil(updated)
+	s.Equal(created.ID, updated.ID)
+	s.Equal("new_label", updated.Label)
+	s.Equal("new description", updated.Descr)
+	s.Equal(originalLabel, created.Label)
+	s.Equal(originalDescr, created.Descr)
+}
+
+func (s *apiTestSuite) TestListApi_WithFilter() {
+	created := s.createTestApi()
+
+	listDTO := sysmodel.ListApiDTO{
+		URL:    created.URL,
+		Method: created.Method,
+	}
+	page, size := listDTO.StandardModelQuery.GetPageParam()
+	count, list, err := s.apiService.ListApi(context.Background(), page, size, listDTO)
+
+	s.Nil(err)
+	s.GreaterOrEqual(int(count), 1)
+	s.NotNil(list)
+
+	found := false
+	for _, api := range list {
+		if api.ID == created.ID {
+			found = true
+			break
+		}
+	}
+	s.True(found, "Created API should be in filtered list")
+}
+
 func TestApiTestSuite(t *testing.T) {
-	pts := &ApiTestSuite{}
-	suite.Run(t, pts)
+	suite.Run(t, &apiTestSuite{})
 }

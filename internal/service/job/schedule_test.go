@@ -55,11 +55,14 @@ type ScheduleTestSuite struct {
 
 func (suite *ScheduleTestSuite) SetupSuite() {
 	suite.db = test.NewTestGormDBWithConfig(nil)
-	suite.db.AutoMigrate(&jobmodel.ScheduleModel{}, &jobmodel.ScriptModel{})
+	if err := suite.db.AutoMigrate(&jobmodel.ScheduleModel{}, &jobmodel.ScriptModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	suite.db.Exec("DELETE FROM job_schedule")
 
 	dbTimeout := test.NewTestDBTimeouts()
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 
 	var script jobmodel.ScriptModel
@@ -86,11 +89,13 @@ func (suite *ScheduleTestSuite) SetupSuite() {
 			logger,
 			suite.db,
 			dbTimeout,
+			dbSlowThreshold,
 		),
 		jobrepo.NewRecordRepo(
 			logger,
 			suite.db,
 			dbTimeout,
+			dbSlowThreshold,
 		),
 	)
 
@@ -100,11 +105,13 @@ func (suite *ScheduleTestSuite) SetupSuite() {
 			logger,
 			suite.db,
 			dbTimeout,
+			dbSlowThreshold,
 		),
 		jobrepo.NewScheduleRepo(
 			logger,
 			suite.db,
 			dbTimeout,
+			dbSlowThreshold,
 		),
 		recordService,
 		crontab,
@@ -254,12 +261,12 @@ func (suite *ScheduleTestSuite) TestListScheduleJob() {
 	suite.Nil(err, "创建计划任务应该成功")
 
 	// 测试获取调度器任务列表
-	jobList, err := suite.scheduleService.ListScheduleJob(ctx)
+	jobList, err := suite.scheduleService.ListJob(ctx)
 	suite.Nil(err, "获取调度器任务列表应该成功")
 	suite.NotNil(jobList, "返回的调度器任务列表不应该为nil")
 }
 
-func (suite *ScheduleTestSuite) TestReLoadSchedule() {
+func (suite *ScheduleTestSuite) TestLoadSchedule() {
 	ctx := createScheduleTestContext()
 
 	// 创建一个计划任务
@@ -267,9 +274,9 @@ func (suite *ScheduleTestSuite) TestReLoadSchedule() {
 	_, err := suite.scheduleService.CreateSchedule(ctx, dto)
 	suite.Nil(err, "创建计划任务应该成功")
 
-	// 测试重新加载计划任务
-	err = suite.scheduleService.ReLoadSchedule(ctx, nil)
-	suite.Nil(err, "重新加载计划任务应该成功")
+	// 测试加载计划任务
+	err = suite.scheduleService.LoadSchedule(ctx)
+	suite.Nil(err, "加载计划任务应该成功")
 }
 
 func (suite *ScheduleTestSuite) TestAddJob() {
@@ -292,7 +299,7 @@ func (suite *ScheduleTestSuite) TestAddJob() {
 	}
 
 	// 测试添加计划任务
-	err := suite.scheduleService.AddJob(ctx, schedule)
+	err := suite.scheduleService.AddJob(ctx, *schedule)
 	suite.Nil(err, "添加计划任务应该成功")
 }
 
@@ -316,7 +323,7 @@ func (suite *ScheduleTestSuite) TestAddJob_WithoutRetry() {
 	}
 
 	// 测试添加计划任务
-	err := suite.scheduleService.AddJob(ctx, schedule)
+	err := suite.scheduleService.AddJob(ctx, *schedule)
 	suite.Nil(err, "添加计划任务应该成功")
 }
 
@@ -340,7 +347,7 @@ func (suite *ScheduleTestSuite) TestAddJob_WithZeroMaxRetries() {
 	}
 
 	// 测试添加计划任务
-	err := suite.scheduleService.AddJob(ctx, schedule)
+	err := suite.scheduleService.AddJob(ctx, *schedule)
 	suite.Nil(err, "添加计划任务应该成功")
 }
 
@@ -364,7 +371,7 @@ func (suite *ScheduleTestSuite) TestRemoveJob() {
 	}
 
 	// 先添加计划任务
-	err := suite.scheduleService.AddJob(ctx, schedule)
+	err := suite.scheduleService.AddJob(ctx, *schedule)
 	suite.Nil(err, "添加计划任务应该成功")
 
 	// 然后移除计划任务
@@ -425,50 +432,14 @@ func (suite *ScheduleTestSuite) TestListSchedule_ContextError() {
 	suite.NotNil(err, "上下文错误时列出计划任务应该失败")
 }
 
-func (suite *ScheduleTestSuite) TestListScheduleJob_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文获取调度器任务列表
-	_, err := suite.scheduleService.ListScheduleJob(ctx)
-	suite.NotNil(err, "上下文错误时获取调度器任务列表应该失败")
-}
-
 func (suite *ScheduleTestSuite) TestReLoadSchedule_ContextError() {
 	// 创建一个可取消的上下文并立即取消
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	// 尝试使用已取消的上下文重新加载计划任务
-	err := suite.scheduleService.ReLoadSchedule(ctx, nil)
-	suite.NotNil(err, "上下文错误时重新加载计划任务应该失败")
-}
-
-func (suite *ScheduleTestSuite) TestAddJob_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文添加计划任务
-	schedule := &jobmodel.ScheduleModel{
-		Name:          "test_schedule",
-		Specification: "0 0 * * *",
-		IsEnabled:     true,
-		ScriptID:      1,
-	}
-	err := suite.scheduleService.AddJob(ctx, schedule)
-	suite.NotNil(err, "上下文错误时添加计划任务应该失败")
-}
-
-func (suite *ScheduleTestSuite) TestRemoveJob_ContextError() {
-	// 创建一个可取消的上下文并立即取消
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// 尝试使用已取消的上下文移除计划任务
-	err := suite.scheduleService.RemoveJob(ctx, 1)
-	suite.NotNil(err, "上下文错误时移除计划任务应该失败")
+	err := suite.scheduleService.LoadSchedule(ctx)
+	suite.NotNil(err, "上下文错误时加载计划任务应该失败")
 }
 
 func (suite *ScheduleTestSuite) TestUpdateScheduleByIDs() {
@@ -565,7 +536,8 @@ func (suite *ScheduleTestSuite) TestCreateSchedule_DisabledScript() {
 		IsBuiltin: false,
 		Username:  "test_user",
 	}
-	suite.scheduleService.scriptRepo.CreateModel(ctx, disabledScript)
+	err := suite.scheduleService.scriptRepo.CreateModel(ctx, disabledScript)
+	suite.Nil(err, "创建禁用脚本应该成功")
 
 	dto := jobmodel.ScheduleUpsertDTO{
 		Name:          "test_schedule_disabled",
@@ -657,13 +629,6 @@ func (suite *ScheduleTestSuite) TestListSchedule_EmptyResult() {
 	suite.Nil(err, "列出计划任务应该成功")
 	suite.Equal(int64(0), count, "Count should be 0 for non-existent schedule")
 	suite.Nil(scheduleList, "Schedule list should be nil for empty result")
-}
-
-func (suite *ScheduleTestSuite) TestReLoadSchedule_EmptyResult() {
-	ctx := createScheduleTestContext()
-
-	err := suite.scheduleService.ReLoadSchedule(ctx, map[string]any{"id > ?": 999999})
-	suite.Nil(err, "重新加载不存在的计划任务应该成功")
 }
 
 func TestScheduleTestSuite(t *testing.T) {

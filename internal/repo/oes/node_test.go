@@ -18,9 +18,20 @@ import (
 	"gin-artweb/internal/shared/test"
 )
 
-func CreateTestOesNodeModel(oesColonyID, hostID uint32) *oesmodel.OesNodeModel {
+// NewTestOesNodeModel 创建测试OesNode模型
+func NewTestOesNodeModel(oesColonyID, hostID uint32) *oesmodel.OesNodeModel {
 	return &oesmodel.OesNodeModel{
 		NodeRole:    "master",
+		IsEnable:    true,
+		OesColonyID: oesColonyID,
+		HostID:      hostID,
+	}
+}
+
+// NewTestOesNodeModelWithRole 创建指定角色的测试OesNode模型
+func NewTestOesNodeModelWithRole(oesColonyID, hostID uint32, role string) *oesmodel.OesNodeModel {
+	return &oesmodel.OesNodeModel{
+		NodeRole:    role,
 		IsEnable:    true,
 		OesColonyID: oesColonyID,
 		HostID:      hostID,
@@ -33,11 +44,14 @@ type OesNodeTestSuite struct {
 	log      *zap.Logger
 	gormDB   *gorm.DB
 	timeouts *config.DBTimeout
+	testNode *oesmodel.OesNodeModel
 }
 
 func (suite *OesNodeTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &oesmodel.OesColonyModel{}, &oesmodel.OesNodeModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &oesmodel.OesColonyModel{}, &oesmodel.OesNodeModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
@@ -95,16 +109,25 @@ func (suite *OesNodeTestSuite) SetupSuite() {
 	suite.timeouts = test.NewTestDBTimeouts()
 	suite.log = test.NewTestZapLogger()
 	suite.gormDB = db
+	slowThreshold := test.NewTestDBSlowThreshold()
 	suite.nodeRepo = &OesNodeRepo{
-		log:      suite.log,
-		gormDB:   suite.gormDB,
-		timeouts: suite.timeouts,
+		log:           suite.log,
+		gormDB:        suite.gormDB,
+		timeouts:      suite.timeouts,
+		slowThreshold: slowThreshold,
 	}
+}
+
+func (suite *OesNodeTestSuite) SetupTest() {
+	// 为每个测试创建一个基础测试节点
+	suite.testNode = NewTestOesNodeModel(1, 1)
+	err := suite.nodeRepo.CreateModel(context.Background(), suite.testNode)
+	suite.NoError(err, "创建测试OesNode应该成功")
 }
 
 func (suite *OesNodeTestSuite) TestCreateModel() {
 	// 测试正常创建
-	cm := CreateTestOesNodeModel(1, 1) // 使用已创建的集群和主机ID
+	cm := NewTestOesNodeModel(1, 1)
 	err := suite.nodeRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建OesNode应该成功")
 	suite.NotZero(cm.ID, "OesNode ID应该不为零")
@@ -115,27 +138,22 @@ func (suite *OesNodeTestSuite) TestCreateModel() {
 }
 
 func (suite *OesNodeTestSuite) TestUpdateModel() {
-	// 创建测试数据
-	cm := CreateTestOesNodeModel(1, 1)
-	err := suite.nodeRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesNode用于更新测试应该成功")
-
 	// 测试正常更新
 	updateData := map[string]any{
 		"NodeRole": "follow",
 		"IsEnable": false,
 	}
-	err = suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", cm.ID)
+	err := suite.nodeRepo.UpdateModel(context.Background(), updateData, "id = ?", suite.testNode.ID)
 	suite.NoError(err, "更新OesNode应该成功")
 
 	// 验证更新结果
-	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
+	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", suite.testNode.ID)
 	suite.NoError(err, "查询更新后的OesNode应该成功")
 	suite.Equal("follow", fm.NodeRole)
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
 	// 测试边界情况:更新数据为空
-	err = suite.nodeRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
+	err = suite.nodeRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", suite.testNode.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
 	// 测试边界情况:更新不存在的OesNode
@@ -144,17 +162,12 @@ func (suite *OesNodeTestSuite) TestUpdateModel() {
 }
 
 func (suite *OesNodeTestSuite) TestDeleteModel() {
-	// 创建测试数据
-	cm := CreateTestOesNodeModel(1, 1)
-	err := suite.nodeRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesNode用于删除测试应该成功")
-
 	// 测试正常删除
-	err = suite.nodeRepo.DeleteModel(context.Background(), "id = ?", cm.ID)
+	err := suite.nodeRepo.DeleteModel(context.Background(), "id = ?", suite.testNode.ID)
 	suite.NoError(err, "删除OesNode应该成功")
 
 	// 验证删除结果
-	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
+	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", suite.testNode.ID)
 	suite.Error(err, "查询已删除的OesNode应该返回错误")
 	suite.Nil(fm, "已删除的OesNode应该为nil")
 
@@ -164,17 +177,12 @@ func (suite *OesNodeTestSuite) TestDeleteModel() {
 }
 
 func (suite *OesNodeTestSuite) TestGetModel() {
-	// 创建测试数据
-	cm := CreateTestOesNodeModel(1, 1)
-	err := suite.nodeRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesNode用于查询测试应该成功")
-
 	// 测试正常查询
-	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
+	fm, err := suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", suite.testNode.ID)
 	suite.NoError(err, "查询OesNode应该成功")
-	suite.Equal(cm.ID, fm.ID)
-	suite.Equal(cm.NodeRole, fm.NodeRole)
-	suite.Equal(cm.IsEnable, fm.IsEnable)
+	suite.Equal(suite.testNode.ID, fm.ID)
+	suite.Equal(suite.testNode.NodeRole, fm.NodeRole)
+	suite.Equal(suite.testNode.IsEnable, fm.IsEnable)
 
 	// 测试边界情况:查询不存在的OesNode
 	fm, err = suite.nodeRepo.GetModel(context.Background(), nil, "id = ?", 999999)
@@ -182,15 +190,15 @@ func (suite *OesNodeTestSuite) TestGetModel() {
 	suite.Nil(fm, "查询不存在的OesNode应该返回nil")
 
 	// 测试边界情况:使用预加载
-	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"OesColony", "Host"}, "id = ?", cm.ID)
+	fm, err = suite.nodeRepo.GetModel(context.Background(), []string{"OesColony", "Host"}, "id = ?", suite.testNode.ID)
 	suite.NoError(err, "使用预加载查询OesNode应该成功")
-	suite.Equal(cm.ID, fm.ID)
+	suite.Equal(suite.testNode.ID, fm.ID)
 }
 
 func (suite *OesNodeTestSuite) TestListModel() {
 	// 创建多个测试数据
 	for i := 0; i < 5; i++ {
-		cm := CreateTestOesNodeModel(1, 1)
+		cm := NewTestOesNodeModel(1, 1)
 		err := suite.nodeRepo.CreateModel(context.Background(), cm)
 		suite.NoError(err, "创建OesNode用于列表测试应该成功")
 	}
@@ -203,7 +211,6 @@ func (suite *OesNodeTestSuite) TestListModel() {
 	}
 	models, err := suite.nodeRepo.ListModel(context.Background(), qp)
 	suite.NoError(err, "查询OesNode列表应该成功")
-	suite.Greater(int64(len(models)), int64(0), "OesNode列表数量应该大于0")
 	suite.NotNil(models, "OesNode列表应该不为nil")
 	suite.Greater(len(models), 0, "OesNode列表长度应该大于0")
 
@@ -213,17 +220,11 @@ func (suite *OesNodeTestSuite) TestListModel() {
 	}
 	models2, err := suite.nodeRepo.ListModel(context.Background(), qp2)
 	suite.NoError(err, "查询不存在的OesNode列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的OesNode列表数量应该为0")
 	suite.NotNil(models2, "不存在的OesNode列表应该不为nil")
 	suite.Len(models2, 0, "不存在的OesNode列表长度应该为0")
 }
 
 func (suite *OesNodeTestSuite) TestContextTimeout() {
-	// 创建测试数据
-	cm := CreateTestOesNodeModel(1, 1)
-	err := suite.nodeRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建OesNode用于超时测试应该成功")
-
 	// 测试上下文超时情况
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
@@ -232,14 +233,14 @@ func (suite *OesNodeTestSuite) TestContextTimeout() {
 	time.Sleep(time.Millisecond * 2)
 
 	// 测试超时后的操作
-	_, err = suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
+	_, err := suite.nodeRepo.GetModel(timeoutCtx, nil, "id = ?", suite.testNode.ID)
 	suite.Error(err, "上下文超时后查询OesNode应该返回错误")
 }
 
 func (suite *OesNodeTestSuite) TestCountModel() {
-	// 创建测试数据
+	// 创建多个测试数据
 	for i := 0; i < 3; i++ {
-		cm := CreateTestOesNodeModel(1, 1)
+		cm := NewTestOesNodeModel(1, 1)
 		err := suite.nodeRepo.CreateModel(context.Background(), cm)
 		suite.NoError(err, "创建OesNode用于计数测试应该成功")
 	}
@@ -261,11 +262,13 @@ func (suite *OesNodeTestSuite) TestCountModel() {
 }
 
 func (suite *OesNodeTestSuite) TestNewOesNodeRepo() {
-	repo := NewOesNodeRepo(suite.log, suite.gormDB, suite.timeouts)
+	slowThreshold := test.NewTestDBSlowThreshold()
+	repo := NewOesNodeRepo(suite.log, suite.gormDB, suite.timeouts, slowThreshold)
 	suite.NotNil(repo, "NewOesNodeRepo 应该返回非空实例")
 	suite.Equal(suite.log, repo.log, "日志实例应该正确设置")
 	suite.Equal(suite.gormDB, repo.gormDB, "数据库实例应该正确设置")
 	suite.Equal(suite.timeouts, repo.timeouts, "超时设置应该正确设置")
+	suite.Equal(slowThreshold, repo.slowThreshold, "慢查询阈值设置应该正确设置")
 }
 
 func TestOesNodeTestSuite(t *testing.T) {

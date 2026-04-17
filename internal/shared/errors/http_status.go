@@ -2,7 +2,7 @@ package errors
 
 import "net/http"
 
-// reasonToStatus 错误原因到HTTP状态码的映射
+// #nosec G101 -- reasonToStatus 错误原因到HTTP状态码的映射
 var reasonToStatus = map[ErrorReason]int{
 	// 通用错误
 	ReasonUnknown:           http.StatusInternalServerError,
@@ -10,12 +10,12 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonRequestTimeout:    http.StatusRequestTimeout,
 	ReasonRateLimitExceeded: http.StatusTooManyRequests,
 
-	// 上下文相关
+	// #nosec G101 -- 上下文相关
 	ReasonNoContext:        http.StatusBadRequest,
 	ReasonCanceled:         http.StatusRequestTimeout,
 	ReasonDeadlineExceeded: http.StatusRequestTimeout,
 
-	// 安全认证
+	// #nosec G101 -- 安全认证
 	ReasonHostHeaderInvalid:      http.StatusBadRequest,
 	ReasonNonceNotFound:          http.StatusBadRequest,
 	ReasonReplayAttack:           http.StatusBadRequest,
@@ -24,7 +24,7 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonTimestampExpired:       http.StatusBadRequest,
 	ReasonPasswordStrengthFailed: http.StatusBadRequest,
 
-	// 身份权限认证
+	// #nosec G101 -- 身份权限认证
 	ReasonUnauthorized:      http.StatusUnauthorized,
 	ReasonTokenExpired:      http.StatusUnauthorized,
 	ReasonTokenInvalid:      http.StatusUnauthorized,
@@ -34,7 +34,7 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonAccountLocked:     http.StatusForbidden,
 	ReasonForbidden:         http.StatusForbidden,
 
-	// 数据库操作
+	// #nosec G101 -- 数据库操作
 	ReasonRecordNotFound:                http.StatusNotFound,
 	ReasonInvalidTransaction:            http.StatusInternalServerError,
 	ReasonNotImplemented:                http.StatusNotImplemented,
@@ -58,27 +58,27 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonForeignKeyViolated:            http.StatusConflict,
 	ReasonCheckConstraintViolated:       http.StatusBadRequest,
 
-	// ssh链接
+	// #nosec G101 -- ssh链接
 	ReasonSSHConnectionFailed: http.StatusBadRequest,
 	ReasonSSHKeyDeployFailed:  http.StatusBadRequest,
 
-	// 上传下载文件
+	// #nosec G101 -- 上传下载文件
 	ReasonDownloadFileNotFound:         http.StatusNotFound,
 	ReasonDownloadFilePermissionDenied: http.StatusForbidden,
 	ReasonDownloadFileFailed:           http.StatusInternalServerError,
 
-	// 压缩解压文件
+	// #nosec G101 -- 压缩解压文件
 	ReasonUnZIPFailed:       http.StatusInternalServerError,
 	ReasonZIPFailed:         http.StatusInternalServerError,
 	ReasonZIPFileNotFound:   http.StatusNotFound,
 	ReasonZIPFileIsEmpty:    http.StatusBadRequest,
 	ReasonZIPFileIsNotValid: http.StatusBadRequest,
 
-	// 缓存文件
+	// #nosec G101 -- 缓存文件
 	ReasonExportCacheFileFailed: http.StatusInternalServerError,
 	ReasonDeleteCacheFileFailed: http.StatusInternalServerError,
 
-	// 脚本相关
+	// #nosec G101 -- 脚本相关
 	ReasonScriptNotFound:     http.StatusNotFound,
 	ReasonScriptIsBuiltin:    http.StatusBadRequest,
 	ReasonScriptIsDisabled:   http.StatusBadRequest,
@@ -86,11 +86,11 @@ var reasonToStatus = map[ErrorReason]int{
 	ReasonScriptSaveFailed:   http.StatusInternalServerError,
 	ReasonScriptRemoveFailed: http.StatusInternalServerError,
 
-	// 程序包相关
+	// #nosec G101 -- 程序包相关
 	ReasonPackageNotFound:     http.StatusNotFound,
 	ReasonPackageSaveFailed:   http.StatusInternalServerError,
 	ReasonPackageRemoveFailed: http.StatusInternalServerError,
 
-	// 计划任务相关
+	// #nosec G101 -- 计划任务相关
 	ReasonCronSpecificationInvalid: http.StatusBadRequest,
 }

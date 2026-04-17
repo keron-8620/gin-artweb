@@ -47,6 +47,18 @@ func (m *ScriptModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListScriptModelToUint32s(ms []ScriptModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 type UploadScriptDTO struct {
 	// 上传的程序包文件
 	File *multipart.FileHeader `form:"file" binding:"required"`
@@ -83,7 +95,7 @@ func (dto *UploadScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-type UploadScriptBiz struct {
+type ScriptUpsertDTO struct {
 	Filename  string    // 文件名
 	File      io.Reader // 文件内容
 	Descr     string    // 描述信息
@@ -94,7 +106,7 @@ type UploadScriptBiz struct {
 	Status    bool      // 状态
 }
 
-func (dto *UploadScriptBiz) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (dto *ScriptUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", dto.Filename)
 	enc.AddString("descr", dto.Descr)
 	enc.AddString("project", dto.Project)
@@ -104,7 +116,21 @@ func (dto *UploadScriptBiz) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func (dto *UploadScriptBiz) ToUpdateMap() map[string]any {
+func (dto *ScriptUpsertDTO) ToModel(username string) ScriptModel {
+	return ScriptModel{
+		Name:      dto.Filename,
+		Descr:     dto.Descr,
+		ParamDesc: dto.ParamDesc,
+		Project:   dto.Project,
+		Label:     dto.Label,
+		Language:  dto.Language,
+		Status:    dto.Status,
+		IsBuiltin: false,
+		Username:  username,
+	}
+}
+
+func (dto *ScriptUpsertDTO) ToUpdateMap() map[string]any {
 	return map[string]any{
 		"name":       dto.Filename,
 		"descr":      dto.Descr,

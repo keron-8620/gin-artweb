@@ -46,9 +46,12 @@ func newPkgServiceTestContext(t *testing.T) *pkgServiceTestContext {
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
-	db.AutoMigrate(&resomodel.PackageModel{})
+	if err := db.AutoMigrate(&resomodel.PackageModel{}); err != nil {
+		t.Fatalf("failed to migrate package model: %v", err)
+	}
 	dbTimeout := test.NewTestDBTimeouts()
-	pkgRepo := resourcerepo.NewPackageRepo(testLogger, db, dbTimeout)
+	dbSlowThreshold := test.NewTestDBSlowThreshold()
+	pkgRepo := resourcerepo.NewPackageRepo(testLogger, db, dbTimeout, dbSlowThreshold)
 	pkgService := NewPackageService(
 		testLogger,
 		pkgRepo,
@@ -287,7 +290,10 @@ func TestPackageService_DeletePackageByID_FindFailed(t *testing.T) {
 		t.Fatalf("创建Package应该成功: %v", err)
 	}
 
-	ctx.pkgRepo.DeleteModel(context.Background(), pm.ID)
+	err = ctx.pkgRepo.DeleteModel(context.Background(), pm.ID)
+	if err != nil {
+		t.Fatalf("删除Package应该成功: %v", err)
+	}
 
 	svcErr := ctx.pkgService.DeletePackageByID(context.Background(), pm.ID)
 	if svcErr == nil {

@@ -68,7 +68,9 @@ func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("path", m.Path)
 	enc.AddString("component", m.Component)
-	enc.AddObject("meta", &m.Meta)
+	if err := enc.AddObject("meta", &m.Meta); err != nil {
+		return err
+	}
 	enc.AddString("name", m.Name)
 	enc.AddUint32("sort", m.Sort)
 	enc.AddBool("is_active", m.IsActive)
@@ -76,13 +78,28 @@ func (m *MenuModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m.ParentID != nil {
 		enc.AddUint32("parent_id", *m.ParentID)
 	}
-	enc.AddArray("apis", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("apis", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, api := range m.Apis {
 			ae.AppendUint32(api.ID)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (m *MenuModel) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"path":      m.Path,
+		"component": m.Component,
+		"name":      m.Name,
+		"meta":      m.Meta.Json(),
+		"sort":      m.Sort,
+		"is_active": m.IsActive,
+		"descr":     m.Descr,
+		"parent_id": m.ParentID,
+	}
 }
 
 func ListMenuModelToUint32s(ms []MenuModel) []uint32 {
@@ -136,7 +153,9 @@ func (dto *CreateMenuDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("id", dto.ID)
 	enc.AddString("path", dto.Path)
 	enc.AddString("component", dto.Component)
-	enc.AddObject("meta", &dto.Meta)
+	if err := enc.AddObject("meta", &dto.Meta); err != nil {
+		return err
+	}
 	enc.AddString("name", dto.Name)
 	enc.AddUint32("sort", dto.Sort)
 	enc.AddBool("is_active", dto.IsActive)
@@ -144,13 +163,38 @@ func (dto *CreateMenuDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if dto.ParentID != nil {
 		enc.AddUint32("parent_id", *dto.ParentID)
 	}
-	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (dto *CreateMenuDTO) ToModel() MenuModel {
+	m := MenuModel{
+		StandardModel: database.StandardModel{
+			BaseModel: database.BaseModel{ID: dto.ID},
+		},
+		Path:      dto.Path,
+		Component: dto.Component,
+		Name:      dto.Name,
+		Meta: MetaSchemas{
+			Icon:  dto.Meta.Icon,
+			Title: dto.Meta.Title,
+		},
+		Sort:     dto.Sort,
+		IsActive: dto.IsActive,
+		Descr:    dto.Descr,
+		ParentID: dto.ParentID,
+	}
+	if m.ParentID != nil && *m.ParentID == 0 {
+		m.ParentID = nil
+	}
+	return m
 }
 
 // UpdateMenuDTO 用于更新菜单的请求结构体
@@ -188,7 +232,9 @@ type UpdateMenuDTO struct {
 func (dto *UpdateMenuDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("path", dto.Path)
 	enc.AddString("component", dto.Component)
-	enc.AddObject("meta", &dto.Meta)
+	if err := enc.AddObject("meta", &dto.Meta); err != nil {
+		return err
+	}
 	enc.AddString("name", dto.Name)
 	enc.AddUint32("sort", dto.Sort)
 	enc.AddBool("is_active", dto.IsActive)
@@ -196,12 +242,14 @@ func (dto *UpdateMenuDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if dto.ParentID != nil {
 		enc.AddUint32("parent_id", *dto.ParentID)
 	}
-	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
 }
 

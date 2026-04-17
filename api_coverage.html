@@ -1,0 +1,3074 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>sys: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">gin-artweb/internal/service/sys/api.go (66.1%)</option>
+				
+				<option value="file1">gin-artweb/internal/service/sys/button.go (0.0%)</option>
+				
+				<option value="file2">gin-artweb/internal/service/sys/menu.go (0.0%)</option>
+				
+				<option value="file3">gin-artweb/internal/service/sys/password.go (0.0%)</option>
+				
+				<option value="file4">gin-artweb/internal/service/sys/role.go (0.0%)</option>
+				
+				<option value="file5">gin-artweb/internal/service/sys/user.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package sys
+
+import (
+        "context"
+        "time"
+
+        emperror "emperror.dev/errors"
+        "go.uber.org/zap"
+
+        sysmodel "gin-artweb/internal/model/sys"
+        sysrepo "gin-artweb/internal/repo/sys"
+        "gin-artweb/internal/shared/common"
+        "gin-artweb/internal/shared/ctxutil"
+        "gin-artweb/internal/shared/database"
+        "gin-artweb/internal/shared/errors"
+)
+
+type ApiService struct {
+        log     *zap.Logger
+        apiRepo *sysrepo.ApiRepo
+}
+
+func NewApiService(
+        log *zap.Logger,
+        apiRepo *sysrepo.ApiRepo,
+) *ApiService <span class="cov8" title="1">{
+        return &amp;ApiService{
+                log:     log,
+                apiRepo: apiRepo,
+        }
+}</span>
+
+func (s *ApiService) CreateApi(
+        ctx context.Context,
+        dto sysmodel.CreateApiDTO,
+) (*sysmodel.ApiModel, *errors.Error) <span class="cov8" title="1">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov8" title="1">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov8" title="1">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "创建API:开始执行",
+                zap.Object("create_api_dto", &amp;dto),
+        )
+
+        m := dto.ToModel()
+
+        if err := s.apiRepo.CreateModel(ctx, &amp;m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建API:创建数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("api_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov8" title="1">rollback := func() </span><span class="cov0" title="0">{
+                if err := s.apiRepo.DeleteModel(ctx, m.ID); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "创建API:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(err),
+                                zap.Uint32("api_id", m.ID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov8" title="1">if err := s.apiRepo.AddPolicy(ctx, m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建API:添加访问策略失败",
+                        zap.Error(err),
+                        zap.Object("api_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov8" title="1">log.Info(
+                "创建API:执行成功",
+                zap.Uint32("api_id", m.ID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return &amp;m, nil</span>
+}
+
+func (s *ApiService) UpdateApiByID(
+        ctx context.Context,
+        apiID uint32,
+        dto sysmodel.UpdateApiDTO,
+) (*sysmodel.ApiModel, *errors.Error) <span class="cov8" title="1">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov8" title="1">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov8" title="1">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "更新API:开始执行",
+                zap.Uint32("api_id", apiID),
+                zap.Object("update_api_dto", &amp;dto),
+        )
+
+        oldApi, fErr := s.FindApiByID(ctx, apiID)
+        if fErr != nil </span><span class="cov8" title="1">{
+                log.Error(
+                        "更新API:查询更新前的API失败",
+                        zap.Error(fErr),
+                        zap.Uint32("api_id", apiID),
+                )
+                return nil, fErr
+        }</span>
+
+        <span class="cov8" title="1">if err := s.apiRepo.RemovePolicy(ctx, *oldApi, false); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新API:移除旧API策略失败",
+                        zap.Error(err),
+                        zap.Object("api_model", oldApi),
+                        zap.Bool("remove_inherited", false),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov8" title="1">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.apiRepo.AddPolicy(ctx, *oldApi); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新API:恢复旧API策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("api_model", oldApi),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov8" title="1">updateData := dto.ToUpdateMap()
+        if err := s.apiRepo.UpdateModel(ctx, updateData, "id = ?", apiID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新API:更新数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("api_id", apiID),
+                        zap.Any("update_data", updateData),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return nil, errors.NewGormError(err, updateData)
+        }</span>
+
+        <span class="cov8" title="1">rollback := func() </span><span class="cov0" title="0">{
+                upData := oldApi.ToUpdateMap()
+                if err := s.apiRepo.UpdateModel(ctx, upData, "id = ?", apiID); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新API:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(err),
+                                zap.Uint32("api_id", apiID),
+                                zap.Any("update_data", upData),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov8" title="1">newApi, fErr := s.FindApiByID(ctx, apiID)
+        if fErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新API:查询更新后的API失败",
+                        zap.Error(fErr),
+                        zap.Uint32("api_id", apiID),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, fErr
+        }</span>
+
+        <span class="cov8" title="1">if err := s.apiRepo.AddPolicy(ctx, *newApi); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新API:添加新API策略失败",
+                        zap.Error(err),
+                        zap.Object("api_model", newApi),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov8" title="1">log.Info(
+                "更新API:执行成功",
+                zap.Uint32("api_id", apiID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return newApi, nil</span>
+}
+
+func (s *ApiService) DeleteApiByID(
+        ctx context.Context,
+        apiID uint32,
+) *errors.Error <span class="cov8" title="1">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov8" title="1">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov8" title="1">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "删除API:开始执行",
+                zap.Uint32("api_id", apiID),
+        )
+
+        m, rErr := s.FindApiByID(ctx, apiID)
+        if rErr != nil </span><span class="cov8" title="1">{
+                log.Error(
+                        "删除API:查询待删除API失败",
+                        zap.Error(rErr),
+                        zap.Uint32("api_id", apiID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return rErr
+        }</span>
+
+        <span class="cov8" title="1">if err := s.apiRepo.RemovePolicy(ctx, *m, true); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除API:移除API策略失败",
+                        zap.Error(err),
+                        zap.Object("api_model", m),
+                        zap.Bool("remove_inherited", true),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.FromError(err)
+        }</span>
+
+        <span class="cov8" title="1">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.apiRepo.AddPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "删除API:恢复旧API策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("api_model", m),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov8" title="1">if err := s.apiRepo.DeleteModel(ctx, apiID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除API:删除数据库模型失败，请手动清理脏数据",
+                        zap.Error(err),
+                        zap.Object("api_model", m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return errors.NewGormError(err, map[string]any{"id": apiID})
+        }</span>
+
+        <span class="cov8" title="1">log.Info(
+                "删除API:执行成功",
+                zap.Uint32("api_id", apiID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *ApiService) FindApiByID(
+        ctx context.Context,
+        apiID uint32,
+) (*sysmodel.ApiModel, *errors.Error) <span class="cov8" title="1">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov8" title="1">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov8" title="1">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.apiRepo.GetModel(ctx, apiID)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Error(
+                        "查询API:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("api_id", apiID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"id": apiID})
+        }</span>
+
+        <span class="cov8" title="1">log.Debug(
+                "查询API:查询到的数据库模型详情",
+                zap.Object("api_model", m),
+        )
+
+        return m, nil</span>
+}
+
+func (s *ApiService) ListApi(
+        ctx context.Context,
+        page, size int,
+        dto sysmodel.ListApiDTO,
+) (int64, []sysmodel.ApiModel, *errors.Error) <span class="cov8" title="1">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov8" title="1">{
+                return 0, nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov8" title="1">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Debug(
+                "查询API列表:入参详情",
+                zap.Int("page", page),
+                zap.Int("size", size),
+                zap.Object("list_api_dto", &amp;dto),
+        )
+
+        limit, offset := common.Page2LimitOffset(page, size)
+        qp := database.QueryParams{
+                Limit:   limit,
+                Offset:  offset,
+                OrderBy: []string{"id ASC"},
+                Query:   dto.ToQueryMap(),
+        }
+
+        count, err := s.apiRepo.CountModel(ctx, qp.Query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询API列表:查询数据库模型总数失败",
+                        zap.Error(err),
+                        zap.Any("query", qp.Query),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov8" title="1">if count == 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "查询API列表:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, nil
+        }</span>
+
+        <span class="cov8" title="1">ms, err := s.apiRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询API列表:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov8" title="1">return count, ms, nil</span>
+}
+
+func (s *ApiService) LoadApiPolicy(
+        ctx context.Context,
+) error <span class="cov8" title="1">{
+        startTime := time.Now()
+        s.log.Debug("加载API策略:开始执行")
+
+        qp := database.QueryParams{
+                Columns: []string{"id", "url", "method"},
+        }
+
+        ms, err := s.apiRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(
+                        "加载API策略:查询数据库模型列表失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov8" title="1">apiCount := int64(len(ms))
+        if apiCount == 0 </span><span class="cov0" title="0">{
+                s.log.Warn(
+                        "加载API策略:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">failCount := int64(0)
+        for i := range ms </span><span class="cov8" title="1">{
+                if err := s.apiRepo.AddPolicy(ctx, ms[i]); err != nil </span><span class="cov0" title="0">{
+                        s.log.Error(
+                                "加载API策略:添加策略失败",
+                                zap.Error(err),
+                                zap.Object("api_model", &amp;ms[i]),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                        failCount++
+                }</span>
+        }
+
+        // 最终日志
+        <span class="cov8" title="1">totalDuration := time.Since(startTime)
+        s.log.Info(
+                "加载API策略:执行完成",
+                zap.Int64("total_api", apiCount),
+                zap.Int64("success_count", apiCount-failCount),
+                zap.Int64("fail_count", failCount),
+                zap.Duration("total_duration", totalDuration),
+        )
+
+        // 有失败但不阻断启动
+        if failCount &gt; 0 </span><span class="cov0" title="0">{
+                return emperror.Errorf("部分API策略加载失败，失败数量：%d", failCount)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package sys
+
+import (
+        "context"
+        "time"
+
+        emperror "emperror.dev/errors"
+        "go.uber.org/zap"
+
+        sysmodel "gin-artweb/internal/model/sys"
+        sysrepo "gin-artweb/internal/repo/sys"
+        "gin-artweb/internal/shared/common"
+        "gin-artweb/internal/shared/ctxutil"
+        "gin-artweb/internal/shared/database"
+        "gin-artweb/internal/shared/errors"
+)
+
+type ButtonService struct {
+        log        *zap.Logger
+        apiRepo    *sysrepo.ApiRepo
+        menuRepo   *sysrepo.MenuRepo
+        buttonRepo *sysrepo.ButtonRepo
+}
+
+func NewButtonService(
+        log *zap.Logger,
+        apiRepo *sysrepo.ApiRepo,
+        menuRepo *sysrepo.MenuRepo,
+        buttonRepo *sysrepo.ButtonRepo,
+) *ButtonService <span class="cov0" title="0">{
+        return &amp;ButtonService{
+                log:        log,
+                apiRepo:    apiRepo,
+                menuRepo:   menuRepo,
+                buttonRepo: buttonRepo,
+        }
+}</span>
+
+func (s *ButtonService) getMenu(
+        ctx context.Context,
+        menuID uint32,
+) (*sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.menuRepo.GetModel(ctx, nil, menuID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询按钮关联的菜单:查询数据库失败",
+                        zap.Error(err),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"menu_id": menuID})
+        }</span>
+
+        <span class="cov0" title="0">return m, nil</span>
+}
+
+func (s *ButtonService) getApis(
+        ctx context.Context,
+        apiIDs []uint32,
+) ([]sysmodel.ApiModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        if len(apiIDs) == 0 </span><span class="cov0" title="0">{
+                return []sysmodel.ApiModel{}, nil
+        }</span>
+
+        <span class="cov0" title="0">qp := database.QueryParams{
+                Query: map[string]any{"id in ?": apiIDs},
+        }
+
+        log.Debug(
+                "查询按钮关联的权限列表:查询参数",
+                zap.Uint32s("api_ids", apiIDs),
+        )
+
+        ms, err := s.apiRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询按钮关联的权限列表:查询数据库失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">return ms, nil</span>
+}
+
+func (s *ButtonService) CreateButton(
+        ctx context.Context,
+        dto sysmodel.CreateButtonDTO,
+) (*sysmodel.ButtonModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "创建按钮:开始执行",
+                zap.Object("create_button_dto", &amp;dto),
+        )
+
+        m := dto.ToModel()
+
+        menu, err := s.getMenu(ctx, m.MenuID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建按钮:查询关联菜单失败",
+                        zap.Error(err),
+                        zap.Uint32("menu_id", m.MenuID),
+                )
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">m.Menu = *menu
+
+        apis, err := s.getApis(ctx, dto.ApiIDs)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建按钮:查询关联API列表失败",
+                        zap.Error(err),
+                        zap.Uint32s("api_ids", dto.ApiIDs),
+                )
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">if err := s.buttonRepo.CreateModel(ctx, &amp;m, apis); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建按钮:创建数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("button_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">rollback := func() </span><span class="cov0" title="0">{
+                if err := s.buttonRepo.DeleteModel(ctx, m.ID); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "创建按钮:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(err),
+                                zap.Uint32("button_id", m.ID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">if len(apis) &gt; 0 </span><span class="cov0" title="0">{
+                m.Apis = apis
+        }</span>
+
+        <span class="cov0" title="0">if err := s.buttonRepo.AddGroupPolicy(ctx, m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建按钮:添加按钮的组策略失败",
+                        zap.Error(err),
+                        zap.Object("button_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "创建按钮:执行成功",
+                zap.Uint32("button_id", m.ID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return &amp;m, nil</span>
+}
+
+func (s *ButtonService) UpdateButtonByID(
+        ctx context.Context,
+        buttonID uint32,
+        dto sysmodel.UpdateButtonDTO,
+) (*sysmodel.ButtonModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "更新按钮:开始执行",
+                zap.Uint32("button_id", buttonID),
+                zap.Object("update_button_dto", &amp;dto),
+        )
+
+        apis, fErr := s.getApis(ctx, dto.ApiIDs)
+        if fErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新按钮:查询按钮关联的权限列表失败",
+                        zap.Error(fErr),
+                        zap.Uint32s("api_ids", dto.ApiIDs),
+                )
+                return nil, fErr
+        }</span>
+
+        <span class="cov0" title="0">om, rErr := s.FindButtonByID(ctx, []string{"Menu", "Apis"}, buttonID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新按钮:查询更新前的按钮详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("button_id", buttonID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.buttonRepo.RemoveGroupPolicy(ctx, *om, false); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新按钮:删除原按钮组策略失败",
+                        zap.Error(err),
+                        zap.Object("button_model", om),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.buttonRepo.AddGroupPolicy(ctx, *om); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新按钮:恢复旧按钮组策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("button_model", om),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">updateData := dto.ToUpdateMap()
+        if err := s.buttonRepo.UpdateModel(ctx, updateData, apis, "id = ?", buttonID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新按钮:更新数据库模型失败",
+                        zap.Error(err),
+                        zap.Any("update_data", updateData),
+                        zap.Uint32("button_id", buttonID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return nil, errors.NewGormError(err, updateData)
+        }</span>
+
+        <span class="cov0" title="0">rollback := func() </span><span class="cov0" title="0">{
+                upData := om.ToUpdateMap()
+                if upErr := s.buttonRepo.UpdateModel(ctx, upData, om.Apis, "id = ?", buttonID); upErr != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新按钮:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(upErr),
+                                zap.Uint32("button_id", buttonID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">m, rErr := s.FindButtonByID(ctx, []string{"Menu", "Apis"}, buttonID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新按钮:查询更新后的按钮详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("button_id", buttonID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.buttonRepo.AddGroupPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新按钮:添加新按钮组策略失败",
+                        zap.Error(err),
+                        zap.Object("button_model", m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "更新按钮:执行成功",
+                zap.Uint32("button_id", buttonID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return m, nil</span>
+}
+
+func (s *ButtonService) DeleteButtonByID(
+        ctx context.Context,
+        buttonID uint32,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "删除按钮:开始执行",
+                zap.Uint32("button_id", buttonID),
+        )
+
+        m, rErr := s.FindButtonByID(ctx, []string{"Menu", "Apis"}, buttonID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除按钮:查询按钮详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("button_id", buttonID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.buttonRepo.RemoveGroupPolicy(ctx, *m, true); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除按钮:移除策略失败",
+                        zap.Error(err),
+                        zap.Object("button_model", m),
+                        zap.Bool("remove_inherited", true),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.buttonRepo.AddGroupPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "删除按钮:恢复旧按钮组策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("button_model", m),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">if err := s.buttonRepo.DeleteModel(ctx, buttonID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除按钮:删除数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("button_id", buttonID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return errors.NewGormError(err, map[string]any{"id": buttonID})
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "删除按钮:执行成功",
+                zap.Uint32("button_id", buttonID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *ButtonService) FindButtonByID(
+        ctx context.Context,
+        preloads []string,
+        buttonID uint32,
+) (*sysmodel.ButtonModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.buttonRepo.GetModel(ctx, preloads, buttonID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询按钮:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Strings("preloads", preloads),
+                        zap.Uint32("button_id", buttonID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"id": buttonID})
+        }</span>
+
+        <span class="cov0" title="0">log.Debug(
+                "查询按钮:查询到的数据库模型详情",
+                zap.Object("button_model", m),
+        )
+        return m, nil</span>
+}
+
+func (s *ButtonService) ListButton(
+        ctx context.Context,
+        page, size int,
+        dto sysmodel.ListButtonDTO,
+) (int64, []sysmodel.ButtonModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return 0, nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Debug(
+                "查询按钮列表:入参详情",
+                zap.Int("page", page),
+                zap.Int("size", size),
+                zap.Object("list_button_dto", &amp;dto),
+        )
+
+        limit, offset := common.Page2LimitOffset(page, size)
+        qp := database.QueryParams{
+                Limit:   limit,
+                Offset:  offset,
+                OrderBy: []string{"id ASC"},
+                Query:   dto.ToQueryMap(),
+        }
+
+        count, err := s.buttonRepo.CountModel(ctx, qp.Query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询按钮列表:查询数据库模型总数失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "查询按钮列表:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, nil
+        }</span>
+
+        <span class="cov0" title="0">ms, err := s.buttonRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询按钮列表:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+        <span class="cov0" title="0">return count, ms, nil</span>
+}
+
+func (s *ButtonService) LoadButtonPolicy(
+        ctx context.Context,
+) error <span class="cov0" title="0">{
+        startTime := time.Now()
+        s.log.Debug("加载按钮策略:开始执行")
+
+        qp := database.QueryParams{
+                Preloads: []string{"Apis"},
+                Columns:  []string{"id", "menu_id"},
+        }
+
+        ms, err := s.buttonRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                s.log.Error(
+                        "加载按钮策略:查询数据库模型列表失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">buttonCount := int64(len(ms))
+        if buttonCount == 0 </span><span class="cov0" title="0">{
+                s.log.Warn(
+                        "加载按钮策略:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">failCount := int64(0)
+        for i := range ms </span><span class="cov0" title="0">{
+                if err := s.buttonRepo.AddGroupPolicy(ctx, ms[i]); err != nil </span><span class="cov0" title="0">{
+                        s.log.Error(
+                                "加载按钮策略:添加按钮组组策略失败",
+                                zap.Error(err),
+                                zap.Uint32("button_id", ms[i].ID),
+                        )
+                        failCount++
+                }</span>
+        }
+
+        // 最终日志
+        <span class="cov0" title="0">totalDuration := time.Since(startTime)
+        s.log.Info(
+                "加载按钮策略:执行完成",
+                zap.Int64("total_button", buttonCount),
+                zap.Int64("success_count", buttonCount-failCount),
+                zap.Int64("fail_count", failCount),
+                zap.Duration("total_duration", totalDuration),
+        )
+
+        // 有失败但不阻断启动
+        if failCount &gt; 0 </span><span class="cov0" title="0">{
+                return emperror.Errorf("部分按钮策略加载失败，失败数量：%d", failCount)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package sys
+
+import (
+        "context"
+        "time"
+
+        emperror "emperror.dev/errors"
+        "go.uber.org/zap"
+
+        sysmodel "gin-artweb/internal/model/sys"
+        sysrepo "gin-artweb/internal/repo/sys"
+        "gin-artweb/internal/shared/common"
+        "gin-artweb/internal/shared/ctxutil"
+        "gin-artweb/internal/shared/database"
+        "gin-artweb/internal/shared/errors"
+)
+
+type MenuService struct {
+        log      *zap.Logger
+        apiRepo  *sysrepo.ApiRepo
+        menuRepo *sysrepo.MenuRepo
+}
+
+func NewMenuService(
+        log *zap.Logger,
+        apiRepo *sysrepo.ApiRepo,
+        menuRepo *sysrepo.MenuRepo,
+) *MenuService <span class="cov0" title="0">{
+        return &amp;MenuService{
+                log:      log,
+                apiRepo:  apiRepo,
+                menuRepo: menuRepo,
+        }
+}</span>
+
+func (s *MenuService) getParentMenu(
+        ctx context.Context,
+        parentID *uint32,
+) (*sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        if parentID == nil || *parentID == 0 </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">pid := *parentID
+
+        m, err := s.menuRepo.GetModel(ctx, nil, pid)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询父菜单:查询数据库失败",
+                        zap.Error(err),
+                        zap.Uint32("parent_id", pid),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"parent_id": pid})
+        }</span>
+        <span class="cov0" title="0">return m, nil</span>
+}
+
+func (s *MenuService) getApis(
+        ctx context.Context,
+        apiIDs []uint32,
+) ([]sysmodel.ApiModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        if len(apiIDs) == 0 </span><span class="cov0" title="0">{
+                return []sysmodel.ApiModel{}, nil
+        }</span>
+
+        <span class="cov0" title="0">qp := database.QueryParams{
+                Query: map[string]any{"id in ?": apiIDs},
+        }
+
+        log.Debug(
+                "查询菜单关联的权限列表:查询参数",
+                zap.Uint32s("api_ids", apiIDs),
+        )
+
+        ms, err := s.apiRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询菜单关联的权限列表:查询数据库失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">return ms, nil</span>
+}
+
+func (s *MenuService) CreateMenu(
+        ctx context.Context,
+        dto sysmodel.CreateMenuDTO,
+) (*sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "创建菜单:开始执行",
+                zap.Object("create_menu_dto", &amp;dto),
+        )
+
+        m := dto.ToModel()
+
+        parent, rErr := s.getParentMenu(ctx, dto.ParentID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建菜单:查询父菜单失败",
+                        zap.Error(rErr),
+                        zap.Uint32p("parent_id", dto.ParentID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+        <span class="cov0" title="0">if parent != nil </span><span class="cov0" title="0">{
+                m.Parent = parent
+        }</span>
+
+        <span class="cov0" title="0">apis, rErr := s.getApis(ctx, dto.ApiIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建菜单:查询菜单关联的权限列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("api_ids", dto.ApiIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.menuRepo.CreateModel(ctx, &amp;m, apis); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建菜单:创建数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("menu_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">rollback := func() </span><span class="cov0" title="0">{
+                if err := s.menuRepo.DeleteModel(ctx, m.ID); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "创建菜单:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(err),
+                                zap.Uint32("menu_id", m.ID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">if len(apis) &gt; 0 </span><span class="cov0" title="0">{
+                m.Apis = apis
+        }</span>
+
+        <span class="cov0" title="0">if err := s.menuRepo.AddGroupPolicy(ctx, m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建菜单:添加菜单组策略失败",
+                        zap.Error(err),
+                        zap.Object("menu_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "创建菜单:执行成功",
+                zap.Uint32("menu_id", m.ID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return &amp;m, nil</span>
+}
+
+func (s *MenuService) UpdateMenuByID(
+        ctx context.Context,
+        menuID uint32,
+        dto sysmodel.UpdateMenuDTO,
+) (*sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "更新菜单:开始执行",
+                zap.Uint32("menu_id", menuID),
+                zap.Object("update_menu_dto", &amp;dto),
+        )
+
+        apis, rErr := s.getApis(ctx, dto.ApiIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Debug(
+                        "更新菜单:查询菜单关联的权限列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("api_ids", dto.ApiIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">om, rErr := s.FindMenuByID(ctx, []string{"Parent", "Apis"}, menuID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新菜单:查询更新前的菜单详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.menuRepo.RemoveGroupPolicy(ctx, *om, false); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新菜单:删除原菜单组策略失败",
+                        zap.Error(err),
+                        zap.Object("menu_model", om),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.menuRepo.AddGroupPolicy(ctx, *om); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新菜单:恢复旧菜单组策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("menu_model", om),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">updateData := dto.ToUpdateMap()
+        if err := s.menuRepo.UpdateModel(ctx, updateData, apis, "id = ?", menuID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新菜单:更新数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Any("update_data", updateData),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return nil, errors.NewGormError(err, updateData)
+        }</span>
+
+        <span class="cov0" title="0">rollback := func() </span><span class="cov0" title="0">{
+                upData := om.ToUpdateMap()
+                if upErr := s.menuRepo.UpdateModel(ctx, upData, om.Apis, "id = ?", menuID); upErr != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新菜单:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(upErr),
+                                zap.Uint32("menu_id", menuID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">nm, rErr := s.FindMenuByID(ctx, []string{"Parent", "Apis"}, menuID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新菜单:查询更新后的菜单详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.menuRepo.AddGroupPolicy(ctx, *nm); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新菜单:添加新菜单组策略失败",
+                        zap.Error(err),
+                        zap.Object("menu_model", nm),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "更新菜单:执行成功",
+                zap.Uint32("menu_id", menuID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nm, nil</span>
+}
+
+func (s *MenuService) DeleteMenuByID(
+        ctx context.Context,
+        menuID uint32,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "删除菜单:开始执行",
+                zap.Uint32("menu_id", menuID),
+        )
+
+        m, fErr := s.FindMenuByID(ctx, []string{"Parent", "Apis"}, menuID)
+        if fErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除菜单:查询菜单详情失败",
+                        zap.Error(fErr),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return fErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.menuRepo.RemoveGroupPolicy(ctx, *m, true); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除菜单:移除按钮组策略失败",
+                        zap.Error(err),
+                        zap.Object("menu_model", m),
+                        zap.Bool("remove_inherited", true),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.menuRepo.AddGroupPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "删除菜单:恢复旧菜单组策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("menu_model", m),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">if err := s.menuRepo.DeleteModel(ctx, menuID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除菜单:删除数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return errors.NewGormError(err, map[string]any{"id": menuID})
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "删除菜单:执行成功",
+                zap.Uint32("menu_id", menuID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *MenuService) FindMenuByID(
+        ctx context.Context,
+        preloads []string,
+        menuID uint32,
+) (*sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.menuRepo.GetModel(ctx, preloads, menuID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询菜单:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Strings("preloads", preloads),
+                        zap.Uint32("menu_id", menuID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"id": menuID})
+        }</span>
+
+        <span class="cov0" title="0">log.Debug(
+                "查询菜单:查询到的数据库模型详情",
+                zap.Object("menu_model", m),
+        )
+        return m, nil</span>
+}
+
+func (s *MenuService) ListMenu(
+        ctx context.Context,
+        page, size int,
+        dto sysmodel.ListMenuDTO,
+) (int64, []sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return 0, nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Debug(
+                "查询菜单列表:入参详情",
+                zap.Int("page", page),
+                zap.Int("size", size),
+                zap.Object("list_menu_dto", &amp;dto),
+        )
+
+        limit, offset := common.Page2LimitOffset(page, size)
+        qp := database.QueryParams{
+                Limit:   limit,
+                Offset:  offset,
+                OrderBy: []string{"id ASC"},
+                Query:   dto.ToQueryMap(),
+        }
+
+        count, err := s.menuRepo.CountModel(ctx, qp.Query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询菜单列表:查询数据库模型总数失败",
+                        zap.Error(err),
+                        zap.Any("query", qp.Query),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "查询菜单列表:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, nil
+        }</span>
+
+        <span class="cov0" title="0">ms, err := s.menuRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询菜单列表:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">return count, ms, nil</span>
+}
+
+func (s *MenuService) LoadMenuPolicy(
+        ctx context.Context,
+) error <span class="cov0" title="0">{
+        startTime := time.Now()
+        s.log.Debug("加载菜单策略:开始执行")
+
+        qp := database.QueryParams{
+                Preloads: []string{"Apis"},
+                Columns:  []string{"id", "parent_id"},
+        }
+
+        ms, err := s.menuRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                s.log.Error(
+                        "加载菜单策略:查询数据库模型列表失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">menuCount := int64(len(ms))
+        if menuCount == 0 </span><span class="cov0" title="0">{
+                s.log.Warn(
+                        "加载菜单策略:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">failCount := int64(0)
+        for i := range ms </span><span class="cov0" title="0">{
+                if err := s.menuRepo.AddGroupPolicy(ctx, ms[i]); err != nil </span><span class="cov0" title="0">{
+                        s.log.Error(
+                                "加载菜单策略:添加菜单组策略失败",
+                                zap.Error(err),
+                                zap.Uint32("menu_id", ms[i].ID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                        failCount++
+                }</span>
+        }
+
+        // 最终日志
+        <span class="cov0" title="0">totalDuration := time.Since(startTime)
+        s.log.Info(
+                "加载菜单策略:执行完成",
+                zap.Int64("total_menu", menuCount),
+                zap.Int64("success_count", menuCount-failCount),
+                zap.Int64("fail_count", failCount),
+                zap.Duration("total_duration", totalDuration),
+        )
+
+        // 有失败但不阻断启动
+        if failCount &gt; 0 </span><span class="cov0" title="0">{
+                return emperror.Errorf("部分菜单策略加载失败，失败数量：%d", failCount)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package sys
+
+import (
+        "unicode"
+)
+
+// Strength 等级常量
+const (
+        StrengthVeryWeak = iota
+        StrengthWeak
+        StrengthMedium
+        StrengthStrong
+        StrengthVeryStrong
+)
+
+// 使用位掩码标记字符类型
+const (
+        maskLower   = 1 &lt;&lt; iota // 1
+        maskUpper               // 2
+        maskDigit               // 4
+        maskSpecial             // 8
+)
+
+// getPasswordCharTypes 分析密码包含的字符类型并返回类型数量
+func getPasswordCharTypes(password string) (typesCount int) <span class="cov0" title="0">{
+        if len(password) == 0 </span><span class="cov0" title="0">{
+                return 0
+        }</span>
+
+        <span class="cov0" title="0">var charTypes uint8
+
+        // 遍历密码中的每个字符，识别其类型
+        for _, r := range password </span><span class="cov0" title="0">{
+                switch </span>{
+                case unicode.IsLower(r):<span class="cov0" title="0">
+                        charTypes |= maskLower</span>
+                case unicode.IsUpper(r):<span class="cov0" title="0">
+                        charTypes |= maskUpper</span>
+                case unicode.IsDigit(r):<span class="cov0" title="0">
+                        charTypes |= maskDigit</span>
+                case !unicode.IsLetter(r) &amp;&amp; !unicode.IsDigit(r):<span class="cov0" title="0">
+                        charTypes |= maskSpecial</span>
+                }
+        }
+
+        // 统计满足的字符类型数量
+        <span class="cov0" title="0">if charTypes&amp;maskLower != 0 </span><span class="cov0" title="0">{
+                typesCount++
+        }</span>
+        <span class="cov0" title="0">if charTypes&amp;maskUpper != 0 </span><span class="cov0" title="0">{
+                typesCount++
+        }</span>
+        <span class="cov0" title="0">if charTypes&amp;maskDigit != 0 </span><span class="cov0" title="0">{
+                typesCount++
+        }</span>
+        <span class="cov0" title="0">if charTypes&amp;maskSpecial != 0 </span><span class="cov0" title="0">{
+                typesCount++
+        }</span>
+
+        <span class="cov0" title="0">return typesCount</span>
+}
+
+// GetPasswordStrength 根据密码字符串返回其强度等级
+func GetPasswordStrength(password string) int <span class="cov0" title="0">{
+        passwordLen := len(password)
+
+        // 空密码为极弱
+        if passwordLen == 0 </span><span class="cov0" title="0">{
+                return StrengthVeryWeak
+        }</span>
+
+        // 获取密码包含的字符类型数量
+        <span class="cov0" title="0">typesCount := getPasswordCharTypes(password)
+
+        // 基于长度和字符类型数量计算强度分数
+        score := passwordLen + typesCount*2 // 长度和类型多样性加权
+
+        // 根据分数判断强度等级
+        switch </span>{
+        case score &lt; 10:<span class="cov0" title="0">
+                return StrengthVeryWeak</span>
+        case score &lt; 15:<span class="cov0" title="0">
+                return StrengthWeak</span>
+        case score &lt; 20:<span class="cov0" title="0">
+                return StrengthMedium</span>
+        case score &lt; 25:<span class="cov0" title="0">
+                return StrengthStrong</span>
+        default:<span class="cov0" title="0">
+                return StrengthVeryStrong</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package sys
+
+import (
+        "context"
+        "time"
+
+        emperror "emperror.dev/errors"
+        "go.uber.org/zap"
+
+        sysmodel "gin-artweb/internal/model/sys"
+        sysrepo "gin-artweb/internal/repo/sys"
+        "gin-artweb/internal/shared/common"
+        "gin-artweb/internal/shared/ctxutil"
+        "gin-artweb/internal/shared/database"
+        "gin-artweb/internal/shared/errors"
+)
+
+type RoleService struct {
+        log        *zap.Logger
+        apiRepo    *sysrepo.ApiRepo
+        menuRepo   *sysrepo.MenuRepo
+        buttonRepo *sysrepo.ButtonRepo
+        roleRepo   *sysrepo.RoleRepo
+}
+
+func NewRoleService(
+        log *zap.Logger,
+        apiRepo *sysrepo.ApiRepo,
+        menuRepo *sysrepo.MenuRepo,
+        buttonRepo *sysrepo.ButtonRepo,
+        roleRepo *sysrepo.RoleRepo,
+) *RoleService <span class="cov0" title="0">{
+        return &amp;RoleService{
+                log:        log,
+                apiRepo:    apiRepo,
+                menuRepo:   menuRepo,
+                buttonRepo: buttonRepo,
+                roleRepo:   roleRepo,
+        }
+}</span>
+
+func (s *RoleService) GetApis(
+        ctx context.Context,
+        apiIDs []uint32,
+) ([]sysmodel.ApiModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        if len(apiIDs) == 0 </span><span class="cov0" title="0">{
+                return []sysmodel.ApiModel{}, nil
+        }</span>
+
+        <span class="cov0" title="0">qp := database.QueryParams{
+                Query: map[string]any{"id in ?": apiIDs},
+        }
+
+        log.Debug(
+                "查询角色关联的API列表:查询参数",
+                zap.Uint32s("api_ids", apiIDs),
+        )
+
+        ms, err := s.apiRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询角色关联的API列表:查询数据库失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">return ms, nil</span>
+}
+
+func (s *RoleService) GetMenus(
+        ctx context.Context,
+        menuIDs []uint32,
+) ([]sysmodel.MenuModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        if len(menuIDs) == 0 </span><span class="cov0" title="0">{
+                return []sysmodel.MenuModel{}, nil
+        }</span>
+
+        <span class="cov0" title="0">qp := database.QueryParams{
+                Query: map[string]any{"id in ?": menuIDs},
+        }
+
+        log.Debug(
+                "查询角色关联的菜单列表:查询参数",
+                zap.Uint32s("menu_ids", menuIDs),
+        )
+
+        ms, err := s.menuRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询角色关联的菜单列表:查询数据库失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">return ms, nil</span>
+}
+
+func (s *RoleService) GetButtons(
+        ctx context.Context,
+        buttonIDs []uint32,
+) ([]sysmodel.ButtonModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        if len(buttonIDs) == 0 </span><span class="cov0" title="0">{
+                return []sysmodel.ButtonModel{}, nil
+        }</span>
+
+        <span class="cov0" title="0">qp := database.QueryParams{
+                Query: map[string]any{"id in ?": buttonIDs},
+        }
+
+        log.Debug(
+                "查询角色关联的按钮列表:查询参数",
+                zap.Uint32s("button_ids", buttonIDs),
+        )
+
+        ms, err := s.buttonRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询角色关联的按钮列表:查询数据库失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">return ms, nil</span>
+}
+
+func (s *RoleService) CreateRole(
+        ctx context.Context,
+        dto sysmodel.RoleUpsertDTO,
+) (*sysmodel.RoleModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "创建角色:开始执行",
+                zap.Object("role_upsert_dto", &amp;dto),
+        )
+
+        m := dto.ToModel()
+
+        apis, rErr := s.GetApis(ctx, dto.ApiIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建角色:查询关联的API列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("api_ids", dto.ApiIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">menus, rErr := s.GetMenus(ctx, dto.MenuIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建角色:查询关联的菜单列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("menu_ids", dto.MenuIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">buttons, rErr := s.GetButtons(ctx, dto.ButtonIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建角色:查询关联的按钮列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("button_ids", dto.ButtonIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.roleRepo.CreateModel(ctx, &amp;m, apis, menus, buttons); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建角色:创建数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("role_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">rollback := func() </span><span class="cov0" title="0">{
+                if err := s.roleRepo.DeleteModel(ctx, m.ID); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "创建角色:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(err),
+                                zap.Uint32("role_id", m.ID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">if len(apis) &gt; 0 </span><span class="cov0" title="0">{
+                m.Apis = apis
+        }</span>
+        <span class="cov0" title="0">if len(menus) &gt; 0 </span><span class="cov0" title="0">{
+                m.Menus = menus
+        }</span>
+        <span class="cov0" title="0">if len(buttons) &gt; 0 </span><span class="cov0" title="0">{
+                m.Buttons = buttons
+        }</span>
+
+        <span class="cov0" title="0">if err := s.roleRepo.AddGroupPolicy(ctx, m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建角色:添加角色组策略失败",
+                        zap.Error(err),
+                        zap.Object("role_model", &amp;m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "创建角色:执行成功",
+                zap.Uint32("role_id", m.ID),
+                zap.Duration("total_step_duration", time.Since(startTime)),
+        )
+        return &amp;m, nil</span>
+}
+
+func (s *RoleService) UpdateRoleByID(
+        ctx context.Context,
+        roleID uint32,
+        dto sysmodel.RoleUpsertDTO,
+) (*sysmodel.RoleModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "更新角色:开始执行",
+                zap.Uint32("role_id", roleID),
+                zap.Object("update_role_dto", &amp;dto),
+        )
+
+        apis, rErr := s.GetApis(ctx, dto.ApiIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:查询关联的API列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("api_ids", dto.ApiIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">menus, rErr := s.GetMenus(ctx, dto.MenuIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:查询关联的菜单列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("menu_ids", dto.MenuIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">buttons, rErr := s.GetButtons(ctx, dto.ButtonIDs)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:查询关联的按钮列表失败",
+                        zap.Error(rErr),
+                        zap.Uint32s("button_ids", dto.ButtonIDs),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">om, rErr := s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:查询更新前的角色详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.roleRepo.RemoveGroupPolicy(ctx, *om); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:移除旧策略失败",
+                        zap.Error(err),
+                        zap.Object("role_model", om),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.roleRepo.AddGroupPolicy(ctx, *om); err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新角色:恢复旧角色组策略失败,请手动添加策略",
+                                zap.Error(err),
+                                zap.Object("role_model", om),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">updateData := dto.ToUpdateMap()
+        if err := s.roleRepo.UpdateModel(ctx, updateData, apis, menus, buttons, "id = ?", roleID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:更新数据库模型失败",
+                        zap.Error(err),
+                        zap.Any("update_data", updateData),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return nil, errors.NewGormError(err, updateData)
+        }</span>
+
+        <span class="cov0" title="0">rollback := func() </span><span class="cov0" title="0">{
+                upData := om.ToUpdateMap()
+                if upErr := s.roleRepo.UpdateModel(ctx, upData, om.Apis, om.Menus, om.Buttons, "id = ?", roleID); upErr != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "更新角色:回滚数据库数据失败，请手动处理脏数据",
+                                zap.Error(upErr),
+                                zap.Uint32("role_id", roleID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">m, rErr := s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:查询更新后的角色详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">if err := s.roleRepo.AddGroupPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新角色:添加新策略失败",
+                        zap.Error(err),
+                        zap.Object("role_model", m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                rollback()
+                recoverOldPolicy()
+                return nil, errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "更新角色:执行成功",
+                zap.Uint32("role_id", roleID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return m, nil</span>
+}
+
+func (s *RoleService) DeleteRoleByID(
+        ctx context.Context,
+        roleID uint32,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "删除角色:开始执行",
+                zap.Uint32("role_id", roleID),
+        )
+
+        m, rErr := s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除角色:查询角色详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return rErr
+        }</span>
+
+        // 移除策略
+        <span class="cov0" title="0">if err := s.roleRepo.RemoveGroupPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                log.Error("删除角色:移除角色组策略失败",
+                        zap.Error(err),
+                        zap.Object("role_model", m),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.FromError(err)
+        }</span>
+
+        // 删库失败时恢复策略
+        <span class="cov0" title="0">recoverOldPolicy := func() </span><span class="cov0" title="0">{
+                if err := s.roleRepo.AddGroupPolicy(ctx, *m); err != nil </span><span class="cov0" title="0">{
+                        log.Error("删除角色:恢复旧角色组策略失败，请手动处理",
+                                zap.Error(err),
+                                zap.Object("role_model", m),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }
+
+        <span class="cov0" title="0">if err := s.roleRepo.DeleteModel(ctx, roleID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除角色:删除数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                recoverOldPolicy()
+                return errors.NewGormError(err, map[string]any{"id": roleID})
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "删除角色:执行成功",
+                zap.Uint32("role_id", roleID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *RoleService) FindRoleByID(
+        ctx context.Context,
+        preloads []string,
+        roleID uint32,
+) (*sysmodel.RoleModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.roleRepo.GetModel(ctx, preloads, roleID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询角色:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Strings("preloads", preloads),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"id": roleID})
+        }</span>
+
+        <span class="cov0" title="0">log.Debug(
+                "查询角色:查询到的数据库模型详情",
+                zap.Object("role_model", m),
+        )
+        return m, nil</span>
+}
+
+func (s *RoleService) ListRole(
+        ctx context.Context,
+        page, size int,
+        dto sysmodel.ListRoleDTO,
+) (int64, []sysmodel.RoleModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return 0, nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Debug(
+                "查询角色列表:参数详情",
+                zap.Int("page", page),
+                zap.Int("size", size),
+                zap.Object("list_role_dto", &amp;dto),
+        )
+
+        limit, offset := common.Page2LimitOffset(page, size)
+        qp := database.QueryParams{
+                Preloads: []string{"Apis", "Menus", "Buttons"},
+                Limit:    limit,
+                Offset:   offset,
+                OrderBy:  []string{"id ASC"},
+                Query:    dto.ToQueryMap(),
+        }
+
+        count, err := s.roleRepo.CountModel(ctx, qp.Query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询角色列表:查询数据库模型总数失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "查询角色列表:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, nil
+        }</span>
+
+        <span class="cov0" title="0">ms, err := s.roleRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询角色列表:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+        <span class="cov0" title="0">return count, ms, nil</span>
+}
+
+func (s *RoleService) LoadRolePolicy(
+        ctx context.Context,
+) error <span class="cov0" title="0">{
+        startTime := time.Now()
+        s.log.Debug("加载角色策略:开始执行")
+
+        qp := database.QueryParams{
+                Preloads: []string{"Apis", "Menus", "Buttons"},
+                Columns:  []string{"id"},
+        }
+
+        ms, err := s.roleRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                s.log.Error(
+                        "加载角色策略:查询数据库模型角色列表失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("list_step_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">roleCount := int64(len(ms))
+        if roleCount == 0 </span><span class="cov0" title="0">{
+                s.log.Warn(
+                        "加载角色策略:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">failCount := int64(0)
+        for i := range ms </span><span class="cov0" title="0">{
+                if err := s.roleRepo.AddGroupPolicy(ctx, ms[i]); err != nil </span><span class="cov0" title="0">{
+                        s.log.Error(
+                                "加载角色策略:添加角色组策略失败",
+                                zap.Error(err),
+                                zap.Uint32("role_id", ms[i].ID),
+                        )
+                        failCount++
+                }</span>
+        }
+
+        // 最终日志
+        <span class="cov0" title="0">totalDuration := time.Since(startTime)
+        s.log.Info(
+                "加载角色策略:执行完成",
+                zap.Int64("total_role", roleCount),
+                zap.Int64("success_count", roleCount-failCount),
+                zap.Int64("fail_count", failCount),
+                zap.Duration("total_duration", totalDuration),
+        )
+
+        // 有失败但不阻断启动
+        if failCount &gt; 0 </span><span class="cov0" title="0">{
+                return emperror.Errorf("部分角色策略加载失败，失败数量：%d", failCount)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (s *RoleService) GetRoleMenuTree(
+        ctx context.Context,
+        roleID uint32,
+) ([]sysmodel.MenuTreeNode, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, rErr := s.FindRoleByID(ctx, []string{"Apis", "Menus", "Buttons"}, roleID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "获取角色菜单树:查询角色详情失败",
+                        zap.Error(rErr),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+
+        <span class="cov0" title="0">var topMenus []sysmodel.MenuModel
+        roleMenuMap := make(map[uint32]sysmodel.MenuModel)
+        for _, menu := range m.Menus </span><span class="cov0" title="0">{
+                roleMenuMap[menu.ID] = menu
+                if menu.ParentID == nil </span><span class="cov0" title="0">{
+                        topMenus = append(topMenus, menu)
+                }</span>
+        }
+
+        <span class="cov0" title="0">roleButtonMap := make(map[uint32]sysmodel.ButtonModel)
+        for _, button := range m.Buttons </span><span class="cov0" title="0">{
+                roleButtonMap[button.ID] = button
+        }</span>
+
+        <span class="cov0" title="0">var result []sysmodel.MenuTreeNode
+        for _, menu := range topMenus </span><span class="cov0" title="0">{
+                mt, err := s.buildMenuTree(menu, roleMenuMap, roleButtonMap)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "获取角色菜单树:构建菜单树失败",
+                                zap.Error(err),
+                                zap.Uint32("role_id", roleID),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">result = append(result, *mt)</span>
+        }
+
+        <span class="cov0" title="0">return result, nil</span>
+}
+
+func (s *RoleService) buildMenuTree(
+        m sysmodel.MenuModel,
+        mp map[uint32]sysmodel.MenuModel,
+        bp map[uint32]sysmodel.ButtonModel,
+) (*sysmodel.MenuTreeNode, *errors.Error) <span class="cov0" title="0">{
+        var children []sysmodel.MenuModel
+        for _, menu := range mp </span><span class="cov0" title="0">{
+                if menu.ParentID != nil &amp;&amp; *menu.ParentID == m.ID </span><span class="cov0" title="0">{
+                        children = append(children, menu)
+                }</span>
+        }
+        <span class="cov0" title="0">var childTrees []sysmodel.MenuTreeNode
+        for _, child := range children </span><span class="cov0" title="0">{
+                childTree, err := s.buildMenuTree(child, mp, bp)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">childTrees = append(childTrees, *childTree)</span>
+        }
+        <span class="cov0" title="0">var buttons []sysmodel.ButtonBaseOut
+        for _, button := range bp </span><span class="cov0" title="0">{
+                if button.MenuID == m.ID </span><span class="cov0" title="0">{
+                        buttons = append(buttons, *sysmodel.ButtonModelToBaseOut(button))
+                }</span>
+        }
+        <span class="cov0" title="0">return &amp;sysmodel.MenuTreeNode{
+                MenuBaseOut: *sysmodel.MenuModelToBaseOut(m),
+                Children:    childTrees,
+                Buttons:     buttons,
+        }, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package sys
+
+import (
+        "context"
+        "time"
+
+        "go.uber.org/zap"
+
+        sysmodel "gin-artweb/internal/model/sys"
+        sysrepo "gin-artweb/internal/repo/sys"
+        "gin-artweb/internal/shared/auth"
+        "gin-artweb/internal/shared/common"
+        "gin-artweb/internal/shared/config"
+        "gin-artweb/internal/shared/ctxutil"
+        "gin-artweb/internal/shared/database"
+        "gin-artweb/internal/shared/errors"
+        "gin-artweb/pkg/crypto"
+)
+
+type SecuritySettings struct {
+        MaxFailedAttempts int           `yaml:"max_failed_attempts"` // 最大登录失败次数
+        LockDuration      time.Duration `yaml:"lock_minutes"`        // 锁定时长(分钟)
+        PasswordStrength  int           `yaml:"password_strength"`   // 密码强度等级
+}
+
+type UserService struct {
+        log        *zap.Logger
+        roleRepo   *sysrepo.RoleRepo
+        userRepo   *sysrepo.UserRepo
+        recordRepo *sysrepo.LoginRecordRepo
+        hasher     crypto.Hasher
+        jwt        *config.JWTConfig
+        sec        SecuritySettings
+}
+
+func NewUserService(
+        log *zap.Logger,
+        roleRepo *sysrepo.RoleRepo,
+        userRepo *sysrepo.UserRepo,
+        recordRepo *sysrepo.LoginRecordRepo,
+        hasher crypto.Hasher,
+        jwt *config.JWTConfig,
+        sec SecuritySettings,
+) *UserService <span class="cov0" title="0">{
+        return &amp;UserService{
+                log:        log,
+                roleRepo:   roleRepo,
+                userRepo:   userRepo,
+                recordRepo: recordRepo,
+                hasher:     hasher,
+                jwt:        jwt,
+                sec:        sec,
+        }
+}</span>
+
+func (s *UserService) GetRole(
+        ctx context.Context,
+        roleID uint32,
+) (*sysmodel.RoleModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.roleRepo.GetModel(ctx, nil, roleID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户关联的角色:查询数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("role_id", roleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"role_id": roleID})
+        }</span>
+        <span class="cov0" title="0">return m, nil</span>
+}
+
+func (s *UserService) CreateUser(
+        ctx context.Context,
+        dto sysmodel.CreateUserDTO,
+) (*sysmodel.UserModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "创建用户:开始执行",
+                zap.Object("create_user_dto", &amp;dto),
+        )
+
+        // 检查密码强度
+        if err := s.validatePasswordStrength(dto.Password); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建用户:密码强度校验失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">m := dto.ToModel()
+
+        // 密码哈希
+        if password, err := s.hashPassword(ctx, dto.Password); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建用户:密码哈希失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, err
+        }</span> else<span class="cov0" title="0"> {
+                m.Password = password
+        }</span>
+
+        // 获取角色信息
+        <span class="cov0" title="0">role, rErr := s.GetRole(ctx, m.RoleID)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建用户:查询关联角色的数据库模型失败",
+                        zap.Error(rErr),
+                        zap.Uint32("role_id", m.RoleID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, rErr
+        }</span>
+        <span class="cov0" title="0">m.Role = *role
+
+        if err := s.userRepo.CreateModel(ctx, &amp;m); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "创建用户:创建数据库模型失败",
+                        zap.Error(err),
+                        zap.String("username", m.Username),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "创建用户:执行成功",
+                zap.Uint32("user_id", m.ID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return &amp;m, nil</span>
+}
+
+func (s *UserService) UpdateUserByID(
+        ctx context.Context,
+        userID uint32,
+        dto sysmodel.UpdateUserDTO,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "更新用户:开始执行",
+                zap.Uint32("user_id", userID),
+                zap.Object("update_user_dto", &amp;dto),
+        )
+
+        updateData := dto.ToUpdateMap()
+        if err := s.userRepo.UpdateModel(ctx, updateData, "id = ?", userID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "更新用户:更新数据库模型失败",
+                        zap.Error(err),
+                        zap.Uint32("user_id", userID),
+                        zap.Any("update_data", updateData),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, updateData)
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "更新用户:执行成功",
+                zap.Uint32("user_id", userID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *UserService) DeleteUserByID(
+        ctx context.Context,
+        userID uint32,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "删除用户:执行开始",
+                zap.Uint32("user_id", userID),
+        )
+
+        if err := s.userRepo.DeleteModel(ctx, userID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "删除用户:数据库删除失败",
+                        zap.Error(err),
+                        zap.Uint32("user_id", userID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, map[string]any{"id": userID})
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "删除用户:执行成功",
+                zap.Uint32("user_id", userID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *UserService) FindUserByID(
+        ctx context.Context,
+        preloads []string,
+        userID uint32,
+) (*sysmodel.UserModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.userRepo.GetModel(ctx, preloads, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户:数据库查询失败",
+                        zap.Error(err),
+                        zap.Uint32("user_id", userID),
+                        zap.Strings("preloads", preloads),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"id": userID})
+        }</span>
+
+        <span class="cov0" title="0">log.Debug(
+                "查询用户:查询到的用户详情",
+                zap.Object("user_model", m),
+        )
+        return m, nil</span>
+}
+
+func (s *UserService) FindUserByName(
+        ctx context.Context,
+        preloads []string,
+        username string,
+) (*sysmodel.UserModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        m, err := s.userRepo.GetModel(ctx, preloads, "username = ?", username)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户名:数据库查询失败",
+                        zap.Error(err),
+                        zap.Strings("preloads", preloads),
+                        zap.String("username", username),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return nil, errors.NewGormError(err, map[string]any{"username": username})
+        }</span>
+
+        <span class="cov0" title="0">log.Debug(
+                "查询用户:查询到的用户详情",
+                zap.Object("user_model", m),
+        )
+        return m, nil</span>
+}
+
+func (s *UserService) ListUser(
+        ctx context.Context,
+        page, size int,
+        dto sysmodel.ListUserDTO,
+) (int64, []sysmodel.UserModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return 0, nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Debug(
+                "查询用户列表:入参详情",
+                zap.Int("page", page),
+                zap.Int("size", size),
+                zap.Object("list_user_dto", &amp;dto),
+        )
+
+        limit, offset := common.Page2LimitOffset(page, size)
+        qp := database.QueryParams{
+                Limit:    limit,
+                Offset:   offset,
+                OrderBy:  []string{"id ASC"},
+                Query:    dto.ToQueryMap(),
+                Preloads: []string{"Role"},
+        }
+
+        count, err := s.userRepo.CountModel(ctx, qp.Query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户列表:查询数据库模型总数失败",
+                        zap.Error(err),
+                        zap.Any("query", qp.Query),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "查询用户列表:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, nil
+        }</span>
+
+        <span class="cov0" title="0">ms, err := s.userRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户列表:数据库查询失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+        <span class="cov0" title="0">return count, ms, nil</span>
+}
+
+func (s *UserService) ListLoginRecord(
+        ctx context.Context,
+        page, size int,
+        dto sysmodel.ListLoginRecordDTO,
+) (int64, []sysmodel.LoginRecordModel, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return 0, nil, errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Debug(
+                "查询用户登录记录列表:入参详情",
+                zap.Int("page", page),
+                zap.Int("size", size),
+                zap.Object("list_login_record_dto", &amp;dto),
+        )
+
+        limit, offset := common.Page2LimitOffset(page, size)
+        qp := database.QueryParams{
+                Limit:    limit,
+                Offset:   offset,
+                OrderBy:  []string{"id DESC"},
+                Query:    dto.ToQueryMap(),
+                Preloads: []string{},
+        }
+
+        count, err := s.recordRepo.CountModel(ctx, qp.Query)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户登录记录列表:查询数据库模型总数失败",
+                        zap.Error(err),
+                        zap.Any("query", qp.Query),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+
+        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "查询用户登录记录列表:数据库模型总数为0",
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return count, nil, nil
+        }</span>
+
+        <span class="cov0" title="0">ms, err := s.recordRepo.ListModel(ctx, qp)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "查询用户登录记录列表:数据库查询失败",
+                        zap.Error(err),
+                        zap.Object("query_params", &amp;qp),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return 0, nil, errors.NewGormError(err, nil)
+        }</span>
+        <span class="cov0" title="0">return count, ms, nil</span>
+}
+
+func (s *UserService) Login(
+        ctx context.Context,
+        dto sysmodel.LoginDTO,
+        reqCtx sysmodel.RequestContext,
+) (string, string, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return "", "", errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := s.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
+
+        log.Debug(
+                "用户登录:请求参数详情",
+                zap.String("username", dto.Username),
+                zap.String("ip_address", reqCtx.IP),
+                zap.String("user_agent", reqCtx.UserAgent),
+        )
+
+        num, err := s.recordRepo.GetLoginFailNum(ctx, reqCtx.IP)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "用户登录:获取登录失败次数失败",
+                        zap.Error(err),
+                        zap.String("username", dto.Username),
+                        zap.String("ip_address", reqCtx.IP),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">if num &lt;= 0 </span><span class="cov0" title="0">{
+                log.Warn(
+                        "用户登录:登录尝试次数用尽，账户已锁定",
+                        zap.String("username", dto.Username),
+                        zap.String("ip_address", reqCtx.IP),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", errors.ErrAccountLocked
+        }</span>
+
+        <span class="cov0" title="0">lrm := sysmodel.LoginRecordModel{
+                Username:  dto.Username,
+                LoginAt:   time.Now(),
+                IPAddress: reqCtx.IP,
+                UserAgent: reqCtx.UserAgent,
+                Status:    false,
+        }
+
+        defer func() </span><span class="cov0" title="0">{
+                if dErr := s.recordRepo.CreateModel(ctx, &amp;lrm); dErr != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "创建用户登录记录失败",
+                                zap.Error(dErr),
+                                zap.Object("login_record_model", &amp;lrm),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+                <span class="cov0" title="0">if lrm.Status </span><span class="cov0" title="0">{
+                        num = s.sec.MaxFailedAttempts
+                }</span> else<span class="cov0" title="0"> {
+                        if num &gt; 0 </span><span class="cov0" title="0">{
+                                num--
+                        }</span>
+                }
+                <span class="cov0" title="0">if fErr := s.recordRepo.SetLoginFailNum(ctx, reqCtx.IP, num); fErr != nil </span><span class="cov0" title="0">{
+                        log.Error(
+                                "用户登录:设置登录失败次数失败",
+                                zap.Error(fErr),
+                                zap.String("ip_address", reqCtx.IP),
+                                zap.Duration("total_duration", time.Since(startTime)),
+                        )
+                }</span>
+        }()
+
+        <span class="cov0" title="0">m, rErr := s.FindUserByName(ctx, []string{"Role"}, dto.Username)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Warn(
+                        "用户不存在或查找失败",
+                        zap.Error(rErr),
+                        zap.String("username", dto.Username),
+                        zap.String("ip_address", reqCtx.IP),
+                        zap.Int("remaining_attempts", num-1),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                // 更新失败次数
+                return "", "", errors.ErrAuthFailed
+        }</span>
+
+        // 检查用户状态
+        <span class="cov0" title="0">if !m.IsActive </span><span class="cov0" title="0">{
+                log.Warn(
+                        "用户账户被锁定",
+                        zap.String("username", dto.Username),
+                        zap.Uint32("user_id", m.ID),
+                        zap.String("ip_address", reqCtx.IP),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", errors.ErrAccountLocked
+        }</span>
+
+        <span class="cov0" title="0">if rErr = s.verifyPassword(ctx, dto.Password, m.Password); rErr != nil </span><span class="cov0" title="0">{
+                log.Warn(
+                        "用户密码验证失败",
+                        zap.Error(rErr),
+                        zap.String("username", dto.Username),
+                        zap.Uint32("user_id", m.ID),
+                        zap.String("ip_address", reqCtx.IP),
+                        zap.Int("remaining_attempts", num-1),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", rErr.WithField("remaining_attempts", num-1)
+        }</span>
+
+        // 登录认证成功
+        <span class="cov0" title="0">log.Debug(
+                "用户登录: 验证登录信息成功",
+                zap.String("username", dto.Username),
+        )
+        lrm.Status = true
+
+        userinfo := auth.UserInfo{
+                Username: dto.Username,
+                UserID:   m.ID,
+                RoleID:   m.RoleID,
+                IsStaff:  m.IsStaff,
+        }
+
+        // 生成JWT token
+        accessToken, err := auth.NewAccessJWT(ctx, s.jwt, userinfo)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "用户登录: 生成访问令牌失败",
+                        zap.Error(err),
+                        zap.String("username", dto.Username),
+                        zap.Uint32("user_id", m.ID),
+                        zap.String("ip_address", reqCtx.IP),
+                )
+                return "", "", errors.FromError(err)
+        }</span>
+
+        <span class="cov0" title="0">refreshToken, err := auth.NewRefreshJWT(ctx, s.jwt, userinfo)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "用户登录: 生成刷新令牌失败",
+                        zap.Error(err),
+                        zap.String("username", dto.Username),
+                        zap.Uint32("user_id", m.ID),
+                        zap.String("ip_address", reqCtx.IP),
+                )
+                return "", "", errors.FromError(err)
+        }</span>
+        <span class="cov0" title="0">return accessToken, refreshToken, nil</span>
+}
+
+func (s *UserService) verifyPassword(
+        ctx context.Context,
+        pwd, hash string,
+) *errors.Error <span class="cov0" title="0">{
+        verified, err := s.hasher.Verify(ctx, pwd, hash)
+        if err != nil </span><span class="cov0" title="0">{
+                return errors.ErrAuthFailed.WithCause(err)
+        }</span>
+
+        <span class="cov0" title="0">if !verified </span><span class="cov0" title="0">{
+                return errors.ErrAuthFailed
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (s *UserService) hashPassword(
+        ctx context.Context,
+        pwd string,
+) (string, *errors.Error) <span class="cov0" title="0">{
+        hashedPassword, err := s.hasher.Hash(ctx, pwd)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", errors.FromError(err)
+        }</span>
+        <span class="cov0" title="0">return hashedPassword, nil</span>
+}
+
+func (s *UserService) validatePasswordStrength(
+        pwd string,
+) *errors.Error <span class="cov0" title="0">{
+        strength := GetPasswordStrength(pwd)
+        if strength &lt; s.sec.PasswordStrength </span><span class="cov0" title="0">{
+                return errors.ErrPasswordStrengthFailed
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (s *UserService) ResetPassword(
+        ctx context.Context,
+        userID uint32,
+        password string,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        log.Info(
+                "重置用户密码:开始执行",
+                zap.Uint32("user_id", userID),
+        )
+
+        if err := s.validatePasswordStrength(password); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "重置用户密码:密码强度校验失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return err
+        }</span>
+
+        // 哈希新密码
+        <span class="cov0" title="0">hashedPassword, err := s.hashPassword(ctx, password)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "重置用户密码:密码哈希失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return err
+        }</span>
+
+        // 更新用户密码
+        <span class="cov0" title="0">if err := s.userRepo.UpdateModel(ctx, map[string]any{"password": hashedPassword}, "id = ?", userID); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "重置用户密码:更新数据库密码失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return errors.NewGormError(err, map[string]any{"id": userID})
+        }</span>
+
+        <span class="cov0" title="0">log.Info(
+                "重置用户密码:执行成功",
+                zap.Uint32("user_id", userID),
+                zap.Duration("total_duration", time.Since(startTime)),
+        )
+        return nil</span>
+}
+
+func (s *UserService) PatchPassword(
+        ctx context.Context,
+        userID uint32,
+        oldPassword string,
+        newPassword string,
+) *errors.Error <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+
+        // 检查旧密码是否正确
+        m, err := s.FindUserByID(ctx, nil, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "获取用户信息失败",
+                        zap.Error(err),
+                        zap.Uint32("user_id", userID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return err
+        }</span>
+
+        <span class="cov0" title="0">if err = s.verifyPassword(ctx, oldPassword, m.Password); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "旧密码验证失败",
+                        zap.Error(err),
+                        zap.Uint32("user_id", userID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return err
+        }</span>
+
+        <span class="cov0" title="0">if err = s.ResetPassword(ctx, userID, newPassword); err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "重置用户密码失败",
+                        zap.Error(err),
+                        zap.Uint32("user_id", userID),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (s *UserService) RefreshTokens(
+        ctx context.Context,
+        refresh string,
+) (string, string, *errors.Error) <span class="cov0" title="0">{
+        startTime := time.Now()
+        if ctx.Err() != nil </span><span class="cov0" title="0">{
+                return "", "", errors.FromError(ctx.Err())
+        }</span>
+        <span class="cov0" title="0">log := s.log.With(zap.String("trace_id", ctxutil.GetTraceID(ctx)))
+
+        claims, rErr := auth.ParseRefreshToken(ctx, s.jwt, refresh)
+        if rErr != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "刷新令牌:解析刷新令牌失败",
+                        zap.Error(rErr),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", errors.ErrTokenInvalid
+        }</span>
+        <span class="cov0" title="0">accessToken, err := auth.NewAccessJWT(ctx, s.jwt, claims.UserInfo)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "刷新令牌:生成访问令牌失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", errors.FromError(err)
+        }</span>
+        <span class="cov0" title="0">refreshToken, err := auth.NewRefreshJWT(ctx, s.jwt, claims.UserInfo)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(
+                        "刷新令牌:生成刷新令牌失败",
+                        zap.Error(err),
+                        zap.Duration("total_duration", time.Since(startTime)),
+                )
+                return "", "", errors.FromError(err)
+        }</span>
+        <span class="cov0" title="0">return accessToken, refreshToken, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -22,12 +22,15 @@ database: # 数据库配置
   # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
-  conn_max_lifetime: 3600 # 连接最大存活时间
-  conn_max_idle_time: 600 # 连接最大空闲时间
   log_sql: true # 是否记录sql日志
-  read_timeout: 5 # 读超时时间
-  write_timeout: 10 # 写超时时间
-  list_timeout: 15 # 批量查询超时
+  conn_max_lifetime: 3600s # 连接最大存活时间
+  conn_max_idle_time: 600s # 连接最大空闲时间
+  read_timeout: 1s # 读超时时间
+  write_timeout: 1s # 写超时时间
+  list_timeout: 3s # 批量查询超时
+  read_slow: 20ms # 查询单条数据慢查询阈值
+  write_slow: 50ms # 写入慢查询阈值
+  list_slow: 80ms # 查询列表慢查询阈值
 
 log: # 日志服务
   level: "DEBUG" # 日志级别

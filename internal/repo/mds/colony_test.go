@@ -3,7 +3,6 @@ package mds
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -21,25 +20,66 @@ import (
 
 var colonyCounter int = 0
 
-func CreateTestMdsColonyModel() *mdsmodel.MdsColonyModel {
+func CreateTestMdsColonyModel(overrides ...map[string]any) *mdsmodel.MdsColonyModel {
 	colonyCounter++
-	return &mdsmodel.MdsColonyModel{
+	model := &mdsmodel.MdsColonyModel{
 		ColonyNum:     fmt.Sprintf("%02d", colonyCounter%100),
 		ExtractedName: fmt.Sprintf("mds-%s", uuid.NewString()),
 		IsEnable:      true,
 		PackageID:     1, // 假设程序包ID为1
 		MonNodeID:     1, // 假设Mon节点ID为1
 	}
+
+	// 应用覆盖值
+	if len(overrides) > 0 {
+		for key, value := range overrides[0] {
+			switch key {
+			case "ColonyNum":
+				if val, ok := value.(string); ok {
+					model.ColonyNum = val
+				}
+			case "ExtractedName":
+				if val, ok := value.(string); ok {
+					model.ExtractedName = val
+				}
+			case "IsEnable":
+				if val, ok := value.(bool); ok {
+					model.IsEnable = val
+				}
+			case "PackageID":
+				if val, ok := value.(uint32); ok {
+					model.PackageID = val
+				}
+			case "MonNodeID":
+				if val, ok := value.(uint32); ok {
+					model.MonNodeID = val
+				}
+			}
+		}
+	}
+
+	return model
 }
 
 type MdsColonyTestSuite struct {
 	suite.Suite
 	colonyRepo *MdsColonyRepo
+	testModel  *mdsmodel.MdsColonyModel
+}
+
+func (suite *MdsColonyTestSuite) SetupTest() {
+	// 在每个测试前创建测试数据
+	suite.testModel = CreateTestMdsColonyModel()
+	err := suite.colonyRepo.CreateModel(context.Background(), suite.testModel)
+	suite.NoError(err, "创建测试MdsColony应该成功")
+	suite.NotZero(suite.testModel.ID, "MdsColony ID应该不为零")
 }
 
 func (suite *MdsColonyTestSuite) SetupSuite() {
 	db := test.NewTestGormDBWithConfig(nil)
-	db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &mdsmodel.MdsColonyModel{})
+	if err := db.AutoMigrate(&resomodel.HostModel{}, &monmodel.MonNodeModel{}, &resomodel.PackageModel{}, &mdsmodel.MdsColonyModel{}); err != nil {
+		suite.Error(err, "数据库迁移失败")
+	}
 
 	// 创建测试数据:主机
 	hostModel := &resomodel.HostModel{
@@ -74,49 +114,40 @@ func (suite *MdsColonyTestSuite) SetupSuite() {
 	db.Create(packageModel)
 
 	dbTimeout := test.NewTestDBTimeouts()
+	slowThreshold := test.NewTestDBSlowThreshold()
 	logger := test.NewTestZapLogger()
 	suite.colonyRepo = &MdsColonyRepo{
-		log:      logger,
-		gormDB:   db,
-		timeouts: dbTimeout,
+		log:           logger,
+		gormDB:        db,
+		timeouts:      dbTimeout,
+		slowThreshold: slowThreshold,
 	}
 }
 
 func (suite *MdsColonyTestSuite) TestCreateModel() {
-	// 测试正常创建
-	cm := CreateTestMdsColonyModel()
-	err := suite.colonyRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsColony应该成功")
-	suite.NotZero(cm.ID, "MdsColony ID应该不为零")
-
 	// 测试边界情况:创建空模型
-	err = suite.colonyRepo.CreateModel(context.Background(), nil)
+	err := suite.colonyRepo.CreateModel(context.Background(), nil)
 	suite.Error(err, "创建空MdsColony模型应该返回错误")
 }
 
 func (suite *MdsColonyTestSuite) TestUpdateModel() {
-	// 创建测试数据
-	cm := CreateTestMdsColonyModel()
-	err := suite.colonyRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsColony用于更新测试应该成功")
-
 	// 测试正常更新 - 不更新ColonyNum以避免唯一约束冲突
 	updateData := map[string]any{
 		"ExtractedName": "updated-mds",
 		"IsEnable":      false,
 	}
-	err = suite.colonyRepo.UpdateModel(context.Background(), updateData, "id = ?", cm.ID)
+	err := suite.colonyRepo.UpdateModel(context.Background(), updateData, "id = ?", suite.testModel.ID)
 	suite.NoError(err, "更新MdsColony应该成功")
 
 	// 验证更新结果
-	fm, err := suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
+	fm, err := suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", suite.testModel.ID)
 	suite.NoError(err, "查询更新后的MdsColony应该成功")
-	suite.Equal(cm.ColonyNum, fm.ColonyNum, "ColonyNum应该保持不变")
+	suite.Equal(suite.testModel.ColonyNum, fm.ColonyNum, "ColonyNum应该保持不变")
 	suite.Equal("updated-mds", fm.ExtractedName)
 	suite.False(fm.IsEnable, "IsEnable应该被更新为false")
 
 	// 测试边界情况:更新数据为空
-	err = suite.colonyRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", cm.ID)
+	err = suite.colonyRepo.UpdateModel(context.Background(), map[string]any{}, "id = ?", suite.testModel.ID)
 	suite.Error(err, "更新数据为空时应该返回错误")
 
 	// 测试边界情况:更新不存在的MdsColony
@@ -125,17 +156,12 @@ func (suite *MdsColonyTestSuite) TestUpdateModel() {
 }
 
 func (suite *MdsColonyTestSuite) TestDeleteModel() {
-	// 创建测试数据
-	cm := CreateTestMdsColonyModel()
-	err := suite.colonyRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsColony用于删除测试应该成功")
-
 	// 测试正常删除
-	err = suite.colonyRepo.DeleteModel(context.Background(), "id = ?", cm.ID)
+	err := suite.colonyRepo.DeleteModel(context.Background(), "id = ?", suite.testModel.ID)
 	suite.NoError(err, "删除MdsColony应该成功")
 
 	// 验证删除结果
-	fm, err := suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
+	fm, err := suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", suite.testModel.ID)
 	suite.Error(err, "查询已删除的MdsColony应该返回错误")
 	suite.Nil(fm, "已删除的MdsColony应该为nil")
 
@@ -145,17 +171,12 @@ func (suite *MdsColonyTestSuite) TestDeleteModel() {
 }
 
 func (suite *MdsColonyTestSuite) TestGetModel() {
-	// 创建测试数据
-	cm := CreateTestMdsColonyModel()
-	err := suite.colonyRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsColony用于查询测试应该成功")
-
 	// 测试正常查询
-	fm, err := suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", cm.ID)
+	fm, err := suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", suite.testModel.ID)
 	suite.NoError(err, "查询MdsColony应该成功")
-	suite.Equal(cm.ID, fm.ID)
-	suite.Equal(cm.ColonyNum, fm.ColonyNum)
-	suite.Equal(cm.IsEnable, fm.IsEnable)
+	suite.Equal(suite.testModel.ID, fm.ID)
+	suite.Equal(suite.testModel.ColonyNum, fm.ColonyNum)
+	suite.Equal(suite.testModel.IsEnable, fm.IsEnable)
 
 	// 测试边界情况:查询不存在的MdsColony
 	fm, err = suite.colonyRepo.GetModel(context.Background(), nil, "id = ?", 999999)
@@ -163,16 +184,15 @@ func (suite *MdsColonyTestSuite) TestGetModel() {
 	suite.Nil(fm, "查询不存在的MdsColony应该返回nil")
 
 	// 测试边界情况:使用预加载
-	fm, err = suite.colonyRepo.GetModel(context.Background(), []string{"Package", "MonNode"}, "id = ?", cm.ID)
+	fm, err = suite.colonyRepo.GetModel(context.Background(), []string{"Package", "MonNode"}, "id = ?", suite.testModel.ID)
 	suite.NoError(err, "使用预加载查询MdsColony应该成功")
-	suite.Equal(cm.ID, fm.ID)
+	suite.Equal(suite.testModel.ID, fm.ID)
 }
 
 func (suite *MdsColonyTestSuite) TestListModel() {
 	// 创建多个测试数据
 	for i := 0; i < 5; i++ {
 		cm := CreateTestMdsColonyModel()
-		// 不手动设置ColonyNum，使用CreateTestMdsColonyModel生成的唯一值
 		err := suite.colonyRepo.CreateModel(context.Background(), cm)
 		suite.NoError(err, "创建MdsColony用于列表测试应该成功")
 	}
@@ -188,24 +208,16 @@ func (suite *MdsColonyTestSuite) TestListModel() {
 	suite.Greater(int64(len(models)), int64(0), "MdsColony列表数量应该大于0")
 	suite.NotNil(models, "MdsColony列表应该不为nil")
 
-	// 测试边界情况:空列表（如果之前没有数据）
-	// 注意:由于测试套件是共享数据库，这里可能不会为空，但我们仍然测试方法调用
+	// 测试边界情况:空列表
 	qp2 := database.QueryParams{
 		Query: map[string]any{"colony_num": "99"},
 	}
 	models2, err := suite.colonyRepo.ListModel(context.Background(), qp2)
 	suite.NoError(err, "查询不存在的MdsColony列表应该成功")
-	suite.Equal(int64(0), int64(len(models2)), "不存在的MdsColony列表数量应该为0")
-	suite.NotNil(models2, "不存在的MdsColony列表应该不为nil")
 	suite.Len(models2, 0, "不存在的MdsColony列表长度应该为0")
 }
 
 func (suite *MdsColonyTestSuite) TestContextTimeout() {
-	// 创建测试数据
-	cm := CreateTestMdsColonyModel()
-	err := suite.colonyRepo.CreateModel(context.Background(), cm)
-	suite.NoError(err, "创建MdsColony用于超时测试应该成功")
-
 	// 测试上下文超时情况
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
@@ -214,18 +226,11 @@ func (suite *MdsColonyTestSuite) TestContextTimeout() {
 	time.Sleep(time.Millisecond * 2)
 
 	// 测试超时后的操作
-	_, err = suite.colonyRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
+	_, err := suite.colonyRepo.GetModel(timeoutCtx, nil, "id = ?", suite.testModel.ID)
 	suite.Error(err, "上下文超时后查询MdsColony应该返回错误")
 }
 
 func (suite *MdsColonyTestSuite) TestCountModel() {
-	// 创建测试数据
-	for i := 0; i < 3; i++ {
-		cm := CreateTestMdsColonyModel()
-		err := suite.colonyRepo.CreateModel(context.Background(), cm)
-		suite.NoError(err, "创建MdsColony用于计数测试应该成功")
-	}
-
 	// 测试正常计数
 	count, err := suite.colonyRepo.CountModel(context.Background(), nil)
 	suite.NoError(err, "计数MdsColony应该成功")
@@ -258,7 +263,7 @@ func (suite *MdsColonyTestSuite) TestSaveConfigFile() {
 	suite.NoError(err, "保存配置文件应该成功")
 
 	// 验证文件内容
-	content, err := ioutil.ReadFile(testPath)
+	content, err := os.ReadFile(testPath)
 	suite.NoError(err, "读取保存的配置文件应该成功")
 	suite.Equal(testContent, string(content), "配置文件内容应该正确")
 
@@ -269,7 +274,7 @@ func (suite *MdsColonyTestSuite) TestSaveConfigFile() {
 	suite.NoError(err, "覆盖保存配置文件应该成功")
 
 	// 验证更新后的内容
-	content, err = ioutil.ReadFile(testPath)
+	content, err = os.ReadFile(testPath)
 	suite.NoError(err, "读取更新后的配置文件应该成功")
 	suite.Equal(testContent2, string(content), "更新后的配置文件内容应该正确")
 
@@ -284,7 +289,7 @@ func (suite *MdsColonyTestSuite) TestRemoveConfigFile() {
 	testPath := "/tmp/test-mds-config-remove.txt"
 
 	// 创建测试文件
-	err := ioutil.WriteFile(testPath, []byte("test content"), 0644)
+	err := os.WriteFile(testPath, []byte("test content"), 0644)
 	suite.NoError(err, "创建测试文件应该成功")
 
 	// 测试正常删除

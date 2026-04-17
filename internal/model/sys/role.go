@@ -31,32 +31,51 @@ func (m *RoleModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("name", m.Name)
 	enc.AddString("descr", m.Descr)
-	enc.AddArray("apis", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("apis", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, api := range m.Apis {
 			ae.AppendUint32(api.ID)
 		}
 		return nil
-	}))
-	enc.AddArray("menus", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	})); err != nil {
+		return err
+	}
+	if err := enc.AddArray("menus", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, menu := range m.Menus {
 			ae.AppendUint32(menu.ID)
 		}
 		return nil
-	}))
-	enc.AddArray("buttons", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	})); err != nil {
+		return err
+	}
+	if err := enc.AddArray("buttons", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, button := range m.Buttons {
 			ae.AppendUint32(button.ID)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
 }
 
-// type MenuTreeNode struct {
-// 	Menu     MenuModel
-// 	Children []*MenuTreeNode
-// 	Buttons  []ButtonModel
-// }
+func (m *RoleModel) ToUpdateMap() map[string]any {
+	return map[string]any{
+		"name":  m.Name,
+		"descr": m.Descr,
+	}
+}
+
+func ListRoleModelToUint32s(ms []RoleModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
 
 // RoleUpsertDTO 用于创建或更新角色的请求结构体
 //
@@ -81,25 +100,38 @@ type RoleUpsertDTO struct {
 func (dto *RoleUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", dto.Name)
 	enc.AddString("descr", dto.Descr)
-	enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	if err := enc.AddArray("api_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.ApiIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
-	enc.AddArray("menu_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	})); err != nil {
+		return err
+	}
+	if err := enc.AddArray("menu_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.MenuIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
-	enc.AddArray("button_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+	})); err != nil {
+		return err
+	}
+	if err := enc.AddArray("button_ids", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 		for _, id := range dto.ButtonIDs {
 			ae.AppendUint32(id)
 		}
 		return nil
-	}))
+	})); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (dto *RoleUpsertDTO) ToModel() RoleModel {
+	return RoleModel{
+		Name:  dto.Name,
+		Descr: dto.Descr,
+	}
 }
 
 func (dto *RoleUpsertDTO) ToUpdateMap() map[string]any {

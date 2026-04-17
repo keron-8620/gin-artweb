@@ -186,21 +186,21 @@ func writeJSONAtomic(filePath string, data any, options SerializerOptions) (*Wri
 	result, err := writeJSON(tmpFile, data, options, startTime)
 	if err != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return nil, err
 	}
 
 	// 检查上下文是否已取消
 	if ctxErr := options.Context.Err(); ctxErr != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 原子重命名
 	if err := os.Rename(tmpFile, filePath); err != nil {
 		// 清理临时文件
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return nil, fmt.Errorf("原子重命名 %s -> %s 失败: %w", tmpFile, filePath, err)
 	}
 

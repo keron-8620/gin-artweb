@@ -15,20 +15,23 @@ import (
 )
 
 type MdsNodeRepo struct {
-	log      *zap.Logger
-	gormDB   *gorm.DB
-	timeouts *config.DBTimeout
+	log           *zap.Logger
+	gormDB        *gorm.DB
+	timeouts      *config.DBTimeout
+	slowThreshold *config.DBSlowThreshold
 }
 
 func NewMdsNodeRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 ) *MdsNodeRepo {
 	return &MdsNodeRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -45,87 +48,97 @@ func (r *MdsNodeRepo) CreateModel(
 		log.Error(
 			"创建mds节点:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
+
 	log.Debug(
-		"创建mds节点:开始执行",
-		zap.Object("model", m),
+		"创建mds节点:模型详情",
+		zap.Object("mds_node_model", m),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createMdsNodeStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &mdsmodel.MdsNodeModel{}, m, nil)
-	createMdsNodeDuration := time.Since(createMdsNodeStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建mds节点:数据库操作失败",
 			zap.Error(err),
-			zap.Object("node_model", m),
-			zap.Duration("create_mds_node_duration", createMdsNodeDuration),
+			zap.Object("mds_node_model", m),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建mds节点:数据库操作失败")
 	}
-	log.Debug(
-		"创建mds节点:执行成功",
-		zap.Object("node_model", m),
-		zap.Duration("create_mds_node_duration", createMdsNodeDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建mds节点模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("node_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
 func (r *MdsNodeRepo) UpdateModel(
 	ctx context.Context,
-	data map[string]any,
+	updateData map[string]any,
 	conds ...any,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	// 检查参数
-	if len(data) == 0 {
-		err := errors.New("更新mds节点:更新数据不能为空")
+	if len(updateData) == 0 {
+		err := errors.New("更新mds节点:更新数据为空")
 		log.Error(
-			"更新mds节点:更新数据不能为空",
+			"更新mds节点:更新数据为空",
 			zap.Error(err),
-			zap.Any("update_data", data),
-			zap.Any("conds", conds),
+			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
 
+	updateData["updated_at"] = startTime
+
 	log.Debug(
-		"更新mds节点:开始执行",
-		zap.Any("update_data", data),
+		"更新mds集群:更新数据",
+		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	updateMdsNodeStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &mdsmodel.MdsNodeModel{}, data, nil, conds...)
-	updateMdsNodeDuration := time.Since(updateMdsNodeStartTime)
+
+	updateStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &mdsmodel.MdsNodeModel{}, updateData, nil, conds...)
+	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
 			"更新mds节点:数据库操作失败",
 			zap.Error(err),
-			zap.Any("update_data", data),
+			zap.Any("update_data", updateData),
 			zap.Any("conds", conds),
-			zap.Duration("update_mds_node_duration", updateMdsNodeDuration),
+			zap.Duration("update_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新mds节点:数据库操作失败")
 	}
-	log.Debug(
-		"更新mds节点:执行成功",
-		zap.Any("update_data", data),
-		zap.Any("conds", conds),
-		zap.Duration("update_mds_node_duration", updateMdsNodeDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新mds节点:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -137,31 +150,33 @@ func (r *MdsNodeRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除mds节点:开始执行",
+		"删除mds节点:删除条件",
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	deleteMdsNodeStartTime := time.Now()
+
+	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &mdsmodel.MdsNodeModel{}, conds...)
-	deleteMdsNodeDuration := time.Since(deleteMdsNodeStartTime)
+	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
 			"删除mds节点:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_mds_node_duration", deleteMdsNodeDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除mds节点:数据库操作失败")
 	}
-	log.Debug(
-		"删除mds节点:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_mds_node_duration", deleteMdsNodeDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除mds节点:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -172,33 +187,42 @@ func (r *MdsNodeRepo) GetModel(
 ) (*mdsmodel.MdsNodeModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
+
 	log.Debug(
-		"查询mds节点:开始执行",
+		"查询mds节点:查询条件",
 		zap.Any("conds", conds),
 	)
+
 	var m mdsmodel.MdsNodeModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	getMdsNodeStartTime := time.Now()
+
+	getStartTime := time.Now()
 	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
-	getMdsNodeDuration := time.Since(getMdsNodeStartTime)
+	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
 			"查询mds节点:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_mds_node_duration", getMdsNodeDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询mds节点:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询mds节点:执行成功",
-		zap.Object("node_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_mds_node_duration", getMdsNodeDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询mds节点:查询到的模型详情",
+		zap.Object("mds_node_model", &m),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询mds节点:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return &m, nil
 }
 
@@ -208,32 +232,42 @@ func (r *MdsNodeRepo) ListModel(
 ) ([]mdsmodel.MdsNodeModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
+
 	log.Debug(
-		"查询mds节点列表:开始执行",
+		"查询mds节点列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
+
 	var ms []mdsmodel.MdsNodeModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	listMdsNodeStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &mdsmodel.MdsNodeModel{}, &ms, qp)
-	listMdsNodeDuration := time.Since(listMdsNodeStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询mds节点列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_mds_node_duration", listMdsNodeDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询mds节点列表:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询mds节点列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_mds_node_duration", listMdsNodeDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询mds节点列表:查询到的模型列表",
+		zap.Uint32s("node_ids", mdsmodel.ListMdsNodeModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询mds节点列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -245,31 +279,37 @@ func (r *MdsNodeRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询mds节点总数:开始执行",
+		"查询mds节点总数:查询条件",
 		zap.Any("query", query),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countMdsNodeStartTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &mdsmodel.MdsNodeModel{}, query)
-	countMdsNodeDuration := time.Since(countMdsNodeStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询mds节点总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_mds_node_duration", countMdsNodeDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询mds节点总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询mds节点总数:执行成功",
-		zap.Any("query", query),
+		"查询mds节点总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_mds_node_duration", countMdsNodeDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询mds节点总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }

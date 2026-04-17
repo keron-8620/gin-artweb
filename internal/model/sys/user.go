@@ -37,6 +37,18 @@ func (m *UserModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func ListUserModelToUint32s(ms []UserModel) []uint32 {
+	if len(ms) == 0 {
+		return []uint32{}
+	}
+
+	ids := make([]uint32, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	return ids
+}
+
 // CreateUserDTO 用于创建用户的请求结构体
 //
 // swagger:model CreateUserDTO
@@ -63,6 +75,15 @@ func (dto *CreateUserDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("is_staff", dto.IsStaff)
 	enc.AddUint32("role_id", dto.RoleID)
 	return nil
+}
+
+func (dto *CreateUserDTO) ToModel() UserModel {
+	return UserModel{
+		Username: dto.Username,
+		IsActive: dto.IsActive,
+		IsStaff:  dto.IsStaff,
+		RoleID:   dto.RoleID,
+	}
 }
 
 // UpdateUserDTO 用于更新用户的请求结构体

@@ -17,8 +17,10 @@
         - "{{ slave_path_oes_home_conf }}"
         - "{{ slave_path_oes_home_data }}"
         - "{{ slave_path_oes_home_data_flags }}"
-        - "{{ slave_path_oes_home_data_exchange }}"
         - "{{ slave_path_oes_home_data_monitor }}"
+        - "{{ slave_path_oes_home_data_exchange }}"
+        - "{{ slave_path_oes_home_data_exchange_sse_etf }}"
+        - "{{ slave_path_oes_home_data_exchange_szse_etf }}"
 
     - name: copy oes files to slave
       synchronize:

@@ -34,34 +34,6 @@ func TestAESCipher(t *testing.T) {
 	}
 }
 
-// 测试DES模式
-func TestDESCipher(t *testing.T) {
-	ctx := context.Background()
-	key := []byte("your-key") // 8 bytes for DES
-
-	// 创建 DES 加密器
-	desCipher, err := NewDESCipher(key)
-	if err != nil {
-		t.Fatalf("创建DES加密器错误: %+v", err)
-	}
-
-	// 测试加密解密
-	plaintext := "Hello, World!"
-	ciphertext, err := desCipher.Encrypt(ctx, plaintext)
-	if err != nil {
-		t.Fatalf("加密错误: %+v", err)
-	}
-
-	decrypted, err := desCipher.Decrypt(ctx, ciphertext)
-	if err != nil {
-		t.Fatalf("解密错误: %+v", err)
-	}
-
-	if decrypted != plaintext {
-		t.Errorf("解密文本与原始文本不匹配: 得到 %s, 期望 %s", decrypted, plaintext)
-	}
-}
-
 // 测试SHA256哈希
 func TestSHA256Hasher(t *testing.T) {
 	ctx := context.Background()

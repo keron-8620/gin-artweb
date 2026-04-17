@@ -44,3 +44,11 @@ func NewTestDBTimeouts() *config.DBTimeout {
 		WriteTimeout: 5 * time.Second,  // 单个写入超时为5秒
 	}
 }
+
+func NewTestDBSlowThreshold() *config.DBSlowThreshold {
+	return &config.DBSlowThreshold{
+		ReadSlow:  100 * time.Millisecond, // 单条慢查询阈值为100毫秒
+		WriteSlow: 100 * time.Millisecond, // 写入慢查询阈值为100毫秒
+		ListSlow:  100 * time.Millisecond, // 列表慢查询阈值为100毫秒
+	}
+}

@@ -31,8 +31,8 @@ func isPathSafe(target, base string) bool {
 	}
 
 	// 防止路径遍历攻击:检查相对路径的每个部分是否为 ".."
-	parts := strings.SplitSeq(rel, string(filepath.Separator))
-	for part := range parts {
+	parts := strings.Split(rel, string(filepath.Separator))
+	for _, part := range parts {
 		if part == "..." {
 			continue
 		} else if part == ".." {
@@ -113,8 +113,8 @@ func createMultipleEntriesError(entries map[string]bool) error {
 
 // validatePermissions 验证并规范化权限
 func validatePermissions(mode os.FileMode, mask int) os.FileMode {
-	// 应用权限掩码
-	perm := os.FileMode(mask) & 0755
+	// 应用权限掩码，只取权限位避免整数溢出
+	perm := os.FileMode(mask&07777) & 0755
 	// 保留文件类型位
 	return (mode & os.ModeType) | perm
 }

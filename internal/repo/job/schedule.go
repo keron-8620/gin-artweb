@@ -18,9 +18,10 @@ import (
 // 负责计划任务模型的CRUD操作
 // 使用GORM进行数据库操作
 type ScheduleRepo struct {
-	log      *zap.Logger       // 日志记录器
-	gormDB   *gorm.DB          // GORM数据库连接
-	timeouts *config.DBTimeout // 数据库操作超时配置
+	log           *zap.Logger             // 日志记录器
+	gormDB        *gorm.DB                // GORM数据库连接
+	timeouts      *config.DBTimeout       // 数据库操作超时配置
+	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
 }
 
 // NewScheduleRepo 创建计划任务仓库实例
@@ -30,6 +31,7 @@ type ScheduleRepo struct {
 //	log: 日志记录器，用于记录操作日志
 //	gormDB: GORM数据库连接，用于执行数据库操作
 //	timeouts: 数据库操作超时配置，控制各类数据库操作的超时时间
+//	slowThreshold: 数据库操作慢查询阈值配置，用于判断是否需要记录慢查询日志
 //
 // 返回值:
 //
@@ -38,11 +40,13 @@ func NewScheduleRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
+	slowThreshold *config.DBSlowThreshold,
 ) *ScheduleRepo {
 	return &ScheduleRepo{
-		log:      log,
-		gormDB:   gormDB,
-		timeouts: timeouts,
+		log:           log,
+		gormDB:        gormDB,
+		timeouts:      timeouts,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -74,9 +78,14 @@ func (r *ScheduleRepo) CreateModel(
 		log.Error(
 			"创建计划任务模型:模型不能为空",
 			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	m.CreatedAt = startTime
+	m.UpdatedAt = startTime
+
 	log.Debug(
 		"创建计划任务模型:开始执行",
 		zap.Object("schedule_model", m),
@@ -84,25 +93,28 @@ func (r *ScheduleRepo) CreateModel(
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	createScheduleStartTime := time.Now()
+
+	createStartTime := time.Now()
 	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, m, nil)
-	createScheduleDuration := time.Since(createScheduleStartTime)
+	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
 			"创建计划任务模型:数据库操作失败",
 			zap.Error(err),
 			zap.Object("schedule_model", m),
-			zap.Duration("create_schedule_duration", createScheduleDuration),
+			zap.Duration("create_duration", createDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "创建计划任务模型:数据库操作失败")
 	}
-	log.Debug(
-		"创建计划任务模型:执行成功",
-		zap.Object("schedule_model", m),
-		zap.Duration("create_schedule_duration", createScheduleDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if createDuration > r.slowThreshold.WriteSlow {
+		log.Warn("创建计划任务模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32("schedule_id", m.ID),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -124,52 +136,55 @@ func (r *ScheduleRepo) CreateModel(
 //  3. 记录操作日志
 func (r *ScheduleRepo) UpdateModel(
 	ctx context.Context,
-	data map[string]any,
+	updateData map[string]any,
 	conds ...any,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
-	// 检查参数
-	if len(data) == 0 {
-		err := errors.New("更新计划任务模型:更新数据不能为空")
+	if len(updateData) == 0 {
+		err := errors.New("更新计划任务模型:更新数据为空")
 		log.Error(
-			"更新计划任务模型:更新数据不能为空",
+			"更新计划任务模型:更新数据为空",
 			zap.Error(err),
-			zap.Any("update_data", data),
-			zap.Any("conditions", conds),
+			zap.Any("update_data", updateData),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
 	}
+
+	updateData["updated_at"] = startTime
+
 	log.Debug(
-		"更新计划任务模型:开始执行",
-		zap.Any("update_data", data),
-		zap.Any("conditions", conds),
+		"更新计划任务模型:更新数据",
+		zap.Any("update_data", updateData),
+		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	updateScheduleStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, data, nil, conds...)
-	updateScheduleDuration := time.Since(updateScheduleStartTime)
+
+	updateStartTime := time.Now()
+	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, updateData, nil, conds...)
+	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
 			"更新计划任务模型:数据库操作失败",
 			zap.Error(err),
-			zap.Any("update_data", data),
-			zap.Any("conditions", conds),
-			zap.Duration("update_schedule_duration", updateScheduleDuration),
+			zap.Any("update_data", updateData),
+			zap.Any("conds", conds),
+			zap.Duration("update_duration", updateDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "更新计划任务模型:数据库操作失败")
 	}
-	log.Debug(
-		"更新计划任务模型:执行成功",
-		zap.Any("update_data", data),
-		zap.Any("conditions", conds),
-		zap.Duration("update_schedule_duration", updateScheduleDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if updateDuration > r.slowThreshold.WriteSlow {
+		log.Warn("更新计划任务模型:数据库更新耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("update_duration", updateDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -195,31 +210,33 @@ func (r *ScheduleRepo) DeleteModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"删除计划任务模型:开始执行",
+		"删除计划任务模型:删除条件",
 		zap.Any("conds", conds),
 	)
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout)
 	defer cancel()
-	deleteScheduleStartTime := time.Now()
+
+	deleteStartTime := time.Now()
 	err := database.DBDelete(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, conds...)
-	deleteScheduleDuration := time.Since(deleteScheduleStartTime)
+	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
 			"删除计划任务模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("delete_schedule_duration", deleteScheduleDuration),
+			zap.Duration("delete_duration", deleteDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.WrapIf(err, "删除计划任务模型:数据库操作失败")
 	}
-	log.Debug(
-		"删除计划任务模型:执行成功",
-		zap.Any("conds", conds),
-		zap.Duration("delete_schedule_duration", deleteScheduleDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
+
+	if deleteDuration > r.slowThreshold.WriteSlow {
+		log.Warn("删除计划任务模型:数据库删除耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("delete_duration", deleteDuration),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow),
+		)
+	}
 	return nil
 }
 
@@ -250,33 +267,41 @@ func (r *ScheduleRepo) GetModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询计划任务模型:开始执行",
+		"查询计划任务模型:查询条件",
+		zap.Strings("preloads", preloads),
 		zap.Any("conds", conds),
 	)
 
 	var m jobmodel.ScheduleModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	getScheduleStartTime := time.Now()
+
+	getStartTime := time.Now()
 	err := database.DBGet(dbCtx, r.gormDB, preloads, &m, conds...)
-	getScheduleDuration := time.Since(getScheduleStartTime)
+	getDuration := time.Since(getStartTime)
 	if err != nil {
 		log.Error(
 			"查询计划任务模型:数据库操作失败",
 			zap.Error(err),
 			zap.Any("conds", conds),
-			zap.Duration("get_schedule_duration", getScheduleDuration),
+			zap.Duration("get_duration", getDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询计划任务模型:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询计划任务模型:执行成功",
+		"查询计划任务模型:查询到的模型详情",
 		zap.Object("schedule_model", &m),
-		zap.Any("conds", conds),
-		zap.Duration("get_schedule_duration", getScheduleDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if getDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询计划任务模型:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("get_duration", getDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return &m, nil
 }
 
@@ -306,32 +331,40 @@ func (r *ScheduleRepo) ListModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询计划任务模型列表:开始执行",
+		"查询计划任务模型列表:入参详情",
 		zap.Object("query_params", &qp),
 	)
 
 	var ms []jobmodel.ScheduleModel
+
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
-	listScheduleStartTime := time.Now()
+
+	listStartTime := time.Now()
 	err := database.DBList(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, &ms, qp)
-	listScheduleDuration := time.Since(listScheduleStartTime)
+	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
 			"查询计划任务模型列表:数据库操作失败",
 			zap.Error(err),
 			zap.Object("query_params", &qp),
-			zap.Duration("list_schedule_duration", listScheduleDuration),
+			zap.Duration("list_duration", listDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, errors.WrapIf(err, "查询计划任务模型列表:数据库操作失败")
 	}
+
 	log.Debug(
-		"查询计划任务模型列表:执行成功",
-		zap.Object("query_params", &qp),
-		zap.Duration("list_schedule_duration", listScheduleDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
+		"查询计划任务模型列表:查询到的模型列表",
+		zap.Uint32s("schedule_ids", jobmodel.ListScheduleModelToUint32s(ms)),
 	)
+
+	if listDuration > r.slowThreshold.ListSlow {
+		log.Warn("查询计划任务模型列表:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("list_duration", listDuration),
+			zap.Duration("threshold", r.slowThreshold.ListSlow),
+		)
+	}
 	return ms, nil
 }
 
@@ -343,32 +376,38 @@ func (r *ScheduleRepo) CountModel(
 	log := ctxutil.NewLogger(r.log, ctx)
 
 	log.Debug(
-		"查询计划任务模型总数:开始执行",
+		"查询计划任务模型总数:入参详情",
 		zap.Any("query", query),
 	)
 
 	// 开启数据库事务
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
-	countScheduleStartTime := time.Now()
+
+	countStartTime := time.Now()
 	count, err := database.DBCount(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, query)
-	countScheduleDuration := time.Since(countScheduleStartTime)
+	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(
 			"查询计划任务模型总数:数据库查询失败",
 			zap.Error(err),
 			zap.Any("query", query),
-			zap.Duration("count_schedule_duration", countScheduleDuration),
+			zap.Duration("count_duration", countDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return 0, errors.WrapIf(err, "查询计划任务模型总数:数据库查询失败")
 	}
+
 	log.Debug(
-		"查询计划任务模型总数:执行成功",
-		zap.Any("query", query),
+		"查询计划任务模型总数:查询到的记录数",
 		zap.Int64("count", count),
-		zap.Duration("count_schedule_duration", countScheduleDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
 	)
+
+	if countDuration > r.slowThreshold.ReadSlow {
+		log.Warn("查询计划任务模型总数:数据库查询耗时超过慢查询阈值，可能影响性能",
+			zap.Duration("count_duration", countDuration),
+			zap.Duration("threshold", r.slowThreshold.ReadSlow),
+		)
+	}
 	return count, nil
 }

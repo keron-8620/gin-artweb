@@ -38,7 +38,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 
 	// 创建目标文件前检查父目录
 	dstDir := filepath.Dir(cleanDst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0750); err != nil {
 		return errors.WithMessagef(err, "创建目标目录失败, dir=%s", dstDir)
 	}
 
@@ -222,7 +222,9 @@ func processZipEntry(filePath, baseDir string, info os.FileInfo, zipWriter *zip.
 		if err != nil {
 			return errors.WithMessagef(err, "打开文件失败, filepath=%s", filePath)
 		}
-		defer closeWithError(file, "关闭文件失败")
+		defer func() {
+			_ = closeWithError(file, "关闭文件失败")
+		}()
 
 		written, err := safeCopy(options.Context, writer, file, options.MaxFileSize, options.BufferSize)
 		if err != nil {
@@ -262,10 +264,12 @@ func Unzip(src, dst string, opts ...ArchiveOption) error {
 	if err != nil {
 		return errors.WithMessagef(err, "打开zip文件失败, src=%s", cleanSrc)
 	}
-	defer closeWithError(reader, "关闭zip读取器失败")
+	defer func() {
+		_ = closeWithError(reader, "关闭zip读取器失败")
+	}()
 
 	// 创建目标目录
-	if err := os.MkdirAll(cleanDst, 0755); err != nil {
+	if err := os.MkdirAll(cleanDst, 0750); err != nil {
 		return errors.WithMessagef(err, "创建目标目录失败, dst=%s", cleanDst)
 	}
 
@@ -345,7 +349,7 @@ func unzipFile(zipFile *zip.File, target string, options ArchiveOptions) (int64,
 
 	// 创建父目录
 	parentDir := filepath.Dir(target)
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
+	if err := os.MkdirAll(parentDir, 0750); err != nil {
 		return 0, errors.WithMessagef(err, "创建父目录失败, dir=%s", parentDir)
 	}
 
@@ -354,7 +358,9 @@ func unzipFile(zipFile *zip.File, target string, options ArchiveOptions) (int64,
 	if err != nil {
 		return 0, errors.WithMessagef(err, "打开zip内文件失败, entry=%s", zipFile.Name)
 	}
-	defer closeWithError(srcFile, "关闭zip内文件失败")
+	defer func() {
+		_ = closeWithError(srcFile, "关闭zip内文件失败")
+	}()
 
 	// 创建目标文件（使用更安全的权限模式）
 	fileMode := zipFile.Mode()
@@ -370,7 +376,9 @@ func unzipFile(zipFile *zip.File, target string, options ArchiveOptions) (int64,
 	if err != nil {
 		return 0, errors.WithMessagef(err, "创建目标文件失败, target=%s", target)
 	}
-	defer closeWithError(targetFile, "关闭目标文件失败")
+	defer func() {
+		_ = closeWithError(targetFile, "关闭目标文件失败")
+	}()
 
 	// 复制内容
 	written, err := safeCopy(options.Context, targetFile, srcFile, options.MaxFileSize, options.BufferSize)
@@ -397,7 +405,9 @@ func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
 	if err != nil {
 		return "", errors.WithMessagef(err, "打开zip文件失败, src=%s", cleanSrc)
 	}
-	defer closeWithError(reader, "关闭zip读取器失败")
+	defer func() {
+		_ = closeWithError(reader, "关闭zip读取器失败")
+	}()
 
 	topLevelEntries := make(map[string]bool, 1) // 初始容量1
 
@@ -469,7 +479,9 @@ func ZipStream(src io.Reader, dst io.Writer, fileName string, opts ...ArchiveOpt
 
 	// 创建zip写入器
 	zipWriter := zip.NewWriter(dst)
-	defer closeWithError(zipWriter, "关闭zip写入器失败")
+	defer func() {
+		_ = closeWithError(zipWriter, "关闭zip写入器失败")
+	}()
 
 	// 创建文件头
 	header := &zip.FileHeader{
@@ -527,7 +539,9 @@ func UnzipStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error {
 	if err != nil {
 		return errors.WithMessage(err, "打开zip内文件失败")
 	}
-	defer closeWithError(srcFile, "关闭zip内文件失败")
+	defer func() {
+		_ = closeWithError(srcFile, "关闭zip内文件失败")
+	}()
 
 	// 复制内容
 	_, err = safeCopy(options.Context, dst, srcFile, options.MaxFileSize, options.BufferSize)

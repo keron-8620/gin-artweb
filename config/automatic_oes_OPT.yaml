@@ -78,7 +78,7 @@ sse_cp_files:                                             # 上海产品文件�
   - "cpxx0202{{ curr_date[4:] }}.txt"
   - "zhcl03{{ curr_date[4:] }}.txt"
   - "reff03{{ curr_date[4:] }}.txt"
-  - "reff0302{{ curr_date }}.xml"
+  - "reff0302{{ curr_date[4:] }}.xml"
   - "bondinfo{{ curr_date }}.txt"
   - "bondinfo{{ curr_date }}.zip"
   - "archive_bondinfo{{ curr_date }}.zip"

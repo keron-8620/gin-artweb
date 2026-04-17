@@ -1,46 +1,41 @@
 package serializer
 
 import (
-	"os"
 	"path/filepath"
 
 	"emperror.dev/errors"
 )
 
-// validatePath 校验文件路径
+// validatePath 校验文件路径：
+// 1. 不能为空
+// 2. 必须是绝对路径
+// 3. 防止路径遍历攻击
 func validatePath(filePath string) error {
+	// 1. 路径不能为空
 	if filePath == "" {
 		return errors.New("文件路径不能为空")
 	}
-	return nil
-}
 
-// checkFileSize 检查文件大小限制
-func checkFileSize(fileSize int64, maxSize int64) error {
-	if maxSize > 0 && fileSize > maxSize {
-		return errors.Errorf("文件大小超出限制: max=%d, current=%d", maxSize, fileSize)
+	// 2. 必须是绝对路径
+	if !filepath.IsAbs(filePath) {
+		return errors.New("必须使用绝对路径")
 	}
-	return nil
-}
 
-// createTempFile 创建临时文件
-func createTempFile(filePath string) (string, error) {
-	dir := filepath.Dir(filePath)
-	base := filepath.Base(filePath)
+	// 3. 清理路径并检查是否存在路径遍历
+	cleanPath := filepath.Clean(filePath)
+	if !filepath.IsAbs(cleanPath) {
+		return errors.New("路径清理后不是绝对路径，可能存在路径遍历攻击")
+	}
 
-	tempFile, err := os.CreateTemp(dir, base+".*.tmp")
+	// 4. 检查清理后的路径是否与原始路径解析到同一位置
+	absPath, err := filepath.Abs(filePath)
 	if err != nil {
-		return "", errors.WithMessage(err, "创建临时文件失败")
+		return errors.Wrap(err, "获取绝对路径失败")
 	}
-	tempFile.Close()
 
-	return tempFile.Name(), nil
-}
-
-// atomicRename 原子重命名文件
-func atomicRename(oldPath, newPath string) error {
-	if err := os.Rename(oldPath, newPath); err != nil {
-		return errors.WithMessagef(err, "原子重命名失败: %s -> %s", oldPath, newPath)
+	if cleanPath != absPath {
+		return errors.New("路径可能包含路径遍历攻击")
 	}
+
 	return nil
 }
