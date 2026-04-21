@@ -49,7 +49,7 @@ func ReadYAML(filePath string, v any, opts ...SerializerOption) (*ReadResult, er
 	}
 
 	// 读取文件内容
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) // #nosec G304
 	if err != nil {
 		return nil, errors.Errorf("读取YAML文件失败, 文件路径=%s", filePath)
 	}

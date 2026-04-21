@@ -69,8 +69,8 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 	}
 
 	return func(c *gin.Context) {
-		log := logger.With(zap.String("trace_id", ctxutil.GetTraceID(c.Request.Context())))
 		startTime := time.Now()
+		log := ctxutil.NewLogger(logger, c.Request.Context())
 
 		// WebSocket请求跳过超时处理
 		if isWebSocketRequest(c) {

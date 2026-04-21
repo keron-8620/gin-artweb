@@ -43,14 +43,14 @@ func NewMenuHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu [post]
 // @Security ApiKeyAuth
-func (h *MenuHandler) CreateMenu(ctx *gin.Context) {
+func (h *MenuHandler) CreateMenu(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("创建菜单:开始执行")
 
 	var req sysmodel.CreateMenuDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"创建菜单:绑定创建菜单请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建菜单:绑定创建菜单请求参数失败") {
 		return
 	}
 
@@ -66,7 +66,7 @@ func (h *MenuHandler) CreateMenu(ctx *gin.Context) {
 			zap.Object("create_menu_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *MenuHandler) CreateMenu(ctx *gin.Context) {
 	)
 
 	mo := sysmodel.MenuModelToDetailOut(*m)
-	ctx.JSON(http.StatusCreated, &sysmodel.MenuResp{
+	c.JSON(http.StatusCreated, &sysmodel.MenuResp{
 		Code: http.StatusCreated,
 		Data: mo,
 	})
@@ -96,17 +96,19 @@ func (h *MenuHandler) CreateMenu(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu/{id} [put]
 // @Security ApiKeyAuth
-func (h *MenuHandler) UpdateMenu(ctx *gin.Context) {
+func (h *MenuHandler) UpdateMenu(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新菜单:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新菜单:绑定更新菜单ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新菜单:绑定更新菜单ID参数失败") {
 		return
 	}
 
 	var req sysmodel.UpdateMenuDTO
-	if !common.ShouldBind(ctx, log, &req, "更新菜单:绑定更新菜单请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新菜单:绑定更新菜单请求参数失败") {
 		return
 	}
 
@@ -119,7 +121,7 @@ func (h *MenuHandler) UpdateMenu(ctx *gin.Context) {
 			zap.Object("update_menu_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -130,7 +132,7 @@ func (h *MenuHandler) UpdateMenu(ctx *gin.Context) {
 	)
 
 	mo := sysmodel.MenuModelToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &sysmodel.MenuResp{
+	c.JSON(http.StatusOK, &sysmodel.MenuResp{
 		Code: http.StatusOK,
 		Data: mo,
 	})
@@ -148,12 +150,14 @@ func (h *MenuHandler) UpdateMenu(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu/{id} [delete]
 // @Security ApiKeyAuth
-func (h *MenuHandler) DeleteMenu(ctx *gin.Context) {
+func (h *MenuHandler) DeleteMenu(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除菜单:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除菜单:绑定删除菜单ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除菜单:绑定删除菜单ID参数失败") {
 		return
 	}
 
@@ -165,7 +169,7 @@ func (h *MenuHandler) DeleteMenu(ctx *gin.Context) {
 			zap.Uint32("menu_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -175,7 +179,7 @@ func (h *MenuHandler) DeleteMenu(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询菜单
@@ -190,12 +194,13 @@ func (h *MenuHandler) DeleteMenu(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu/{id} [get]
 // @Security ApiKeyAuth
-func (h *MenuHandler) GetMenu(ctx *gin.Context) {
+func (h *MenuHandler) GetMenu(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询菜单:绑定查询菜单ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询菜单:绑定查询菜单ID参数失败") {
 		return
 	}
 
@@ -207,18 +212,12 @@ func (h *MenuHandler) GetMenu(ctx *gin.Context) {
 			zap.Uint32("menu_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询菜单:执行成功",
-		zap.Uint32("menu_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := sysmodel.MenuModelToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &sysmodel.MenuResp{
+	c.JSON(http.StatusOK, &sysmodel.MenuResp{
 		Code: http.StatusOK,
 		Data: mo,
 	})
@@ -235,14 +234,14 @@ func (h *MenuHandler) GetMenu(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/menu [get]
 // @Security ApiKeyAuth
-func (h *MenuHandler) ListMenu(ctx *gin.Context) {
+func (h *MenuHandler) ListMenu(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("查询菜单列表:开始执行")
 
 	var req sysmodel.ListMenuDTO
-	if !common.ShouldBindQuery(
-		ctx, log, &req,
-		"查询菜单列表:绑定查询菜单列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询菜单列表:绑定查询菜单列表参数失败") {
 		return
 	}
 
@@ -257,20 +256,12 @@ func (h *MenuHandler) ListMenu(ctx *gin.Context) {
 			zap.Object("list_menu_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询菜单列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListMenuModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagMenuResp{
+	c.JSON(http.StatusOK, &sysmodel.PagMenuResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

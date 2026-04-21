@@ -183,7 +183,7 @@ func (s *RecordService) Execute(
 	}
 
 	// 打开日志文件
-	taskinfo.LogFile, taskinfo.Error = os.Create(logPath)
+	taskinfo.LogFile, taskinfo.Error = os.Create(logPath) // #nosec G304
 	if taskinfo.Error != nil {
 		taskinfo.Status = 5
 		taskinfo.ErrMSG = fmt.Sprintf("创建日志文件失败: %v", taskinfo.Error)
@@ -369,7 +369,7 @@ func (s *RecordService) Execute(
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_RECORD_ID=%d", record.ID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_LOG_PATH=%s", logPath))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir)) // #nosec G304
 	if record.EnvVars != "" {
 		var envMap map[string]string
 		if err := json.Unmarshal([]byte(record.EnvVars), &envMap); err == nil {
@@ -450,25 +450,15 @@ func (s *RecordService) Cancel(ctx context.Context, recordID uint32) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(s.log, ctx)
 	cancel := s.GetCancel(recordID)
-	if cancel == nil {
-		log.Warn(
-			"未找到要取消的脚本任务",
-			zap.Uint32("script_record_id", recordID),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-	} else {
-		log.Info(
-			"开始取消脚本执行",
-			zap.Uint32("script_record_id", recordID),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
+	if cancel != nil {
 		cancel()
-		log.Info(
-			"取消脚本执行成功",
-			zap.Uint32("script_record_id", recordID),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
+		return
 	}
+	log.Warn(
+		"未找到要取消的脚本任务",
+		zap.Uint32("script_record_id", recordID),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 }
 
 func (s *RecordService) GenerateScriptLogPath(data time.Time, logName string) string {

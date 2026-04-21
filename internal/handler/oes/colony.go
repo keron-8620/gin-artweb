@@ -52,20 +52,16 @@ func NewOesColonyHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony [post]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) CreateOesColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("创建oes集群:开始执行")
+
 	var req oesmodel.OesColonyUpsertDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"创建oes集群:绑定创建oes集群参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建oes集群:绑定创建oes集群参数失败") {
 		return
 	}
-
-	log.Info(
-		"创建oes集群:开始执行",
-		zap.Object("oes_colony_dto", &req),
-	)
 
 	m, rErr := s.colonySvc.CreateOesColony(ctx, req)
 	if rErr != nil {
@@ -75,7 +71,7 @@ func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
 			zap.Object("oes_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -85,7 +81,7 @@ func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
+	c.JSON(http.StatusOK, &oesmodel.OesColonyResp{
 		Code: http.StatusOK,
 		Data: *oesmodel.OesColonyToDetailOut(*m),
 	})
@@ -104,18 +100,19 @@ func (s *OesColonyHandler) CreateOesColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id} [put]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) UpdateOesColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("更新oes集群:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新oes集群:绑定更新oes集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新oes集群:绑定更新oes集群ID参数失败") {
 		return
 	}
 
 	var req oesmodel.OesColonyUpsertDTO
-	if !common.ShouldBind(ctx, log, &req,
-		"更新oes集群:绑定更新oes集群参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新oes集群:绑定更新oes集群参数失败") {
 		return
 	}
 
@@ -128,7 +125,7 @@ func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
 			zap.Object("oes_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -138,7 +135,7 @@ func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
+	c.JSON(http.StatusOK, &oesmodel.OesColonyResp{
 		Code: http.StatusOK,
 		Data: *oesmodel.OesColonyToDetailOut(*m),
 	})
@@ -156,12 +153,14 @@ func (s *OesColonyHandler) UpdateOesColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id} [delete]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) DeleteOesColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("删除oes集群:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除oes集群:绑定删除oes集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除oes集群:绑定删除oes集群ID参数失败") {
 		return
 	}
 
@@ -173,7 +172,7 @@ func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
 			zap.Uint32("oes_colony_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -183,7 +182,7 @@ func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询oes集群详情
@@ -198,11 +197,13 @@ func (s *OesColonyHandler) DeleteOesColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id} [get]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) GetOesColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询oes集群详情:绑定查询oes集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询oes集群详情:绑定查询oes集群ID参数失败") {
 		return
 	}
 
@@ -216,18 +217,12 @@ func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
 			zap.Uint32("oes_colony_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询oes集群详情:执行成功",
-		zap.Uint32("oes_colony_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := oesmodel.OesColonyToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &oesmodel.OesColonyResp{
+	c.JSON(http.StatusOK, &oesmodel.OesColonyResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -244,12 +239,13 @@ func (s *OesColonyHandler) GetOesColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony [get]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
+func (s *OesColonyHandler) ListOesColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询oes集群列表:绑定查询oes集群列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询oes集群列表:绑定查询oes集群列表参数失败") {
 		return
 	}
 
@@ -264,19 +260,12 @@ func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
 			zap.Object("oes_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
-	log.Info(
-		"查询oes集群列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 
 	mbs := oesmodel.ListOesColonyToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &oesmodel.PagOesColonyResp{
+	c.JSON(http.StatusOK, &oesmodel.PagOesColonyResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -294,12 +283,13 @@ func (s *OesColonyHandler) ListOesColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/{id}/schedule [get]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) ListOesSchedules(ctx *gin.Context) {
+func (s *OesColonyHandler) ListOesSchedules(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询oes计划任务:绑定查询oes集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询oes计划任务:绑定查询oes集群ID参数失败") {
 		return
 	}
 
@@ -311,19 +301,13 @@ func (s *OesColonyHandler) ListOesSchedules(ctx *gin.Context) {
 			zap.Uint32("oes_colony_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询oes计划任务:执行成功",
-		zap.Uint32("oes_colony_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	num := len(schedules)
 	mos := jobmodel.ListScheduledToDetailOut(schedules)
-	ctx.JSON(http.StatusOK, &jobmodel.PagScheduleResp{
+	c.JSON(http.StatusOK, &jobmodel.PagScheduleResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(1, num, int64(num), mos),
 	})
@@ -340,12 +324,13 @@ func (s *OesColonyHandler) ListOesSchedules(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/status/stk [get]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
+func (s *OesColonyHandler) ListStkTaskStatus(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询oes现货集群列表的任务状态:绑定查询oes现货集群列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询oes现货集群列表的任务状态:绑定查询oes现货集群列表参数失败") {
 		return
 	}
 	req.SystemType = "STK"
@@ -358,21 +343,15 @@ func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
 			zap.Object("oes_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
-
-	log.Info(
-		"查询oes现货集群列表的任务状态:执行成功",
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 
 	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
 	for i, task := range tasks {
 		results[i] = BuildStkColonyTaskInfo(task)
 	}
-
-	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
+	c.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})
@@ -389,12 +368,13 @@ func (s *OesColonyHandler) ListStkTaskStatus(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/status/crd [get]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
+func (s *OesColonyHandler) ListCrdTaskStatus(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询oes两融集群列表的任务状态:绑定查询oes两融集群列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询oes两融集群列表的任务状态:绑定查询oes两融集群列表参数失败") {
 		return
 	}
 	req.SystemType = "CRD"
@@ -407,21 +387,16 @@ func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
 			zap.Object("oes_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
-
-	log.Info(
-		"查询oes两融集群列表的任务状态:执行成功",
-		zap.Duration("total_time", time.Since(startTime)),
-	)
 
 	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
 	for i, task := range tasks {
 		results[i] = BuildCrdColonyTaskInfo(task)
 	}
 
-	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
+	c.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})
@@ -438,12 +413,13 @@ func (s *OesColonyHandler) ListCrdTaskStatus(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/colony/status/opt [get]
 // @Security ApiKeyAuth
-func (s *OesColonyHandler) ListOptTaskStatus(ctx *gin.Context) {
+func (s *OesColonyHandler) ListOptTaskStatus(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesColonyDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询oes期权集群列表的任务状态:绑定查询oes期权集群列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询oes期权集群列表的任务状态:绑定查询oes期权集群列表参数失败") {
 		return
 	}
 	req.SystemType = "OPT"
@@ -456,21 +432,16 @@ func (s *OesColonyHandler) ListOptTaskStatus(ctx *gin.Context) {
 			zap.Object("oes_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
-
-	log.Info(
-		"查询oes期权集群列表的任务状态:执行成功",
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
 
 	results := make([]oesmodel.OesColonyTaskInfo, len(tasks))
 	for i, task := range tasks {
 		results[i] = BuildOptColonyTaskInfo(task)
 	}
 
-	ctx.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
+	c.JSON(http.StatusOK, &oesmodel.ListOesTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})

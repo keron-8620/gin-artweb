@@ -43,12 +43,14 @@ func NewButtonHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button [post]
 // @Security ApiKeyAuth
-func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
+func (h *ButtonHandler) CreateButton(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("创建按钮:开始执行")
 
 	var req sysmodel.CreateButtonDTO
-	if !common.ShouldBind(ctx, log, &req, "创建按钮:绑定创建按钮请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建按钮:绑定创建按钮请求参数失败") {
 		return
 	}
 
@@ -60,7 +62,7 @@ func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
 			zap.Object("create_button_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -70,7 +72,7 @@ func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusCreated, &sysmodel.ButtonResp{
+	c.JSON(http.StatusCreated, &sysmodel.ButtonResp{
 		Code: http.StatusCreated,
 		Data: sysmodel.ButtonModelToDetailOut(*m),
 	})
@@ -89,17 +91,19 @@ func (h *ButtonHandler) CreateButton(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button/{id} [put]
 // @Security ApiKeyAuth
-func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
+func (h *ButtonHandler) UpdateButton(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新按钮:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新按钮:绑定更新按钮ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新按钮:绑定更新按钮ID参数失败") {
 		return
 	}
 
 	var req sysmodel.UpdateButtonDTO
-	if !common.ShouldBind(ctx, log, &req, "更新按钮:绑定更新按钮请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新按钮:绑定更新按钮请求参数失败") {
 		return
 	}
 
@@ -112,7 +116,7 @@ func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
 			zap.Object("update_button_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -122,7 +126,7 @@ func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &sysmodel.ButtonResp{
+	c.JSON(http.StatusOK, &sysmodel.ButtonResp{
 		Code: http.StatusOK,
 		Data: sysmodel.ButtonModelToDetailOut(*m),
 	})
@@ -140,12 +144,14 @@ func (h *ButtonHandler) UpdateButton(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button/{id} [delete]
 // @Security ApiKeyAuth
-func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
+func (h *ButtonHandler) DeleteButton(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除按钮:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除按钮:绑定删除按钮ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除按钮:绑定删除按钮ID参数失败") {
 		return
 	}
 
@@ -157,7 +163,7 @@ func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
 			zap.Uint32("button_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -167,7 +173,7 @@ func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询按钮
@@ -182,12 +188,13 @@ func (h *ButtonHandler) DeleteButton(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button/{id} [get]
 // @Security ApiKeyAuth
-func (h *ButtonHandler) GetButton(ctx *gin.Context) {
+func (h *ButtonHandler) GetButton(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询按钮:绑定查询按钮ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询按钮:绑定查询按钮ID参数失败") {
 		return
 	}
 
@@ -199,17 +206,11 @@ func (h *ButtonHandler) GetButton(ctx *gin.Context) {
 			zap.Uint32("button_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询按钮:查询按钮成功",
-		zap.Uint32("button_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &sysmodel.ButtonResp{
+	c.JSON(http.StatusOK, &sysmodel.ButtonResp{
 		Code: http.StatusOK,
 		Data: sysmodel.ButtonModelToDetailOut(*m),
 	})
@@ -226,12 +227,14 @@ func (h *ButtonHandler) GetButton(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/button [get]
 // @Security ApiKeyAuth
-func (h *ButtonHandler) ListButton(ctx *gin.Context) {
+func (h *ButtonHandler) ListButton(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("查询按钮列表:开始执行")
 
 	var req sysmodel.ListButtonDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询按钮列表:绑定查询按钮列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询按钮列表:绑定查询按钮列表参数失败") {
 		return
 	}
 
@@ -246,20 +249,12 @@ func (h *ButtonHandler) ListButton(ctx *gin.Context) {
 			zap.Object("list_button_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询按钮列表:查询按钮列表成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListButtonModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagButtonResp{
+	c.JSON(http.StatusOK, &sysmodel.PagButtonResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

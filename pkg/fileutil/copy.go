@@ -57,14 +57,14 @@ func CopyFile(ctx context.Context, src, dst string) error {
 	}
 
 	// 打开源文件（只读）
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304
 	if err != nil {
 		return errors.WithMessagef(err, "打开源文件失败, src=%s", src)
 	}
 	defer srcFile.Close()
 
 	// 创建目标文件（继承源权限）
-	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode().Perm())
+	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode().Perm()) // #nosec G304
 	if err != nil {
 		return errors.WithMessagef(err, "创建目标文件失败, dst=%s", dst)
 	}

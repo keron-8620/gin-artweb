@@ -201,7 +201,7 @@
 				
 				<option value="file72">gin-artweb/internal/service/mds/node.go (0.0%)</option>
 				
-				<option value="file73">gin-artweb/internal/service/mon/node.go (0.0%)</option>
+				<option value="file73">gin-artweb/internal/service/mon/node.go (81.6%)</option>
 				
 				<option value="file74">gin-artweb/internal/service/oes/colony.go (0.0%)</option>
 				
@@ -2592,7 +2592,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/job.ExecScriptDTO"
+                            "$ref": "#/definitions/job.CreateScriptRecordDTO"
                         }
                     }
                 ],
@@ -8346,7 +8346,7 @@ const docTemplate = `{
                 }
             }
         },
-        "job.ExecScriptDTO": {
+        "job.CreateScriptRecordDTO": {
             "type": "object",
             "required": [
                 "script_id",
@@ -11276,7 +11276,7 @@ func NewScriptRecordHandler(
 // @Tags 脚本执行记录
 // @Accept json
 // @Produce json
-// @Param request body jobmodel.ExecScriptDTO true "执行脚本请求参数"
+// @Param request body jobmodel.CreateScriptRecordDTO true "执行脚本请求参数"
 // @Success 200 {object} jobmodel.ScriptRecordResp "成功返回执行记录信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
@@ -11606,7 +11606,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) <span clas
         }</span>
 
         // 初始化文件信息
-        <span class="cov0" title="0">file, err := os.Open(logPath)
+        <span class="cov0" title="0">file, err := os.Open(logPath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 log.Error(
                         "实时获取脚本执行日志:打开日志文件失败",
@@ -31057,7 +31057,7 @@ func NewRouter(
         <span class="cov0" title="0">r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
 
         // 注册超时处理中间件
-        r.Use(middleware.TimeoutMiddleware(loggers.Handler, time.Duration(init.Conf.Server.Timeout.Request)*time.Second))
+        r.Use(middleware.TimeoutMiddleware(loggers.Handler, init.Conf.Server.Timeout.Request))
 
         // 配置 Swagger 文档
         if init.Conf.Server.Swagger </span><span class="cov0" title="0">{
@@ -31092,7 +31092,6 @@ func NewRouter(
 
 import (
         "context"
-        "time"
 
         "github.com/gin-gonic/gin"
         "go.uber.org/zap"
@@ -31112,7 +31111,7 @@ func newSysRouter(
 ) <span class="cov0" title="0">{
         secSettings := syssvc.SecuritySettings{
                 MaxFailedAttempts: init.Conf.Security.Login.MaxFailedAttempts,
-                LockDuration:      time.Duration(init.Conf.Security.Login.LockMinutes) * time.Minute,
+                LockDuration:      init.Conf.Security.Login.LockDuration,
                 PasswordStrength:  init.Conf.Security.Password.StrengthLevel,
         }
 
@@ -31121,9 +31120,13 @@ func newSysRouter(
         buttonRepo := sysrepo.NewButtonRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold, init.Enforcer)
         roleRepo := sysrepo.NewRoleRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold, init.Enforcer)
         userRepo := sysrepo.NewUserRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
-        recordRepo := sysrepo.NewLoginRecordRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold,
-                time.Duration(init.Conf.Security.Login.LockMinutes)*time.Minute,
-                time.Duration(init.Conf.Security.Token.AccessMinutes*2)*time.Minute,
+        recordRepo := sysrepo.NewLoginRecordRepo(
+                loggers.Repo,
+                init.DB,
+                init.DBTimeout,
+                init.DBSlowThreshold,
+                init.Conf.Security.Login.LockDuration,
+                init.Conf.Security.Token.AccessDuration,
                 init.Conf.Security.Login.MaxFailedAttempts,
         )
 
@@ -31377,7 +31380,7 @@ func (s *RecordService) Execute(
         }</span>
 
         // 打开日志文件
-        <span class="cov3" title="2">taskinfo.LogFile, taskinfo.Error = os.Create(logPath)
+        <span class="cov3" title="2">taskinfo.LogFile, taskinfo.Error = os.Create(logPath) // #nosec G304
         if taskinfo.Error != nil </span><span class="cov0" title="0">{
                 taskinfo.Status = 5
                 taskinfo.ErrMSG = fmt.Sprintf("创建日志文件失败: %v", taskinfo.Error)
@@ -31563,7 +31566,7 @@ func (s *RecordService) Execute(
         <span class="cov0" title="0">cmd.Env = os.Environ()
         cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_RECORD_ID=%d", record.ID))
         cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_LOG_PATH=%s", logPath))
-        cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir))
+        cmd.Env = append(cmd.Env, fmt.Sprintf("JOB_BASE_DIR=%s", config.BaseDir)) // #nosec G304
         if record.EnvVars != "" </span><span class="cov0" title="0">{
                 var envMap map[string]string
                 if err := json.Unmarshal([]byte(record.EnvVars), &amp;envMap); err == nil </span><span class="cov0" title="0">{
@@ -34535,7 +34538,7 @@ type MonNodeService struct {
 func NewMonNodeService(
         log *zap.Logger,
         nodeRepo *monrepo.MonNodeRepo,
-) *MonNodeService <span class="cov0" title="0">{
+) *MonNodeService <span class="cov10" title="17">{
         return &amp;MonNodeService{
                 log:      log,
                 nodeRepo: nodeRepo,
@@ -34545,12 +34548,12 @@ func NewMonNodeService(
 func (s *MonNodeService) CreateMonNode(
         ctx context.Context,
         dto monmodel.MonNodeUpsertDTO,
-) (*monmodel.MonNodeModel, *errors.Error) <span class="cov0" title="0">{
+) (*monmodel.MonNodeModel, *errors.Error) <span class="cov4" title="3">{
         startTime := time.Now()
-        if ctx.Err() != nil </span><span class="cov0" title="0">{
+        if ctx.Err() != nil </span><span class="cov1" title="1">{
                 return nil, errors.FromError(ctx.Err())
         }</span>
-        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+        <span class="cov3" title="2">log := ctxutil.NewLogger(s.log, ctx)
 
         log.Info(
                 "创建mon节点:开始执行",
@@ -34558,7 +34561,7 @@ func (s *MonNodeService) CreateMonNode(
         )
 
         m := dto.ToModel()
-        if err := s.nodeRepo.CreateModel(ctx, &amp;m); err != nil </span><span class="cov0" title="0">{
+        if err := s.nodeRepo.CreateModel(ctx, &amp;m); err != nil </span><span class="cov1" title="1">{
                 log.Error(
                         "创建mon节点:创建数据库模型失败",
                         zap.Error(err),
@@ -34568,7 +34571,7 @@ func (s *MonNodeService) CreateMonNode(
                 return nil, errors.NewGormError(err, nil)
         }</span>
 
-        <span class="cov0" title="0">outputPath := GetMonNodeExportPath(m.ID)
+        <span class="cov1" title="1">outputPath := GetMonNodeExportPath(m.ID)
         if err := s.ExportMonNode(ctx, m, outputPath); err != nil </span><span class="cov0" title="0">{
                 log.Error(
                         "创建mon节点:导出节点文件失败",
@@ -34580,7 +34583,7 @@ func (s *MonNodeService) CreateMonNode(
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">log.Info(
+        <span class="cov1" title="1">log.Info(
                 "创建mon节点:执行成功",
                 zap.Uint32("mon_node_id", m.ID),
                 zap.Duration("total_duration", time.Since(startTime)),
@@ -34592,12 +34595,12 @@ func (s *MonNodeService) UpdateMonNodeByID(
         ctx context.Context,
         nodeID uint32,
         dto monmodel.MonNodeUpsertDTO,
-) (*monmodel.MonNodeModel, *errors.Error) <span class="cov0" title="0">{
+) (*monmodel.MonNodeModel, *errors.Error) <span class="cov4" title="3">{
         startTime := time.Now()
-        if ctx.Err() != nil </span><span class="cov0" title="0">{
+        if ctx.Err() != nil </span><span class="cov1" title="1">{
                 return nil, errors.FromError(ctx.Err())
         }</span>
-        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+        <span class="cov3" title="2">log := ctxutil.NewLogger(s.log, ctx)
 
         log.Info(
                 "更新mon节点:开始执行",
@@ -34617,8 +34620,8 @@ func (s *MonNodeService) UpdateMonNodeByID(
                 return nil, errors.NewGormError(err, nil)
         }</span>
 
-        <span class="cov0" title="0">m, rErr := s.FindMonNodeByID(ctx, []string{"Host"}, nodeID)
-        if rErr != nil </span><span class="cov0" title="0">{
+        <span class="cov3" title="2">m, rErr := s.FindMonNodeByID(ctx, []string{"Host"}, nodeID)
+        if rErr != nil </span><span class="cov1" title="1">{
                 log.Error(
                         "更新mon节点:查询更新后的mon节点失败",
                         zap.Error(rErr),
@@ -34628,7 +34631,7 @@ func (s *MonNodeService) UpdateMonNodeByID(
                 return nil, rErr
         }</span>
 
-        <span class="cov0" title="0">outputPath := GetMonNodeExportPath(nodeID)
+        <span class="cov1" title="1">outputPath := GetMonNodeExportPath(nodeID)
         if rErr := s.ExportMonNode(ctx, *m, outputPath); rErr != nil </span><span class="cov0" title="0">{
                 log.Error(
                         "更新mon节点:导出节点文件失败",
@@ -34639,7 +34642,7 @@ func (s *MonNodeService) UpdateMonNodeByID(
                 return nil, rErr
         }</span>
 
-        <span class="cov0" title="0">log.Info(
+        <span class="cov1" title="1">log.Info(
                 "更新mon节点:执行成功",
                 zap.Uint32("mon_node_id", nodeID),
                 zap.Duration("total_duration", time.Since(startTime)),
@@ -34650,12 +34653,12 @@ func (s *MonNodeService) UpdateMonNodeByID(
 func (s *MonNodeService) DeleteMonNodeByID(
         ctx context.Context,
         nodeID uint32,
-) *errors.Error <span class="cov0" title="0">{
+) *errors.Error <span class="cov4" title="3">{
         startTime := time.Now()
-        if ctx.Err() != nil </span><span class="cov0" title="0">{
+        if ctx.Err() != nil </span><span class="cov1" title="1">{
                 return errors.FromError(ctx.Err())
         }</span>
-        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+        <span class="cov3" title="2">log := ctxutil.NewLogger(s.log, ctx)
 
         log.Info(
                 "删除mon节点:开始执行",
@@ -34672,7 +34675,7 @@ func (s *MonNodeService) DeleteMonNodeByID(
                 return errors.NewGormError(err, map[string]any{"id": nodeID})
         }</span>
 
-        <span class="cov0" title="0">outportPath := GetMonNodeExportPath(nodeID)
+        <span class="cov3" title="2">outportPath := GetMonNodeExportPath(nodeID)
         if err := fileutil.Remove(ctx, outportPath); err != nil </span><span class="cov0" title="0">{
                 log.Error(
                         "删除mon节点:删除节点文件失败, 请手动删除",
@@ -34683,7 +34686,7 @@ func (s *MonNodeService) DeleteMonNodeByID(
                 return errors.ErrDeleteCacheFileFailed.WithCause(err)
         }</span>
 
-        <span class="cov0" title="0">log.Info(
+        <span class="cov3" title="2">log.Info(
                 "删除mon节点:执行成功",
                 zap.Uint32("mon_node_id", nodeID),
                 zap.Duration("total_duration", time.Since(startTime)),
@@ -34695,15 +34698,15 @@ func (s *MonNodeService) FindMonNodeByID(
         ctx context.Context,
         preloads []string,
         nodeID uint32,
-) (*monmodel.MonNodeModel, *errors.Error) <span class="cov0" title="0">{
+) (*monmodel.MonNodeModel, *errors.Error) <span class="cov6" title="6">{
         startTime := time.Now()
-        if ctx.Err() != nil </span><span class="cov0" title="0">{
+        if ctx.Err() != nil </span><span class="cov1" title="1">{
                 return nil, errors.FromError(ctx.Err())
         }</span>
-        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+        <span class="cov6" title="5">log := ctxutil.NewLogger(s.log, ctx)
 
         m, err := s.nodeRepo.GetModel(ctx, preloads, nodeID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov4" title="3">{
                 log.Error(
                         "查询mon节点:查询数据库模型失败",
                         zap.Error(err),
@@ -34714,7 +34717,7 @@ func (s *MonNodeService) FindMonNodeByID(
                 return nil, errors.NewGormError(err, map[string]any{"id": nodeID})
         }</span>
 
-        <span class="cov0" title="0">log.Debug(
+        <span class="cov3" title="2">log.Debug(
                 "查询mon节点:查询到的数据库模型详情",
                 zap.Object("mon_node_model", m),
         )
@@ -34725,12 +34728,12 @@ func (s *MonNodeService) ListMonNode(
         ctx context.Context,
         page, size int,
         dto monmodel.ListMonNodeDTO,
-) (int64, []monmodel.MonNodeModel, *errors.Error) <span class="cov0" title="0">{
+) (int64, []monmodel.MonNodeModel, *errors.Error) <span class="cov5" title="4">{
         startTime := time.Now()
-        if ctx.Err() != nil </span><span class="cov0" title="0">{
+        if ctx.Err() != nil </span><span class="cov1" title="1">{
                 return 0, nil, errors.FromError(ctx.Err())
         }</span>
-        <span class="cov0" title="0">log := ctxutil.NewLogger(s.log, ctx)
+        <span class="cov4" title="3">log := ctxutil.NewLogger(s.log, ctx)
 
         log.Debug(
                 "查询mon节点列表:参数详情",
@@ -34759,7 +34762,7 @@ func (s *MonNodeService) ListMonNode(
                 return 0, nil, errors.NewGormError(err, nil)
         }</span>
 
-        <span class="cov0" title="0">if count == 0 </span><span class="cov0" title="0">{
+        <span class="cov4" title="3">if count == 0 </span><span class="cov1" title="1">{
                 log.Warn(
                         "查询mon节点列表:数据库模型总数为0",
                         zap.Duration("total_duration", time.Since(startTime)),
@@ -34767,7 +34770,7 @@ func (s *MonNodeService) ListMonNode(
                 return 0, nil, nil
         }</span>
 
-        <span class="cov0" title="0">ms, err := s.nodeRepo.ListModel(ctx, qp)
+        <span class="cov3" title="2">ms, err := s.nodeRepo.ListModel(ctx, qp)
         if err != nil </span><span class="cov0" title="0">{
                 log.Error(
                         "查询mon节点列表:查询数据库模型失败",
@@ -34777,14 +34780,14 @@ func (s *MonNodeService) ListMonNode(
                 )
                 return 0, nil, errors.NewGormError(err, nil)
         }</span>
-        <span class="cov0" title="0">return count, ms, nil</span>
+        <span class="cov3" title="2">return count, ms, nil</span>
 }
 
 func (s *MonNodeService) ExportMonNode(
         ctx context.Context,
         m monmodel.MonNodeModel,
         outputPath string,
-) *errors.Error <span class="cov0" title="0">{
+) *errors.Error <span class="cov4" title="3">{
         startTime := time.Now()
         log := ctxutil.NewLogger(s.log, ctx)
 
@@ -34805,10 +34808,10 @@ func (s *MonNodeService) ExportMonNode(
                 )
                 return errors.ErrExportCacheFileFailed.WithCause(err)
         }</span>
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov4" title="3">return nil</span>
 }
 
-func GetMonNodeExportPath(pk uint32) string <span class="cov0" title="0">{
+func GetMonNodeExportPath(pk uint32) string <span class="cov6" title="6">{
         return filepath.Join(config.StorageDir, "mon", "config", fmt.Sprintf("%d", pk), "mon.yaml")
 }</span>
 </pre>
@@ -40639,7 +40642,7 @@ func ReadUint32FromFile(filePath string) (uint32, error) <span class="cov0" titl
                 <span class="cov0" title="0">return 0, nil</span>
         }
         // 读取文件内容
-        <span class="cov0" title="0">file, err := os.Open(filePath)
+        <span class="cov0" title="0">file, err := os.Open(filePath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return 0, errors.WrapIfWithDetails(err, "打开文件失败", "filepath", filePath)
         }</span>
@@ -40966,6 +40969,7 @@ import (
 
         "emperror.dev/errors"
         "github.com/glebarez/sqlite"
+        "gorm.io/driver/gaussdb"
         "gorm.io/driver/mysql"
         "gorm.io/driver/postgres"
         "gorm.io/driver/sqlserver"
@@ -41014,8 +41018,11 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) <span class=
                 db, openErr = gorm.Open(sqlite.Open(c.Dns), gc)</span>
         case "sqlserver":<span class="cov0" title="0">
                 db, openErr = gorm.Open(sqlserver.Open(c.Dns), gc)</span>
-        // case "opengauss":
-        //         db, openErr = gorm.Open(opengauss.Open(c.Dns), gc)
+        case "opengauss":<span class="cov0" title="0">
+                db, openErr = gorm.Open(gaussdb.New(gaussdb.Config{
+                        DSN:                  c.Dns,
+                        PreferSimpleProtocol: true,
+                }), gc)</span>
         default:<span class="cov0" title="0">
                 // 不支持的数据库驱动类型
                 return nil, errors.NewWithDetails("不支持的数据库驱动类型: %s", c.Type)</span>
@@ -41414,9 +41421,10 @@ import (
 
 // ExecSQLFile 执行 SQL 脚本文件，支持所有数据库 + 所有注释类型
 func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error <span class="cov0" title="0">{
-        content, err := os.ReadFile(filePath)
+        // 读取SQL文件
+        content, err := os.ReadFile(filePath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
-                return err
+                return errors.WithMessagef(err, "读取SQL文件失败, 路径: %s", filePath)
         }</span>
 
         // 核心：清理所有注释（// -- # /* */）
@@ -41455,73 +41463,87 @@ func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error <span 
         <span class="cov0" title="0">return nil</span>
 }
 
-// cleanSQLComments 清理：//  --  #  /* */ 全部注释
+// 安全版本：只删除 单引号外部 的注释，不会破坏字符串内容
 func cleanSQLComments(sql string) string <span class="cov0" title="0">{
-        // 1. 去掉 多行注释 /* ... */
-        clean := removeMultiLineComments(sql)
-        // 2. 去掉 单行注释 -- 、 # 、 //
-        clean = removeSingleLineComments(clean)
-        return clean
-}</span>
+        var result strings.Builder
+        n := len(sql)
+        inQuote := false // 是否在 ' 字符串内部
 
-// 移除 /* ... */ 多行注释
-func removeMultiLineComments(s string) string <span class="cov0" title="0">{
-        for </span><span class="cov0" title="0">{
-                start := strings.Index(s, "/*")
-                if start == -1 </span><span class="cov0" title="0">{
-                        break</span>
-                }
-                <span class="cov0" title="0">end := strings.Index(s[start:], "*/")
-                if end == -1 </span><span class="cov0" title="0">{
-                        break</span>
-                }
-                <span class="cov0" title="0">end += start
-                s = s[:start] + s[end+2:]</span>
-        }
-        <span class="cov0" title="0">return s</span>
-}
-
-// 移除 --、#、// 单行注释
-func removeSingleLineComments(s string) string <span class="cov0" title="0">{
-        lines := strings.Split(s, "\n")
-        var result []string
-
-        for _, line := range lines </span><span class="cov0" title="0">{
-                trimmed := strings.TrimSpace(line)
-                if trimmed == "" </span><span class="cov0" title="0">{
+        for i := 0; i &lt; n; </span><span class="cov0" title="0">{
+                if sql[i] == '\'' </span><span class="cov0" title="0">{
+                        inQuote = !inQuote
+                        result.WriteByte(sql[i])
+                        i++
                         continue</span>
                 }
 
-                // 去掉 -- 注释
-                <span class="cov0" title="0">if idx := strings.Index(line, "--"); idx != -1 </span><span class="cov0" title="0">{
-                        line = line[:idx]
-                }</span>
-                // 去掉 # 注释
-                <span class="cov0" title="0">if idx := strings.Index(line, "#"); idx != -1 </span><span class="cov0" title="0">{
-                        line = line[:idx]
-                }</span>
-                // 去掉 // 注释
-                <span class="cov0" title="0">if idx := strings.Index(line, "//"); idx != -1 </span><span class="cov0" title="0">{
-                        line = line[:idx]
-                }</span>
+                // 不在字符串内，才处理注释
+                <span class="cov0" title="0">if !inQuote </span><span class="cov0" title="0">{
+                        // 多行注释 /*
+                        if i+1 &lt; n &amp;&amp; sql[i] == '/' &amp;&amp; sql[i+1] == '*' </span><span class="cov0" title="0">{
+                                // 跳过直到 */
+                                for i += 2; i+1 &lt; n; i++ </span><span class="cov0" title="0">{
+                                        if sql[i] == '*' &amp;&amp; sql[i+1] == '/' </span><span class="cov0" title="0">{
+                                                i += 2
+                                                break</span>
+                                        }
+                                }
+                                <span class="cov0" title="0">continue</span>
+                        }
 
-                <span class="cov0" title="0">line = strings.TrimSpace(line)
-                if line != "" </span><span class="cov0" title="0">{
-                        result = append(result, line)
-                }</span>
+                        // 单行注释 --  //  #
+                        <span class="cov0" title="0">if i+1 &lt; n &amp;&amp; ((sql[i] == '-' &amp;&amp; sql[i+1] == '-') || (sql[i] == '/' &amp;&amp; sql[i+1] == '/')) </span><span class="cov0" title="0">{
+                                // 跳过本行剩余
+                                for i &lt; n &amp;&amp; sql[i] != '\n' </span><span class="cov0" title="0">{
+                                        i++
+                                }</span>
+                                <span class="cov0" title="0">continue</span>
+                        }
+                        <span class="cov0" title="0">if sql[i] == '#' </span><span class="cov0" title="0">{
+                                for i &lt; n &amp;&amp; sql[i] != '\n' </span><span class="cov0" title="0">{
+                                        i++
+                                }</span>
+                                <span class="cov0" title="0">continue</span>
+                        }
+                }
+
+                // 正常字符
+                <span class="cov0" title="0">result.WriteByte(sql[i])
+                i++</span>
         }
-        <span class="cov0" title="0">return strings.Join(result, " ")</span>
+
+        <span class="cov0" title="0">return strings.TrimSpace(result.String())</span>
 }
 
 // splitSQL 按 ; 分割 SQL
 func splitSQL(sql string) []string <span class="cov0" title="0">{
         var statements []string
-        for _, stmt := range strings.Split(sql, ";") </span><span class="cov0" title="0">{
-                stmt = strings.TrimSpace(stmt)
-                if stmt != "" </span><span class="cov0" title="0">{
-                        statements = append(statements, stmt)
+        var current strings.Builder
+        n := len(sql)
+        inQuote := false
+
+        for i := 0; i &lt; n; i++ </span><span class="cov0" title="0">{
+                c := sql[i]
+                if c == '\'' </span><span class="cov0" title="0">{
+                        inQuote = !inQuote
+                        current.WriteByte(c)
+                }</span> else<span class="cov0" title="0"> if c == ';' &amp;&amp; !inQuote </span><span class="cov0" title="0">{
+                        stmt := strings.TrimSpace(current.String())
+                        if stmt != "" </span><span class="cov0" title="0">{
+                                statements = append(statements, stmt)
+                        }</span>
+                        <span class="cov0" title="0">current.Reset()</span>
+                } else<span class="cov0" title="0"> {
+                        current.WriteByte(c)
                 }</span>
         }
+
+        // 最后一段
+        <span class="cov0" title="0">stmt := strings.TrimSpace(current.String())
+        if stmt != "" </span><span class="cov0" title="0">{
+                statements = append(statements, stmt)
+        }</span>
+
         <span class="cov0" title="0">return statements</span>
 }
 </pre>
@@ -42720,7 +42742,7 @@ func ParsePrivateKey(filePath string) (ssh.Signer, error) <span class="cov0" tit
         }</span>
 
         // 读取私钥文件
-        <span class="cov0" title="0">key, err := os.ReadFile(filePath)
+        <span class="cov0" title="0">key, err := os.ReadFile(filePath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return nil, errors.WithMessagef(err, "读取SSH私钥文件失败, 路径: %s", filePath)
         }</span>
@@ -42839,7 +42861,7 @@ func UploadFile(
         }</span>
 
         // 打开本地源文件
-        <span class="cov0" title="0">srcFile, err := os.Open(src)
+        <span class="cov0" title="0">srcFile, err := os.Open(src) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WithMessagef(err, "打开本地源文件失败，路径: %s", src)
         }</span>
@@ -42851,7 +42873,7 @@ func UploadFile(
                 return errors.WithMessagef(err, "创建远程目录失败，路径: %s", destDir)
         }</span>
 
-        // 创建远程目标文件
+        // nosec G304: 创建远程目标文件
         <span class="cov0" title="0">dstFile, err := client.Create(dest)
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WithMessagef(err, "创建远程目标文件失败，路径: %s", dest)
@@ -42909,7 +42931,7 @@ func DownloadFile(
         }</span>
 
         // 创建本地目标文件
-        <span class="cov0" title="0">dstFile, err := os.Create(dest)
+        <span class="cov0" title="0">dstFile, err := os.Create(dest) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WithMessagef(err, "创建本地目标文件失败，路径: %s", dest)
         }</span>
@@ -43531,7 +43553,7 @@ func main() <span class="cov0" title="0">{
         <span class="cov0" title="0">srv := &amp;http.Server{
                 Addr:              fmt.Sprintf("%s:%d", i.Conf.Server.Host, i.Conf.Server.Port),
                 Handler:           r,
-                ReadHeaderTimeout: time.Duration(sysConf.Server.Timeout.Request),
+                ReadHeaderTimeout: sysConf.Server.Timeout.Request,
         }
 
         // 启动一个 goroutine 来异步启动 HTTP/HTTPS 服务
@@ -43593,8 +43615,7 @@ func main() <span class="cov0" title="0">{
         loggers.Server.Info("正在关闭服务器...")
 
         // 创建带超时控制的上下文对象用于通知服务器关闭
-        ctx, cancel := context.WithTimeout(context.Background(),
-                time.Duration(i.Conf.Server.Timeout.Shutdown)*time.Second)
+        ctx, cancel := context.WithTimeout(context.Background(), i.Conf.Server.Timeout.Shutdown)
         defer cancel()
 
         // 执行服务器优雅关闭逻辑
@@ -43620,7 +43641,7 @@ func newSystemConf(configPath string) *config.SystemConf <span class="cov0" titl
         }
 
         // 读取配置文件
-        <span class="cov0" title="0">data, err := os.ReadFile(configPath)
+        <span class="cov0" title="0">data, err := os.ReadFile(configPath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 golog.Fatalf("FATAL: 读取配置文件失败: %v", err)
         }</span>
@@ -43646,8 +43667,8 @@ func newSystemConf(configPath string) *config.SystemConf <span class="cov0" titl
 // 返回值3: 初始化过程中发生的错误
 func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.SystemInit, func(), error) <span class="cov0" title="0">{
         jwtConf := config.NewJWTConfig(
-                time.Duration(conf.Security.Token.AccessMinutes)*time.Minute,
-                time.Duration(conf.Security.Token.RefreshMinutes)*time.Minute,
+                time.Duration(conf.Security.Token.AccessDuration)*time.Minute,
+                time.Duration(conf.Security.Token.RefreshDuration)*time.Minute,
                 conf.Security.Token.AccessMethod,
                 conf.Security.Token.RefreshMethod,
                 []byte(os.Getenv("JWT_ACCESS_SECRET")),
@@ -43668,9 +43689,16 @@ func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.Sy
 
         // 初始化数据库超时配置
         dbTimeout := config.DBTimeout{
-                ListTimeout:  time.Duration(conf.Database.ListTimeout) * time.Second,
-                ReadTimeout:  time.Duration(conf.Database.ReadTimeout) * time.Second,
-                WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
+                ListTimeout:  conf.Database.ListTimeout,
+                ReadTimeout:  conf.Database.ReadTimeout,
+                WriteTimeout: conf.Database.WriteTimeout,
+        }
+
+        // 初始化数据库慢查询阈值
+        dbSlowThreshold := &amp;config.DBSlowThreshold{
+                ReadSlow:  conf.Database.ReadSlow,
+                WriteSlow: conf.Database.WriteSlow,
+                ListSlow:  conf.Database.ListSlow,
         }
 
         // 初始化数据库连接
@@ -43682,17 +43710,19 @@ func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.Sy
 
         // 返回初始化结构体和清理函数
         <span class="cov0" title="0">return &amp;config.SystemInit{
-                        Conf:      conf,
-                        DB:        db,
-                        DBTimeout: &amp;dbTimeout,
-                        Enforcer:  enf,
-                        Crontab:   ct,
-                        JwtConf:   jwtConf,
+                        Conf:            conf,
+                        DB:              db,
+                        DBTimeout:       &amp;dbTimeout,
+                        DBSlowThreshold: dbSlowThreshold,
+                        Enforcer:        enf,
+                        Crontab:         ct,
+                        JwtConf:         jwtConf,
+                        Loggers:         loggers,
                 }, func() </span><span class="cov0" title="0">{
                         // 关闭计划任务
                         if ct != nil </span><span class="cov0" title="0">{
                                 cronLogger.Info("正在关闭计划任务...")
-                                shutdownTimeout := time.Duration(conf.Server.Timeout.Shutdown) * time.Second
+                                shutdownTimeout := conf.Server.Timeout.Shutdown
                                 ctx := ct.Stop() // Stop 返回一个 context
                                 // 等待最多30秒让任务完成
                                 select </span>{
@@ -44229,7 +44259,7 @@ func processTarEntry(filePath, baseDir string, info os.FileInfo, tarWriter *tar.
 
         // 写入文件内容（仅普通文件）
         <span class="cov8" title="11">if info.Mode().IsRegular() </span><span class="cov7" title="9">{
-                file, err := os.Open(filePath)
+                file, err := os.Open(filePath) // #nosec G304
                 if err != nil </span><span class="cov0" title="0">{
                         return errors.Wrapf(err, "打开文件失败, filepath=%s", filePath)
                 }</span>
@@ -44262,7 +44292,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error <span class="cov7" ti
         }</span>
 
         // 打开源文件
-        <span class="cov6" title="5">srcFile, err := os.Open(src)
+        <span class="cov6" title="5">srcFile, err := os.Open(src) // #nosec G304
         if err != nil </span><span class="cov3" title="2">{
                 return errors.Wrapf(err, "打开源文件失败, src=%s", src)
         }</span>
@@ -44323,7 +44353,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error <span class="cov7" ti
 // processUntarEntry 处理单个解压条目（解耦核心逻辑）
 func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, options ArchiveOptions) (int64, error) <span class="cov5" title="4">{
         // 构造目标路径并检查安全性
-        target := filepath.Join(dst, header.Name)
+        target := filepath.Join(dst, header.Name) // #nosec G305
         if !isPathSafe(target, dst) </span><span class="cov0" title="0">{
                 return 0, errors.Errorf("非法路径（路径遍历攻击）, target=%s, base=%s", target, dst)
         }</span>
@@ -44365,7 +44395,8 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
                 // 应用权限掩码
                 fileMode = validatePermissions(fileMode, options.PermissionsMask)
 
-                file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode)
+                // 创建目标文件
+                file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode) // #nosec G304
                 if err != nil </span><span class="cov0" title="0">{
                         return 0, errors.WrapIf(err, "创建目标文件失败")
                 }</span>
@@ -44386,7 +44417,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
                         return 0, errors.New("拒绝绝对路径符号链接")
                 }</span>
 
-                <span class="cov1" title="1">linkTarget := filepath.Join(filepath.Dir(target), header.Linkname)
+                <span class="cov1" title="1">linkTarget := filepath.Join(filepath.Dir(target), header.Linkname) // #nosec G305
                 if !isPathSafe(linkTarget, dst) </span><span class="cov0" title="0">{
                         return 0, errors.New("符号链接指向基础目录外")
                 }</span>
@@ -44419,7 +44450,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) <
                 return "", errors.WrapIf(options.Context.Err(), "校验 tar.gz 文件是否只包含一个顶层目录:上下文检查失败")
         }</span>
 
-        <span class="cov4" title="3">srcFile, err := os.Open(src)
+        <span class="cov4" title="3">srcFile, err := os.Open(src) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return "", errors.Wrapf(err, "打开源文件失败, src=%s", src)
         }</span>
@@ -44934,7 +44965,7 @@ func processZipEntry(filePath, baseDir string, info os.FileInfo, zipWriter *zip.
                 }</span>
 
                 // 读取并写入文件
-                <span class="cov7" title="11">file, err := os.Open(filePath)
+                <span class="cov7" title="11">file, err := os.Open(filePath) // #nosec G304
                 if err != nil </span><span class="cov0" title="0">{
                         return errors.WithMessagef(err, "打开文件失败, filepath=%s", filePath)
                 }</span>
@@ -45088,7 +45119,7 @@ func unzipFile(zipFile *zip.File, target string, options ArchiveOptions) (int64,
         // 应用权限掩码
         fileMode = validatePermissions(fileMode, options.PermissionsMask)
 
-        targetFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileMode)
+        targetFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileMode) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return 0, errors.WithMessagef(err, "创建目标文件失败, target=%s", target)
         }</span>
@@ -45135,7 +45166,7 @@ func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) <sp
                         }</span>
                 }
 
-                // 清理路径
+                // nosec G304: 清理路径
                 <span class="cov5" title="5">name := filepath.Clean(file.Name)
                 name = strings.TrimPrefix(name, "./")
                 name = strings.TrimSuffix(name, "/")
@@ -45619,7 +45650,7 @@ func (fe *AESFileEncryptor) EncryptFile(ctx context.Context, srcPath, dstPath st
         }</span>
 
         // 打开源文件
-        <span class="cov8" title="1">srcFile, err := os.Open(srcPath)
+        <span class="cov8" title="1">srcFile, err := os.Open(srcPath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WrapIf(err, "打开源文件错误")
         }</span>
@@ -45638,7 +45669,7 @@ func (fe *AESFileEncryptor) EncryptFile(ctx context.Context, srcPath, dstPath st
         }</span>
 
         // 写入目标文件
-        <span class="cov8" title="1">dstFile, err := os.Create(dstPath)
+        <span class="cov8" title="1">dstFile, err := os.Create(dstPath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WrapIf(err, "创建目标文件错误")
         }</span>
@@ -45660,7 +45691,7 @@ func (fe *AESFileEncryptor) DecryptFile(ctx context.Context, srcPath, dstPath st
         }</span>
 
         // 打开源文件
-        <span class="cov8" title="1">srcFile, err := os.Open(srcPath)
+        <span class="cov8" title="1">srcFile, err := os.Open(srcPath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WrapIf(err, "打开源文件错误")
         }</span>
@@ -45679,7 +45710,7 @@ func (fe *AESFileEncryptor) DecryptFile(ctx context.Context, srcPath, dstPath st
         }</span>
 
         // 写入目标文件
-        <span class="cov8" title="1">dstFile, err := os.Create(dstPath)
+        <span class="cov8" title="1">dstFile, err := os.Create(dstPath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WrapIf(err, "创建目标文件错误")
         }</span>
@@ -46299,14 +46330,14 @@ func CopyFile(ctx context.Context, src, dst string) error <span class="cov9" tit
         }</span>
 
         // 打开源文件（只读）
-        <span class="cov9" title="8">srcFile, err := os.Open(src)
+        <span class="cov9" title="8">srcFile, err := os.Open(src) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WithMessagef(err, "打开源文件失败, src=%s", src)
         }</span>
         <span class="cov9" title="8">defer srcFile.Close()
 
         // 创建目标文件（继承源权限）
-        dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode().Perm())
+        dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode().Perm()) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return errors.WithMessagef(err, "创建目标文件失败, dst=%s", dst)
         }</span>
@@ -46821,7 +46852,7 @@ func SafeRemoveAll(ctx context.Context, filePath string) error <span class="cov4
         }</span>
 
         // 2. 拒绝子路径（精确分隔符，避免 /usr-local 误判）
-        <span class="cov3" title="2">for unsafePath := range unsafePaths </span><span class="cov10" title="21">{
+        <span class="cov3" title="2">for unsafePath := range unsafePaths </span><span class="cov10" title="20">{
                 if strings.HasPrefix(absPath, unsafePath+"/") </span><span class="cov1" title="1">{
                         return errors.Errorf("安全检查失败, 禁止删除系统路径子目录, abs_path=%s, unsafe_parent=%s", absPath, unsafePath)
                 }</span>
@@ -47139,7 +47170,7 @@ func ReadJSON(filePath string, v any, opts ...SerializerOption) (*ReadResult, er
         }</span>
 
         // 读取文件内容
-        <span class="cov7" title="3">data, err := os.ReadFile(filePath)
+        <span class="cov7" title="3">data, err := os.ReadFile(filePath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return nil, errors.WithMessagef(err, "读取JSON文件失败, 文件路径=%s", filePath)
         }</span>
@@ -47214,7 +47245,7 @@ func writeJSON(filePath string, data any, options SerializerOptions, startTime t
         }</span>
 
         // 创建或截断文件
-        <span class="cov7" title="3">file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, options.FileMode)
+        <span class="cov7" title="3">file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, options.FileMode) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("创建文件 %s 失败: %w", filePath, err)
         }</span>
@@ -47654,7 +47685,7 @@ func ReadYAML(filePath string, v any, opts ...SerializerOption) (*ReadResult, er
         }</span>
 
         // 读取文件内容
-        <span class="cov7" title="3">data, err := os.ReadFile(filePath)
+        <span class="cov7" title="3">data, err := os.ReadFile(filePath) // #nosec G304
         if err != nil </span><span class="cov0" title="0">{
                 return nil, errors.Errorf("读取YAML文件失败, 文件路径=%s", filePath)
         }</span>

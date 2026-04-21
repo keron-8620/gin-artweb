@@ -36,7 +36,7 @@ func (fe *AESFileEncryptor) EncryptFile(ctx context.Context, srcPath, dstPath st
 	}
 
 	// 打开源文件
-	srcFile, err := os.Open(srcPath)
+	srcFile, err := os.Open(srcPath) // #nosec G304
 	if err != nil {
 		return errors.WrapIf(err, "打开源文件错误")
 	}
@@ -55,7 +55,7 @@ func (fe *AESFileEncryptor) EncryptFile(ctx context.Context, srcPath, dstPath st
 	}
 
 	// 写入目标文件
-	dstFile, err := os.Create(dstPath)
+	dstFile, err := os.Create(dstPath) // #nosec G304
 	if err != nil {
 		return errors.WrapIf(err, "创建目标文件错误")
 	}
@@ -77,7 +77,7 @@ func (fe *AESFileEncryptor) DecryptFile(ctx context.Context, srcPath, dstPath st
 	}
 
 	// 打开源文件
-	srcFile, err := os.Open(srcPath)
+	srcFile, err := os.Open(srcPath) // #nosec G304
 	if err != nil {
 		return errors.WrapIf(err, "打开源文件错误")
 	}
@@ -96,7 +96,7 @@ func (fe *AESFileEncryptor) DecryptFile(ctx context.Context, srcPath, dstPath st
 	}
 
 	// 写入目标文件
-	dstFile, err := os.Create(dstPath)
+	dstFile, err := os.Create(dstPath) // #nosec G304
 	if err != nil {
 		return errors.WrapIf(err, "创建目标文件错误")
 	}

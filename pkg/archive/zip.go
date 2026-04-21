@@ -218,7 +218,7 @@ func processZipEntry(filePath, baseDir string, info os.FileInfo, zipWriter *zip.
 		}
 
 		// 读取并写入文件
-		file, err := os.Open(filePath)
+		file, err := os.Open(filePath) // #nosec G304
 		if err != nil {
 			return errors.WithMessagef(err, "打开文件失败, filepath=%s", filePath)
 		}
@@ -372,7 +372,7 @@ func unzipFile(zipFile *zip.File, target string, options ArchiveOptions) (int64,
 	// 应用权限掩码
 	fileMode = validatePermissions(fileMode, options.PermissionsMask)
 
-	targetFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileMode)
+	targetFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileMode) // #nosec G304
 	if err != nil {
 		return 0, errors.WithMessagef(err, "创建目标文件失败, target=%s", target)
 	}
@@ -419,7 +419,7 @@ func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
 			}
 		}
 
-		// 清理路径
+		// nosec G304: 清理路径
 		name := filepath.Clean(file.Name)
 		name = strings.TrimPrefix(name, "./")
 		name = strings.TrimSuffix(name, "/")

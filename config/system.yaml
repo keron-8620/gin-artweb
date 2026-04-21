@@ -10,15 +10,15 @@ server: # 服务配置
     rps: 10 # 令牌生成速率
     burst: 20 # 桶容量
   timeout:
-    request: 60 # 请求超时时间(秒)
-    shutdown: 30 # 关闭超时时间(秒)
+    request: 60s # 请求超时时间
+    shutdown: 30s # 关闭超时时间
   swagger: true # 是否启用swagger
 
 database: # 数据库配置
-  type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
-  dns: "artweb.db" # sqlite3数据库配置
+  type: "opengauss" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
+  # dns: "artweb.db" # sqlite3数据库配置
   # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
-  # dns: "host=127.0.0.1 port=5432 user=gaussdb password=Quant@360 dbname=gin_artweb_0_17_7_0_3 sslmode=disable" # PostgreSql/OpenGauss配置
+  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_artweb sslmode=disable" # PostgreSql/OpenGauss配置
   # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
@@ -51,24 +51,24 @@ cors: # 跨域服务
 
 security: # 安全配置
   host_guard: # host请求头配置
-    enable: true # 是否启用host请求头防护
+    enable: false # 是否启用host请求头防护
     trusted_hosts: # 受信任的host列表
       - "127.0.0.1:8621"
       - "192.168.10.12:8621"
   timestamp: # 时间戳相关配置(用于拦截重放攻击)
     check_timestamp: false # 是否检查时间戳
-    tolerance: 300000  # 时间容忍度(毫秒)，允许客户端时间与服务器时间的最大偏差
-    future_tolerance: 60000 # 未来时间容忍度(毫秒)，允许客户端时间超前的最大范围
+    tolerance: 300s  # 时间容忍度，允许客户端时间与服务器时间的最大偏差
+    future_tolerance: 300s # 未来时间容忍度，允许客户端时间超前的最大范围
   login: # 登录服务
     max_failed_attempts: 5 # 登录失败最大次数
-    lock_minutes: 30 # 登录失败锁定时间
+    lock_duration: 30m # 登录失败锁定时间
   password: # 密码策略
     strength_level: 3 # 密码强度等级(0-4)
   token: # token相关配置
-    access_minutes: 30 # token过期时间(分钟)
-    refresh_minutes: 180 # token刷新时间(分钟)
+    access_duration: 3600s # token有效时间
+    refresh_duration: 3h # token刷新时间
     access_method: "HS256" # token访问方法
-    refresh_method: "HS512" # token刷新方法
+    refresh_method: "HS256" # token刷新方法
 
 api:
   total_timeout: 10s       # 接口层总超时（所有API请求的最大耗时）
@@ -79,7 +79,7 @@ api:
 
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名
-  timeout: 5 # ssh连接超时时间
+  timeout: 5s # ssh连接超时时间
 
 upload: # 文件上传
   max_script_size: 1 # 上传脚本大小限制(MB)

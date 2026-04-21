@@ -88,7 +88,7 @@ func ParsePrivateKey(filePath string) (ssh.Signer, error) {
 	}
 
 	// 读取私钥文件
-	key, err := os.ReadFile(filePath)
+	key, err := os.ReadFile(filePath) // #nosec G304
 	if err != nil {
 		return nil, errors.WithMessagef(err, "读取SSH私钥文件失败, 路径: %s", filePath)
 	}

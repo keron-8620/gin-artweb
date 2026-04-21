@@ -22,7 +22,6 @@ var (
 	ErrPasswordStrengthFailed = FromReason(ReasonPasswordStrengthFailed) // 密码强度不足
 
 	// 身份权限认证
-	ErrUnauthorized      = FromReason(ReasonUnauthorized)      // 未授权
 	ErrTokenExpired      = FromReason(ReasonTokenExpired)      // 令牌过期
 	ErrTokenInvalid      = FromReason(ReasonTokenInvalid)      // 令牌无效
 	ErrMissingAuth       = FromReason(ReasonMissingAuth)       // 缺少认证信息

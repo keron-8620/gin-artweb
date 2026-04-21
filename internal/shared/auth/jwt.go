@@ -60,9 +60,6 @@ func NewUserClaims(c *config.JWTConfig, u UserInfo, tt TokenType) JwtClaims {
 
 // NewJWT 创建JWT
 func NewAccessJWT(ctx context.Context, c *config.JWTConfig, u UserInfo) (string, error) {
-	if ctx.Err() != nil {
-		return "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
-	}
 	claims := NewUserClaims(c, u, TokenTypeAccess)
 	token := jwt.NewWithClaims(c.AccessMethod, claims)
 	tokenString, err := token.SignedString(c.AccessSecret)
@@ -74,9 +71,6 @@ func NewAccessJWT(ctx context.Context, c *config.JWTConfig, u UserInfo) (string,
 
 // NewRefreshJWT 创建刷新JWT
 func NewRefreshJWT(ctx context.Context, c *config.JWTConfig, u UserInfo) (string, error) {
-	if ctx.Err() != nil {
-		return "", emperror.WrapIf(ctx.Err(), "上下文已取消/超时")
-	}
 	claims := NewUserClaims(c, u, TokenTypeRefresh)
 	token := jwt.NewWithClaims(c.RefreshMethod, claims)
 	tokenString, err := token.SignedString(c.RefreshSecret)
@@ -88,13 +82,13 @@ func NewRefreshJWT(ctx context.Context, c *config.JWTConfig, u UserInfo) (string
 
 // ParseAccessToken 解析并验证JWT令牌
 func ParseAccessToken(ctx context.Context, c *config.JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
-	if ctx.Err() != nil {
-		return nil, errors.FromError(ctx.Err())
-	}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&JwtClaims{},
 		func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.ErrTokenInvalid
+			}
 			return c.AccessSecret, nil
 		},
 	)
@@ -115,13 +109,13 @@ func ParseAccessToken(ctx context.Context, c *config.JWTConfig, tokenString stri
 
 // ParseRefreshToken 解析并验证刷新JWT令牌
 func ParseRefreshToken(ctx context.Context, c *config.JWTConfig, tokenString string) (*JwtClaims, *errors.Error) {
-	if ctx.Err() != nil {
-		return nil, errors.FromError(ctx.Err())
-	}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&JwtClaims{},
 		func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.ErrTokenInvalid
+			}
 			return c.RefreshSecret, nil
 		},
 	)

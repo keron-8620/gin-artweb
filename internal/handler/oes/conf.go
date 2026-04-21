@@ -46,56 +46,61 @@ func NewOesConfHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name} [post]
 // @Security ApiKeyAuth
-func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
+func (s *OesConfHandler) UploadOesConf(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("上传oes配置文件:开始执行")
 
 	// 1. 绑定URL路径参数
 	var pathReq oesmodel.GetOesConfDTO
-	if err := ctx.ShouldBindUri(&pathReq); err != nil {
+	if err := c.ShouldBindUri(&pathReq); err != nil {
 		log.Error(
 			"绑定上传的oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_uri", c.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
 	// 2. 绑定表单数据（包含文件）
 	var formReq oesmodel.UploadOesConfDto
-	if err := ctx.ShouldBind(&formReq); err != nil {
+	if err := c.ShouldBind(&formReq); err != nil {
 		log.Error(
 			"绑定上传的oes配置文件表单参数失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_uri", c.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
 	// 3. 将配置文件保存到指定的位置
 	dirName := oessvc.GetOesColonyConfigDir(pathReq.ColonyNum)
 	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
-	if err := common.UploadFile(ctx, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
+	if err := common.UploadFile(c, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
 		log.Error(
 			"上传oes配置文件:执行失败",
 			zap.Error(err),
 			zap.String("save_path", savePath),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	log.Info(
 		"上传oes配置文件:执行成功",
+		zap.String("colony_num", pathReq.ColonyNum),
+		zap.String("dir_name", pathReq.DirName),
+		zap.String("filename", formReq.File.Filename),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // DownloadOesConf 下载oes配置文件
@@ -112,36 +117,42 @@ func (s *OesConfHandler) UploadOesConf(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name}/{filename} [get]
 // @Security ApiKeyAuth
-func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
+func (s *OesConfHandler) DownloadOesConf(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("下载oes配置文件:开始执行")
+
 	var req oesmodel.OesConfFileDTO
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindUri(&req); err != nil {
 		log.Error(
 			"绑定删除的oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_uri", c.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
 	dirName := oessvc.GetOesColonyConfigDir(req.ColonyNum)
 	filePath := filepath.Join(dirName, req.DirName, req.Filename)
-	if err := common.DownloadFile(ctx, log, filePath, ""); err != nil {
+	if err := common.DownloadFile(c, log, filePath, ""); err != nil {
 		log.Error(
 			"下载oes配置文件:执行失败",
 			zap.Error(err),
 			zap.String("save_path", filePath),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	log.Info(
 		"下载oes配置文件:执行成功",
+		zap.String("colony_num", req.ColonyNum),
+		zap.String("dir_name", req.DirName),
+		zap.String("filename", req.Filename),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 }
@@ -160,18 +171,21 @@ func (s *OesConfHandler) DownloadOesConf(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf/{dir_name}/{filename} [delete]
 // @Security ApiKeyAuth
-func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
+func (s *OesConfHandler) DeleteOesConf(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("删除oes配置文件:开始执行")
+
 	var req oesmodel.OesConfFileDTO
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindUri(&req); err != nil {
 		log.Error(
 			"绑定删除的oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_uri", c.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -185,11 +199,18 @@ func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
+	log.Info(
+		"删除oes配置文件:执行成功",
+		zap.String("colony_num", req.ColonyNum),
+		zap.String("dir_name", req.DirName),
+		zap.String("filename", req.Filename),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // ListOesConf 获取oes配置文件列表
@@ -204,19 +225,20 @@ func (s *OesConfHandler) DeleteOesConf(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/{colony_num}/conf [get]
 // @Security ApiKeyAuth
-func (s *OesConfHandler) ListOesConf(ctx *gin.Context) {
+func (s *OesConfHandler) ListOesConf(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesConfDTO
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindUri(&req); err != nil {
 		log.Error(
 			"绑定oes配置文件路径参数失败",
 			zap.Error(err),
-			zap.String("request_uri", ctx.Request.RequestURI),
+			zap.String("request_uri", c.Request.RequestURI),
 		)
 		rErr := errors.ErrValidationFailed.WithCause(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -230,16 +252,11 @@ func (s *OesConfHandler) ListOesConf(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
-	log.Info(
-		"获取oes配置文件列表:执行成功",
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, oesmodel.PagOesConfResp{
+	c.JSON(http.StatusOK, oesmodel.PagOesConfResp{
 		Code: http.StatusOK,
 		Data: info,
 	})

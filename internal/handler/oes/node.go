@@ -41,12 +41,14 @@ func NewOesNodeHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/node [post]
 // @Security ApiKeyAuth
-func (s *OesNodeHandler) CreateOesNode(ctx *gin.Context) {
+func (s *OesNodeHandler) CreateOesNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("创建oes节点:开始执行")
 
 	var req oesmodel.OesNodeUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "创建oes节点:绑定创建oes节点参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建oes节点:绑定创建oes节点参数失败") {
 		return
 	}
 
@@ -56,18 +58,19 @@ func (s *OesNodeHandler) CreateOesNode(ctx *gin.Context) {
 			"创建oes节点失败",
 			zap.Error(rErr),
 			zap.Object("oes_node_dto", &req),
-			zap.Duration("total_time", time.Since(startTime)),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
 	log.Info(
 		"创建oes节点:执行成功",
+		zap.Uint32("oes_node_id", m.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &oesmodel.OesNodeResp{
+	c.JSON(http.StatusOK, &oesmodel.OesNodeResp{
 		Code: http.StatusOK,
 		Data: *oesmodel.OesNodeToDetailOut(*m),
 	})
@@ -86,17 +89,19 @@ func (s *OesNodeHandler) CreateOesNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/node/{id} [put]
 // @Security ApiKeyAuth
-func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
+func (s *OesNodeHandler) UpdateOesNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("更新oes节点:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新oes节点:绑定更新oes节点ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新oes节点:绑定更新oes节点ID参数失败") {
 		return
 	}
 
 	var req oesmodel.OesNodeUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "更新oes节点:绑定更新oes节点参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新oes节点:绑定更新oes节点参数失败") {
 		return
 	}
 
@@ -109,7 +114,7 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 			zap.Object("oes_node_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -118,8 +123,7 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 		zap.Uint32("oes_node_id", uri.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-
-	ctx.JSON(http.StatusOK, &oesmodel.OesNodeResp{
+	c.JSON(http.StatusOK, &oesmodel.OesNodeResp{
 		Code: http.StatusOK,
 		Data: *oesmodel.OesNodeToDetailOut(*m),
 	})
@@ -137,12 +141,14 @@ func (s *OesNodeHandler) UpdateOesNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/node/{id} [delete]
 // @Security ApiKeyAuth
-func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
+func (s *OesNodeHandler) DeleteOesNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("删除oes节点:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除oes节点:绑定删除oes节点ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除oes节点:绑定删除oes节点ID参数失败") {
 		return
 	}
 
@@ -154,7 +160,7 @@ func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
 			zap.Uint32("oes_node_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -164,7 +170,7 @@ func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询oes节点详情
@@ -179,12 +185,13 @@ func (s *OesNodeHandler) DeleteOesNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/node/{id} [get]
 // @Security ApiKeyAuth
-func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
+func (s *OesNodeHandler) GetOesNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询oes节点:绑定查询oes节点ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询oes节点:绑定查询oes节点ID参数失败") {
 		return
 	}
 
@@ -196,18 +203,12 @@ func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
 			zap.Uint32("oes_node_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询oes节点:执行成功",
-		zap.Uint32("oes_node_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := oesmodel.OesNodeToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &oesmodel.OesNodeResp{
+	c.JSON(http.StatusOK, &oesmodel.OesNodeResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -224,12 +225,13 @@ func (s *OesNodeHandler) GetOesNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/node [get]
 // @Security ApiKeyAuth
-func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
+func (s *OesNodeHandler) ListOesNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req oesmodel.ListOesNodeDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询oes节点列表:绑定查询oes节点列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询oes节点列表:绑定查询oes节点列表参数失败") {
 		return
 	}
 
@@ -244,20 +246,12 @@ func (s *OesNodeHandler) ListOesNode(ctx *gin.Context) {
 			zap.Object("oes_node_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
-	log.Info(
-		"查询oes节点列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := oesmodel.ListOesNodeToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &oesmodel.PagOesNodeResp{
+	c.JSON(http.StatusOK, &oesmodel.PagOesNodeResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

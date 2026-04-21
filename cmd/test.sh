@@ -22,7 +22,7 @@ golangci-lint run
 
 # 4. 安全漏洞检查
 # echo "===== 4. gosec ====="
-# gosec -quiet ./...
+gosec -quiet ./...
 
 # 5. 依赖漏洞检查
 # echo "===== 5. govulncheck ====="

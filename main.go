@@ -158,7 +158,7 @@ func main() {
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", i.Conf.Server.Host, i.Conf.Server.Port),
 		Handler:           r,
-		ReadHeaderTimeout: time.Duration(sysConf.Server.Timeout.Request),
+		ReadHeaderTimeout: sysConf.Server.Timeout.Request,
 	}
 
 	// 启动一个 goroutine 来异步启动 HTTP/HTTPS 服务
@@ -220,8 +220,7 @@ func main() {
 	loggers.Server.Info("正在关闭服务器...")
 
 	// 创建带超时控制的上下文对象用于通知服务器关闭
-	ctx, cancel := context.WithTimeout(context.Background(),
-		time.Duration(i.Conf.Server.Timeout.Shutdown)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), i.Conf.Server.Timeout.Shutdown)
 	defer cancel()
 
 	// 执行服务器优雅关闭逻辑
@@ -247,7 +246,7 @@ func newSystemConf(configPath string) *config.SystemConf {
 	}
 
 	// 读取配置文件
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) // #nosec G304
 	if err != nil {
 		golog.Fatalf("FATAL: 读取配置文件失败: %v", err)
 	}
@@ -273,8 +272,8 @@ func newSystemConf(configPath string) *config.SystemConf {
 // 返回值3: 初始化过程中发生的错误
 func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.SystemInit, func(), error) {
 	jwtConf := config.NewJWTConfig(
-		time.Duration(conf.Security.Token.AccessMinutes)*time.Minute,
-		time.Duration(conf.Security.Token.RefreshMinutes)*time.Minute,
+		time.Duration(conf.Security.Token.AccessDuration)*time.Minute,
+		time.Duration(conf.Security.Token.RefreshDuration)*time.Minute,
 		conf.Security.Token.AccessMethod,
 		conf.Security.Token.RefreshMethod,
 		[]byte(os.Getenv("JWT_ACCESS_SECRET")),
@@ -295,9 +294,16 @@ func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.Sy
 
 	// 初始化数据库超时配置
 	dbTimeout := config.DBTimeout{
-		ListTimeout:  time.Duration(conf.Database.ListTimeout) * time.Second,
-		ReadTimeout:  time.Duration(conf.Database.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(conf.Database.WriteTimeout) * time.Second,
+		ListTimeout:  conf.Database.ListTimeout,
+		ReadTimeout:  conf.Database.ReadTimeout,
+		WriteTimeout: conf.Database.WriteTimeout,
+	}
+
+	// 初始化数据库慢查询阈值
+	dbSlowThreshold := &config.DBSlowThreshold{
+		ReadSlow:  conf.Database.ReadSlow,
+		WriteSlow: conf.Database.WriteSlow,
+		ListSlow:  conf.Database.ListSlow,
 	}
 
 	// 初始化数据库连接
@@ -309,17 +315,19 @@ func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.Sy
 
 	// 返回初始化结构体和清理函数
 	return &config.SystemInit{
-			Conf:      conf,
-			DB:        db,
-			DBTimeout: &dbTimeout,
-			Enforcer:  enf,
-			Crontab:   ct,
-			JwtConf:   jwtConf,
+			Conf:            conf,
+			DB:              db,
+			DBTimeout:       &dbTimeout,
+			DBSlowThreshold: dbSlowThreshold,
+			Enforcer:        enf,
+			Crontab:         ct,
+			JwtConf:         jwtConf,
+			Loggers:         loggers,
 		}, func() {
 			// 关闭计划任务
 			if ct != nil {
 				cronLogger.Info("正在关闭计划任务...")
-				shutdownTimeout := time.Duration(conf.Server.Timeout.Shutdown) * time.Second
+				shutdownTimeout := conf.Server.Timeout.Shutdown
 				ctx := ct.Stop() // Stop 返回一个 context
 				// 等待最多30秒让任务完成
 				select {

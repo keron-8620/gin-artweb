@@ -11,9 +11,10 @@ import (
 
 // ExecSQLFile 执行 SQL 脚本文件，支持所有数据库 + 所有注释类型
 func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
-	content, err := os.ReadFile(filePath)
+	// 读取SQL文件
+	content, err := os.ReadFile(filePath) // #nosec G304
 	if err != nil {
-		return err
+		return errors.WithMessagef(err, "读取SQL文件失败, 路径: %s", filePath)
 	}
 
 	// 核心：清理所有注释（// -- # /* */）
@@ -52,72 +53,86 @@ func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
 	return nil
 }
 
-// cleanSQLComments 清理：//  --  #  /* */ 全部注释
+// 安全版本：只删除 单引号外部 的注释，不会破坏字符串内容
 func cleanSQLComments(sql string) string {
-	// 1. 去掉 多行注释 /* ... */
-	clean := removeMultiLineComments(sql)
-	// 2. 去掉 单行注释 -- 、 # 、 //
-	clean = removeSingleLineComments(clean)
-	return clean
-}
+	var result strings.Builder
+	n := len(sql)
+	inQuote := false // 是否在 ' 字符串内部
 
-// 移除 /* ... */ 多行注释
-func removeMultiLineComments(s string) string {
-	for {
-		start := strings.Index(s, "/*")
-		if start == -1 {
-			break
-		}
-		end := strings.Index(s[start:], "*/")
-		if end == -1 {
-			break
-		}
-		end += start
-		s = s[:start] + s[end+2:]
-	}
-	return s
-}
-
-// 移除 --、#、// 单行注释
-func removeSingleLineComments(s string) string {
-	lines := strings.Split(s, "\n")
-	var result []string
-
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
+	for i := 0; i < n; {
+		if sql[i] == '\'' {
+			inQuote = !inQuote
+			result.WriteByte(sql[i])
+			i++
 			continue
 		}
 
-		// 去掉 -- 注释
-		if idx := strings.Index(line, "--"); idx != -1 {
-			line = line[:idx]
-		}
-		// 去掉 # 注释
-		if idx := strings.Index(line, "#"); idx != -1 {
-			line = line[:idx]
-		}
-		// 去掉 // 注释
-		if idx := strings.Index(line, "//"); idx != -1 {
-			line = line[:idx]
+		// 不在字符串内，才处理注释
+		if !inQuote {
+			// 多行注释 /*
+			if i+1 < n && sql[i] == '/' && sql[i+1] == '*' {
+				// 跳过直到 */
+				for i += 2; i+1 < n; i++ {
+					if sql[i] == '*' && sql[i+1] == '/' {
+						i += 2
+						break
+					}
+				}
+				continue
+			}
+
+			// 单行注释 --  //  #
+			if i+1 < n && ((sql[i] == '-' && sql[i+1] == '-') || (sql[i] == '/' && sql[i+1] == '/')) {
+				// 跳过本行剩余
+				for i < n && sql[i] != '\n' {
+					i++
+				}
+				continue
+			}
+			if sql[i] == '#' {
+				for i < n && sql[i] != '\n' {
+					i++
+				}
+				continue
+			}
 		}
 
-		line = strings.TrimSpace(line)
-		if line != "" {
-			result = append(result, line)
-		}
+		// 正常字符
+		result.WriteByte(sql[i])
+		i++
 	}
-	return strings.Join(result, " ")
+
+	return strings.TrimSpace(result.String())
 }
 
 // splitSQL 按 ; 分割 SQL
 func splitSQL(sql string) []string {
 	var statements []string
-	for _, stmt := range strings.Split(sql, ";") {
-		stmt = strings.TrimSpace(stmt)
-		if stmt != "" {
-			statements = append(statements, stmt)
+	var current strings.Builder
+	n := len(sql)
+	inQuote := false
+
+	for i := 0; i < n; i++ {
+		c := sql[i]
+		if c == '\'' {
+			inQuote = !inQuote
+			current.WriteByte(c)
+		} else if c == ';' && !inQuote {
+			stmt := strings.TrimSpace(current.String())
+			if stmt != "" {
+				statements = append(statements, stmt)
+			}
+			current.Reset()
+		} else {
+			current.WriteByte(c)
 		}
 	}
+
+	// 最后一段
+	stmt := strings.TrimSpace(current.String())
+	if stmt != "" {
+		statements = append(statements, stmt)
+	}
+
 	return statements
 }

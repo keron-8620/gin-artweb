@@ -39,23 +39,22 @@ func NewScriptRecordHandler(
 // @Tags 脚本执行记录
 // @Accept json
 // @Produce json
-// @Param request body jobmodel.ExecScriptDTO true "执行脚本请求参数"
+// @Param request body jobmodel.CreateScriptRecordDTO true "执行脚本请求参数"
 // @Success 200 {object} jobmodel.ScriptRecordResp "成功返回执行记录信息"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/record [post]
 // @Security ApiKeyAuth
-func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
+func (h *ScriptRecordHandler) ExecScriptRecord(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("执行脚本:开始执行")
+
 	var req jobmodel.CreateScriptRecordDTO
-	if !common.ShouldBind(
-		ctx, log, &req,
-		"执行脚本:绑定请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "执行脚本:绑定请求参数失败") {
 		return
 	}
-
-	log.Info("执行脚本:开始执行")
 
 	log.Debug(
 		"执行脚本:入参详情",
@@ -82,7 +81,7 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 			zap.Duration("exec_step_duration", execStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -100,7 +99,7 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &jobmodel.ScriptRecordResp{
+	c.JSON(http.StatusOK, &jobmodel.ScriptRecordResp{
 		Code: http.StatusOK,
 		Data: *jobmodel.ScriptRecordToDetailOut(*m),
 	})
@@ -118,52 +117,30 @@ func (h *ScriptRecordHandler) ExecScriptRecord(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/record/{id} [get]
 // @Security ApiKeyAuth
-func (h *ScriptRecordHandler) GetScriptRecord(ctx *gin.Context) {
+func (h *ScriptRecordHandler) GetScriptRecord(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"查询脚本执行记录:绑定记录ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询脚本执行记录:绑定记录ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"查询脚本执行记录:开始执行",
-		zap.Uint32("record_id", uri.ID),
-	)
-
-	findStepStart := time.Now()
 	m, err := h.recordSvc.FindScriptRecordByID(ctx, []string{"Script"}, uri.ID)
-	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
 			"查询脚本执行记录:执行失败",
 			zap.Error(err),
 			zap.Uint32("record_id", uri.ID),
-			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Debug(
-		"查询脚本执行记录:执行记录模型详情",
-		zap.Object("record_model", m),
-		zap.Duration("find_step_duration", findStepDuration),
-	)
-
-	log.Info(
-		"查询脚本执行记录:执行成功",
-		zap.Uint32("record_id", uri.ID),
-		zap.Uint32("script_id", m.ScriptID),
-		zap.Duration("find_step_duration", findStepDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := jobmodel.ScriptRecordToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &jobmodel.ScriptRecordResp{
+	c.JSON(http.StatusOK, &jobmodel.ScriptRecordResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -180,27 +157,20 @@ func (h *ScriptRecordHandler) GetScriptRecord(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/record [get]
 // @Security ApiKeyAuth
-func (h *ScriptRecordHandler) ListScriptRecord(ctx *gin.Context) {
+func (h *ScriptRecordHandler) ListScriptRecord(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var req jobmodel.ListScriptRecordDTO
 	if !common.ShouldBindQuery(
-		ctx, log, &req,
+		c, log, &req,
 		"查询脚本执行记录列表:绑定查询参数失败") {
 		return
 	}
 
-	log.Info("查询脚本执行记录列表:开始执行")
-
-	log.Debug(
-		"查询脚本执行记录列表:入参详情",
-		zap.Object("list_script_record_dto", &req),
-	)
-
-	listStepStart := time.Now()
 	page, size := req.StandardModelQuery.GetPageParam()
 	total, ms, err := h.recordSvc.ListScriptRecord(ctx, page, size, &req)
-	listStepDuration := time.Since(listStepStart)
 	if err != nil {
 		log.Error(
 			"查询脚本执行记录列表:执行失败",
@@ -208,24 +178,14 @@ func (h *ScriptRecordHandler) ListScriptRecord(ctx *gin.Context) {
 			zap.Int("page", page),
 			zap.Int("size", size),
 			zap.Object("list_script_record_dto", &req),
-			zap.Duration("list_step_duration", listStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询脚本执行记录列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("list_step_duration", listStepDuration),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := jobmodel.ListScriptRecordToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &jobmodel.PagScriptRecordResp{
+	c.JSON(http.StatusOK, &jobmodel.PagScriptRecordResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -243,63 +203,46 @@ func (h *ScriptRecordHandler) ListScriptRecord(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/record/{id}/log [get]
 // @Security ApiKeyAuth
-func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
+func (h *ScriptRecordHandler) DownloadScriptRecordLog(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"下载脚本执行日志:绑定记录ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "下载脚本执行日志:绑定记录ID参数失败") {
 		return
 	}
 
-	log.Info(
-		"下载脚本执行日志:开始执行",
-		zap.Uint32("record_id", uri.ID),
-	)
-
-	findStepStart := time.Now()
 	m, err := h.recordSvc.FindScriptRecordByID(ctx, []string{"Script"}, uri.ID)
-	findStepDuration := time.Since(findStepStart)
 	if err != nil {
 		log.Error(
 			"下载脚本执行日志:查询记录详情失败",
 			zap.Error(err),
 			zap.Uint32("record_id", uri.ID),
-			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
-	log.Debug(
-		"下载脚本执行日志:执行记录模型详情",
-		zap.Object("record_model", m),
-		zap.Duration("find_step_duration", findStepDuration),
-	)
 
 	logPath := h.recordSvc.GenerateScriptLogPath(m.CreatedAt, m.LogName)
-	downloadStepStart := time.Now()
-	err = common.DownloadFile(ctx, log, logPath, m.LogName)
-	downloadStepDuration := time.Since(downloadStepStart)
+	err = common.DownloadFile(c, log, logPath, m.LogName)
 	if err != nil {
 		log.Error(
 			"下载脚本执行日志:下载日志失败",
 			zap.Error(err),
 			zap.String("log_path", logPath),
 			zap.String("rename", m.LogName),
-			zap.Duration("download_step_duration", downloadStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	log.Info(
 		"下载脚本执行日志:下载日志成功",
 		zap.Uint32("record_id", uri.ID),
-		zap.Duration("find_step_duration", findStepDuration),
-		zap.Duration("download_step_duration", downloadStepDuration),
+		zap.String("log_path", logPath),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 }
@@ -315,12 +258,13 @@ func (h *ScriptRecordHandler) DownloadScriptRecordLog(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/record/{id}/log/stream [get]
 // @Security ApiKeyAuth
-func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
+func (h *ScriptRecordHandler) StreamScriptRecordLog(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 	var uri commodel.IDUri
 	if !common.ShouldBindUri(
-		ctx, log, &uri,
+		c, log, &uri,
 		"实时获取脚本执行日志:绑定记录ID参数失败") {
 		return
 	}
@@ -345,7 +289,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Duration("find_step_duration", findStepDuration),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	log.Debug(
@@ -364,12 +308,12 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.ErrScriptNotFound.WithField("script_record_id", uri.ID)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
 	// 初始化文件信息
-	file, err := os.Open(logPath)
+	file, err := os.Open(logPath) // #nosec G304
 	if err != nil {
 		log.Error(
 			"实时获取脚本执行日志:打开日志文件失败",
@@ -379,13 +323,13 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	defer file.Close()
 
 	// 监听客户端断开连接
-	clientGone := ctx.Writer.CloseNotify()
+	clientGone := c.Writer.CloseNotify()
 
 	// 移动到文件末尾，准备读取新内容
 	fileInfo, err := file.Stat()
@@ -398,7 +342,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	lastModTime := fileInfo.ModTime()
@@ -416,14 +360,14 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	if n > 0 {
 		initialLines := strings.SplitSeq(string(initialBytes[:n]), "\n")
 		for line := range initialLines {
 			if line != "" {
-				if err := sse.Encode(ctx.Writer, sse.Event{
+				if err := sse.Encode(c.Writer, sse.Event{
 					Data: []byte(line),
 				}); err != nil {
 					log.Error(
@@ -433,12 +377,12 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 						zap.Duration("total_duration", time.Since(startTime)),
 					)
 					rErr := errors.FromError(err)
-					errors.RespondWithError(ctx, rErr)
+					errors.RespondWithError(c, rErr)
 					return
 				}
 			}
 		}
-		ctx.Writer.Flush()
+		c.Writer.Flush()
 	}
 
 	// 检查任务是否仍在运行
@@ -524,7 +468,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 					newLines := strings.SplitSeq(string(buf[:n]), "\n")
 					for line := range newLines {
 						if line != "" {
-							if err := sse.Encode(ctx.Writer, sse.Event{
+							if err := sse.Encode(c.Writer, sse.Event{
 								Data: []byte(line),
 							}); err != nil {
 								log.Error(
@@ -534,12 +478,12 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 									zap.Duration("total_duration", time.Since(startTime)),
 								)
 								rErr := errors.FromError(err)
-								errors.RespondWithError(ctx, rErr)
+								errors.RespondWithError(c, rErr)
 								return
 							}
 						}
 					}
-					ctx.Writer.Flush()
+					c.Writer.Flush()
 				}
 
 				currentSize = newSize
@@ -578,7 +522,7 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 							continue
 						}
 						if line != "" {
-							if err := sse.Encode(ctx.Writer, sse.Event{
+							if err := sse.Encode(c.Writer, sse.Event{
 								Data: []byte(line),
 							}); err != nil {
 								log.Error(
@@ -588,12 +532,12 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 									zap.Duration("total_duration", time.Since(startTime)),
 								)
 								rErr := errors.FromError(err)
-								errors.RespondWithError(ctx, rErr)
+								errors.RespondWithError(c, rErr)
 								return
 							}
 						}
 					}
-					ctx.Writer.Flush()
+					c.Writer.Flush()
 					currentSize += int64(n)
 				}
 
@@ -623,13 +567,13 @@ func (h *ScriptRecordHandler) StreamScriptRecordLog(ctx *gin.Context) {
 // @Success 200 {object} commodel.MapAPIResp "终止信号"
 // @Router /api/v1/jobs/record/{id} [delete]
 // @Security ApiKeyAuth
-func (h *ScriptRecordHandler) CancelScriptRecord(ctx *gin.Context) {
+func (h *ScriptRecordHandler) CancelScriptRecord(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(
-		ctx, log, &uri,
-		"取消脚本执行:绑定记录ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "取消脚本执行:绑定记录ID参数失败") {
 		return
 	}
 
@@ -638,17 +582,14 @@ func (h *ScriptRecordHandler) CancelScriptRecord(ctx *gin.Context) {
 		zap.Uint32("record_id", uri.ID),
 	)
 
-	cancelStepStart := time.Now()
 	h.recordSvc.Cancel(ctx, uri.ID)
-	cancelStepDuration := time.Since(cancelStepStart)
 	log.Info(
 		"取消脚本执行:发送终止信号成功",
 		zap.Uint32("record_id", uri.ID),
-		zap.Duration("cancel_step_duration", cancelStepDuration),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 func (h *ScriptRecordHandler) LoadRouter(r *gin.RouterGroup) {

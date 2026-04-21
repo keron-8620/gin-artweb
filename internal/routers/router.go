@@ -100,7 +100,7 @@ func NewRouter(
 	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
 
 	// 注册超时处理中间件
-	r.Use(middleware.TimeoutMiddleware(loggers.Handler, time.Duration(init.Conf.Server.Timeout.Request)*time.Second))
+	r.Use(middleware.TimeoutMiddleware(loggers.Handler, init.Conf.Server.Timeout.Request))
 
 	// 配置 Swagger 文档
 	if init.Conf.Server.Swagger {

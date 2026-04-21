@@ -50,12 +50,14 @@ func NewScriptHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script [post]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
+func (h *ScriptHandler) CreateScript(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("上传脚本:开始执行")
 
 	var req jobmodel.UploadScriptDTO
-	if !common.ShouldBind(ctx, log, &req, "上传脚本:绑定上传脚本请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "上传脚本:绑定上传脚本请求参数失败") {
 		return
 	}
 
@@ -67,7 +69,7 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	defer fileReader.Close()
@@ -90,7 +92,7 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 			zap.Object("upload_script_biz", &dto),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -100,7 +102,7 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &jobmodel.ScriptResp{
+	c.JSON(http.StatusOK, &jobmodel.ScriptResp{
 		Code: http.StatusOK,
 		Data: *jobmodel.ScriptModelToStandardOut(*m),
 	})
@@ -125,17 +127,19 @@ func (h *ScriptHandler) CreateScript(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script/{id} [put]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
+func (h *ScriptHandler) UpdateScript(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新脚本:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新脚本:绑定脚本ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新脚本:绑定脚本ID参数失败") {
 		return
 	}
 
 	var req jobmodel.UploadScriptDTO
-	if !common.ShouldBind(ctx, log, &req, "更新脚本:绑定更新脚本请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新脚本:绑定更新脚本请求参数失败") {
 		return
 	}
 
@@ -147,7 +151,7 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	defer fileReader.Close()
@@ -171,7 +175,7 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 			zap.Object("update_script_biz", &dto),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -180,8 +184,7 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 		zap.Uint32("script_id", uri.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-
-	ctx.JSON(http.StatusOK, &jobmodel.ScriptResp{
+	c.JSON(http.StatusOK, &jobmodel.ScriptResp{
 		Code: http.StatusOK,
 		Data: *jobmodel.ScriptModelToStandardOut(*nm),
 	})
@@ -199,12 +202,14 @@ func (h *ScriptHandler) UpdateScript(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script/{id} [delete]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
+func (h *ScriptHandler) DeleteScript(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除脚本:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除脚本:绑定删除脚本ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除脚本:绑定删除脚本ID参数失败") {
 		return
 	}
 
@@ -216,7 +221,7 @@ func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
 			zap.Uint32("script_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -226,7 +231,7 @@ func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询脚本详情
@@ -241,12 +246,13 @@ func (h *ScriptHandler) DeleteScript(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script/{id} [get]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) GetScript(ctx *gin.Context) {
+func (h *ScriptHandler) GetScript(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询脚本:绑定查询脚本ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询脚本:绑定查询脚本ID参数失败") {
 		return
 	}
 
@@ -258,18 +264,12 @@ func (h *ScriptHandler) GetScript(ctx *gin.Context) {
 			zap.Uint32("script_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询脚本:执行成功",
-		zap.Uint32("script_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := jobmodel.ScriptModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &jobmodel.ScriptResp{
+	c.JSON(http.StatusOK, &jobmodel.ScriptResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -286,12 +286,13 @@ func (h *ScriptHandler) GetScript(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script [get]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) ListScript(ctx *gin.Context) {
+func (h *ScriptHandler) ListScript(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req jobmodel.ListScriptDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询脚本列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询脚本列表:绑定查询参数失败") {
 		return
 	}
 
@@ -306,20 +307,12 @@ func (h *ScriptHandler) ListScript(ctx *gin.Context) {
 			zap.Object("list_script_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询脚本列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := jobmodel.ListScriptModelToOutBase(ms)
-	ctx.JSON(http.StatusOK, &jobmodel.PagScriptResp{
+	c.JSON(http.StatusOK, &jobmodel.PagScriptResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -337,12 +330,13 @@ func (h *ScriptHandler) ListScript(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script/{id}/download [get]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
+func (h *ScriptHandler) DownloadScript(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "下载脚本:绑定脚本ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "下载脚本:绑定脚本ID参数失败") {
 		return
 	}
 
@@ -354,12 +348,12 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 			zap.Uint32("script_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	savePath := jobsvc.GetScriptStoragePath(m.Project, m.Label, m.Name, m.IsBuiltin)
-	err = common.DownloadFile(ctx, log, savePath, m.Name)
+	err = common.DownloadFile(c, log, savePath, m.Name)
 	if err != nil {
 		log.Error(
 			"下载脚本:下载脚本失败",
@@ -368,13 +362,16 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 			zap.String("script_name", m.Name),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	log.Info(
 		"下载脚本:下载脚本成功",
 		zap.Uint32("script_id", uri.ID),
+		zap.String("script_project", m.Project),
+		zap.String("script_label", m.Label),
+		zap.String("script_name", m.Name),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 }
@@ -390,12 +387,13 @@ func (h *ScriptHandler) DownloadScript(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script/project [get]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) ListProject(ctx *gin.Context) {
+func (h *ScriptHandler) ListProject(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req jobmodel.ListScriptDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询项目列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询项目列表:绑定查询参数失败") {
 		return
 	}
 
@@ -407,17 +405,11 @@ func (h *ScriptHandler) ListProject(ctx *gin.Context) {
 			zap.Object("list_script_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询项目列表:查询项目列表成功",
-		zap.Strings("projects", projects),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &jobmodel.ListProjectResp{
+	c.JSON(http.StatusOK, &jobmodel.ListProjectResp{
 		Code: http.StatusOK,
 		Data: projects,
 	})
@@ -434,12 +426,13 @@ func (h *ScriptHandler) ListProject(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/script/label [get]
 // @Security ApiKeyAuth
-func (h *ScriptHandler) ListLabel(ctx *gin.Context) {
+func (h *ScriptHandler) ListLabel(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req jobmodel.ListScriptDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询标签列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询标签列表:绑定查询参数失败") {
 		return
 	}
 
@@ -451,17 +444,11 @@ func (h *ScriptHandler) ListLabel(ctx *gin.Context) {
 			zap.Object("list_script_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询标签列表:查询标签列表成功",
-		zap.Strings("labels", labels),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &jobmodel.ListProjectResp{
+	c.JSON(http.StatusOK, &jobmodel.ListProjectResp{
 		Code: http.StatusOK,
 		Data: labels,
 	})

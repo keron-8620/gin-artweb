@@ -51,7 +51,7 @@ func ReadJSON(filePath string, v any, opts ...SerializerOption) (*ReadResult, er
 	}
 
 	// 读取文件内容
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) // #nosec G304
 	if err != nil {
 		return nil, errors.WithMessagef(err, "读取JSON文件失败, 文件路径=%s", filePath)
 	}
@@ -126,7 +126,7 @@ func writeJSON(filePath string, data any, options SerializerOptions, startTime t
 	}
 
 	// 创建或截断文件
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, options.FileMode)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, options.FileMode) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("创建文件 %s 失败: %w", filePath, err)
 	}

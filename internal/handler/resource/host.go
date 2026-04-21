@@ -43,12 +43,14 @@ func NewHostHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host [post]
 // @Security ApiKeyAuth
-func (h *HostHandler) CreateHost(ctx *gin.Context) {
+func (h *HostHandler) CreateHost(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("新增主机:开始执行")
 
 	var req resomodel.HostUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "新增主机:绑定创建主机请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "新增主机:绑定创建主机请求参数失败") {
 		return
 	}
 
@@ -60,7 +62,7 @@ func (h *HostHandler) CreateHost(ctx *gin.Context) {
 			zap.Object("host_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -71,7 +73,7 @@ func (h *HostHandler) CreateHost(ctx *gin.Context) {
 	)
 
 	mo := resomodel.HostModelToStandardOut(*m)
-	ctx.JSON(http.StatusCreated, &resomodel.HostResp{
+	c.JSON(http.StatusCreated, &resomodel.HostResp{
 		Code: http.StatusCreated,
 		Data: *mo,
 	})
@@ -90,17 +92,19 @@ func (h *HostHandler) CreateHost(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{id} [put]
 // @Security ApiKeyAuth
-func (h *HostHandler) UpdateHost(ctx *gin.Context) {
+func (h *HostHandler) UpdateHost(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新主机:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新主机:绑定更新主机ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新主机:绑定更新主机ID参数失败") {
 		return
 	}
 
 	var req resomodel.HostUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "更新主机:绑定更新主机请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新主机:绑定更新主机请求参数失败") {
 		return
 	}
 
@@ -113,7 +117,7 @@ func (h *HostHandler) UpdateHost(ctx *gin.Context) {
 			zap.Object("host_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -124,7 +128,7 @@ func (h *HostHandler) UpdateHost(ctx *gin.Context) {
 	)
 
 	mo := resomodel.HostModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &resomodel.HostResp{
+	c.JSON(http.StatusOK, &resomodel.HostResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -142,12 +146,14 @@ func (h *HostHandler) UpdateHost(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{id} [delete]
 // @Security ApiKeyAuth
-func (h *HostHandler) DeleteHost(ctx *gin.Context) {
+func (h *HostHandler) DeleteHost(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除主机:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除主机:绑定删除主机ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除主机:绑定删除主机ID参数失败") {
 		return
 	}
 
@@ -159,7 +165,7 @@ func (h *HostHandler) DeleteHost(ctx *gin.Context) {
 			zap.Uint32("host_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -169,7 +175,7 @@ func (h *HostHandler) DeleteHost(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询主机
@@ -184,12 +190,13 @@ func (h *HostHandler) DeleteHost(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host/{id} [get]
 // @Security ApiKeyAuth
-func (h *HostHandler) GetHost(ctx *gin.Context) {
+func (h *HostHandler) GetHost(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询主机:绑定查询主机ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询主机:绑定查询主机ID参数失败") {
 		return
 	}
 
@@ -201,18 +208,12 @@ func (h *HostHandler) GetHost(ctx *gin.Context) {
 			zap.Uint32("host_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询主机:执行成功",
-		zap.Uint32("host_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := resomodel.HostModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &resomodel.HostResp{
+	c.JSON(http.StatusOK, &resomodel.HostResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -229,12 +230,13 @@ func (h *HostHandler) GetHost(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/host [get]
 // @Security ApiKeyAuth
-func (h *HostHandler) ListHost(ctx *gin.Context) {
+func (h *HostHandler) ListHost(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req resomodel.ListHostDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询主机列表:绑定查询主机列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询主机列表:绑定查询主机列表参数失败") {
 		return
 	}
 
@@ -249,20 +251,12 @@ func (h *HostHandler) ListHost(ctx *gin.Context) {
 			zap.Object("list_host_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询主机列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := resomodel.ListHostModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &resomodel.PagHostResp{
+	c.JSON(http.StatusOK, &resomodel.PagHostResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

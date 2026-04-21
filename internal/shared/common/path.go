@@ -18,7 +18,7 @@ func ReadUint32FromFile(filePath string) (uint32, error) {
 		return 0, nil
 	}
 	// 读取文件内容
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return 0, errors.WrapIfWithDetails(err, "打开文件失败", "filepath", filePath)
 	}

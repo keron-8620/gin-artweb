@@ -2,7 +2,6 @@ package routers
 
 import (
 	"context"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -22,7 +21,7 @@ func newSysRouter(
 ) {
 	secSettings := syssvc.SecuritySettings{
 		MaxFailedAttempts: init.Conf.Security.Login.MaxFailedAttempts,
-		LockDuration:      time.Duration(init.Conf.Security.Login.LockMinutes) * time.Minute,
+		LockDuration:      init.Conf.Security.Login.LockDuration,
 		PasswordStrength:  init.Conf.Security.Password.StrengthLevel,
 	}
 
@@ -31,9 +30,13 @@ func newSysRouter(
 	buttonRepo := sysrepo.NewButtonRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold, init.Enforcer)
 	roleRepo := sysrepo.NewRoleRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold, init.Enforcer)
 	userRepo := sysrepo.NewUserRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
-	recordRepo := sysrepo.NewLoginRecordRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold,
-		time.Duration(init.Conf.Security.Login.LockMinutes)*time.Minute,
-		time.Duration(init.Conf.Security.Token.AccessMinutes*2)*time.Minute,
+	recordRepo := sysrepo.NewLoginRecordRepo(
+		loggers.Repo,
+		init.DB,
+		init.DBTimeout,
+		init.DBSlowThreshold,
+		init.Conf.Security.Login.LockDuration,
+		init.Conf.Security.Token.AccessDuration,
 		init.Conf.Security.Login.MaxFailedAttempts,
 	)
 

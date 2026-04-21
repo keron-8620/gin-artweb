@@ -7,20 +7,22 @@ import (
 
 const (
 	TraceIDKey     ContextKey = "request_id"
-	defaultTraceID string     = "unknown-trace-id"
+	DefaultTraceID string     = "unknown-trace-id"
 )
 
 func GetTraceID(ctx context.Context) string {
 	if ctx == nil {
-		return defaultTraceID
+		return DefaultTraceID
 	}
-	requestID, ok := ctx.Value(TraceIDKey).(string)
-	if !ok || strings.TrimSpace(requestID) == "" {
-		return defaultTraceID
+
+	traceID, ok := ctx.Value(TraceIDKey).(string)
+	if ok && strings.TrimSpace(traceID) != "" {
+		return traceID
 	}
-	return requestID
+
+	return DefaultTraceID
 }
 
-func SetTraceID(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, TraceIDKey, requestID)
+func SetTraceID(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, TraceIDKey, traceID)
 }

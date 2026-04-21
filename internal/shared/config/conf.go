@@ -65,23 +65,23 @@ type HostGuardConfig struct {
 
 // TimestampConfig 时间戳验证配置
 type TimestampConfig struct {
-	CheckTimestamp  bool `yaml:"check_timestamp"`  // 是否检查时间戳
-	Tolerance       int  `yaml:"tolerance"`        // 时间容忍度(毫秒)
-	FutureTolerance int  `yaml:"future_tolerance"` // 未来时间容忍度(毫秒)
+	CheckTimestamp  bool          `yaml:"check_timestamp"`  // 是否检查时间戳
+	Tolerance       time.Duration `yaml:"tolerance"`        // 时间容忍度(毫秒)
+	FutureTolerance time.Duration `yaml:"future_tolerance"` // 未来时间容忍度(毫秒)
 }
 
 // TokenConfig Token配置
 type TokenConfig struct {
-	AccessMinutes  int    `yaml:"access_minutes"`  // Token过期时间(分钟)
-	RefreshMinutes int    `yaml:"refresh_minutes"` // 刷新令牌过期时间(分钟)
-	AccessMethod   string `yaml:"access_method"`   // 访问令牌签名方法
-	RefreshMethod  string `yaml:"refresh_method"`  // 刷新令牌签名方法
+	AccessDuration  time.Duration `yaml:"access_duration"`  // Token有效时间
+	RefreshDuration time.Duration `yaml:"refresh_duration"` // 刷新令牌有效时间
+	AccessMethod    string        `yaml:"access_method"`    // 访问令牌签名方法
+	RefreshMethod   string        `yaml:"refresh_method"`   // 刷新令牌签名方法
 }
 
 // LoginSecurityConfig 登录安全配置
 type LoginSecurityConfig struct {
-	MaxFailedAttempts int `yaml:"max_failed_attempts"` // 最大登录失败次数
-	LockMinutes       int `yaml:"lock_minutes"`        // 锁定时长(分钟)
+	MaxFailedAttempts int           `yaml:"max_failed_attempts"` // 最大登录失败次数
+	LockDuration      time.Duration `yaml:"lock_duration"`       // 锁定时长
 }
 
 // PasswordConfig 密码配置
@@ -117,8 +117,8 @@ type RateLimitConfig struct {
 
 // TimeoutConfig 超时配置
 type TimeoutConfig struct {
-	Request  int `yaml:"request"`  // 请求处理超时时间(秒)
-	Shutdown int `yaml:"shutdown"` // 服务关闭超时时间(秒)
+	Request  time.Duration `yaml:"request"`  // 请求处理超时时间(秒)
+	Shutdown time.Duration `yaml:"shutdown"` // 服务关闭超时时间(秒)
 }
 
 // ServerConfig 服务器配置
@@ -136,7 +136,7 @@ type SSHConfig struct {
 	Private string `mapstructure:"private" json:"private"`
 
 	// 连接超时时间（秒）
-	Timeout int `mapstructure:"timeout" json:"timeout"`
+	Timeout time.Duration `mapstructure:"timeout" json:"timeout"`
 }
 
 // UploadConfig 上传配置

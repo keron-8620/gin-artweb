@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"context"
+
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -35,7 +37,7 @@ func JWTAuthMiddleware(c *config.JWTConfig, logger *zap.Logger) gin.HandlerFunc 
 		// 从请求头获取token
 		token := extractToken(ctx)
 		if token == "" {
-			errors.RespondWithError(ctx, errors.ErrUnauthorized)
+			errors.RespondWithError(ctx, errors.ErrMissingAuth)
 			return
 		}
 
@@ -50,18 +52,26 @@ func JWTAuthMiddleware(c *config.JWTConfig, logger *zap.Logger) gin.HandlerFunc 
 			return
 		}
 
-		ctx.Set(ctxutil.JwtClaimsKey, claims)
+		newCtx := context.WithValue(ctx.Request.Context(), ctxutil.JwtClaimsKey, claims)
+		ctx.Request = ctx.Request.WithContext(newCtx)
 		ctx.Next()
 	}
 }
 
 func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		claims, err := ctxutil.GetJwtClaims(ctx)
-		if err != nil || claims == nil {
-			errors.RespondWithError(ctx, errors.ErrUnauthorized)
+		traceID := ctxutil.GetTraceID(ctx.Request.Context())
+		claims, err := ctxutil.GetJwtClaims(ctx.Request.Context())
+		if err != nil {
+			logger.Error(
+				"获取JWT claims失败",
+				zap.Error(err),
+				zap.String("trace_id", traceID),
+			)
+			errors.RespondWithError(ctx, errors.ErrAuthFailed)
 			return
 		}
+
 		role := auth.RoleToSubject(claims.RoleID)
 		fullPath := ctx.FullPath()
 
@@ -74,6 +84,7 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String("sub", role),
 				zap.String("obj", fullPath),
 				zap.String("act", ctx.Request.Method),
+				zap.String("trace_id", traceID),
 			)
 			errors.RespondWithError(ctx, errors.FromError(err))
 			return
@@ -84,6 +95,7 @@ func CasbinAuthMiddleware(enforcer *casbin.Enforcer, logger *zap.Logger) gin.Han
 				zap.String("sub", role),
 				zap.String("obj", fullPath),
 				zap.String("act", ctx.Request.Method),
+				zap.String("trace_id", traceID),
 			)
 			errors.RespondWithError(ctx, errors.ErrForbidden)
 			return

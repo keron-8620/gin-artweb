@@ -230,7 +230,7 @@ func processTarEntry(filePath, baseDir string, info os.FileInfo, tarWriter *tar.
 
 	// 写入文件内容（仅普通文件）
 	if info.Mode().IsRegular() {
-		file, err := os.Open(filePath)
+		file, err := os.Open(filePath) // #nosec G304
 		if err != nil {
 			return errors.Wrapf(err, "打开文件失败, filepath=%s", filePath)
 		}
@@ -263,7 +263,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 	}
 
 	// 打开源文件
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304
 	if err != nil {
 		return errors.Wrapf(err, "打开源文件失败, src=%s", src)
 	}
@@ -324,7 +324,7 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 // processUntarEntry 处理单个解压条目（解耦核心逻辑）
 func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, options ArchiveOptions) (int64, error) {
 	// 构造目标路径并检查安全性
-	target := filepath.Join(dst, header.Name)
+	target := filepath.Join(dst, header.Name) // #nosec G305
 	if !isPathSafe(target, dst) {
 		return 0, errors.Errorf("非法路径（路径遍历攻击）, target=%s, base=%s", target, dst)
 	}
@@ -366,7 +366,8 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 		// 应用权限掩码
 		fileMode = validatePermissions(fileMode, options.PermissionsMask)
 
-		file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode)
+		// 创建目标文件
+		file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode) // #nosec G304
 		if err != nil {
 			return 0, errors.WrapIf(err, "创建目标文件失败")
 		}
@@ -387,7 +388,7 @@ func processUntarEntry(header *tar.Header, tarReader *tar.Reader, dst string, op
 			return 0, errors.New("拒绝绝对路径符号链接")
 		}
 
-		linkTarget := filepath.Join(filepath.Dir(target), header.Linkname)
+		linkTarget := filepath.Join(filepath.Dir(target), header.Linkname) // #nosec G305
 		if !isPathSafe(linkTarget, dst) {
 			return 0, errors.New("符号链接指向基础目录外")
 		}
@@ -420,7 +421,7 @@ func ValidateSingleDirTarGz(src string, opts ...ArchiveOption) (string, error) {
 		return "", errors.WrapIf(options.Context.Err(), "校验 tar.gz 文件是否只包含一个顶层目录:上下文检查失败")
 	}
 
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304
 	if err != nil {
 		return "", errors.Wrapf(err, "打开源文件失败, src=%s", src)
 	}

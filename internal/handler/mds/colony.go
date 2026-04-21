@@ -46,12 +46,14 @@ func NewMdsColonyHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony [post]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) CreateMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) CreateMdsColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("创建mds集群:开始执行")
 
 	var req mdsmodel.MdsColonyUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "创建mds集群:绑定创建mds集群参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建mds集群:绑定创建mds集群参数失败") {
 		return
 	}
 
@@ -63,7 +65,7 @@ func (s *MdsColonyHandler) CreateMdsColony(ctx *gin.Context) {
 			zap.Object("mds_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -73,7 +75,7 @@ func (s *MdsColonyHandler) CreateMdsColony(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
+	c.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
 		Data: *mdsmodel.MdsColonyToDetailOut(*m),
 	})
@@ -92,17 +94,19 @@ func (s *MdsColonyHandler) CreateMdsColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id} [put]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) UpdateMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) UpdateMdsColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("更新mds集群:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新mds集群:绑定更新mds集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新mds集群:绑定更新mds集群ID参数失败") {
 		return
 	}
 
 	var req mdsmodel.MdsColonyUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "更新mds集群:绑定更新mds集群参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新mds集群:绑定更新mds集群参数失败") {
 		return
 	}
 
@@ -115,7 +119,7 @@ func (s *MdsColonyHandler) UpdateMdsColony(ctx *gin.Context) {
 			zap.Object("mds_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -125,7 +129,7 @@ func (s *MdsColonyHandler) UpdateMdsColony(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
+	c.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
 		Data: *mdsmodel.MdsColonyToDetailOut(*m),
 	})
@@ -143,12 +147,14 @@ func (s *MdsColonyHandler) UpdateMdsColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id} [delete]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) DeleteMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) DeleteMdsColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
+	log.Info("删除mds集群:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除mds集群:绑定删除mds集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除mds集群:绑定删除mds集群ID参数失败") {
 		return
 	}
 
@@ -160,7 +166,7 @@ func (s *MdsColonyHandler) DeleteMdsColony(ctx *gin.Context) {
 			zap.Uint32("mds_colony_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -170,7 +176,7 @@ func (s *MdsColonyHandler) DeleteMdsColony(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询mds集群详情
@@ -185,12 +191,13 @@ func (s *MdsColonyHandler) DeleteMdsColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id} [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) GetMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) GetMdsColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询mds集群详情:绑定查询mds集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询mds集群详情:绑定查询mds集群ID参数失败") {
 		return
 	}
 
@@ -202,18 +209,12 @@ func (s *MdsColonyHandler) GetMdsColony(ctx *gin.Context) {
 			zap.Uint32("mds_colony_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询mds集群:执行成功",
-		zap.Uint32("mds_colony_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := mdsmodel.MdsColonyToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
+	c.JSON(http.StatusOK, &mdsmodel.MdsColonyResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -234,12 +235,13 @@ func (s *MdsColonyHandler) GetMdsColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
+func (s *MdsColonyHandler) ListMdsColony(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req mdsmodel.ListMdsColonyDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询mds集群列表:绑定查询mds集群列表参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询mds集群列表:绑定查询mds集群列表参数失败") {
 		return
 	}
 
@@ -254,20 +256,12 @@ func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
 			zap.Object("mds_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询mds集群列表成功",
-		zap.Int64("total", total),
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := mdsmodel.ListMdsColonyToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &mdsmodel.PagMdsColonyResp{
+	c.JSON(http.StatusOK, &mdsmodel.PagMdsColonyResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -285,12 +279,13 @@ func (s *MdsColonyHandler) ListMdsColony(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/{id}/schedule [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) ListMdsSchedules(ctx *gin.Context) {
+func (s *MdsColonyHandler) ListMdsSchedules(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询mds计划任务:绑定查询mds集群ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询mds计划任务:绑定查询mds集群ID参数失败") {
 		return
 	}
 
@@ -302,7 +297,7 @@ func (s *MdsColonyHandler) ListMdsSchedules(ctx *gin.Context) {
 			zap.Uint32("mds_colony_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -314,7 +309,7 @@ func (s *MdsColonyHandler) ListMdsSchedules(ctx *gin.Context) {
 
 	num := len(schedules)
 	mos := jobmodel.ListScheduledToDetailOut(schedules)
-	ctx.JSON(http.StatusOK, &jobmodel.PagScheduleResp{
+	c.JSON(http.StatusOK, &jobmodel.PagScheduleResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(1, num, int64(num), mos),
 	})
@@ -331,12 +326,13 @@ func (s *MdsColonyHandler) ListMdsSchedules(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mds/colony/status [get]
 // @Security ApiKeyAuth
-func (s *MdsColonyHandler) ListMdsTaskStatus(ctx *gin.Context) {
+func (s *MdsColonyHandler) ListMdsTaskStatus(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	var req mdsmodel.ListMdsColonyDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询mds集群任务状态:绑定查询mds集群任务状态参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询mds集群任务状态:绑定查询mds集群任务状态参数失败") {
 		return
 	}
 
@@ -348,12 +344,12 @@ func (s *MdsColonyHandler) ListMdsTaskStatus(ctx *gin.Context) {
 			zap.Object("mds_colony_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
 	if len(tasks) == 0 {
-		ctx.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoResp{
+		c.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoResp{
 			Code: http.StatusOK,
 			Data: []mdsmodel.MdsColonyTaskInfo{},
 		})
@@ -373,12 +369,7 @@ func (s *MdsColonyHandler) ListMdsTaskStatus(ctx *gin.Context) {
 		}
 	}
 
-	log.Info(
-		"查询mds集群任务状态:执行成功",
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoResp{
+	c.JSON(http.StatusOK, &mdsmodel.ListMdsTasksInfoResp{
 		Code: http.StatusOK,
 		Data: results,
 	})

@@ -235,8 +235,7 @@ insert into sys_menu_api(menu_id,api_id) values('86','2013');
 insert into sys_menu_api(menu_id,api_id) values('86','2016');
 
 
-
-insert into sys_role(name,descr) values('admin','系统管理员');
+insert into sys_role(id, name,descr) values('1','admin','系统管理员');
 
 
 insert into sys_role_api(role_id,api_id) values('1','1');
@@ -391,7 +390,7 @@ insert into job_script(name,descr,param_desc,project,label,language,status,is_bu
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_killall.sh','强杀mds','$1:集群号名称|字符串|必填|示例:01','mds','cmd_emgy_mds','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_okflag.sh','生成mds的flag标识','$1:集群号名称|字符串|必填|示例:01','mds','cmd_emgy_mds','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_restart.sh','重启mds','$1:集群号名称|字符串|必填|示例:01','mds','cmd_emgy_mds','shell','1','1','mon');
-insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_set_status.sh','设置mds指定任务状态','$1:集群号名称|字符串|必填|示例:01;$2:任务名称|字符串|必填|示例:reset、reset2、ezoes_oiw_check、ezstep_oiw_check等;$3:任务状态|字符串(0:初始,1:就绪,2:运行中,3:等待结束,4:失败,5:成功)|必填|示例:5''','mds','cmd_emgy_mds','shell','1','1','mon');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_set_status.sh','设置mds指定任务状态','$1:集群号名称|字符串|必填|示例:01;$2:任务名称|字符串|必填|示例:reset、reset2、ezoes_oiw_check、ezstep_oiw_check等;$3:任务状态|字符串(0:初始,1:就绪,2:运行中,3:等待结束,4:失败,5:成功)|必填|示例:5','mds','cmd_emgy_mds','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_zb_control.sh','mds灾备','$1:集群号名称|字符串|必填|示例:01;$2:执行操作|字符串(start/stop)|必填|示例:start','mds','cmd_emgy_mds','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('deploy.sh','部署oes集群','$1:集群号名称|字符串|必填|示例:01','oes','dep','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('backup.sh','备份oes集群','$1:集群号名称|字符串|必填|示例:01','oes','dep','shell','1','1','mon');
@@ -422,7 +421,7 @@ insert into job_script(name,descr,param_desc,project,label,language,status,is_bu
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_killall.sh','强杀oes','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_okflag.sh','生成oes的flag标识','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_restart.sh','重启oes','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');
-insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_set_status.sh','设置oes指定任务状态','$1:集群号名称|字符串|必填|示例:01;$2:任务名称|字符串|必填|示例:reset、reset2、ezoes_oiw_check、ezstep_oiw_check等;$3:任务状态|字符串(0:初始,1:就绪,2:运行中,3:等待结束,4:失败,5:成功)|必填|示例:5''','oes','cmd_emgy_oes','shell','1','1','mon');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_set_status.sh','设置oes指定任务状态','$1:集群号名称|字符串|必填|示例:01;$2:任务名称|字符串|必填|示例:reset、reset2、ezoes_oiw_check、ezstep_oiw_check等;$3:任务状态|字符串(0:初始,1:就绪,2:运行中,3:等待结束,4:失败,5:成功)|必填|示例:5','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_zb_control.sh','oes灾备','$1:集群号名称|字符串|必填|示例:01;$2:执行操作|字符串(start/stop)|必填|示例:start','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('start.sh','启动mon','$1:节点号|字符串|必填|示例:01','mon','cmd','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('stop.sh','停止mon','$1:节点号|字符串|必填|示例:01','mon','cmd','shell','1','1','mon');

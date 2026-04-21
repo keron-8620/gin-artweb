@@ -852,7 +852,7 @@ definitions:
         example: cron
         type: string
     type: object
-  job.ExecScriptDTO:
+  job.CreateScriptRecordDTO:
     properties:
       command_args:
         description: 命令行参数
@@ -4594,7 +4594,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/job.ExecScriptDTO'
+          $ref: '#/definitions/job.CreateScriptRecordDTO'
       produces:
       - application/json
       responses:

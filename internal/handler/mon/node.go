@@ -43,12 +43,14 @@ func NewNodeHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node [post]
 // @Security ApiKeyAuth
-func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
+func (h *NodeHandler) CreateMonNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("新增mon节点:开始执行")
 
 	var req monmodel.MonNodeUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "新增mon节点:绑定创建mon节点参数失败") {
+	if !common.ShouldBind(c, log, &req, "新增mon节点:绑定创建mon节点参数失败") {
 		return
 	}
 
@@ -60,7 +62,7 @@ func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
 			zap.Object("mon_node_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -70,7 +72,7 @@ func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusCreated, &monmodel.MonNodeResp{
+	c.JSON(http.StatusCreated, &monmodel.MonNodeResp{
 		Code: http.StatusCreated,
 		Data: *monmodel.MonNodeToDetailOut(*m),
 	})
@@ -89,17 +91,19 @@ func (h *NodeHandler) CreateMonNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node/{id} [put]
 // @Security ApiKeyAuth
-func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
+func (h *NodeHandler) UpdateMonNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新mon节点:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新mon节点:绑定更新mon节点ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新mon节点:绑定更新mon节点ID参数失败") {
 		return
 	}
 
 	var req monmodel.MonNodeUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "更新mon节点:绑定更新mon节点参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新mon节点:绑定更新mon节点参数失败") {
 		return
 	}
 
@@ -112,7 +116,7 @@ func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
 			zap.Object("mon_node_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -122,7 +126,7 @@ func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &monmodel.MonNodeResp{
+	c.JSON(http.StatusOK, &monmodel.MonNodeResp{
 		Code: http.StatusOK,
 		Data: *monmodel.MonNodeToDetailOut(*m),
 	})
@@ -140,12 +144,14 @@ func (h *NodeHandler) UpdateMonNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node/{id} [delete]
 // @Security ApiKeyAuth
-func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
+func (h *NodeHandler) DeleteMonNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除mon节点:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除mon节点:绑定删除mon节点ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除mon节点:绑定删除mon节点ID参数失败") {
 		return
 	}
 
@@ -157,7 +163,7 @@ func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
 			zap.Uint32("node_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -167,7 +173,7 @@ func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询mon节点
@@ -182,12 +188,13 @@ func (h *NodeHandler) DeleteMonNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node/{id} [get]
 // @Security ApiKeyAuth
-func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
+func (h *NodeHandler) GetMonNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询mon节点:绑定查询mon节点ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询mon节点:绑定查询mon节点ID参数失败") {
 		return
 	}
 
@@ -199,18 +206,12 @@ func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
 			zap.Uint32("node_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
-	log.Info(
-		"查询mon节点:执行成功",
-		zap.Uint32("node_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := monmodel.MonNodeToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &monmodel.MonNodeResp{
+	c.JSON(http.StatusOK, &monmodel.MonNodeResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -227,12 +228,13 @@ func (h *NodeHandler) GetMonNode(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/mon/node [get]
 // @Security ApiKeyAuth
-func (h *NodeHandler) ListMonNode(ctx *gin.Context) {
+func (h *NodeHandler) ListMonNode(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req monmodel.ListMonNodeDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询mon节点列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询mon节点列表:绑定查询参数失败") {
 		return
 	}
 
@@ -247,20 +249,12 @@ func (h *NodeHandler) ListMonNode(ctx *gin.Context) {
 			zap.Object("list_mon_node_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
-	log.Info(
-		"查询mon节点列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := monmodel.ListMonNodeToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &monmodel.PagMonNodeResp{
+	c.JSON(http.StatusOK, &monmodel.PagMonNodeResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

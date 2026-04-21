@@ -17,7 +17,7 @@ if [ -f "$basepath/bin/artweb" ]; then
 fi
 
 # # 注入版本、Commit ID、构建时间等
-VERSION="0.17.7.0.3" # 项目版本号
+VERSION="0.17.7.0.4" # 项目版本号
 COMMIT_ID=$(git rev-parse --short HEAD) # 获取Git短Commit ID
 BUILD_TIME=$(date +"%Y-%m-%d %H:%M:%S") # 获取当前时间
 

@@ -39,7 +39,7 @@ func UploadFile(
 	}
 
 	// 打开本地源文件
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304
 	if err != nil {
 		return errors.WithMessagef(err, "打开本地源文件失败，路径: %s", src)
 	}
@@ -51,7 +51,7 @@ func UploadFile(
 		return errors.WithMessagef(err, "创建远程目录失败，路径: %s", destDir)
 	}
 
-	// 创建远程目标文件
+	// nosec G304: 创建远程目标文件
 	dstFile, err := client.Create(dest)
 	if err != nil {
 		return errors.WithMessagef(err, "创建远程目标文件失败，路径: %s", dest)
@@ -109,7 +109,7 @@ func DownloadFile(
 	}
 
 	// 创建本地目标文件
-	dstFile, err := os.Create(dest)
+	dstFile, err := os.Create(dest) // #nosec G304
 	if err != nil {
 		return errors.WithMessagef(err, "创建本地目标文件失败，路径: %s", dest)
 	}

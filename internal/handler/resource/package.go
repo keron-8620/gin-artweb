@@ -48,12 +48,14 @@ func NewPackageHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/package [post]
 // @Security ApiKeyAuth
-func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
+func (h *PackageHandler) UploadPackage(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("上传程序包:开始执行")
 
 	var req resomodel.UploadPackageDTO
-	if !common.ShouldBind(ctx, log, &req, "上传程序包:绑定上传程序包参数失败") {
+	if !common.ShouldBind(c, log, &req, "上传程序包:绑定上传程序包参数失败") {
 		return
 	}
 
@@ -65,7 +67,7 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		rErr := errors.FromError(err)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 	defer fileReader.Close()
@@ -85,7 +87,7 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 			zap.Object("upload_package_biz", &dto),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -95,7 +97,7 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusCreated, &resomodel.PackageResp{
+	c.JSON(http.StatusCreated, &resomodel.PackageResp{
 		Code: http.StatusCreated,
 		Data: *resomodel.PackageModelToOutBase(*pkg),
 	})
@@ -112,12 +114,14 @@ func (h *PackageHandler) UploadPackage(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/package/{id} [delete]
 // @Security ApiKeyAuth
-func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
+func (h *PackageHandler) DeletePackage(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除程序包:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除程序包:绑定删除程序包ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除程序包:绑定删除程序包ID参数失败") {
 		return
 	}
 
@@ -129,7 +133,7 @@ func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
 			zap.Uint32("package_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -138,7 +142,7 @@ func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
 		zap.Uint32("package_id", uri.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询程序包
@@ -152,12 +156,13 @@ func (h *PackageHandler) DeletePackage(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/package/{id} [get]
 // @Security ApiKeyAuth
-func (h *PackageHandler) GetPackage(ctx *gin.Context) {
+func (h *PackageHandler) GetPackage(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询程序包:绑定查询程序包ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询程序包:绑定查询程序包ID参数失败") {
 		return
 	}
 
@@ -169,18 +174,12 @@ func (h *PackageHandler) GetPackage(ctx *gin.Context) {
 			zap.Uint32("package_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询程序包:执行成功",
-		zap.Uint32("package_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := resomodel.PackageModelToOutBase(*m)
-	ctx.JSON(http.StatusOK, &resomodel.PackageResp{
+	c.JSON(http.StatusOK, &resomodel.PackageResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -196,12 +195,13 @@ func (h *PackageHandler) GetPackage(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/package [get]
 // @Security ApiKeyAuth
-func (h *PackageHandler) ListPackage(ctx *gin.Context) {
+func (h *PackageHandler) ListPackage(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req resomodel.ListPackageDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询程序包列表:绑定参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询程序包列表:绑定参数失败") {
 		return
 	}
 
@@ -216,20 +216,12 @@ func (h *PackageHandler) ListPackage(ctx *gin.Context) {
 			zap.Object("list_package_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询程序包列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := resomodel.ListPkgModelToOut(ms)
-	ctx.JSON(http.StatusOK, &resomodel.PagPackageResp{
+	c.JSON(http.StatusOK, &resomodel.PagPackageResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -246,12 +238,14 @@ func (h *PackageHandler) ListPackage(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/resource/package/{id}/download [get]
 // @Security ApiKeyAuth
-func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
+func (h *PackageHandler) DownloadPackage(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("下载程序包:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "下载程序包:绑定下载程序包ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "下载程序包:绑定下载程序包ID参数失败") {
 		return
 	}
 
@@ -263,13 +257,13 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 			zap.Uint32("package_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	// 构建文件路径
 	filePath := resosvc.GetPackageStoragePath(pkg.StorageFilename)
-	if err := common.DownloadFile(ctx, log, filePath, pkg.OriginFilename); err != nil {
+	if err := common.DownloadFile(c, log, filePath, pkg.OriginFilename); err != nil {
 		log.Error(
 			"下载程序包:下载文件失败",
 			zap.Error(err),
@@ -277,13 +271,15 @@ func (h *PackageHandler) DownloadPackage(ctx *gin.Context) {
 			zap.String("filename", pkg.OriginFilename),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
 	log.Info(
 		"下载程序包:执行成功",
 		zap.Uint32("package_id", uri.ID),
+		zap.String("filename", pkg.OriginFilename),
+		zap.String("filepath", filePath),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 }

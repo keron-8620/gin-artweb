@@ -42,12 +42,14 @@ func NewApiHandler(
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Router /api/v1/customer/api [post]
 // @Security ApiKeyAuth
-func (h *ApiHandler) CreateApi(ctx *gin.Context) {
+func (h *ApiHandler) CreateApi(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("创建API:开始执行")
 
 	var req sysmodel.CreateApiDTO
-	if !common.ShouldBind(ctx, log, &req, "创建API:绑定创建API请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建API:绑定创建API请求参数失败") {
 		return
 	}
 
@@ -59,7 +61,7 @@ func (h *ApiHandler) CreateApi(ctx *gin.Context) {
 			zap.Object("create_api_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -70,7 +72,7 @@ func (h *ApiHandler) CreateApi(ctx *gin.Context) {
 	)
 
 	mo := sysmodel.ApiModelToStandardOut(*m)
-	ctx.JSON(http.StatusCreated, &sysmodel.ApiResp{
+	c.JSON(http.StatusCreated, &sysmodel.ApiResp{
 		Code: http.StatusCreated,
 		Data: mo,
 	})
@@ -88,17 +90,19 @@ func (h *ApiHandler) CreateApi(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "API未找到"
 // @Router /api/v1/customer/api/{id} [put]
 // @Security ApiKeyAuth
-func (h *ApiHandler) UpdateApi(ctx *gin.Context) {
+func (h *ApiHandler) UpdateApi(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新API:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新API:绑定更新APIID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新API:绑定更新APIID参数失败") {
 		return
 	}
 
 	var req sysmodel.UpdateApiDTO
-	if !common.ShouldBind(ctx, log, &req, "更新API:绑定更新API请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新API:绑定更新API请求参数失败") {
 		return
 	}
 
@@ -111,7 +115,7 @@ func (h *ApiHandler) UpdateApi(ctx *gin.Context) {
 			zap.Object("update_api_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -122,7 +126,7 @@ func (h *ApiHandler) UpdateApi(ctx *gin.Context) {
 	)
 
 	mo := sysmodel.ApiModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &sysmodel.ApiResp{
+	c.JSON(http.StatusOK, &sysmodel.ApiResp{
 		Code: http.StatusOK,
 		Data: mo,
 	})
@@ -139,12 +143,14 @@ func (h *ApiHandler) UpdateApi(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "API未找到"
 // @Router /api/v1/customer/api/{id} [delete]
 // @Security ApiKeyAuth
-func (h *ApiHandler) DeleteApi(ctx *gin.Context) {
+func (h *ApiHandler) DeleteApi(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除API:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除API:绑定删除APIID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除API:绑定删除APIID参数失败") {
 		return
 	}
 
@@ -155,11 +161,17 @@ func (h *ApiHandler) DeleteApi(ctx *gin.Context) {
 			zap.Uint32("api_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	log.Info(
+		"删除API:执行成功",
+		zap.Uint32("api_id", uri.ID),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询API
@@ -173,12 +185,13 @@ func (h *ApiHandler) DeleteApi(ctx *gin.Context) {
 // @Failure 404 {object} errors.Error "API未找到"
 // @Router /api/v1/customer/api/{id} [get]
 // @Security ApiKeyAuth
-func (h *ApiHandler) GetApi(ctx *gin.Context) {
+func (h *ApiHandler) GetApi(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询API:绑定查询APIID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询API:绑定查询APIID参数失败") {
 		return
 	}
 
@@ -190,18 +203,12 @@ func (h *ApiHandler) GetApi(ctx *gin.Context) {
 			zap.Uint32("api_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询API:执行成功",
-		zap.Uint32("api_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := sysmodel.ApiModelToStandardOut(*m)
-	ctx.JSON(http.StatusOK, &sysmodel.ApiResp{
+	c.JSON(http.StatusOK, &sysmodel.ApiResp{
 		Code: http.StatusOK,
 		Data: mo,
 	})
@@ -218,12 +225,13 @@ func (h *ApiHandler) GetApi(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "内部服务错误"
 // @Router /api/v1/customer/api [get]
 // @Security ApiKeyAuth
-func (h *ApiHandler) ListApi(ctx *gin.Context) {
+func (h *ApiHandler) ListApi(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req sysmodel.ListApiDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询API列表:绑定查询API列表请求参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询API列表:绑定查询API列表请求参数失败") {
 		return
 	}
 
@@ -238,20 +246,12 @@ func (h *ApiHandler) ListApi(ctx *gin.Context) {
 			zap.Object("list_api_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询API列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListApiModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagApiResp{
+	c.JSON(http.StatusOK, &sysmodel.PagApiResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

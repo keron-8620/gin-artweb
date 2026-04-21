@@ -42,12 +42,14 @@ func NewScheduleHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/schedule [post]
 // @Security ApiKeyAuth
-func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
+func (h *ScheduleHandler) CreateSchedule(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("创建计划任务:开始执行")
 
 	var req jobmodel.ScheduleUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "创建计划任务:绑定请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "创建计划任务:绑定请求参数失败") {
 		return
 	}
 
@@ -56,8 +58,9 @@ func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 			"创建计划任务:计划任务表达式格式错误",
 			zap.Error(err),
 			zap.String("specification", req.Specification),
+			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, errors.ErrCronSpecificationInvalid)
+		errors.RespondWithError(c, errors.ErrCronSpecificationInvalid)
 		return
 	}
 
@@ -69,7 +72,7 @@ func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 			zap.Object("schedule_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -79,7 +82,7 @@ func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &jobmodel.ScheduleResp{
+	c.JSON(http.StatusOK, &jobmodel.ScheduleResp{
 		Code: http.StatusOK,
 		Data: *jobmodel.ScheduleToDetailOut(*m),
 	})
@@ -98,17 +101,19 @@ func (h *ScheduleHandler) CreateSchedule(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/schedule/{id} [put]
 // @Security ApiKeyAuth
-func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
+func (h *ScheduleHandler) UpdateSchedule(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新计划任务:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新计划任务:绑定更新计划任务ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新计划任务:绑定更新计划任务ID参数失败") {
 		return
 	}
 
 	var req jobmodel.ScheduleUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "更新计划任务:绑定更新计划任务请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新计划任务:绑定更新计划任务请求参数失败") {
 		return
 	}
 
@@ -118,7 +123,7 @@ func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 			zap.Error(err),
 			zap.String("specification", req.Specification),
 		)
-		errors.RespondWithError(ctx, errors.ErrCronSpecificationInvalid)
+		errors.RespondWithError(c, errors.ErrCronSpecificationInvalid)
 		return
 	}
 
@@ -131,7 +136,7 @@ func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 			zap.Object("schedule_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -141,7 +146,7 @@ func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &jobmodel.ScheduleResp{
+	c.JSON(http.StatusOK, &jobmodel.ScheduleResp{
 		Code: http.StatusOK,
 		Data: *jobmodel.ScheduleToDetailOut(*m),
 	})
@@ -159,12 +164,14 @@ func (h *ScheduleHandler) UpdateSchedule(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/schedule/{id} [delete]
 // @Security ApiKeyAuth
-func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
+func (h *ScheduleHandler) DeleteSchedule(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除计划任务:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除计划任务:绑定删除计划任务ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除计划任务:绑定删除计划任务ID参数失败") {
 		return
 	}
 
@@ -176,7 +183,7 @@ func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
 			zap.Uint32("schedule_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -186,7 +193,7 @@ func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询计划任务详情
@@ -201,12 +208,13 @@ func (h *ScheduleHandler) DeleteSchedule(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/schedule/{id} [get]
 // @Security ApiKeyAuth
-func (h *ScheduleHandler) GetSchedule(ctx *gin.Context) {
+func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询计划任务:绑定计划任务ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询计划任务:绑定计划任务ID参数失败") {
 		return
 	}
 
@@ -218,18 +226,12 @@ func (h *ScheduleHandler) GetSchedule(ctx *gin.Context) {
 			zap.Uint32("schedule_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询计划任务:执行成功",
-		zap.Uint32("schedule_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mo := jobmodel.ScheduleToDetailOut(*m)
-	ctx.JSON(http.StatusOK, &jobmodel.ScheduleResp{
+	c.JSON(http.StatusOK, &jobmodel.ScheduleResp{
 		Code: http.StatusOK,
 		Data: *mo,
 	})
@@ -246,12 +248,13 @@ func (h *ScheduleHandler) GetSchedule(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/jobs/schedule [get]
 // @Security ApiKeyAuth
-func (h *ScheduleHandler) ListSchedule(ctx *gin.Context) {
+func (h *ScheduleHandler) ListSchedule(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req jobmodel.ListScheduleDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询计划任务列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询计划任务列表:绑定查询参数失败") {
 		return
 	}
 
@@ -266,20 +269,12 @@ func (h *ScheduleHandler) ListSchedule(ctx *gin.Context) {
 			zap.Object("list_schedule_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询计划任务列表:查询计划任务列表成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := jobmodel.ListScheduledToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &jobmodel.PagScheduleResp{
+	c.JSON(http.StatusOK, &jobmodel.PagScheduleResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

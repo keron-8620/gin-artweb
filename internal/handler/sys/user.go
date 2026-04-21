@@ -43,12 +43,14 @@ func NewUserHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user [post]
 // @Security ApiKeyAuth
-func (h *UserHandler) CreateUser(ctx *gin.Context) {
+func (h *UserHandler) CreateUser(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("新增用户:开始执行")
 
 	var req sysmodel.CreateUserDTO
-	if !common.ShouldBind(ctx, log, &req, "新增用户:绑定创建用户请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "新增用户:绑定创建用户请求参数失败") {
 		return
 	}
 
@@ -60,7 +62,7 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 			zap.Object("create_user_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -70,7 +72,7 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusCreated, &sysmodel.UserResp{
+	c.JSON(http.StatusCreated, &sysmodel.UserResp{
 		Code: http.StatusCreated,
 		Data: sysmodel.UserModelToDetailOut(*m),
 	})
@@ -89,17 +91,19 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{id} [put]
 // @Security ApiKeyAuth
-func (h *UserHandler) UpdateUser(ctx *gin.Context) {
+func (h *UserHandler) UpdateUser(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新用户:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新用户:绑定用户ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新用户:绑定用户ID参数失败") {
 		return
 	}
 
 	var req sysmodel.UpdateUserDTO
-	if !common.ShouldBind(ctx, log, &req, "更新用户:绑定更新用户请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新用户:绑定更新用户请求参数失败") {
 		return
 	}
 
@@ -112,7 +116,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 			zap.Object("update_user_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -124,7 +128,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 			zap.Uint32("user_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -134,7 +138,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &sysmodel.UserResp{
+	c.JSON(http.StatusOK, &sysmodel.UserResp{
 		Code: http.StatusOK,
 		Data: sysmodel.UserModelToDetailOut(*m),
 	})
@@ -152,12 +156,14 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{id} [delete]
 // @Security ApiKeyAuth
-func (h *UserHandler) DeleteUser(ctx *gin.Context) {
+func (h *UserHandler) DeleteUser(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除用户:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除用户:绑定用户ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除用户:绑定用户ID参数失败") {
 		return
 	}
 
@@ -169,7 +175,7 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 			zap.Uint32("user_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -179,7 +185,7 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询用户
@@ -194,12 +200,13 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/{id} [get]
 // @Security ApiKeyAuth
-func (h *UserHandler) GetUser(ctx *gin.Context) {
+func (h *UserHandler) GetUser(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询用户详情:绑定用户ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询用户详情:绑定用户ID参数失败") {
 		return
 	}
 
@@ -211,17 +218,11 @@ func (h *UserHandler) GetUser(ctx *gin.Context) {
 			zap.Uint32("user_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询用户:执行成功",
-		zap.Uint32("user_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &sysmodel.UserResp{
+	c.JSON(http.StatusOK, &sysmodel.UserResp{
 		Code: http.StatusOK,
 		Data: sysmodel.UserModelToDetailOut(*m),
 	})
@@ -238,12 +239,13 @@ func (h *UserHandler) GetUser(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user [get]
 // @Security ApiKeyAuth
-func (h *UserHandler) ListUser(ctx *gin.Context) {
+func (h *UserHandler) ListUser(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req sysmodel.ListUserDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询用户列表:绑定查询用户列表请求参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询用户列表:绑定查询用户列表请求参数失败") {
 		return
 	}
 
@@ -258,20 +260,12 @@ func (h *UserHandler) ListUser(ctx *gin.Context) {
 			zap.Object("list_user_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询用户列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListUserModelToDetailOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagUserResp{
+	c.JSON(http.StatusOK, &sysmodel.PagUserResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -290,17 +284,19 @@ func (h *UserHandler) ListUser(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/password/{id} [patch]
 // @Security ApiKeyAuth
-func (h *UserHandler) ResetPassword(ctx *gin.Context) {
+func (h *UserHandler) ResetPassword(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("重置用户密码:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "重置用户密码:绑定用户ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "重置用户密码:绑定用户ID参数失败") {
 		return
 	}
 
 	var req sysmodel.ResetPasswordDTO
-	if !common.ShouldBind(ctx, log, &req, "重置用户密码:绑定重置用户密码请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "重置用户密码:绑定重置用户密码请求参数失败") {
 		return
 	}
 
@@ -312,7 +308,7 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 			zap.Uint32("user_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -321,7 +317,7 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 		zap.Uint32("user_id", uri.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 修改当前用户密码
@@ -336,16 +332,18 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/me/password [patch]
 // @Security ApiKeyAuth
-func (h *UserHandler) PatchPassword(ctx *gin.Context) {
+func (h *UserHandler) PatchPassword(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
-	claims := ctxutil.MustGetJwtClaims(ctx)
+	log.Info("修改个人密码:开始执行")
 
 	var req sysmodel.PatchPasswordDTO
-	if !common.ShouldBind(ctx, log, &req, "修改个人密码:绑定修改个人密码请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "修改个人密码:绑定修改个人密码请求参数失败") {
 		return
 	}
 
+	claims := ctxutil.MustGetJwtClaims(ctx)
 	err := h.userSvc.PatchPassword(ctx, claims.UserID, req.OldPassword, req.NewPassword)
 	if err != nil {
 		log.Error(
@@ -354,7 +352,7 @@ func (h *UserHandler) PatchPassword(ctx *gin.Context) {
 			zap.Uint32("user_id", claims.UserID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -363,7 +361,7 @@ func (h *UserHandler) PatchPassword(ctx *gin.Context) {
 		zap.Uint32("user_id", claims.UserID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 登陆接口
@@ -377,18 +375,20 @@ func (h *UserHandler) PatchPassword(ctx *gin.Context) {
 // @Failure 401 {object} errors.Error "用户名或密码错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/login [post]
-func (h *UserHandler) Login(ctx *gin.Context) {
+func (h *UserHandler) Login(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("用户登录:开始执行")
 
 	var req sysmodel.LoginDTO
-	if !common.ShouldBind(ctx, log, &req, "用户登录:绑定用户登录请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "用户登录:绑定用户登录请求参数失败") {
 		return
 	}
 
 	reqCtx := sysmodel.RequestContext{
-		IP:        ctx.ClientIP(),
-		UserAgent: ctx.Request.UserAgent(),
+		IP:        c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
 	}
 
 	accessToken, refreshToken, err := h.userSvc.Login(ctx, req, reqCtx)
@@ -399,7 +399,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 			zap.String("username", req.Username),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -409,7 +409,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &sysmodel.LoginResp{
+	c.JSON(http.StatusOK, &sysmodel.LoginResp{
 		Code: http.StatusOK,
 		Data: sysmodel.LoginOut{
 			AccessToken:  accessToken,
@@ -429,12 +429,14 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 // @Failure 401 {object} errors.Error "用户名或密码错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/refresh/token [post]
-func (h *UserHandler) RefreshToken(ctx *gin.Context) {
+func (h *UserHandler) RefreshToken(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("刷新令牌:开始执行")
 
 	var req sysmodel.RefreshTokenDTO
-	if !common.ShouldBind(ctx, log, &req, "刷新令牌:绑定刷新令牌请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "刷新令牌:绑定刷新令牌请求参数失败") {
 		return
 	}
 
@@ -445,7 +447,7 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 			zap.Error(rErr),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, rErr)
+		errors.RespondWithError(c, rErr)
 		return
 	}
 
@@ -454,7 +456,7 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusOK, &sysmodel.LoginResp{
+	c.JSON(http.StatusOK, &sysmodel.LoginResp{
 		Code: http.StatusOK,
 		Data: sysmodel.LoginOut{
 			AccessToken:  accessToken,
@@ -474,12 +476,13 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/user/record/login [get]
 // @Security ApiKeyAuth
-func (h *UserHandler) ListLoginRecord(ctx *gin.Context) {
+func (h *UserHandler) ListLoginRecord(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var req sysmodel.ListLoginRecordDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询用户登录记录列表:绑定查询用户登录记录列表请求参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询用户登录记录列表:绑定查询用户登录记录列表请求参数失败") {
 		return
 	}
 
@@ -494,20 +497,12 @@ func (h *UserHandler) ListLoginRecord(ctx *gin.Context) {
 			zap.Object("list_login_record_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询用户登录记录列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListLoginRecordModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagLoginRecordResp{
+	c.JSON(http.StatusOK, &sysmodel.PagLoginRecordResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -525,16 +520,17 @@ func (h *UserHandler) ListLoginRecord(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/me/record/login [get]
 // @Security ApiKeyAuth
-func (h *UserHandler) ListMeLoginRecord(ctx *gin.Context) {
+func (h *UserHandler) ListMeLoginRecord(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
-	claims := ctxutil.MustGetJwtClaims(ctx)
 
 	var req sysmodel.ListLoginRecordDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询个人登录记录列表:绑定查询个人登录记录列表请求参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询个人登录记录列表:绑定查询个人登录记录列表请求参数失败") {
 		return
 	}
 
+	claims := ctxutil.MustGetJwtClaims(ctx)
 	req.Username = claims.Username
 	page, size := req.BaseModelQuery.GetPageParam()
 	total, ms, err := h.userSvc.ListLoginRecord(ctx, page, size, req)
@@ -547,20 +543,12 @@ func (h *UserHandler) ListMeLoginRecord(ctx *gin.Context) {
 			zap.Object("list_login_record_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询个人登录记录列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListLoginRecordModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagLoginRecordResp{
+	c.JSON(http.StatusOK, &sysmodel.PagLoginRecordResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})

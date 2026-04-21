@@ -43,12 +43,14 @@ func NewRoleHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role [post]
 // @Security ApiKeyAuth
-func (h *RoleHandler) CreateRole(ctx *gin.Context) {
+func (h *RoleHandler) CreateRole(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("新增角色:开始执行")
 
 	var req sysmodel.RoleUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "新增角色:绑定新增角色请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "新增角色:绑定新增角色请求参数失败") {
 		return
 	}
 
@@ -60,7 +62,7 @@ func (h *RoleHandler) CreateRole(ctx *gin.Context) {
 			zap.Object("role_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -70,7 +72,7 @@ func (h *RoleHandler) CreateRole(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(http.StatusCreated, &sysmodel.RoleResp{
+	c.JSON(http.StatusCreated, &sysmodel.RoleResp{
 		Code: http.StatusCreated,
 		Data: sysmodel.RoleModelToDetailOut(*m),
 	})
@@ -89,17 +91,19 @@ func (h *RoleHandler) CreateRole(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role/{id} [put]
 // @Security ApiKeyAuth
-func (h *RoleHandler) UpdateRole(ctx *gin.Context) {
+func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("更新角色:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "更新角色:绑定角色ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "更新角色:绑定角色ID参数失败") {
 		return
 	}
 
 	var req sysmodel.RoleUpsertDTO
-	if !common.ShouldBind(ctx, log, &req, "更新角色:绑定更新角色请求参数失败") {
+	if !common.ShouldBind(c, log, &req, "更新角色:绑定更新角色请求参数失败") {
 		return
 	}
 
@@ -112,7 +116,7 @@ func (h *RoleHandler) UpdateRole(ctx *gin.Context) {
 			zap.Object("role_upsert_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -121,8 +125,7 @@ func (h *RoleHandler) UpdateRole(ctx *gin.Context) {
 		zap.Uint32("role_id", uri.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-
-	ctx.JSON(http.StatusOK, &sysmodel.RoleResp{
+	c.JSON(http.StatusOK, &sysmodel.RoleResp{
 		Code: http.StatusOK,
 		Data: sysmodel.RoleModelToDetailOut(*m),
 	})
@@ -140,12 +143,14 @@ func (h *RoleHandler) UpdateRole(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role/{id} [delete]
 // @Security ApiKeyAuth
-func (h *RoleHandler) DeleteRole(ctx *gin.Context) {
+func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除角色:开始执行")
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "删除角色:绑定角色ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "删除角色:绑定角色ID参数失败") {
 		return
 	}
 
@@ -156,7 +161,7 @@ func (h *RoleHandler) DeleteRole(ctx *gin.Context) {
 			zap.Uint32("role_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
@@ -166,7 +171,7 @@ func (h *RoleHandler) DeleteRole(ctx *gin.Context) {
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
-	ctx.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
 }
 
 // @Summary 查询角色
@@ -181,12 +186,13 @@ func (h *RoleHandler) DeleteRole(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role/{id} [get]
 // @Security ApiKeyAuth
-func (h *RoleHandler) GetRole(ctx *gin.Context) {
+func (h *RoleHandler) GetRole(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
 
 	var uri commodel.IDUri
-	if !common.ShouldBindUri(ctx, log, &uri, "查询角色:绑定角色ID参数失败") {
+	if !common.ShouldBindUri(c, log, &uri, "查询角色:绑定角色ID参数失败") {
 		return
 	}
 
@@ -198,17 +204,11 @@ func (h *RoleHandler) GetRole(ctx *gin.Context) {
 			zap.Uint32("role_id", uri.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询角色:执行成功",
-		zap.Uint32("role_id", uri.ID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &sysmodel.RoleResp{
+	c.JSON(http.StatusOK, &sysmodel.RoleResp{
 		Code: http.StatusOK,
 		Data: sysmodel.RoleModelToDetailOut(*m),
 	})
@@ -225,12 +225,14 @@ func (h *RoleHandler) GetRole(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/role [get]
 // @Security ApiKeyAuth
-func (h *RoleHandler) ListRole(ctx *gin.Context) {
+func (h *RoleHandler) ListRole(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("查询角色列表:开始执行")
 
 	var req sysmodel.ListRoleDTO
-	if !common.ShouldBindQuery(ctx, log, &req, "查询角色列表:绑定查询参数失败") {
+	if !common.ShouldBindQuery(c, log, &req, "查询角色列表:绑定查询参数失败") {
 		return
 	}
 
@@ -245,20 +247,12 @@ func (h *RoleHandler) ListRole(ctx *gin.Context) {
 			zap.Object("list_role_dto", &req),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询角色列表:执行成功",
-		zap.Int("page", page),
-		zap.Int("size", size),
-		zap.Int64("total", total),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
 	mbs := sysmodel.ListRoleModelToStandardOut(ms)
-	ctx.JSON(http.StatusOK, &sysmodel.PagRoleResp{
+	c.JSON(http.StatusOK, &sysmodel.PagRoleResp{
 		Code: http.StatusOK,
 		Data: commodel.NewPag(page, size, total, mbs),
 	})
@@ -274,11 +268,13 @@ func (h *RoleHandler) ListRole(ctx *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/customer/me/menu/tree [get]
 // @Security ApiKeyAuth
-func (h *RoleHandler) GetRoleMenuTree(ctx *gin.Context) {
+func (h *RoleHandler) GetRoleMenuTree(c *gin.Context) {
 	startTime := time.Now()
+	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
-	claims := ctxutil.MustGetJwtClaims(ctx)
+	log.Info("查询个人角色菜单树:开始执行")
 
+	claims := ctxutil.MustGetJwtClaims(ctx)
 	menuTrees, err := h.roleSvc.GetRoleMenuTree(ctx, claims.RoleID)
 	if err != nil {
 		log.Error(
@@ -287,17 +283,11 @@ func (h *RoleHandler) GetRoleMenuTree(ctx *gin.Context) {
 			zap.Uint32("role_id", claims.RoleID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		errors.RespondWithError(ctx, err)
+		errors.RespondWithError(c, err)
 		return
 	}
 
-	log.Info(
-		"查询个人角色菜单树:执行成功",
-		zap.Uint32("role_id", claims.RoleID),
-		zap.Duration("total_duration", time.Since(startTime)),
-	)
-
-	ctx.JSON(http.StatusOK, &sysmodel.RoleMenuTreeResp{
+	c.JSON(http.StatusOK, &sysmodel.RoleMenuTreeResp{
 		Code: http.StatusOK,
 		Data: menuTrees,
 	})
