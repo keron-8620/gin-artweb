@@ -61,18 +61,6 @@ func (s *OesCronService) CreateCornByColony(
 		zap.Object("oes_colony_model", m),
 	)
 
-	dto := jobmodel.ScheduleUpsertDTO{
-		IsEnabled:     m.IsEnable,
-		EnvVars:       "{}",
-		CommandArgs:   m.ColonyNum,
-		WorkDir:       "",
-		Timeout:       3600,
-		IsRetry:       true,
-		RetryInterval: 300,
-		MaxRetries:    3,
-		CreateType:    1,
-	}
-
 	var cronConf map[string]oesmodel.OesCronTask
 	switch m.SystemType {
 	case "STK":
@@ -84,33 +72,73 @@ func (s *OesCronService) CreateCornByColony(
 	default:
 		return errors.ErrValidationFailed.WithField("system_type", m.SystemType)
 	}
-	for name, task := range cronConf {
-		dto.Name = fmt.Sprintf("oes_%s_%s", m.ColonyNum, name)
-		dto.ScriptID = task.ScriptID
-		dto.Specification = task.Specification
-		schedule, err := s.scheduleSvc.CreateSchedule(ctx, dto)
-		if err != nil {
-			log.Error(
-				fmt.Sprintf("注册oes计划任务:%s注册失败", name),
-				zap.Error(err),
-				zap.Object("schedule_upsert_dto", &dto),
-			)
-			return errors.FromError(err)
-		}
 
-		if err := s.cronRepo.CreateModel(ctx, &oesmodel.OesCronModel{
-			OesColonyID: m.ID,
-			ScheduleID:  schedule.ID,
-		}); err != nil {
+	dtos := make([]jobmodel.ScheduleUpsertDTO, 0, len(cronConf))
+	for name, task := range cronConf {
+		dto := jobmodel.ScheduleUpsertDTO{
+			Name:          fmt.Sprintf("oes_%s_%s", m.ColonyNum, name),
+			Specification: task.Specification,
+			IsEnabled:     m.IsEnable,
+			EnvVars:       "{}",
+			CommandArgs:   m.ColonyNum,
+			WorkDir:       "",
+			Timeout:       3600,
+			IsRetry:       true,
+			RetryInterval: 300,
+			MaxRetries:    3,
+			CreateType:    1,
+			ScriptID:      task.ScriptID,
+		}
+		dtos = append(dtos, dto)
+	}
+
+	schedules, err := s.scheduleSvc.CreateSchedules(ctx, dtos)
+	if err != nil {
+		log.Error(
+			"注册oes计划任务:执行失败",
+			zap.Error(err),
+			zap.Uint32("oes_colony_id", m.ID),
+			zap.String("colony_num", m.ColonyNum),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.FromError(err)
+	}
+
+	var scheduleIDs []uint32
+	for _, schedule := range schedules {
+		scheduleIDs = append(scheduleIDs, schedule.ID)
+	}
+
+	clearSchedules := func() {
+		if err := s.scheduleSvc.DeleteScheduleByIDs(ctx, scheduleIDs); err != nil {
 			log.Error(
-				"注册oes计划任务:绑定oes集群与计划任务失败",
+				"注册oes计划任务:删除失败",
 				zap.Error(err),
-				zap.Uint32("schedule_id", schedule.ID),
 				zap.Uint32("oes_colony_id", m.ID),
+				zap.String("colony_num", m.ColonyNum),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
-			return errors.FromError(err)
 		}
+	}
+
+	oesCronModels := make([]oesmodel.OesCronModel, 0, len(schedules))
+	for _, schedule := range schedules {
+		oesCronModels = append(oesCronModels, oesmodel.OesCronModel{
+			OesColonyID: m.ID,
+			ScheduleID:  schedule.ID,
+		})
+	}
+
+	if err := s.cronRepo.CreateModels(ctx, oesCronModels); err != nil {
+		log.Error(
+			"注册oes计划任务:创建失败",
+			zap.Error(err),
+			zap.Uint32("oes_colony_id", m.ID),
+			zap.String("colony_num", m.ColonyNum),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		clearSchedules()
+		return errors.FromError(err)
 	}
 
 	log.Info(

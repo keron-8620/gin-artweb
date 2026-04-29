@@ -34,6 +34,7 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 				default:
 					err = emperrors.New(fmt.Sprintf("%v", v))
 				}
+				traceID := ctxutil.GetTraceID(c)
 				err = emperrors.WrapWithDetails(
 					err,
 					"panic recovered",
@@ -41,6 +42,7 @@ func ErrorMiddleware(logger *zap.Logger) gin.HandlerFunc {
 					"url", c.Request.URL.String(),
 					"client_ip", c.ClientIP(),
 					"user_agent", c.Request.UserAgent(),
+					"trace_id", traceID,
 				)
 
 				logger.Error(

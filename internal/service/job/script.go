@@ -176,8 +176,7 @@ func (s *ScriptService) UpdateScriptByID(
 		}
 	}
 
-	updateData := dto.ToUpdateMap()
-	updateData["username"] = claims.Username
+	updateData := dto.ToUpdateMap(claims.Username)
 	if err := s.scriptRepo.UpdateModel(ctx, updateData, "id = ?", scriptID); err != nil {
 		log.Error(
 			"更新脚本:更新数据库模型失败",

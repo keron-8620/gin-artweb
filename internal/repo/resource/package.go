@@ -98,7 +98,7 @@ func (r *PackageRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.PackageModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.PackageModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -151,7 +151,7 @@ func (r *PackageRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &resomodel.PackageModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &resomodel.PackageModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

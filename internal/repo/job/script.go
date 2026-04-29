@@ -99,7 +99,7 @@ func (r *ScriptRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -169,7 +169,7 @@ func (r *ScriptRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -222,7 +222,7 @@ func (r *ScriptRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &jobmodel.ScriptModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

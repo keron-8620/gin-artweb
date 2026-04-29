@@ -658,8 +658,7 @@ func (s *RecordService) AsyncExecuteScript(
 		return nil, err
 	}
 
-	traceID := ctxutil.GetTraceID(ctx)
-	bgCtx := context.WithValue(context.Background(), ctxutil.TraceIDKey, traceID)
+	bgCtx := context.WithoutCancel(ctx)
 	go s.Execute(bgCtx, record)
 	return record, nil
 }

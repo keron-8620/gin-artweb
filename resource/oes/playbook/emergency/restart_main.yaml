@@ -10,23 +10,29 @@
       args:
         chdir: "{{ slave_path_oes_home_bin }}"
 
+    - name: clear txlog
+      command: tar -zcf txlog_bak.tar.gz txlog && rm -rf ./txlog/TXLOG_*
+      args:
+        chdir: "{{ slave_path_oes_home }}"
+      when: is_clear is defined and is_clear == "ct"
+
     - name: start master oes
       command: ./oes start
       args:
         chdir: "{{ slave_path_oes_home_bin }}"
       when: node_role == "master"
 
-    - name: start follow oes
-      command: ./oes start
-      args:
-        chdir: "{{ slave_path_oes_home_bin }}"
-      when: node_role != "master"
-
     - name: wait 60s
       pause:
         seconds: 60
       delegate_to: 127.0.0.1
       run_once: true
+
+    - name: start follow oes
+      command: ./oes start
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+      when: node_role != "master"
 
     - name: get current time
       command: date +%H%M

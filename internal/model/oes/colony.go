@@ -95,7 +95,7 @@ type OesColonyUpsertDTO struct {
 	ExtractedName string `json:"extracted_name" form:"extracted_name" binding:"required,max=50"`
 
 	// 是否启用
-	IsEnable bool `json:"is_enable" form:"is_enable" binding:"required"`
+	IsEnable bool `json:"is_enable" form:"is_enable"`
 
 	// 程序包ID
 	PackageID uint32 `json:"package_id" form:"package_id" binding:"required"`

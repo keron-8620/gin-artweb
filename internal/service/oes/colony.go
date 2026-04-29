@@ -51,10 +51,29 @@ func (s *OesColonyService) CreateOesColony(
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Debug(
-		"创建oes集群:入参详情",
+	log.Info(
+		"创建oes集群:开始执行",
 		zap.Object("oes_colony_dto", &dto),
 	)
+
+	count, err := s.colonyRepo.CountModel(ctx, map[string]any{"colony_num": dto.ColonyNum})
+	if err != nil {
+		log.Error(
+			"创建oes集群:查询oes集群是否存在失败",
+			zap.Error(err),
+			zap.String("colony_num", dto.ColonyNum),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, errors.NewGormError(err, nil)
+	}
+	if count > 0 {
+		log.Error(
+			"创建oes集群:oes集群已存在",
+			zap.String("colony_num", dto.ColonyNum),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, errors.ErrDuplicatedKey.WithField("colony_num", dto.ColonyNum)
+	}
 
 	m := dto.ToModel()
 	if err := s.colonyRepo.CreateModel(ctx, &m); err != nil {
@@ -67,21 +86,36 @@ func (s *OesColonyService) CreateOesColony(
 		return nil, errors.NewGormError(err, nil)
 	}
 
-	if err := s.cronSvc.CreateCornByColony(ctx, &m); err != nil {
+	preloads := []string{"Package", "XCounter", "MonNode"}
+	colony, rErr := s.FindOesColonyByID(ctx, preloads, m.ID)
+	if rErr != nil {
+		log.Error(
+			"创建oes集群:查询oes集群数据失败",
+			zap.Error(rErr),
+			zap.Uint32("oes_colony_id", m.ID),
+			zap.String("colony_num", m.ColonyNum),
+			zap.Strings("preloads", preloads),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, rErr
+	}
+
+	if err := s.cronSvc.CreateCornByColony(ctx, colony); err != nil {
 		log.Error(
 			"创建oes集群:初始化oes集群定时任务失败",
 			zap.Error(err),
-			zap.Uint32("oes_colony_id", m.ID),
+			zap.Uint32("oes_colony_id", colony.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, err
 	}
 
-	if err := s.OutportOesColonyData(ctx, &m); err != nil {
+	if err := s.OutportOesColonyData(ctx, colony); err != nil {
 		log.Error(
 			"创建oes集群:导出缓存数据失败",
 			zap.Error(err),
-			zap.Uint32("oes_colony_id", m.ID),
+			zap.Uint32("oes_colony_id", colony.ID),
+			zap.String("colony_num", colony.ColonyNum),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, err
@@ -89,10 +123,10 @@ func (s *OesColonyService) CreateOesColony(
 
 	log.Info(
 		"创建oes集群:执行成功",
-		zap.Uint32("oes_colony_id", m.ID),
+		zap.Uint32("oes_colony_id", colony.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return &m, nil
+	return colony, nil
 }
 
 func (s *OesColonyService) UpdateOesColonyByID(
@@ -201,16 +235,6 @@ func (s *OesColonyService) DeleteOesColonyByID(
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 
-	if err := s.colonyRepo.DeleteModel(ctx, oesColonyID); err != nil {
-		log.Error(
-			"删除oes集群:删除数据库模型失败",
-			zap.Error(err),
-			zap.Uint32("oes_colony_id", oesColonyID),
-			zap.Duration("total_duration", time.Since(startTime)),
-		)
-		return errors.NewGormError(err, map[string]any{"id": oesColonyID})
-	}
-
 	if err := s.cronSvc.DeleteCornByColonyID(ctx, oesColonyID); err != nil {
 		log.Error(
 			"删除oes集群:清理计划任务失败",
@@ -219,6 +243,16 @@ func (s *OesColonyService) DeleteOesColonyByID(
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return err
+	}
+
+	if err := s.colonyRepo.DeleteModel(ctx, oesColonyID); err != nil {
+		log.Error(
+			"删除oes集群:删除数据库模型失败",
+			zap.Error(err),
+			zap.Uint32("oes_colony_id", oesColonyID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.NewGormError(err, map[string]any{"id": oesColonyID})
 	}
 
 	log.Info(
@@ -478,13 +512,14 @@ func (s *OesColonyService) OutportOesColonyData(
 
 	// 导出oes集群配置变量文件
 	oesVars := oesmodel.OesColonyVars{
-		ID:        m.ID,
-		ColonyNum: m.ColonyNum,
-		PkgName:   m.ExtractedName,
-		PackageID: m.PackageID,
-		Version:   m.Package.Version,
-		MonNodeID: m.MonNodeID,
-		IsEnable:  m.IsEnable,
+		ID:         m.ID,
+		SystemType: m.SystemType,
+		ColonyNum:  m.ColonyNum,
+		PkgName:    m.ExtractedName,
+		PackageID:  m.PackageID,
+		Version:    m.Package.Version,
+		MonNodeID:  m.MonNodeID,
+		IsEnable:   m.IsEnable,
 	}
 	oesColonyConf := filepath.Join(colonyConfAll, "colony.yaml")
 	if _, err := serializer.WriteYAML(oesColonyConf, oesVars); err != nil {

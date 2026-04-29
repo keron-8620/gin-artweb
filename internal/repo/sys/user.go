@@ -96,7 +96,7 @@ func (r *UserRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.UserModel{}, m, nil)
+	err := database.DBCreateTX(dbCtx, r.gormDB, &sysmodel.UserModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -166,7 +166,7 @@ func (r *UserRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.UserModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &sysmodel.UserModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -219,7 +219,7 @@ func (r *UserRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.UserModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &sysmodel.UserModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

@@ -8,7 +8,7 @@ import (
 )
 
 type OesCronModel struct {
-	database.StandardModel
+	database.BaseModel
 	OesColonyID uint32            `gorm:"column:oes_colony_id;not null;comment:oes集群ID" json:"oes_colony_id"`
 	OesColony   OesColonyModel    `gorm:"foreignKey:OesColonyID;references:ID;constraint:OnDelete:CASCADE" json:"oes_colony"`
 	ScheduleID  uint32            `gorm:"column:schedule_id;not null;comment:计划任务ID" json:"schedule_id"`
@@ -23,7 +23,7 @@ func (m *OesCronModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if m == nil {
 		return nil
 	}
-	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
+	if err := m.BaseModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
 	enc.AddUint32("oes_colony_id", m.OesColonyID)

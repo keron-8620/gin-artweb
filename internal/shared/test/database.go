@@ -18,12 +18,6 @@ func NewTestGormDBWithConfig(config *gorm.Config) *gorm.DB {
 		panic(err)
 	}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		panic(err)
-	}
-	sqlDB.SetMaxOpenConns(1)
-
 	return db
 }
 

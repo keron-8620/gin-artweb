@@ -501,7 +501,7 @@ func (suite *MenuTestSuite) TestInvalidInputs() {
 	err = suite.menuRepo.UpdateModel(context.Background(), map[string]any{
 		"name": "updated_menu",
 	}, []sysmodel.ApiModel{}, "id = ?", 999999)
-	suite.NoError(err, "更新不存在的菜单不应该返回错误")
+	suite.Error(err, "更新不存在的菜单应该返回错误")
 
 	// 测试删除不存在的菜单
 	err = suite.menuRepo.DeleteModel(context.Background(), "id = ?", 999999)

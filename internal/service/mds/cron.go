@@ -55,49 +55,76 @@ func (s *MdsCronService) CreateCornByColony(
 		zap.Object("mds_colony_model", &m),
 	)
 
-	dto := jobmodel.ScheduleUpsertDTO{
-		IsEnabled:     m.IsEnable,
-		EnvVars:       "{}",
-		CommandArgs:   m.ColonyNum,
-		WorkDir:       "",
-		Timeout:       3600,
-		IsRetry:       true,
-		RetryInterval: 300,
-		MaxRetries:    3,
-		CreateType:    1,
+	dtos := make([]jobmodel.ScheduleUpsertDTO, 0, len(s.cronConf))
+	for name, task := range s.cronConf {
+		dto := jobmodel.ScheduleUpsertDTO{
+			Name:          fmt.Sprintf("mds_%s_%s", m.ColonyNum, name),
+			Specification: task.Specification,
+			IsEnabled:     m.IsEnable,
+			EnvVars:       "{}",
+			CommandArgs:   m.ColonyNum,
+			WorkDir:       "",
+			Timeout:       3600,
+			IsRetry:       true,
+			RetryInterval: 300,
+			MaxRetries:    3,
+			CreateType:    1,
+			ScriptID:      task.ScriptID,
+		}
+		dtos = append(dtos, dto)
 	}
 
-	for name, task := range s.cronConf {
-		dto.Name = fmt.Sprintf("mds_%s_%s", m.ColonyNum, name)
-		dto.ScriptID = task.ScriptID
-		dto.Specification = task.Specification
-		schedule, err := s.scheduleSvc.CreateSchedule(ctx, dto)
-		if err != nil {
-			log.Error(
-				fmt.Sprintf("注册mds计划任务:%s注册失败", name),
-				zap.Error(err),
-				zap.Object("schedule_upsert_dto", &dto),
-			)
-			return errors.FromError(err)
-		}
+	schedules, err := s.scheduleSvc.CreateSchedules(ctx, dtos)
+	if err != nil {
+		log.Error(
+			"注册mds计划任务:执行失败",
+			zap.Error(err),
+			zap.Uint32("mds_colony_id", m.ID),
+			zap.String("colony_num", m.ColonyNum),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.FromError(err)
+	}
 
-		if err := s.cronRepo.CreateModel(ctx, &mdsmodel.MdsCronModel{
-			MdsColonyID: m.ID,
-			ScheduleID:  schedule.ID,
-		}); err != nil {
+	var scheduleIDs []uint32
+	for _, schedule := range schedules {
+		scheduleIDs = append(scheduleIDs, schedule.ID)
+	}
+
+	clearSchedules := func() {
+		if err := s.scheduleSvc.DeleteScheduleByIDs(ctx, scheduleIDs); err != nil {
 			log.Error(
-				"注册mds计划任务:绑定mds集群与计划任务失败",
+				"注册mds计划任务:删除失败",
 				zap.Error(err),
-				zap.Uint32("schedule_id", schedule.ID),
 				zap.Uint32("mds_colony_id", m.ID),
+				zap.String("colony_num", m.ColonyNum),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
-			return errors.FromError(err)
 		}
+	}
+
+	mdsCronModels := make([]mdsmodel.MdsCronModel, 0, len(schedules))
+	for _, schedule := range schedules {
+		mdsCronModels = append(mdsCronModels, mdsmodel.MdsCronModel{
+			MdsColonyID: m.ID,
+			ScheduleID:  schedule.ID,
+		})
+	}
+
+	if err := s.cronRepo.CreateModels(ctx, mdsCronModels); err != nil {
+		log.Error(
+			"注册mds计划任务:创建失败",
+			zap.Error(err),
+			zap.Uint32("mds_colony_id", m.ID),
+			zap.String("colony_num", m.ColonyNum),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		clearSchedules()
+		return errors.FromError(err)
 	}
 
 	log.Info(
-		"注册mds计划任务成功",
+		"注册mds计划任务:执行成功",
 		zap.Uint32("mds_colony_id", m.ID),
 		zap.String("colony_num", m.ColonyNum),
 		zap.Duration("total_duration", time.Since(startTime)),

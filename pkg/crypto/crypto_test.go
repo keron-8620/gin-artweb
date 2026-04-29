@@ -3,7 +3,10 @@ package crypto
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // 测试AES-CBC模式
@@ -440,6 +443,256 @@ func TestEdgeCases(t *testing.T) {
 	if err == nil {
 		t.Error("期望取消上下文时返回错误，但得到nil")
 	}
+}
+
+// 测试工具函数
+func TestUtilsFull(t *testing.T) {
+	// 测试随机字节生成
+	randomBytes, err := GenerateRandomBytes(16)
+	assert.NoError(t, err)
+	assert.Len(t, randomBytes, 16)
+
+	// 测试随机字符串生成
+	randomString, err := GenerateRandomString(16)
+	assert.NoError(t, err)
+	assert.Greater(t, len(randomString), 0)
+
+	// 测试随机十六进制生成
+	randomHex, err := GenerateRandomHex(16)
+	assert.NoError(t, err)
+	assert.Len(t, randomHex, 32) // 16 bytes = 32 hex chars
+
+	// 测试随机整数生成
+	randomInt, err := GenerateRandomInt(1, 100)
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, randomInt, int64(1))
+	assert.LessOrEqual(t, randomInt, int64(100))
+
+	// 测试编码/解码
+	testData := []byte("Hello, World!")
+	base64Str := EncodeBase64(testData)
+	decodedData, err := DecodeBase64(base64Str)
+	assert.NoError(t, err)
+	assert.Equal(t, testData, decodedData)
+
+	// 测试十六进制编码/解码
+	hexStr := EncodeHex(testData)
+	decodedHex, err := DecodeHex(hexStr)
+	assert.NoError(t, err)
+	assert.Equal(t, testData, decodedHex)
+
+	// 测试有效性检查
+	assert.True(t, IsValidBase64(base64Str))
+	assert.False(t, IsValidBase64("invalid-base64"))
+	assert.True(t, IsValidHex(hexStr))
+	assert.False(t, IsValidHex("invalid-hex"))
+
+	// 测试字符串操作
+	paddedRight := PadRight("test", 'x', 10)
+	assert.Len(t, paddedRight, 10)
+	assert.Equal(t, "testxxxxxx", paddedRight)
+
+	paddedLeft := PadLeft("test", 'x', 10)
+	assert.Len(t, paddedLeft, 10)
+	assert.Equal(t, "xxxxxxtest", paddedLeft)
+
+	truncated := TruncateString("Hello, World!", 5)
+	assert.Len(t, truncated, 5)
+	assert.Equal(t, "Hello", truncated)
+
+	// 测试安全比较
+	assert.True(t, SafeEqual("test", "test"))
+	assert.False(t, SafeEqual("test", "test1"))
+}
+
+// 测试密钥管理
+func TestKeyManagerFull(t *testing.T) {
+	// 创建密钥管理器
+	km := NewKeyManager()
+
+	// 测试从密码派生密钥
+	password := "my-secret-password"
+	key, err := km.DeriveKey(password, nil)
+	assert.NoError(t, err)
+	assert.Len(t, key, 32)
+
+	// 测试生成随机密钥
+	randomKey, err := km.GenerateRandomKey()
+	assert.NoError(t, err)
+	assert.Len(t, randomKey, 32)
+
+	// 测试生成指定大小的随机密钥
+	randomKey16, err := GenerateRandomKeyWithSize(16)
+	assert.NoError(t, err)
+	assert.Len(t, randomKey16, 16)
+
+	// 测试密钥格式转换
+	keyStr := KeyToBase64(key)
+	decodedKey, err := KeyFromBase64(keyStr)
+	assert.NoError(t, err)
+	assert.Equal(t, key, decodedKey)
+
+	keyHex := KeyToHex(key)
+	decodedKeyHex, err := KeyFromHex(keyHex)
+	assert.NoError(t, err)
+	assert.Equal(t, key, decodedKeyHex)
+
+	// 测试密钥大小验证
+	err = ValidateKeySize(key, "aes")
+	assert.NoError(t, err)
+
+	// 测试无效的密钥大小
+	smallKey := make([]byte, 15)
+	err = ValidateKeySize(smallKey, "aes")
+	assert.Error(t, err)
+
+	// 测试带参数的密钥管理器
+	kmp := NewKeyManagerWithParams(16, 16384, 8, 1, 32)
+	keyFromParams, err := kmp.DeriveKey(password, nil)
+	assert.NoError(t, err)
+	assert.Len(t, keyFromParams, 32)
+}
+
+// 测试HMAC功能
+func TestHMACFull(t *testing.T) {
+	ctx := context.Background()
+	key := []byte("my-secret-key")
+
+	// 测试HMAC-SHA256
+	hmacHasher := NewHMACHasher(key, HMACSHA256)
+
+	// 测试哈希和验证
+	data := "Hello, World!"
+	hash, err := hmacHasher.Hash(ctx, data)
+	assert.NoError(t, err)
+
+	valid, err := hmacHasher.Verify(ctx, data, hash)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+
+	// 测试验证失败的情况
+	invalidValid, err := hmacHasher.Verify(ctx, "invalid data", hash)
+	assert.NoError(t, err)
+	assert.False(t, invalidValid)
+
+	// 测试HMAC-SHA512
+	hmacHasher512 := NewHMACHasher(key, HMACSHA512)
+	_, err = hmacHasher512.Hash(ctx, data)
+	assert.NoError(t, err)
+
+	// 测试底层HMAC函数
+	hmacResult, err := GenerateHMAC(data, key, HMACSHA256)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hmacResult)
+
+	validHMAC, err := VerifyHMAC(data, hmacResult, key, HMACSHA256)
+	assert.NoError(t, err)
+	assert.True(t, validHMAC)
+
+	invalidHMAC, err := VerifyHMAC("invalid data", hmacResult, key, HMACSHA256)
+	assert.NoError(t, err)
+	assert.False(t, invalidHMAC)
+}
+
+// 测试Scrypt哈希
+func TestScryptFull(t *testing.T) {
+	ctx := context.Background()
+
+	// 测试默认参数
+	hasher := NewScryptHasher()
+	data := "Hello, World!"
+	hash, err := hasher.Hash(ctx, data)
+	assert.NoError(t, err)
+
+	valid, err := hasher.Verify(ctx, data, hash)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+
+	// 测试带参数的Scrypt哈希器
+	hasherWithParams := NewScryptHasherWithParams(16, 16384, 8, 1, 32, "base64")
+	hashWithParams, err := hasherWithParams.Hash(ctx, data)
+	assert.NoError(t, err)
+
+	validWithParams, err := hasherWithParams.Verify(ctx, data, hashWithParams)
+	assert.NoError(t, err)
+	assert.True(t, validWithParams)
+}
+
+// 测试文件加密/解密
+func TestFileEncryptorFull(t *testing.T) {
+	ctx := context.Background()
+	key := []byte("your-secret-key12345678901234567") // 32 bytes for AES-256
+
+	// 创建 AES-GCM 加密器
+	aesGCMCipher, err := NewAESGCMCipher(key)
+	assert.NoError(t, err)
+
+	// 创建文件加密器
+	fileEncryptor := NewAESFileEncryptor(aesGCMCipher)
+
+	// 创建测试文件
+	testContent := "Hello, File Encryption!"
+	tempDir := t.TempDir()
+	srcPath := filepath.Join(tempDir, "test.txt")
+	dstPath := filepath.Join(tempDir, "test.encrypted")
+	decryptedPath := filepath.Join(tempDir, "test.decrypted")
+
+	// 写入测试内容
+	err = os.WriteFile(srcPath, []byte(testContent), 0644)
+	assert.NoError(t, err)
+
+	// 测试加密文件
+	err = fileEncryptor.EncryptFile(ctx, srcPath, dstPath)
+	assert.NoError(t, err)
+	assert.FileExists(t, dstPath)
+
+	// 测试解密文件
+	err = fileEncryptor.DecryptFile(ctx, dstPath, decryptedPath)
+	assert.NoError(t, err)
+	assert.FileExists(t, decryptedPath)
+
+	// 读取解密后的内容
+	decryptedContent, err := os.ReadFile(decryptedPath)
+	assert.NoError(t, err)
+	assert.Equal(t, testContent, string(decryptedContent))
+}
+
+// 测试错误处理
+func TestErrorHandling(t *testing.T) {
+	ctx := context.Background()
+
+	// 测试无效的AES密钥
+	_, err := NewAESCipher([]byte("short-key"))
+	assert.Error(t, err)
+
+	// 测试无效的AES-GCM密钥
+	_, err = NewAESGCMCipher([]byte("short-key"))
+	assert.Error(t, err)
+
+	// 测试无效的HMAC哈希器
+	hasher := NewHMACHasher([]byte("key"), "invalid-algorithm")
+	_, err = hasher.Hash(ctx, "test")
+	assert.Error(t, err)
+
+	// 测试空字符串加密
+	key := []byte("your-secret-key1")
+	aesCipher, err := NewAESCipher(key)
+	assert.NoError(t, err)
+
+	emptyString := ""
+	encrypted, err := aesCipher.Encrypt(ctx, emptyString)
+	assert.NoError(t, err)
+
+	decrypted, err := aesCipher.Decrypt(ctx, encrypted)
+	assert.NoError(t, err)
+	assert.Equal(t, emptyString, decrypted)
+
+	// 测试上下文取消
+	cancelCtx, cancel := context.WithCancel(ctx)
+	cancel() // 立即取消
+
+	_, err = aesCipher.Encrypt(cancelCtx, "Hello")
+	assert.Error(t, err)
 }
 
 // 性能测试

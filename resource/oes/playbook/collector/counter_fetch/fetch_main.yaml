@@ -12,12 +12,23 @@
 
     - include_tasks: ./flag_checker.yaml
 
-    - include_tasks: ./counter_collector.yaml
-      when: not xcounter_fetch_ok.stat.exists
+    - block:
+      - include_tasks: ./counter_collector.yaml
+        when: not xcounter_fetch_ok.stat.exists
 
-    - include_tasks: ./counter_checker.yaml
+      - include_tasks: ./counter_checker.yaml
 
-    - include_tasks: ./counter_freezed.yaml
-      when: xcounter_fetch_ok.stat.exists and not xcounter_freezed_ok.stat.exists
+      - include_tasks: ./counter_freezed.yaml
+        when: xcounter_fetch_ok.stat.exists and not xcounter_freezed_ok.stat.exists
+
+      when: not is_enable_counter_unilateral_freeze
+
+    - block:
+      - include_tasks: ./fetch_from_othrt_art.yaml
+        when: xcounter_freezed_ok.stat.exists or not xcounter_freezed_ok.stat.exists
+
+      - include_tasks: ./counter_checker.yaml
+      
+      when: is_enable_counter_unilateral_freeze == "yes"
 
     - include_tasks: ./set_status.yaml

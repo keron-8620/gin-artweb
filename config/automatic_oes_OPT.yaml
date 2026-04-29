@@ -43,12 +43,11 @@ counter_thaw_cmd_args: "-Y -s0"  # 柜台解冻命令参数,顶点柜台: -CHY -
 capital_flow_log_file: "CounterAllot.{{ curr_date }}.falog"  # 两地交易流水日志
 
 #### 主柜柜台两地交易单边冻结配置
-is_enable_counter_unilateral_freeze: no               # 是否启用主柜单边冻结(仅master启用)
-counter_slaves:
-  - slave_host: "xxx.xxx.xxx.xxx"
-    slave_port: 22
-    slave_user: "ansible"
-    slave_path: "/path/to/save"
+is_enable_counter_unilateral_freeze: no               # 是否启用主柜单边冻结(仅从节点启用)
+counter_master_host: "xxx.xxx.xxx.xxx"
+counter_master_port: 22
+counter_master_user: "ansible"
+counter_master_path: "/path/to/save"
 
 counter_check_files:                                   # 主柜台获取检查文件列表
   - "OptCashAcct{{ curr_date[4:] }}.csv"

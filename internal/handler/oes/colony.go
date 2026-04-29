@@ -271,13 +271,13 @@ func (s *OesColonyHandler) ListOesColony(c *gin.Context) {
 	})
 }
 
-// @Summary 查询oes集群计划任务列表
-// @Description 本接口用于查询指定ID的oes集群计划任务列表
-// @Tags oes集群管理
+// @Summary 查询mds集群计划任务列表
+// @Description 本接口用于查询指定ID的mds集群计划任务列表
+// @Tags mds集群管理
 // @Accept json
 // @Produce json
-// @Param id path uint true "oes集群编号"
-// @Success 200 {object} jobmodel.PagScheduleResp "成功返回oes计划任务列表"
+// @Param id path uint true "mds集群编号"
+// @Success 200 {object} jobmodel.PagScheduleResp "成功返回mds计划任务列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 404 {object} errors.Error "oes集群未找到"
 // @Failure 500 {object} errors.Error "服务器内部错误"

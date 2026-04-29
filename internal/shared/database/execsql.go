@@ -12,9 +12,9 @@ import (
 // ExecSQLFile 执行 SQL 脚本文件，支持所有数据库 + 所有注释类型
 func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
 	// 读取SQL文件
-	content, err := os.ReadFile(filePath) // #nosec G304
-	if err != nil {
-		return errors.WithMessagef(err, "读取SQL文件失败, 路径: %s", filePath)
+	content, readErr := os.ReadFile(filePath) // #nosec G304
+	if readErr != nil {
+		return errors.WithMessagef(readErr, "读取SQL文件失败, 路径: %s", filePath)
 	}
 
 	// 核心：清理所有注释（// -- # /* */）
@@ -28,9 +28,11 @@ func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
 		return errors.Wrap(tx.Error, "执行SQL语句时开启事务失败")
 	}
 
+	var err error
+
 	// 捕获异常，使用事务对象tx确保在panic时能正确回滚事务
 	defer func() {
-		_ = DBPanic(ctx, tx)
+		err = DBPanic(ctx, tx, err)
 	}()
 
 	// 逐条执行
@@ -39,14 +41,14 @@ func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
 			continue
 		}
 		// 使用事务对象执行SQL，确保所有操作都在同一事务中
-		if err := tx.Exec(sql).Error; err != nil {
+		if err = tx.Exec(sql).Error; err != nil {
 			tx.Rollback()
 			return errors.Wrap(err, "执行SQL语句时执行失败")
 		}
 	}
 
 	// 提交事务
-	if err := tx.Commit().Error; err != nil {
+	if err = tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "执行SQL语句时提交事务失败")
 	}

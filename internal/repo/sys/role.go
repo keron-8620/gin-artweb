@@ -117,7 +117,7 @@ func (r *RoleRepo) CreateModel(
 	defer cancel()
 
 	createTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.RoleModel{}, m, upmap)
+	err := database.DBCreateRelationTx(dbCtx, r.gormDB, &sysmodel.RoleModel{}, m, upmap)
 	createDuration := time.Since(createTime)
 	if err != nil {
 		log.Error(
@@ -211,7 +211,7 @@ func (r *RoleRepo) UpdateModel(
 	defer cancel()
 
 	updateTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.RoleModel{}, updateData, upmap, conds...)
+	err := database.DBUpdateRelationTx(dbCtx, r.gormDB, &sysmodel.RoleModel{}, updateData, upmap, conds...)
 	updateDuration := time.Since(updateTime)
 	if err != nil {
 		log.Error(
@@ -267,7 +267,7 @@ func (r *RoleRepo) DeleteModel(
 	defer cancel()
 
 	deleteTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.RoleModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &sysmodel.RoleModel{}, conds...)
 	deleteDuration := time.Since(deleteTime)
 	if err != nil {
 		log.Error(

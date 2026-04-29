@@ -75,13 +75,14 @@ func (h *ScriptHandler) CreateScript(c *gin.Context) {
 	defer fileReader.Close()
 
 	dto := jobmodel.ScriptUpsertDTO{
-		Filename: req.File.Filename,
-		File:     fileReader,
-		Descr:    req.Descr,
-		Project:  req.Project,
-		Label:    req.Label,
-		Language: req.Language,
-		Status:   req.Status,
+		Filename:  req.File.Filename,
+		File:      fileReader,
+		Descr:     req.Descr,
+		Project:   req.Project,
+		Label:     req.Label,
+		Language:  req.Language,
+		Status:    req.Status,
+		IsBuiltin: req.IsBuiltin,
 	}
 
 	m, rErr := h.scriptSvc.CreateScript(ctx, dto)
@@ -157,13 +158,14 @@ func (h *ScriptHandler) UpdateScript(c *gin.Context) {
 	defer fileReader.Close()
 
 	dto := jobmodel.ScriptUpsertDTO{
-		Filename: req.File.Filename,
-		File:     fileReader,
-		Descr:    req.Descr,
-		Project:  req.Project,
-		Label:    req.Label,
-		Language: req.Language,
-		Status:   req.Status,
+		Filename:  req.File.Filename,
+		File:      fileReader,
+		Descr:     req.Descr,
+		Project:   req.Project,
+		Label:     req.Label,
+		Language:  req.Language,
+		Status:    req.Status,
+		IsBuiltin: req.IsBuiltin,
 	}
 
 	nm, rErr := h.scriptSvc.UpdateScriptByID(ctx, uri.ID, dto)

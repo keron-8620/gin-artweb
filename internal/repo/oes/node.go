@@ -65,7 +65,7 @@ func (r *OesNodeRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &oesmodel.OesNodeModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &oesmodel.OesNodeModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -119,7 +119,7 @@ func (r *OesNodeRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &oesmodel.OesNodeModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &oesmodel.OesNodeModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -158,7 +158,7 @@ func (r *OesNodeRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &oesmodel.OesNodeModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &oesmodel.OesNodeModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

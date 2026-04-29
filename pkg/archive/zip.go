@@ -2,548 +2,275 @@ package archive
 
 import (
 	"archive/zip"
-	"bufio"
-	"io"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"emperror.dev/errors"
 )
 
-// Zip 将文件或目录压缩为ZIP格式
+type zipFileHandler func(path string, info os.FileInfo, header *zip.FileHeader, file *os.File, opts ArchiveOptions) error
+
 func Zip(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
-
-	// 前置检查
-	if options.Context.Err() != nil {
-		return errors.WithMessage(options.Context.Err(), "zip压缩:上下文检查失败")
+	if err := checkContext(options.Context); err != nil {
+		return fmt.Errorf("context check failed: %w", err)
 	}
-	if src == "" || dst == "" {
-		return errors.New("源路径/目标路径不能为空")
+	if filepath.Base(dst) != dst && !filepath.IsAbs(dst) {
+		return fmt.Errorf("%w: %s", ErrInvalidPath, dst)
 	}
-
-	// 路径安全检查
-	cleanSrc := filepath.Clean(src)
-	cleanDst := filepath.Clean(dst)
-
-	// 验证源路径
-	if !filepath.IsAbs(cleanSrc) {
-		absSrc, err := filepath.Abs(cleanSrc)
-		if err != nil {
-			return errors.WithMessage(err, "获取源路径绝对路径失败")
-		}
-		cleanSrc = absSrc
-	}
-
-	// 创建目标文件前检查父目录
-	dstDir := filepath.Dir(cleanDst)
-	if err := os.MkdirAll(dstDir, 0750); err != nil {
-		return errors.WithMessagef(err, "创建目标目录失败, dir=%s", dstDir)
-	}
-
-	// 创建目标文件
-	dstFile, err := os.Create(cleanDst)
+	dstFile, err := os.Create(dst) // #nosec G304 - path validated above
 	if err != nil {
-		return errors.WithMessagef(err, "创建目标文件失败, dst=%s", cleanDst)
+		return fmt.Errorf("failed to create destination file %s: %w", dst, err)
 	}
-
-	// 使用带缓冲的写入器提高性能
-	bufferedWriter := bufio.NewWriterSize(dstFile, options.BufferSize)
-	var closeErrors []error
-
-	// 预先声明变量以便在defer中使用
-	var zipWriter *zip.Writer
-
-	// 改进的资源清理函数
-	defer func() {
-		// 先刷新缓冲区
-		if err := bufferedWriter.Flush(); err != nil && len(closeErrors) == 0 {
-			closeErrors = append(closeErrors, errors.WithMessage(err, "刷新缓冲区失败"))
-		}
-
-		// 关闭zip写入器
-		if zipWriter != nil {
-			if err := zipWriter.Close(); err != nil {
-				closeErrors = append(closeErrors, errors.WithMessage(err, "关闭zip写入器失败"))
-			}
-		}
-
-		// 关闭目标文件
-		if err := dstFile.Close(); err != nil {
-			closeErrors = append(closeErrors, errors.WithMessage(err, "关闭目标文件失败"))
-		}
-
-		// 如果有关闭错误且主操作成功，则返回第一个关闭错误
-		if len(closeErrors) > 0 && err == nil {
-			err = closeErrors[0]
-		}
-	}()
-
-	// 初始化zip写入器
-	zipWriter = zip.NewWriter(bufferedWriter)
-
-	// 获取源信息
-	srcInfo, err := os.Stat(cleanSrc)
+	if err := dstFile.Close(); err != nil {
+		return fmt.Errorf("failed to close destination file: %w", err)
+	}
+	f, err := os.OpenFile(dst, os.O_WRONLY, 0600) // #nosec G304 - path validated above
 	if err != nil {
-		return errors.WithMessagef(err, "获取源信息失败, src=%s", cleanSrc)
+		return fmt.Errorf("failed to open destination file: %w", err)
 	}
-
-	// 处理文件/目录
-	fileCount := 0
-	totalSize := int64(0)
-
-	var processErr error
-
+	defer f.Close()
+	zipWriter := zip.NewWriter(f)
+	defer zipWriter.Close()
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("failed to stat source %s: %w", src, err)
+	}
 	if srcInfo.IsDir() {
-		processErr = filepath.Walk(cleanSrc, func(filePath string, info os.FileInfo, walkErr error) error {
-			if walkErr != nil {
-				return errors.WithMessagef(walkErr, "遍历目录失败, filepath=%s", filePath)
-			}
-
-			// 安全检查:确保文件路径在源目录内
-			relPath, err := filepath.Rel(cleanSrc, filePath)
+		return walkAndProcessZip(src, zipWriter, options, func(path string, info os.FileInfo, header *zip.FileHeader, file *os.File, opts ArchiveOptions) error {
+			relPath, err := filepath.Rel(filepath.Dir(src), path)
 			if err != nil {
-				return errors.WithMessagef(err, "计算相对路径失败, base=%s, target=%s", cleanSrc, filePath)
+				return fmt.Errorf("failed to calculate relative path for %s: %w", path, err)
 			}
-			if strings.HasPrefix(relPath, "..") {
-				return errors.Errorf("路径超出源目录范围: %s", filePath)
-			}
-
-			// 检查是否应该排除
-			exclude, err := options.ShouldExclude(filePath)
-			if err != nil {
-				return err
-			}
-			if exclude {
+			if relPath == "." {
 				return nil
 			}
-
-			// 检查是否应该包含
-			include, err := options.ShouldInclude(filePath)
+			header.Name = filepath.ToSlash(relPath)
+			if info.IsDir() {
+				header.Name += "/"
+			}
+			w, err := zipWriter.CreateHeader(header)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to create zip header for %s: %w", path, err)
 			}
-			if !include {
-				return nil
-			}
-
-			entryErr := processZipEntry(filePath, cleanSrc, info, zipWriter, &fileCount, &totalSize, options)
-			if entryErr != nil {
-				return errors.WithMessagef(entryErr, "处理zip条目失败, filepath=%s", filePath)
+			if !info.IsDir() && info.Mode().IsRegular() && file != nil {
+				if _, err := safeCopy(opts.Context, w, file, opts.MaxFileSize, opts.BufferSize); err != nil {
+					return fmt.Errorf("failed to copy content for %s: %w", path, err)
+				}
 			}
 			return nil
 		})
-	} else {
-		// 检查是否应该排除
-		exclude, err := options.ShouldExclude(cleanSrc)
-		if err != nil {
-			return err
-		}
-		if exclude {
-			return nil
-		}
-
-		// 检查是否应该包含
-		include, err := options.ShouldInclude(cleanSrc)
-		if err != nil {
-			return err
-		}
-		if !include {
-			return nil
-		}
-
-		// 处理单个文件
-		parentDir := filepath.Dir(cleanSrc)
-		processErr = processZipEntry(cleanSrc, parentDir, srcInfo, zipWriter, &fileCount, &totalSize, options)
 	}
-
-	if processErr != nil {
-		return errors.WithMessage(processErr, "zip压缩失败")
-	}
-
-	// 显式刷新确保所有数据写入
-	if err := bufferedWriter.Flush(); err != nil {
-		return errors.WithMessage(err, "刷新写入缓冲区失败")
-	}
-
-	return nil
+	return processSingleFileZip(src, srcInfo, zipWriter, options)
 }
 
-// processZipEntry 处理单个zip条目（解耦核心逻辑）
-func processZipEntry(filePath, baseDir string, info os.FileInfo, zipWriter *zip.Writer, fileCount *int, totalSize *int64, options ArchiveOptions) error {
-	// 上下文检查
-	if options.Context.Err() != nil {
-		return errors.WithMessage(options.Context.Err(), "zip压缩:上下文检查失败")
-	}
-
-	// 跳过基础目录
-	relPath, err := filepath.Rel(baseDir, filePath)
-	if err != nil {
-		return errors.WithMessagef(err, "计算相对路径失败, filepath=%s", filePath)
-	}
-	if relPath == "." {
-		return nil
-	}
-
-	// 文件数量限制
-	*fileCount++
-	if options.MaxFiles > 0 && *fileCount > options.MaxFiles {
-		return errors.Errorf("文件数量超过限制, max=%d, current=%d", options.MaxFiles, *fileCount)
-	}
-
-	// 创建zip头
-	header, err := zip.FileInfoHeader(info)
-	if err != nil {
-		return errors.WithMessagef(err, "创建zip头失败, filepath=%s", filePath)
-	}
-
-	// 规范化路径（兼容跨平台）
-	header.Name = filepath.ToSlash(relPath)
-	if info.IsDir() {
-		header.Name += "/"
-	}
-
-	// 写入zip头
-	writer, err := zipWriter.CreateHeader(header)
-	if err != nil {
-		return errors.WithMessagef(err, "创建zip条目失败, filepath=%s", filePath)
-	}
-
-	// 写入文件内容（仅普通文件）
-	if !info.IsDir() && info.Mode().IsRegular() {
-		// 大小限制
-		if options.MaxFileSize > 0 && info.Size() > options.MaxFileSize {
-			return errors.Errorf("文件大小超过限制, filepath=%s, max=%d, current=%d", filePath, options.MaxFileSize, info.Size())
-		}
-
-		// 读取并写入文件
-		file, err := os.Open(filePath) // #nosec G304
-		if err != nil {
-			return errors.WithMessagef(err, "打开文件失败, filepath=%s", filePath)
-		}
-		defer func() {
-			_ = closeWithError(file, "关闭文件失败")
-		}()
-
-		written, err := safeCopy(options.Context, writer, file, options.MaxFileSize, options.BufferSize)
-		if err != nil {
-			return errors.WithMessagef(err, "复制文件内容失败, filepath=%s", filePath)
-		}
-
-		*totalSize += written
-	}
-
-	return nil
-}
-
-// Unzip 解压ZIP文件到指定目录
-// 优化点:解耦处理逻辑、批量上下文检查、强化资源安全
-func Unzip(src, dst string, opts ...ArchiveOption) error {
-	options := applyOptions(opts...)
-
-	// 前置检查
-	if options.Context.Err() != nil {
-		return errors.WithMessage(options.Context.Err(), "zip解压:上下文检查失败")
-	}
-	if src == "" || dst == "" {
-		return errors.New("源路径/目标路径不能为空")
-	}
-
-	// 路径安全检查
-	cleanSrc := filepath.Clean(src)
-	cleanDst := filepath.Clean(dst)
-
-	// 验证源文件是否存在
-	if _, err := os.Stat(cleanSrc); err != nil {
-		return errors.WithMessagef(err, "源文件不存在或无法访问, src=%s", cleanSrc)
-	}
-
-	// 打开zip文件
-	reader, err := zip.OpenReader(cleanSrc)
-	if err != nil {
-		return errors.WithMessagef(err, "打开zip文件失败, src=%s", cleanSrc)
-	}
-	defer func() {
-		_ = closeWithError(reader, "关闭zip读取器失败")
-	}()
-
-	// 创建目标目录
-	if err := os.MkdirAll(cleanDst, 0750); err != nil {
-		return errors.WithMessagef(err, "创建目标目录失败, dst=%s", cleanDst)
-	}
-
-	// 处理条目
+func walkAndProcessZip(src string, zipWriter *zip.Writer, options ArchiveOptions, handler zipFileHandler) error {
 	fileCount := 0
-	totalSize := int64(0)
-
-	for i, file := range reader.File {
-		// 批量上下文检查（每100个条目检查一次，减少开销）
-		if i%100 == 0 {
-			if options.Context.Err() != nil {
-				return errors.WithMessage(options.Context.Err(), "上下文检查失败")
-			}
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
-
+		if err := checkContext(options.Context); err != nil {
+			return fmt.Errorf("context check failed during walk: %w", err)
+		}
+		relPath, err := filepath.Rel(filepath.Dir(src), path)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path for %s: %w", path, err)
+		}
+		if relPath == "." {
+			return nil
+		}
 		fileCount++
 		if options.MaxFiles > 0 && fileCount > options.MaxFiles {
-			return errors.Errorf("文件数量超过限制, max=%d, current=%d", options.MaxFiles, fileCount)
+			return fmt.Errorf("%w: %d", ErrFileCountExceeded, options.MaxFiles)
 		}
-
-		entrySize, err := processUnzipEntry(file, cleanDst, options)
+		header, err := zip.FileInfoHeader(info)
 		if err != nil {
-			return errors.WithMessagef(err, "处理zip条目失败, entry=%s", file.Name)
+			return fmt.Errorf("failed to create zip header for %s: %w", path, err)
 		}
-
-		totalSize += entrySize
-	}
-
-	return nil
-}
-
-// processUnzipEntry 处理单个解压条目（解耦核心逻辑）
-func processUnzipEntry(zipFile *zip.File, dst string, options ArchiveOptions) (int64, error) {
-	// 构造目标路径并检查安全性
-	target := filepath.Join(dst, filepath.FromSlash(zipFile.Name))
-
-	// 更严格的路径安全检查
-	if !isPathSafe(target, dst) {
-		return 0, errors.Errorf("非法路径(路径遍历攻击),target=%s, base=%s", target, dst)
-	}
-
-	// 额外的安全检查:确保目标路径在目标目录内
-	relPath, err := filepath.Rel(dst, target)
-	if err != nil {
-		return 0, errors.WithMessagef(err, "计算相对路径失败, target=%s, base=%s", target, dst)
-	}
-	if strings.HasPrefix(relPath, "..") {
-		return 0, errors.Errorf("路径超出目标目录范围: %s", target)
-	}
-
-	// 处理目录
-	if zipFile.FileInfo().IsDir() {
-		// 设置合适的目录权限
-		dirMode := zipFile.Mode()
-		if dirMode == 0 {
-			dirMode = 0755
-		}
-		// 应用权限掩码
-		dirMode = validatePermissions(dirMode, options.PermissionsMask)
-
-		if err := os.MkdirAll(target, dirMode); err != nil {
-			return 0, err
-		}
-		return 0, nil
-	}
-
-	// 处理文件
-	return unzipFile(zipFile, target, options)
-}
-
-// unzipFile 解压单个ZIP文件条目（优化资源释放）
-func unzipFile(zipFile *zip.File, target string, options ArchiveOptions) (int64, error) {
-	// 大小限制
-	if options.MaxFileSize > 0 && zipFile.FileInfo().Size() > options.MaxFileSize {
-		return 0, errors.Errorf("文件大小超过限制, filepath=%s, max=%d, current=%d", target, options.MaxFileSize, zipFile.FileInfo().Size())
-	}
-
-	// 创建父目录
-	parentDir := filepath.Dir(target)
-	if err := os.MkdirAll(parentDir, 0750); err != nil {
-		return 0, errors.WithMessagef(err, "创建父目录失败, dir=%s", parentDir)
-	}
-
-	// 打开zip内文件
-	srcFile, err := zipFile.Open()
-	if err != nil {
-		return 0, errors.WithMessagef(err, "打开zip内文件失败, entry=%s", zipFile.Name)
-	}
-	defer func() {
-		_ = closeWithError(srcFile, "关闭zip内文件失败")
-	}()
-
-	// 创建目标文件（使用更安全的权限模式）
-	fileMode := zipFile.Mode()
-	if fileMode == 0 {
-		fileMode = 0644
-	}
-	// 清除特殊位以提高安全性
-	fileMode &= ^(os.ModeSetuid | os.ModeSetgid | os.ModeSticky)
-	// 应用权限掩码
-	fileMode = validatePermissions(fileMode, options.PermissionsMask)
-
-	targetFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileMode) // #nosec G304
-	if err != nil {
-		return 0, errors.WithMessagef(err, "创建目标文件失败, target=%s", target)
-	}
-	defer func() {
-		_ = closeWithError(targetFile, "关闭目标文件失败")
-	}()
-
-	// 复制内容
-	written, err := safeCopy(options.Context, targetFile, srcFile, options.MaxFileSize, options.BufferSize)
-	if err != nil {
-		return written, errors.WithMessagef(err, "复制文件内容失败, target=%s", target)
-	}
-
-	return written, nil
-}
-
-// ValidateSingleDirZip 校验 ZIP 文件是否只包含一个顶层目录或文件
-// 优化点:提前终止、减少内存占用、统一错误格式
-func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
-	options := applyOptions(opts...)
-
-	if options.Context.Err() != nil {
-		return "", errors.WithMessage(options.Context.Err(), "上下文检查失败")
-	}
-
-	// 路径安全检查
-	cleanSrc := filepath.Clean(src)
-
-	reader, err := zip.OpenReader(cleanSrc)
-	if err != nil {
-		return "", errors.WithMessagef(err, "打开zip文件失败, src=%s", cleanSrc)
-	}
-	defer func() {
-		_ = closeWithError(reader, "关闭zip读取器失败")
-	}()
-
-	topLevelEntries := make(map[string]bool, 1) // 初始容量1
-
-	for i, file := range reader.File {
-		// 批量上下文检查
-		if i%100 == 0 {
-			if options.Context.Err() != nil {
-				return "", errors.WithMessage(options.Context.Err(), "上下文检查失败")
+		var file *os.File
+		if !info.IsDir() && info.Mode().IsRegular() {
+			if options.MaxFileSize > 0 && info.Size() > options.MaxFileSize {
+				return fmt.Errorf("%w: %s size %d > limit %d", ErrFileSizeExceeded, path, info.Size(), options.MaxFileSize)
 			}
-		}
-
-		// nosec G304: 清理路径
-		name := filepath.Clean(file.Name)
-		name = strings.TrimPrefix(name, "./")
-		name = strings.TrimSuffix(name, "/")
-		if name == "" {
-			continue
-		}
-
-		// 提取顶层目录或文件名
-		topLevelName := name
-		if strings.Contains(name, "/") {
-			parts := strings.Split(name, "/")
-			if len(parts) > 0 {
-				topLevelName = parts[0]
+			lstat, err := os.Lstat(path)
+			if err != nil {
+				return fmt.Errorf("failed to lstat file %s: %w", path, err)
 			}
+			if lstat.Mode()&os.ModeSymlink != 0 {
+				return fmt.Errorf("symlink not allowed: %s", path)
+			}
+			f, err := os.Open(path) // #nosec G304,G122 - symlink checked above
+			if err != nil {
+				return fmt.Errorf("failed to open file %s: %w", path, err)
+			}
+			file = f
+			defer f.Close()
 		}
-
-		// 记录顶层条目
-		topLevelEntries[topLevelName] = true
-
-		// 提前终止
-		if len(topLevelEntries) > 1 {
-			return "", createMultipleEntriesError(topLevelEntries)
-		}
-	}
-
-	// 结果校验
-	if len(topLevelEntries) == 0 {
-		return "", errors.New("压缩文件为空")
-	}
-	if len(topLevelEntries) > 1 {
-		return "", createMultipleEntriesError(topLevelEntries)
-	}
-
-	// 返回唯一的顶层条目名（无论是文件还是目录）
-	for name := range topLevelEntries {
-		return name, nil
-	}
-
-	// 理论上不会执行到这里
-	return "", errors.New("压缩文件解析失败")
+		return handler(path, info, header, file, options)
+	})
 }
 
-// ZipStream 从流压缩到流
-func ZipStream(src io.Reader, dst io.Writer, fileName string, opts ...ArchiveOption) error {
-	options := applyOptions(opts...)
-
-	// 前置检查
-	if options.Context.Err() != nil {
-		return errors.WithMessage(options.Context.Err(), "zip流压缩:上下文检查失败")
+func processSingleFileZip(src string, srcInfo os.FileInfo, zipWriter *zip.Writer, options ArchiveOptions) error {
+	fileCount := 1
+	if options.MaxFiles > 0 && fileCount > options.MaxFiles {
+		return fmt.Errorf("%w: %d", ErrFileCountExceeded, options.MaxFiles)
 	}
-	if src == nil || dst == nil {
-		return errors.New("源/目标流不能为空")
+	if options.MaxFileSize > 0 && srcInfo.Size() > options.MaxFileSize {
+		return fmt.Errorf("%w: %s size %d > limit %d", ErrFileSizeExceeded, src, srcInfo.Size(), options.MaxFileSize)
 	}
-	if fileName == "" {
-		fileName = "data"
+	header, err := zip.FileInfoHeader(srcInfo)
+	if err != nil {
+		return fmt.Errorf("failed to create zip header for %s: %w", src, err)
 	}
-
-	// 创建zip写入器
-	zipWriter := zip.NewWriter(dst)
-	defer func() {
-		_ = closeWithError(zipWriter, "关闭zip写入器失败")
-	}()
-
-	// 创建文件头
-	header := &zip.FileHeader{
-		Name: fileName,
-	}
-
-	// 创建zip条目
+	header.Name = filepath.Base(src)
 	writer, err := zipWriter.CreateHeader(header)
 	if err != nil {
-		return errors.WithMessage(err, "创建zip条目失败")
+		return fmt.Errorf("failed to create zip header for %s: %w", src, err)
 	}
-
-	// 复制内容
-	_, err = safeCopy(options.Context, writer, src, options.MaxFileSize, options.BufferSize)
+	file, err := os.Open(src) // #nosec G304 - src validated by caller
 	if err != nil {
-		return errors.WithMessage(err, "复制流内容失败")
+		return fmt.Errorf("failed to open file %s: %w", src, err)
 	}
-
+	defer file.Close()
+	if _, err := safeCopy(options.Context, writer, file, options.MaxFileSize, options.BufferSize); err != nil {
+		return fmt.Errorf("failed to copy content for %s: %w", src, err)
+	}
 	return nil
 }
 
-// UnzipStream 从流解压到流
-func UnzipStream(src io.Reader, dst io.Writer, opts ...ArchiveOption) error {
+func Unzip(src, dst string, opts ...ArchiveOption) error {
 	options := applyOptions(opts...)
-
-	// 前置检查
-	if options.Context.Err() != nil {
-		return errors.WithMessage(options.Context.Err(), "zip流解压:上下文检查失败")
+	if err := checkContext(options.Context); err != nil {
+		return fmt.Errorf("context check failed: %w", err)
 	}
-	if src == nil || dst == nil {
-		return errors.New("源/目标流不能为空")
-	}
-
-	// 读取整个流到内存（对于流式处理，这是一个简单的实现）
-	buf, err := io.ReadAll(src)
+	reader, err := zip.OpenReader(src)
 	if err != nil {
-		return errors.WithMessage(err, "读取zip流失败")
+		return fmt.Errorf("failed to open zip file %s: %w", src, err)
 	}
+	defer reader.Close()
+	if err := os.MkdirAll(dst, 0750); err != nil {
+		return fmt.Errorf("failed to create destination directory %s: %w", dst, err)
+	}
+	fileCount := 0
+	for _, file := range reader.File {
+		if err := checkContext(options.Context); err != nil {
+			return fmt.Errorf("context check failed during unzip: %w", err)
+		}
+		fileCount++
+		if options.MaxFiles > 0 && fileCount > options.MaxFiles {
+			return fmt.Errorf("%w: %d", ErrFileCountExceeded, options.MaxFiles)
+		}
+		cleanName := filepath.Clean(filepath.FromSlash(file.Name))
+		if strings.Contains(cleanName, "..") {
+			return fmt.Errorf("%w: %s", ErrInvalidPath, file.Name)
+		}
+		target := filepath.Join(dst, cleanName)
+		if !isPathSafe(target, dst) {
+			return fmt.Errorf("%w: %s", ErrInvalidPath, target)
+		}
+		if err := processZipEntry(target, file, options); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	// 创建zip读取器
-	reader, err := zip.NewReader(strings.NewReader(string(buf)), int64(len(buf)))
+func processZipEntry(target string, file *zip.File, options ArchiveOptions) error {
+	fileinfo := file.FileInfo()
+	if fileinfo.IsDir() {
+		if err := os.MkdirAll(target, fileinfo.Mode()); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", target, err)
+		}
+		return nil
+	}
+	if options.MaxFileSize > 0 && fileinfo.Size() > options.MaxFileSize {
+		return fmt.Errorf("%w: %s size %d > limit %d", ErrFileSizeExceeded, file.Name, fileinfo.Size(), options.MaxFileSize)
+	}
+	parentDir := filepath.Dir(target)
+	if err := os.MkdirAll(parentDir, 0750); err != nil {
+		return fmt.Errorf("failed to create parent directory %s: %w", parentDir, err)
+	}
+	targetFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileinfo.Mode()) // #nosec G304 - target validated by isPathSafe
 	if err != nil {
-		return errors.WithMessage(err, "创建zip读取器失败")
+		return fmt.Errorf("failed to create target file %s: %w", target, err)
 	}
-
-	// 只处理第一个文件
-	if len(reader.File) == 0 {
-		return errors.New("zip流为空")
-	}
-
-	file := reader.File[0]
-
-	// 打开zip内文件
+	defer targetFile.Close()
 	srcFile, err := file.Open()
 	if err != nil {
-		return errors.WithMessage(err, "打开zip内文件失败")
+		return fmt.Errorf("failed to open zip entry %s: %w", file.Name, err)
 	}
-	defer func() {
-		_ = closeWithError(srcFile, "关闭zip内文件失败")
-	}()
+	defer srcFile.Close()
+	if _, err := safeCopy(options.Context, targetFile, srcFile, options.MaxFileSize, options.BufferSize); err != nil {
+		return fmt.Errorf("failed to copy content for %s: %w", file.Name, err)
+	}
+	return nil
+}
 
-	// 复制内容
-	_, err = safeCopy(options.Context, dst, srcFile, options.MaxFileSize, options.BufferSize)
-	return errors.WithMessage(err, "复制流内容失败")
+func ValidateSingleDirZip(src string, opts ...ArchiveOption) (string, error) {
+	options := applyOptions(opts...)
+	if err := checkContext(options.Context); err != nil {
+		return "", fmt.Errorf("context check failed: %w", err)
+	}
+	reader, err := zip.OpenReader(src)
+	if err != nil {
+		return "", fmt.Errorf("failed to open zip file %s: %w", src, err)
+	}
+	defer reader.Close()
+	return validateZipSingleDir(reader.File, options)
+}
+
+func validateZipSingleDir(files []*zip.File, options ArchiveOptions) (string, error) {
+	topLevelEntries := make(map[string]bool)
+	var firstDirName string
+	for _, file := range files {
+		if err := checkContext(options.Context); err != nil {
+			return "", fmt.Errorf("context check failed during validation: %w", err)
+		}
+		name := cleanZipName(file.Name)
+		topLevelName := extractZipTopLevelName(name)
+		if topLevelName == "" {
+			continue
+		}
+		topLevelEntries[topLevelName] = true
+		if firstDirName == "" && file.FileInfo().IsDir() {
+			firstDirName = topLevelName
+		}
+		if len(topLevelEntries) > 1 {
+			keys := make([]string, 0, len(topLevelEntries))
+			for k := range topLevelEntries {
+				keys = append(keys, k)
+			}
+			return "", fmt.Errorf("%w: %v", ErrMultipleTopLevelEntries, keys)
+		}
+	}
+	if len(topLevelEntries) == 0 {
+		return "", ErrEmptyArchive
+	}
+	if len(topLevelEntries) > 1 {
+		keys := make([]string, 0, len(topLevelEntries))
+		for k := range topLevelEntries {
+			keys = append(keys, k)
+		}
+		return "", fmt.Errorf("%w: %v", ErrMultipleTopLevelEntries, keys)
+	}
+	if firstDirName == "" {
+		return "", ErrSingleEntryNotDir
+	}
+	return firstDirName, nil
+}
+
+func cleanZipName(name string) string {
+	name = filepath.Clean(name)
+	name = strings.TrimPrefix(name, "./")
+	name = strings.TrimSuffix(name, "/")
+	return name
+}
+
+func extractZipTopLevelName(name string) string {
+	if strings.Contains(name, "/") {
+		parts := strings.Split(name, "/")
+		return parts[0]
+	}
+	return name
 }

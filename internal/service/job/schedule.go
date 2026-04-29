@@ -577,6 +577,99 @@ func (s *ScheduleService) LoadSchedule(
 	return nil
 }
 
+func (s *ScheduleService) CreateSchedules(
+	ctx context.Context,
+	dtos []jobmodel.ScheduleUpsertDTO,
+) ([]jobmodel.ScheduleModel, *errors.Error) {
+	startTime := time.Now()
+	if ctx.Err() != nil {
+		return nil, errors.FromError(ctx.Err())
+	}
+	log := ctxutil.NewLogger(s.log, ctx)
+
+	log.Info(
+		"批量创建计划任务:开始执行",
+		zap.Any("create_schedule_dtos", dtos),
+	)
+
+	claims := ctxutil.MustGetJwtClaims(ctx)
+	ms := make([]jobmodel.ScheduleModel, 0, len(dtos))
+	for _, dto := range dtos {
+		ms = append(ms, dto.ToModel(claims.Username))
+	}
+
+	if err := s.scheduleRepo.CreateModels(ctx, ms); err != nil {
+		log.Error(
+			"批量创建计划任务:创建数据库模型失败",
+			zap.Error(err),
+			zap.Any("create_schedule_dtos", dtos),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, errors.NewGormError(err, nil)
+	}
+
+	mIDs := make([]uint32, 0, len(ms))
+	for _, m := range ms {
+		mIDs = append(mIDs, m.ID)
+	}
+
+	rollback := func() {
+		if err := s.DeleteScheduleByIDs(ctx, mIDs); err != nil {
+			log.Error(
+				"批量创建计划任务:回滚计划任务失败,请手动清理脏数据",
+				zap.Error(err),
+				zap.Uint32s("schedule_ids", mIDs),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+		}
+	}
+
+	schedules, err := s.scheduleRepo.ListModel(ctx, database.QueryParams{
+		Preloads: []string{"Script"},
+		Query:    map[string]any{"id in ?": mIDs},
+	})
+	if err != nil {
+		log.Error(
+			"批量创建计划任务:查询创建后的计划任务详情失败",
+			zap.Error(err),
+			zap.Uint32s("schedule_ids", mIDs),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		rollback()
+		return nil, errors.NewGormError(err, nil)
+	}
+
+	successIDs := make([]uint32, 0, len(schedules))
+	clearCron := func() {
+		for _, id := range successIDs {
+			if err := s.RemoveJob(ctx, id); err != nil {
+				log.Error(
+					"批量创建计划任务:移除计划任务失败, 请手动清理脏数据",
+					zap.Error(err),
+					zap.Uint32("schedule_id", id),
+					zap.Duration("total_duration", time.Since(startTime)),
+				)
+			}
+		}
+	}
+	for _, m := range schedules {
+		if err := s.AddJob(ctx, m); err != nil {
+			log.Error(
+				"批量创建计划任务:添加计划任务失败",
+				zap.Error(err),
+				zap.Object("schedule_model", &m),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			rollback()
+			clearCron()
+			return nil, errors.NewGormError(err, nil)
+		}
+		successIDs = append(successIDs, m.ID)
+	}
+
+	return schedules, nil
+}
+
 func (s *ScheduleService) UpdateScheduleByIDs(
 	ctx context.Context,
 	scheduleIDs []uint32,
@@ -619,13 +712,12 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 	}
 
 	for _, m := range ms {
-		removeJobStepStart := time.Now()
 		if err := s.RemoveJob(ctx, m.ID); err != nil {
 			log.Error(
 				"批量更新计划任务:移除旧计划任务失败",
 				zap.Error(err),
 				zap.Uint32("schedule_id", m.ID),
-				zap.Duration("remove_job_step_duration", time.Since(removeJobStepStart)),
+				zap.Duration("total_duration", time.Since(startTime)),
 			)
 			return err
 		}
@@ -667,7 +759,15 @@ func (s *ScheduleService) DeleteScheduleByIDs(
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 
-	if err := s.scheduleRepo.DeleteModel(ctx, scheduleIDs); err != nil {
+	if len(scheduleIDs) == 0 {
+		log.Error(
+			"批量删除计划任务:计划任务ID列表为空",
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.ErrEmptySlice
+	}
+
+	if err := s.scheduleRepo.DeleteModel(ctx, "id IN ?", scheduleIDs); err != nil {
 		log.Error(
 			"批量删除计划任务:删除数据库模型失败",
 			zap.Error(err),

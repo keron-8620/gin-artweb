@@ -5,6 +5,8 @@ import (
 	std_errors "errors"
 	"strings"
 	"testing"
+
+	"gorm.io/gorm"
 )
 
 func TestNewError(t *testing.T) {
@@ -315,5 +317,198 @@ func TestErrorChain(t *testing.T) {
 	}
 	if !std_errors.Is(err, cause2) {
 		t.Error("expected std_errors.Is(err, cause2) to be true")
+	}
+}
+
+func TestFromReason(t *testing.T) {
+	// 测试1: 已知错误原因
+	err := FromReason(ReasonValidationFailed)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if err.Reason != ReasonValidationFailed {
+		t.Errorf("expected reason %v, got %v", ReasonValidationFailed, err.Reason)
+	}
+	if err.Msg != "参数验证错误" {
+		t.Errorf("expected message '参数验证错误', got '%s'", err.Msg)
+	}
+
+	// 测试2: 未知错误原因
+	unknownReason := ErrorReason("UNKNOWN_REASON")
+	err = FromReason(unknownReason)
+	if err.Reason != unknownReason {
+		t.Errorf("expected reason %v, got %v", unknownReason, err.Reason)
+	}
+	if err.Msg != "未知错误" {
+		t.Errorf("expected message '未知错误', got '%s'", err.Msg)
+	}
+}
+
+func TestGetHTTPStatus(t *testing.T) {
+	// 测试1: 已知原因的状态码
+	status := GetHTTPStatus(ReasonValidationFailed)
+	if status != 400 {
+		t.Errorf("expected status 400, got %d", status)
+	}
+
+	// 测试2: 认证失败的状态码
+	status = GetHTTPStatus(ReasonUnauthorized)
+	if status != 401 {
+		t.Errorf("expected status 401, got %d", status)
+	}
+
+	// 测试3: 禁止访问的状态码
+	status = GetHTTPStatus(ReasonForbidden)
+	if status != 403 {
+		t.Errorf("expected status 403, got %d", status)
+	}
+
+	// 测试4: 记录未找到的状态码
+	status = GetHTTPStatus(ReasonRecordNotFound)
+	if status != 404 {
+		t.Errorf("expected status 404, got %d", status)
+	}
+
+	// 测试5: 唯一性约束冲突的状态码
+	status = GetHTTPStatus(ReasonDuplicatedKey)
+	if status != 409 {
+		t.Errorf("expected status 409, got %d", status)
+	}
+
+	// 测试6: 未知原因的默认状态码
+	unknownReason := ErrorReason("UNKNOWN_REASON")
+	status = GetHTTPStatus(unknownReason)
+	if status != 500 {
+		t.Errorf("expected status 500 for unknown reason, got %d", status)
+	}
+}
+
+func TestErrorResponse(t *testing.T) {
+	// 测试1: 正常错误响应
+	err := New(ReasonValidationFailed, "参数错误", map[string]any{"field": "name"})
+	response := ErrorResponse(err)
+	if response == nil {
+		t.Fatal("expected response, got nil")
+	}
+	if response["reason"] != ReasonValidationFailed {
+		t.Errorf("expected reason %v, got %v", ReasonValidationFailed, response["reason"])
+	}
+	if response["msg"] != "参数错误" {
+		t.Errorf("expected message '参数错误', got '%v'", response["msg"])
+	}
+	if response["code"] != 400 {
+		t.Errorf("expected code 400, got %v", response["code"])
+	}
+	data := response["data"].(map[string]any)
+	if data["field"] != "name" {
+		t.Errorf("expected data['field'] = 'name', got '%v'", data["field"])
+	}
+
+	// 测试2: nil错误响应
+	response = ErrorResponse(nil)
+	if response != nil {
+		t.Errorf("expected nil response for nil error, got %v", response)
+	}
+}
+
+func TestErrorResponseWithCode(t *testing.T) {
+	// 测试1: 使用指定状态码
+	err := New(ReasonValidationFailed, "参数错误", nil)
+	response := ErrorResponseWithCode(422, err)
+	if response == nil {
+		t.Fatal("expected response, got nil")
+	}
+	if response["code"] != 422 {
+		t.Errorf("expected code 422, got %v", response["code"])
+	}
+
+	// 测试2: nil错误响应
+	response = ErrorResponseWithCode(400, nil)
+	if response != nil {
+		t.Errorf("expected nil response for nil error, got %v", response)
+	}
+}
+
+type mockContext struct {
+	statusCode int
+	response   any
+}
+
+func (m *mockContext) AbortWithStatusJSON(code int, obj any) {
+	m.statusCode = code
+	m.response = obj
+}
+
+func TestRespondWithError(t *testing.T) {
+	mock := &mockContext{}
+
+	// 测试1: 正常错误响应
+	err := New(ReasonValidationFailed, "参数错误", nil)
+	RespondWithError(mock, err)
+	if mock.statusCode != 400 {
+		t.Errorf("expected status code 400, got %d", mock.statusCode)
+	}
+	response := mock.response.(map[string]any)
+	if response["reason"] != ReasonValidationFailed {
+		t.Errorf("expected reason %v, got %v", ReasonValidationFailed, response["reason"])
+	}
+
+	// 测试2: nil错误响应
+	mock.statusCode = 0
+	mock.response = nil
+	RespondWithError(mock, nil)
+	if mock.statusCode != 200 {
+		t.Errorf("expected status code 200 for nil error, got %d", mock.statusCode)
+	}
+}
+
+func TestNewGormError(t *testing.T) {
+	// 测试1: 记录未找到
+	err := NewGormError(gorm.ErrRecordNotFound, map[string]any{"id": 1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if err.Reason != ReasonRecordNotFound {
+		t.Errorf("expected reason %v, got %v", ReasonRecordNotFound, err.Reason)
+	}
+	if err.Data["id"] != 1 {
+		t.Errorf("expected data['id'] = 1, got %v", err.Data["id"])
+	}
+
+	// 测试2: 唯一性约束冲突
+	err = NewGormError(gorm.ErrDuplicatedKey, map[string]any{"key": "unique_key"})
+	if err.Reason != ReasonDuplicatedKey {
+		t.Errorf("expected reason %v, got %v", ReasonDuplicatedKey, err.Reason)
+	}
+
+	// 测试3: 检查约束冲突
+	err = NewGormError(gorm.ErrCheckConstraintViolated, nil)
+	if err.Reason != ReasonCheckConstraintViolated {
+		t.Errorf("expected reason %v, got %v", ReasonCheckConstraintViolated, err.Reason)
+	}
+
+	// 测试4: 模型已注册
+	err = NewGormError(gorm.ErrRegistered, nil)
+	if err.Reason != ReasonRegistered {
+		t.Errorf("expected reason %v, got %v", ReasonRegistered, err.Reason)
+	}
+
+	// 测试5: 未知GORM错误
+	stdErr := std_errors.New("unknown gorm error")
+	err = NewGormError(stdErr, map[string]any{"detail": "test"})
+	if err.Reason != ReasonUnknown {
+		t.Errorf("expected reason %v, got %v", ReasonUnknown, err.Reason)
+	}
+	if err.Data["detail"] != "test" {
+		t.Errorf("expected data['detail'] = 'test', got %v", err.Data["detail"])
+	}
+
+	// 测试6: nil数据参数
+	err = NewGormError(gorm.ErrRecordNotFound, nil)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if err.Reason != ReasonRecordNotFound {
+		t.Errorf("expected reason %v, got %v", ReasonRecordNotFound, err.Reason)
 	}
 }

@@ -65,7 +65,7 @@ func (r *MonNodeRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &monmodel.MonNodeModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &monmodel.MonNodeModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -119,7 +119,7 @@ func (r *MonNodeRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &monmodel.MonNodeModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &monmodel.MonNodeModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -158,7 +158,7 @@ func (r *MonNodeRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &monmodel.MonNodeModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &monmodel.MonNodeModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

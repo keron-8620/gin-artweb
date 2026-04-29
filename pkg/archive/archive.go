@@ -34,7 +34,7 @@ func NewArchiver(format ArchiveFormat) (Archiver, error) {
 	case FormatTarGz:
 		return &tarGzArchiver{}, nil
 	default:
-		return nil, errors.Errorf("不支持的压缩格式: %s", format)
+		return nil, errors.Errorf("unsupported archive format: %s", format)
 	}
 }
 

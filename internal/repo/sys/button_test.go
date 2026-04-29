@@ -239,7 +239,7 @@ func (suite *ButtonTestSuite) TestUpdateNonExistentButton() {
 	err := suite.buttonRepo.UpdateModel(context.Background(), map[string]any{
 		"name": "updated_button",
 	}, nil, "id = ?", 999999)
-	suite.NoError(err, "更新不存在的按钮不应该返回错误")
+	suite.Error(err, "更新不存在的按钮应该返回错误")
 }
 
 func (suite *ButtonTestSuite) TestDeleteButtonWithEmptyConditions() {

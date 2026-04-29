@@ -53,9 +53,6 @@ func (r *MdsCronRepo) CreateModel(
 		return err
 	}
 
-	m.CreatedAt = startTime
-	m.UpdatedAt = startTime
-
 	log.Debug(
 		"创建mds计划任务:模型详情",
 		zap.Object("mds_cron_model", m),
@@ -65,7 +62,7 @@ func (r *MdsCronRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -106,10 +103,8 @@ func (r *MdsCronRepo) UpdateModel(
 		return err
 	}
 
-	updateData["updated_at"] = startTime
-
 	log.Debug(
-		"更新mds集群:更新数据",
+		"更新mds计划任务:更新数据",
 		zap.Any("update_data", updateData),
 		zap.Any("conds", conds),
 	)
@@ -118,7 +113,7 @@ func (r *MdsCronRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -157,7 +152,7 @@ func (r *MdsCronRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
@@ -311,4 +306,48 @@ func (r *MdsCronRepo) CountModel(
 		)
 	}
 	return count, nil
+}
+
+func (r *MdsCronRepo) CreateModels(
+	ctx context.Context,
+	ms []mdsmodel.MdsCronModel,
+) error {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(r.log, ctx)
+
+	// 检查参数
+	if len(ms) == 0 {
+		err := errors.New("创建mds计划任务模型列表:模型列表不能为空")
+		log.Error(
+			"创建mds计划任务模型列表:模型列表不能为空",
+			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return err
+	}
+
+	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout*time.Duration(len(ms)))
+	defer cancel()
+
+	createStartTime := time.Now()
+	err := database.DBCreateTX(dbCtx, r.gormDB, &mdsmodel.MdsCronModel{}, ms)
+	createDuration := time.Since(createStartTime)
+	if err != nil {
+		log.Error(
+			"创建mds计划任务模型列表:数据库操作失败",
+			zap.Error(err),
+			zap.Any("mds_cron_models", ms),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.WrapIf(err, "创建mds计划任务模型列表:数据库操作失败")
+	}
+
+	if createDuration > r.slowThreshold.WriteSlow*time.Duration(len(ms)) {
+		log.Warn("创建mds计划任务模型列表:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32s("cron_ids", mdsmodel.ListMdsCronModelToUint32s(ms)),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow*time.Duration(len(ms))),
+		)
+	}
+	return nil
 }

@@ -24,10 +24,12 @@ func ReadUint32FromFile(filePath string) (uint32, error) {
 	}
 	defer file.Close() // 确保文件句柄关闭
 
-	// 读取第一行内容（因为文件只有一个数字）
 	scanner := bufio.NewScanner(file)
 	if !scanner.Scan() {
-		return 0, errors.WrapIfWithDetails(err, "文件为空或读取失败", "filepath", filePath)
+		if err = scanner.Err(); err != nil {
+			return 0, errors.WrapIfWithDetails(err, "文件读取失败", "filepath", filePath)
+		}
+		return 0, errors.WrapIfWithDetails(errors.New("文件为空"), "文件为空", "filepath", filePath)
 	}
 	content := scanner.Text()
 

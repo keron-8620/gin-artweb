@@ -631,6 +631,69 @@ func (suite *ScheduleTestSuite) TestListSchedule_EmptyResult() {
 	suite.Nil(scheduleList, "Schedule list should be nil for empty result")
 }
 
+func (suite *ScheduleTestSuite) TestCreateSchedule_RollbackFailure() {
+	ctx := createScheduleTestContext()
+	dto := CreateTestScheduleUpsertDTO()
+	dto.IsEnabled = true
+
+	// 尝试创建计划任务，但使用无效的 cron 表达式，导致 AddJob 失败，触发回滚
+	invalidDTO := CreateTestScheduleUpsertDTO()
+	invalidDTO.IsEnabled = true
+	invalidDTO.Specification = "invalid-cron-expression"
+
+	_, err := suite.scheduleService.CreateSchedule(ctx, invalidDTO)
+	suite.NotNil(err, "创建计划任务应该失败")
+	// 注意：由于 cron 表达式无效，AddJob 会失败，触发回滚操作
+}
+
+func (suite *ScheduleTestSuite) TestUpdateScheduleByID_RollbackFailure() {
+	ctx := createScheduleTestContext()
+	dto := CreateTestScheduleUpsertDTO()
+	dto.IsEnabled = true
+
+	// 创建一个计划任务
+	schedule, err := suite.scheduleService.CreateSchedule(ctx, dto)
+	suite.Nil(err, "创建计划任务应该成功")
+	suite.Greater(schedule.ID, uint32(0), "计划任务ID应该大于0")
+
+	// 准备更新数据，使用无效的 cron 表达式
+	updateDTO := jobmodel.ScheduleUpsertDTO{
+		Name:          "updated_schedule",
+		Specification: "invalid-cron-expression", // 无效的 cron 表达式
+		IsEnabled:     true,
+		ScriptID:      dto.ScriptID,
+	}
+
+	// 尝试更新计划任务，应该失败并触发回滚
+	_, err = suite.scheduleService.UpdateScheduleByID(ctx, schedule.ID, updateDTO)
+	suite.NotNil(err, "更新计划任务应该失败")
+	// 注意：由于 cron 表达式无效，AddJob 会失败，触发回滚操作
+
+	// 验证计划任务是否被回滚到原始状态
+	originalSchedule, err := suite.scheduleService.FindScheduleByID(ctx, []string{}, schedule.ID)
+	suite.Nil(err, "查询计划任务应该成功")
+	suite.Equal(dto.Name, originalSchedule.Name, "计划任务名称应该回滚到原始值")
+	suite.Equal(dto.Specification, originalSchedule.Specification, "计划任务表达式应该回滚到原始值")
+}
+
+func (suite *ScheduleTestSuite) TestCreateSchedules_RollbackFailure() {
+	ctx := createScheduleTestContext()
+
+	// 创建多个计划任务DTO，其中一个使用无效的 cron 表达式
+	dtos := make([]jobmodel.ScheduleUpsertDTO, 2)
+	for i := range dtos {
+		dtos[i] = CreateTestScheduleUpsertDTO()
+		dtos[i].IsEnabled = true
+	}
+	// 设置一个无效的 cron 表达式，导致 AddJob 失败
+	dtos[0].Specification = "invalid-cron-expression"
+
+	// 尝试批量创建计划任务，应该失败并触发回滚
+	_, err := suite.scheduleService.CreateSchedules(ctx, dtos)
+	suite.NotNil(err, "批量创建计划任务应该失败")
+	// 注意：由于 cron 表达式无效，AddJob 会失败，触发回滚操作
+}
+
 func TestScheduleTestSuite(t *testing.T) {
 	pts := &ScheduleTestSuite{}
 	suite.Run(t, pts)

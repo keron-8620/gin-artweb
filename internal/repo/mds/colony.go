@@ -68,7 +68,7 @@ func (r *MdsColonyRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &mdsmodel.MdsColonyModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &mdsmodel.MdsColonyModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -122,7 +122,7 @@ func (r *MdsColonyRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &mdsmodel.MdsColonyModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &mdsmodel.MdsColonyModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -161,7 +161,7 @@ func (r *MdsColonyRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &mdsmodel.MdsColonyModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &mdsmodel.MdsColonyModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

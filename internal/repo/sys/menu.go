@@ -103,7 +103,7 @@ func (r *MenuRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.MenuModel{}, m, upmap)
+	err := database.DBCreateRelationTx(dbCtx, r.gormDB, &sysmodel.MenuModel{}, m, upmap)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -178,7 +178,7 @@ func (r *MenuRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.MenuModel{}, updateData, upmap, conds...)
+	err := database.DBUpdateRelationTx(dbCtx, r.gormDB, &sysmodel.MenuModel{}, updateData, upmap, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -229,7 +229,7 @@ func (r *MenuRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.MenuModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &sysmodel.MenuModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

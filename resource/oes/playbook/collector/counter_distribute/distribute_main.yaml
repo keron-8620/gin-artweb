@@ -15,9 +15,6 @@
     - include_tasks: ./local_to_oes.yaml
       when: xcounter_freezed_ok.stat.exists
 
-    - include_tasks: ./local_to_othrt_art.yaml
-      when: xcounter_freezed_ok.stat.exists and is_enable_counter_unilateral_freeze == "yes"
-
     - include_tasks: ./local_to_mon.yaml
       when: system_type == "crd"
 

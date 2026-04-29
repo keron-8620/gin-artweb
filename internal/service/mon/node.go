@@ -77,7 +77,7 @@ func (s *MonNodeService) CreateMonNode(
 		zap.Uint32("mon_node_id", m.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return &m, nil
+	return s.FindMonNodeByID(ctx, []string{"Host"}, m.ID)
 }
 
 func (s *MonNodeService) UpdateMonNodeByID(

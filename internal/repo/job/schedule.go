@@ -95,7 +95,7 @@ func (r *ScheduleRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -165,7 +165,7 @@ func (r *ScheduleRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -218,7 +218,7 @@ func (r *ScheduleRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
@@ -410,4 +410,73 @@ func (r *ScheduleRepo) CountModel(
 		)
 	}
 	return count, nil
+}
+
+// CreateModels 创建计划任务模型列表
+//
+// 参数:
+//
+//	ctx: 上下文，用于传递请求信息和控制超时
+//	ms: 计划任务模型列表，包含计划任务的详细信息
+//
+// 返回值:
+//
+//	error: 操作错误信息，成功则返回nil
+//
+// 功能:
+//  1. 检查计划任务模型列表是否为空
+//  2. 执行数据库创建操作
+//  3. 记录操作日志
+func (r *ScheduleRepo) CreateModels(
+	ctx context.Context,
+	ms []jobmodel.ScheduleModel,
+) error {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(r.log, ctx)
+
+	// 检查参数
+	if len(ms) == 0 {
+		err := errors.New("创建计划任务模型列表:模型列表不能为空")
+		log.Error(
+			"创建计划任务模型列表:模型列表不能为空",
+			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return err
+	}
+
+	for _, m := range ms {
+		m.CreatedAt = startTime
+		m.UpdatedAt = startTime
+	}
+
+	log.Debug(
+		"创建计划任务模型列表:开始执行",
+		zap.Any("schedule_models", ms),
+	)
+
+	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout*time.Duration(len(ms)))
+	defer cancel()
+
+	createStartTime := time.Now()
+	err := database.DBCreateTX(dbCtx, r.gormDB, &jobmodel.ScheduleModel{}, ms)
+	createDuration := time.Since(createStartTime)
+	if err != nil {
+		log.Error(
+			"创建计划任务模型列表:数据库操作失败",
+			zap.Error(err),
+			zap.Any("schedule_models", ms),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.WrapIf(err, "创建计划任务模型列表:数据库操作失败")
+	}
+
+	if createDuration > r.slowThreshold.WriteSlow*time.Duration(len(ms)) {
+		log.Warn("创建计划任务模型列表:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32s("schedule_ids", jobmodel.ListScheduleModelToUint32s(ms)),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow*time.Duration(len(ms))),
+		)
+	}
+	return nil
 }

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	TraceIDKey     ContextKey = "request_id"
+	TraceIDKey     ContextKey = "trace_id"
 	DefaultTraceID string     = "unknown-trace-id"
 )
 

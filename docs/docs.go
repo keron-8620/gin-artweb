@@ -5731,7 +5731,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "本接口用于查询指定ID的oes集群计划任务列表",
+                "description": "本接口用于查询指定ID的mds集群计划任务列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -5739,13 +5739,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "oes集群管理"
+                    "mds集群管理"
                 ],
-                "summary": "查询oes集群计划任务列表",
+                "summary": "查询mds集群计划任务列表",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "oes集群编号",
+                        "description": "mds集群编号",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -5753,7 +5753,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回oes计划任务列表",
+                        "description": "成功返回mds计划任务列表",
                         "schema": {
                             "$ref": "#/definitions/job.PagScheduleResp"
                         }
@@ -8557,7 +8557,6 @@ const docTemplate = `{
             "required": [
                 "colony_num",
                 "extracted_name",
-                "is_enable",
                 "mon_node_id",
                 "package_id"
             ],
@@ -9069,7 +9068,6 @@ const docTemplate = `{
             "required": [
                 "colony_num",
                 "extracted_name",
-                "is_enable",
                 "mon_node_id",
                 "package_id",
                 "system_type",
@@ -9782,7 +9780,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id",
-                "is_active",
                 "menu_id",
                 "name",
                 "sort"

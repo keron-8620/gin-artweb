@@ -101,7 +101,7 @@ func (r *ApiRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -173,7 +173,7 @@ func (r *ApiRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &sysmodel.ApiModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &sysmodel.ApiModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -226,7 +226,7 @@ func (r *ApiRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &sysmodel.ApiModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &sysmodel.ApiModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

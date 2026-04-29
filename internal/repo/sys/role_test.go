@@ -191,7 +191,7 @@ func (suite *RoleTestSuite) TestUpdateNonExistentRole() {
 	err := suite.roleRepo.UpdateModel(context.Background(), map[string]any{
 		"name": fmt.Sprintf("nonexistent_role_%s", uuid.NewString()),
 	}, nil, nil, nil, "id = ?", 999999)
-	suite.NoError(err, "更新不存在的角色不应该返回错误")
+	suite.Error(err, "更新不存在的角色应该返回错误")
 }
 
 func (suite *RoleTestSuite) TestDeleteRoleWithEmptyConditions() {

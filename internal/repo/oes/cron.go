@@ -53,9 +53,6 @@ func (r *OesCronRepo) CreateModel(
 		return err
 	}
 
-	m.CreatedAt = startTime
-	m.UpdatedAt = startTime
-
 	log.Debug(
 		"创建oes计划任务:模型详情",
 		zap.Object("oes_cron_model", m),
@@ -65,7 +62,7 @@ func (r *OesCronRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -79,7 +76,7 @@ func (r *OesCronRepo) CreateModel(
 	}
 
 	if createDuration > r.slowThreshold.WriteSlow {
-		log.Warn("创建oes计划任务模型:数据库创建耗时超过慢查询阈值，可能影响性能",
+		log.Warn("创建oes计划任务:数据库创建耗时超过慢查询阈值，可能影响性能",
 			zap.Uint32("oes_cron_id", m.ID),
 			zap.Duration("create_duration", createDuration),
 			zap.Duration("threshold", r.slowThreshold.WriteSlow),
@@ -107,8 +104,6 @@ func (r *OesCronRepo) UpdateModel(
 		return err
 	}
 
-	updateData["updated_at"] = startTime
-
 	log.Debug(
 		"更新oes计划任务:更新数据",
 		zap.Any("update_data", updateData),
@@ -119,7 +114,7 @@ func (r *OesCronRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -158,7 +153,7 @@ func (r *OesCronRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
@@ -312,4 +307,48 @@ func (r *OesCronRepo) CountModel(
 		)
 	}
 	return count, nil
+}
+
+func (r *OesCronRepo) CreateModels(
+	ctx context.Context,
+	ms []oesmodel.OesCronModel,
+) error {
+	startTime := time.Now()
+	log := ctxutil.NewLogger(r.log, ctx)
+
+	// 检查参数
+	if len(ms) == 0 {
+		err := errors.New("创建oes计划任务模型列表:模型列表不能为空")
+		log.Error(
+			"创建oes计划任务模型列表:模型列表不能为空",
+			zap.Error(err),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return err
+	}
+
+	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.WriteTimeout*time.Duration(len(ms)))
+	defer cancel()
+
+	createStartTime := time.Now()
+	err := database.DBCreateTX(dbCtx, r.gormDB, &oesmodel.OesCronModel{}, ms)
+	createDuration := time.Since(createStartTime)
+	if err != nil {
+		log.Error(
+			"创建oes计划任务模型列表:数据库操作失败",
+			zap.Error(err),
+			zap.Any("oes_cron_models", ms),
+			zap.Duration("create_duration", createDuration),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.WrapIf(err, "创建oes计划任务模型列表:数据库操作失败")
+	}
+
+	if createDuration > r.slowThreshold.WriteSlow*time.Duration(len(ms)) {
+		log.Warn("创建oes计划任务模型列表:数据库创建耗时超过慢查询阈值，可能影响性能",
+			zap.Uint32s("oes_cron_ids", oesmodel.ListOesCronModelToUint32s(ms)),
+			zap.Duration("threshold", r.slowThreshold.WriteSlow*time.Duration(len(ms))),
+		)
+	}
+	return nil
 }

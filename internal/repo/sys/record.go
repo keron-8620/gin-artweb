@@ -108,7 +108,7 @@ func (r *LoginRecordRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &sysmodel.LoginRecordModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(

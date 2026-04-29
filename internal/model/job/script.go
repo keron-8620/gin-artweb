@@ -80,6 +80,9 @@ type UploadScriptDTO struct {
 
 	// 状态
 	Status bool `form:"status"`
+
+	// 是否是内置脚本
+	IsBuiltin bool `form:"is_builtin"`
 }
 
 func (dto *UploadScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -92,6 +95,7 @@ func (dto *UploadScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("label", dto.Label)
 	enc.AddString("language", dto.Language)
 	enc.AddBool("status", dto.Status)
+	enc.AddBool("is_builtin", dto.IsBuiltin)
 	return nil
 }
 
@@ -104,6 +108,7 @@ type ScriptUpsertDTO struct {
 	Label     string    // 标签
 	Language  string    // 脚本语言
 	Status    bool      // 状态
+	IsBuiltin bool      // 是否是内置脚本
 }
 
 func (dto *ScriptUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -113,6 +118,7 @@ func (dto *ScriptUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("label", dto.Label)
 	enc.AddString("language", dto.Language)
 	enc.AddBool("status", dto.Status)
+	enc.AddBool("is_builtin", dto.IsBuiltin)
 	return nil
 }
 
@@ -125,12 +131,12 @@ func (dto *ScriptUpsertDTO) ToModel(username string) ScriptModel {
 		Label:     dto.Label,
 		Language:  dto.Language,
 		Status:    dto.Status,
-		IsBuiltin: false,
+		IsBuiltin: dto.IsBuiltin,
 		Username:  username,
 	}
 }
 
-func (dto *ScriptUpsertDTO) ToUpdateMap() map[string]any {
+func (dto *ScriptUpsertDTO) ToUpdateMap(username string) map[string]any {
 	return map[string]any{
 		"name":       dto.Filename,
 		"descr":      dto.Descr,
@@ -139,6 +145,8 @@ func (dto *ScriptUpsertDTO) ToUpdateMap() map[string]any {
 		"label":      dto.Label,
 		"language":   dto.Language,
 		"status":     dto.Status,
+		"is_builtin": dto.IsBuiltin,
+		"username":   username,
 	}
 }
 

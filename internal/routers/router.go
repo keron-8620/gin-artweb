@@ -35,22 +35,12 @@ func NewRouter(
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.File(faviconPath)
 	})
+	coveragePath := filepath.Join(htmlDir, "coverage.html")
+	r.GET("/coverage.html", func(c *gin.Context) {
+		c.File(coveragePath)
+	})
 	staticPath := filepath.Join(htmlDir, "static")
 	r.Static("/static", staticPath)
-
-	// 注册链路追踪处理中间件
-	r.Use(middleware.TracingMiddleware(loggers.Handler))
-
-	// 注册统一异常处理中间件
-	r.Use(middleware.ErrorMiddleware(loggers.Handler))
-
-	// 注册跨域请求处理中间件
-	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
-
-	// host请求头防护中间件
-	if init.Conf.Security.HostGuard.Enable {
-		r.Use(middleware.HostGuard(loggers.Handler, init.Conf.Security.HostGuard.TrustedHosts...))
-	}
 
 	// 健康检查接口
 	r.GET("/health", func(c *gin.Context) {
@@ -69,6 +59,33 @@ func NewRouter(
 			"data": nil,
 		})
 	})
+
+	// 配置 Swagger 文档
+	if init.Conf.Server.Swagger {
+		docs.SwaggerInfo.Title = "artweb"
+		docs.SwaggerInfo.Description = "artweb自动化运维平台"
+		docs.SwaggerInfo.Version = version
+		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)
+		docs.SwaggerInfo.Schemes = []string{"http", "https"}
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+
+	// 注册统一异常处理中间件
+	r.Use(middleware.ErrorMiddleware(loggers.Handler))
+
+	// 注册跨域请求处理中间件
+	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
+
+	// host请求头防护中间件
+	if init.Conf.Security.HostGuard.Enable {
+		r.Use(middleware.HostGuard(loggers.Handler, init.Conf.Security.HostGuard.TrustedHosts...))
+	}
 
 	// 注册时间戳处理中间件,用于防御重放攻击
 	if init.Conf.Security.Timestamp.CheckTimestamp {
@@ -99,24 +116,11 @@ func NewRouter(
 	// IP限流中间件
 	r.Use(middleware.IPBasedRateLimiterMiddleware(rate.Limit(init.Conf.Server.Rate.RPS), init.Conf.Server.Rate.Burst))
 
+	// 注册链路追踪处理中间件
+	r.Use(middleware.TracingMiddleware(loggers.Handler))
+
 	// 注册超时处理中间件
 	r.Use(middleware.TimeoutMiddleware(loggers.Handler, init.Conf.Server.Timeout.Request))
-
-	// 配置 Swagger 文档
-	if init.Conf.Server.Swagger {
-		docs.SwaggerInfo.Title = "artweb"
-		docs.SwaggerInfo.Description = "artweb自动化运维平台"
-		docs.SwaggerInfo.Version = version
-		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", init.Conf.Server.Host, init.Conf.Server.Port)
-		docs.SwaggerInfo.Schemes = []string{"http", "https"}
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
-
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
-	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
-	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
-	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
 
 	apiRouter := r.Group("/api")
 

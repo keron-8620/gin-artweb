@@ -180,12 +180,6 @@ func (s *OesNodeService) FindOesNodeByID(
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Info(
-		"查询oes节点:开始执行",
-		zap.Strings("preloads", preloads),
-		zap.Uint32("oes_node_id", oesNodeID),
-	)
-
 	m, err := s.nodeRepo.GetModel(ctx, preloads, oesNodeID)
 	if err != nil {
 		log.Error(

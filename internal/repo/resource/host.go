@@ -98,7 +98,7 @@ func (r *HostRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.HostModel{}, m, nil)
+	err := database.DBCreate(dbCtx, r.gormDB, &resomodel.HostModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -168,7 +168,7 @@ func (r *HostRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdate(dbCtx, r.gormDB, &resomodel.HostModel{}, updateData, nil, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &resomodel.HostModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -221,7 +221,7 @@ func (r *HostRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDelete(dbCtx, r.gormDB, &resomodel.HostModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &resomodel.HostModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(

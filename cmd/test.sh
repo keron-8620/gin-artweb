@@ -1,38 +1,51 @@
 #!/usr/bin/env sh
+set -euo pipefail
+IFS=$'\n\t'
 
-# 设置脚本选项
-set -e  # 遇到错误立即退出
-set -u  # 使用未定义变量时退出
-
-# 获取并切换到项目根目录
+# 切换到项目根目录
 basepath=$(cd "$(dirname "$0")/.." && pwd)
 cd "$basepath"
 
-# 1. 代码格式化
-echo "===== 1. go fmt ====="
+# ====================== 关键修改：创建 html 目录 ======================
+HTML_DIR="html"
+mkdir -p "$HTML_DIR" # 自动创建目录，不存在则创建，存在不报错
+# =====================================================================
+
+# 清理旧文件
+rm -f coverage.out
+rm -f "$HTML_DIR/coverage.html"
+
+echo "===== 1. go fmt 代码格式化 ====="
 go fmt ./...
 
-# 2. 静态检查
-echo "===== 2. go vet ====="
+echo "===== 2. go vet 静态检查 ====="
 go vet ./...
 
-# 3. 代码规范检查
-echo "===== 3. golangci-lint ====="
-golangci-lint run
+echo "===== 3. golangci-lint 代码规范 ====="
+golangci-lint run --timeout 5m
 
-# 4. 安全漏洞检查
-# echo "===== 4. gosec ====="
-gosec -quiet ./...
+echo "===== 4. gosec 安全漏洞扫描 ====="
+gosec -quiet --exclude-dir=.venv ./...
 
-# 5. 依赖漏洞检查
-# echo "===== 5. govulncheck ====="
+# echo "===== 5. govulncheck 依赖漏洞 ====="
 # govulncheck ./...
 
-# 6. 单元测试（带竞争检测 + 输出覆盖率）
-echo "===== 6. go test ====="
-CGO_ENABLED=1 go test -race -coverprofile=coverage.out ./...
+echo "===== 6. go test 单元测试（含竞争检测） ====="
+CGO_ENABLED=1 go test \
+  -race \
+  -timeout 120s \
+  -parallel $(nproc) \
+  -coverprofile=coverage.out \
+  -failfast \
+  ./...
 
-# 7. 生成覆盖率报告
-echo "===== 7. 覆盖率报告 ====="
+echo "===== 7. 生成覆盖率报告 → html/coverage.html ====="
 go tool cover -func=coverage.out
-go tool cover -html=coverage.out -o coverage.html
+# ====================== 关键修改：输出到 html 文件夹 ======================
+go tool cover -html=coverage.out -o "$HTML_DIR/coverage.html"
+# ========================================================================
+
+echo "=================================================="
+echo "✅ 所有检查与测试通过！"
+echo "📄 覆盖率报告：$HTML_DIR/coverage.html"
+echo "=================================================="

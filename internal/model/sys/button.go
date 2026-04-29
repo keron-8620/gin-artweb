@@ -83,7 +83,7 @@ type CreateButtonDTO struct {
 	Sort uint32 `json:"sort" form:"sort" binding:"required"`
 
 	// 是否激活
-	IsActive bool `json:"is_active" form:"is_active" binding:"required"`
+	IsActive bool `json:"is_active" form:"is_active"`
 
 	// 描述信息
 	Descr string `json:"descr" form:"descr" binding:"omitempty,max=254"`
