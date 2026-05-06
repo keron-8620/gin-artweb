@@ -76,11 +76,11 @@ func NewRouter(
 	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
 	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
 
-	// 注册统一异常处理中间件
-	r.Use(middleware.ErrorMiddleware(loggers.Handler))
-
 	// 注册跨域请求处理中间件
 	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
+
+	// 注册统一异常处理中间件
+	r.Use(middleware.ErrorMiddleware(loggers.Handler))
 
 	// host请求头防护中间件
 	if init.Conf.Security.HostGuard.Enable {
