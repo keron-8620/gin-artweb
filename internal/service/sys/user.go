@@ -198,6 +198,16 @@ func (s *UserService) DeleteUserByID(
 		zap.Uint32("user_id", userID),
 	)
 
+	if _, err := s.userRepo.GetModel(ctx, nil, userID); err != nil {
+		log.Error(
+			"删除用户:查询用户失败",
+			zap.Error(err),
+			zap.Uint32("user_id", userID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.NewGormError(err, map[string]any{"id": userID})
+	}
+
 	if err := s.userRepo.DeleteModel(ctx, userID); err != nil {
 		log.Error(
 			"删除用户:数据库删除失败",
@@ -600,6 +610,16 @@ func (s *UserService) ResetPassword(
 		"重置用户密码:开始执行",
 		zap.Uint32("user_id", userID),
 	)
+
+	if _, err := s.userRepo.GetModel(ctx, nil, userID); err != nil {
+		log.Error(
+			"重置用户密码:查询用户失败",
+			zap.Error(err),
+			zap.Uint32("user_id", userID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.NewGormError(err, map[string]any{"id": userID})
+	}
 
 	if err := s.validatePasswordStrength(password); err != nil {
 		log.Error(

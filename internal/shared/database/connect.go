@@ -50,17 +50,18 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 	// 根据数据库类型选择相应的驱动并建立连接
 	switch c.Type {
 	case "mysql":
-		db, openErr = gorm.Open(mysql.Open(c.Dns), gc)
+		db, openErr = gorm.Open(mysql.Open(c.Dsn), gc)
 	case "postgres":
-		db, openErr = gorm.Open(postgres.Open(c.Dns), gc)
+		db, openErr = gorm.Open(postgres.Open(c.Dsn), gc)
 	case "sqlite":
-		db, openErr = gorm.Open(sqlite.Open(c.Dns), gc)
+		db, openErr = gorm.Open(sqlite.Open(c.Dsn), gc)
 	case "sqlserver":
-		db, openErr = gorm.Open(sqlserver.Open(c.Dns), gc)
+		db, openErr = gorm.Open(sqlserver.Open(c.Dsn), gc)
 	case "opengauss":
 		db, openErr = gorm.Open(gaussdb.New(gaussdb.Config{
-			DSN:                  c.Dns,
+			DSN:                  c.Dsn,
 			PreferSimpleProtocol: true,
+			WithoutReturning:     false,
 		}), gc)
 	default:
 		// 不支持的数据库驱动类型

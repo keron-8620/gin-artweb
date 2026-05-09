@@ -225,7 +225,7 @@ func TestSystemConfStruct(t *testing.T) {
 		},
 		Database: &DBConf{
 			Type:            "mysql",
-			Dns:             "root:password@tcp(localhost:3306)/test",
+			Dsn:             "root:password@tcp(localhost:3306)/test",
 			MaxIdleConns:    10,
 			MaxOpenConns:    100,
 			LogSQL:          true,

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gin-artweb/internal/shared/config"
+
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
@@ -28,7 +29,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,

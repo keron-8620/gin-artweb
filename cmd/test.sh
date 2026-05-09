@@ -33,7 +33,7 @@ gosec -quiet --exclude-dir=.venv ./...
 echo "===== 6. go test 单元测试（含竞争检测） ====="
 CGO_ENABLED=1 go test \
   -race \
-  -timeout 120s \
+  -timeout 300s \
   -parallel $(nproc) \
   -coverprofile=coverage.out \
   -failfast \

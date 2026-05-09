@@ -258,8 +258,8 @@ func newSystemConf(configPath string) *config.SystemConf {
 		golog.Fatalf("FATAL: 配置文件解析失败: %v", err)
 	}
 
-	if conf.Database.Type == "sqlite" && !filepath.IsAbs(conf.Database.Dns) {
-		conf.Database.Dns = filepath.Join(config.BaseDir, conf.Database.Dns)
+	if conf.Database.Type == "sqlite" && !filepath.IsAbs(conf.Database.Dsn) {
+		conf.Database.Dsn = filepath.Join(config.BaseDir, conf.Database.Dsn)
 	}
 
 	return conf

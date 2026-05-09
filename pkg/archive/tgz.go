@@ -185,8 +185,11 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 			return fmt.Errorf("%w: %d", ErrFileCountExceeded, options.MaxFiles)
 		}
 		cleanName := filepath.Clean(header.Name)
-		if strings.Contains(cleanName, "..") {
-			return fmt.Errorf("%w: %s", ErrInvalidPath, header.Name)
+		parts := strings.SplitSeq(cleanName, string(filepath.Separator))
+		for part := range parts {
+			if part == ".." {
+				return fmt.Errorf("%w: %s", ErrInvalidPath, header.Name)
+			}
 		}
 		target := filepath.Join(dst, cleanName)
 		if !isPathSafe(target, dst) {
@@ -231,8 +234,11 @@ func processTarEntry(target string, header *tar.Header, tarReader *tar.Reader, o
 			return fmt.Errorf("absolute symlink not allowed: %s -> %s", header.Name, header.Linkname)
 		}
 		cleanLinkName := filepath.Clean(header.Linkname)
-		if strings.Contains(cleanLinkName, "..") {
-			return fmt.Errorf("symlink contains path traversal: %s -> %s", header.Name, header.Linkname)
+		linkParts := strings.Split(cleanLinkName, string(filepath.Separator))
+		for _, part := range linkParts {
+			if part == ".." {
+				return fmt.Errorf("symlink contains path traversal: %s -> %s", header.Name, header.Linkname)
+			}
 		}
 		linkTarget := filepath.Join(filepath.Dir(target), cleanLinkName) // #nosec G305 - isPathSafe check below
 		if !isPathSafe(linkTarget, filepath.Dir(target)) {

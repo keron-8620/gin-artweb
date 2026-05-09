@@ -16,10 +16,10 @@ server: # 服务配置
 
 database: # 数据库配置
   type: "opengauss" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
-  # dns: "artweb.db" # sqlite3数据库配置
-  # dns: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
-  dns: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_artweb sslmode=disable" # PostgreSql/OpenGauss配置
-  # dns: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
+  # dsn: "artweb.db" # sqlite3数据库配置
+  # dsn: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
+  dsn: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_artweb sslmode=disable" # PostgreSql/OpenGauss配置
+  # dsn: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   log_sql: true # 是否记录sql日志

@@ -3,35 +3,27 @@
 # 计划任务实际注册时间以数据库为准
 
 mon: 
-  script_name: "mon.sh"
-  script_label: "cmd"
+  script_id: 26
   specification: "30 6 * * 1-5"
 counter_fetch: 
-  script_name: "counter_fetch.sh"
-  script_label: "cmd"
+  script_id: 27
   specification: "30 7 * * 1-5"
 counter_distribute: 
-  script_name: "counter_distribute.sh"
-  script_label: "cmd"
+  script_id: 28
   specification: "40 7 * * 1-5"
 bse: 
-  script_name: "bse.sh"
-  script_label: "cmd"
+  script_id: 29
   specification: "2 8 * * 1-5"
 sse: 
-  script_name: "sse.sh"
-  script_label: "cmd"
+  script_id: 30
   specification: "5 8 * * 1-5"
 szse: 
-  script_name: "szse.sh"
-  script_label: "cmd"
+  script_id: 31
   specification: "36 7 * * 1-5"
 csdc: 
-  script_name: "csdc.sh"
-  script_label: "cmd"
+  script_id: 32
   specification: "35 7 * * 1-5"
 backup: 
-  script_name: "backup.sh"
-  script_label: "cmd"
+  script_id: 35
   specification: "0 20 * * 1-5"
 ################ stk计划任务 #######################

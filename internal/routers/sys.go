@@ -95,6 +95,7 @@ func newSysRouter(
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
 	appRouter.GET("/me/menu/tree", roleHandler.GetRoleMenuTree)
 	appRouter.PATCH("/me/password", userHandler.PatchPassword)
+	appRouter.GET("/me/record/login", userHandler.ListMeLoginRecord)
 
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Handler))
 	apiHandler.LoadRouter(appRouter)

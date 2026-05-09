@@ -37,7 +37,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 		return fmt.Errorf("failed to stat source %s: %w", src, err)
 	}
 	if srcInfo.IsDir() {
-		return walkAndProcessZip(src, zipWriter, options, func(path string, info os.FileInfo, header *zip.FileHeader, file *os.File, opts ArchiveOptions) error {
+		return walkAndProcessZip(src, options, func(path string, info os.FileInfo, header *zip.FileHeader, file *os.File, opts ArchiveOptions) error {
 			relPath, err := filepath.Rel(filepath.Dir(src), path)
 			if err != nil {
 				return fmt.Errorf("failed to calculate relative path for %s: %w", path, err)
@@ -64,7 +64,7 @@ func Zip(src, dst string, opts ...ArchiveOption) error {
 	return processSingleFileZip(src, srcInfo, zipWriter, options)
 }
 
-func walkAndProcessZip(src string, zipWriter *zip.Writer, options ArchiveOptions, handler zipFileHandler) error {
+func walkAndProcessZip(src string, options ArchiveOptions, handler zipFileHandler) error {
 	fileCount := 0
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -162,8 +162,11 @@ func Unzip(src, dst string, opts ...ArchiveOption) error {
 			return fmt.Errorf("%w: %d", ErrFileCountExceeded, options.MaxFiles)
 		}
 		cleanName := filepath.Clean(filepath.FromSlash(file.Name))
-		if strings.Contains(cleanName, "..") {
-			return fmt.Errorf("%w: %s", ErrInvalidPath, file.Name)
+		parts := strings.SplitSeq(cleanName, string(filepath.Separator))
+		for part := range parts {
+			if part == ".." {
+				return fmt.Errorf("%w: %s", ErrInvalidPath, file.Name)
+			}
 		}
 		target := filepath.Join(dst, cleanName)
 		if !isPathSafe(target, dst) {

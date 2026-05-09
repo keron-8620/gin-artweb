@@ -49,7 +49,18 @@ func (dto *BaseModelQuery) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 func (q *BaseModelQuery) GetPageParam() (int, int) {
-	return max(q.Page, DefaultPage), max(q.Size, DefaultSize)
+	page := q.Page
+	if page < 1 {
+		page = DefaultPage
+	}
+	size := q.Size
+	if size < 1 {
+		size = DefaultSize
+	}
+	if size > MaxSize {
+		size = MaxSize
+	}
+	return page, size
 }
 
 func (q *BaseModelQuery) ToQueryMap(l int) map[string]any {

@@ -563,5 +563,4 @@ func (h *UserHandler) LoadRouter(r *gin.RouterGroup) {
 	r.GET("/user", h.ListUser)
 	r.PATCH("/user/password/:id", h.ResetPassword)
 	r.GET("/user/record/login", h.ListLoginRecord)
-	r.GET("/me/record/login", h.ListMeLoginRecord)
 }

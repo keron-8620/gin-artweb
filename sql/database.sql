@@ -98,12 +98,13 @@ insert into sys_api(id,url,method,label,descr) values('5026','/api/v1/oes/:colon
 
 
 
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('1','/mon','/mon','MON','{"title":"MON","icon":""}','1','1','MON',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('2','/oes','/oes','OES','{"title":"OES","icon":""}','2','1','OES',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('3','/mds','/mds','MDS','{"title":"MDS","icon":""}','3','1','MDS',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"运维管理","icon":""}','4','1','运维管理',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('5','/conf','/conf','Conf','{"title":"基础配置","icon":""}','5','1','基础配置',null);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('6','/api','/api','api','{"title":"权限管理","icon":""}','6','1','权限管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"运维管理","icon":""}','5','1','运维管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('5','/conf','/conf','Conf','{"title":"配置管理","icon":""}','6','1','配置管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('6','/api','/api','api','{"title":"权限管理","icon":""}','7','1','权限管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('7','/monitor','/monitor','Monitor','{"title":"监控管理","icon":""}','4','1','监控管理',null);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('1','mon','mon','MON','{"title":"MON","icon":""}','1','1','MON','7');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('2','oes','oes','OES','{"title":"OES","icon":""}','2','1','OES','7');
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('3','mds','mds','MDS','{"title":"MDS","icon":""}','3','1','MDS','7');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('50','mon_nodes','mon_nodes','mon_nodes','{"title":"MON结点","icon":""}','1','1','MON结点','1');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('60','oes_colony','oes_colony','oes_colony','{"title":"OES集群","icon":""}','1','1','OES集群','2');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('61','oes_nodes','oes_nodes','oes_nodes','{"title":"OES主机","icon":""}','2','1','OES主机','2');
@@ -123,8 +124,6 @@ insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id)
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('100','host','host','host','{"title":"主机管理","icon":""}','1','1','主机管理','5');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('110','user','user','user','{"title":"用户管理","icon":""}','1','1','用户管理','6');
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('111','role','role','role','{"title":"角色管理","icon":""}','2','1','角色管理','6');
-
-
 
 insert into sys_menu_api(menu_id,api_id) values('60','5001');
 insert into sys_menu_api(menu_id,api_id) values('50','1001');
@@ -233,6 +232,7 @@ insert into sys_menu_api(menu_id,api_id) values('86','2006');
 insert into sys_menu_api(menu_id,api_id) values('86','2012');
 insert into sys_menu_api(menu_id,api_id) values('86','2013');
 insert into sys_menu_api(menu_id,api_id) values('86','2016');
+
 
 
 insert into sys_role(id, name,descr) values('1','admin','系统管理员');
@@ -344,6 +344,7 @@ insert into sys_role_menu(role_id,menu_id) values('1','3');
 insert into sys_role_menu(role_id,menu_id) values('1','4');
 insert into sys_role_menu(role_id,menu_id) values('1','5');
 insert into sys_role_menu(role_id,menu_id) values('1','6');
+insert into sys_role_menu(role_id,menu_id) values('1','7');
 insert into sys_role_menu(role_id,menu_id) values('1','50');
 insert into sys_role_menu(role_id,menu_id) values('1','60');
 insert into sys_role_menu(role_id,menu_id) values('1','61');

@@ -189,7 +189,7 @@ INSERT INTO test_table (name) VALUES ('test');
 
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -223,7 +223,7 @@ INSERT INTO test_table (name) VALUES ('test');
 func TestExecSQLFile_FileNotFound(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -262,7 +262,7 @@ INVALID SQL SYNTAX;
 
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -308,7 +308,7 @@ INSERT INTO test_comments (id) VALUES (1); # another comment
 
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -363,7 +363,7 @@ func TestCleanSQLComments_EmptyInput(t *testing.T) {
 func TestExecSQLFile_NilDB(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,

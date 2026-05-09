@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gin-artweb/internal/shared/config"
+
 	"gorm.io/gorm"
 )
 
@@ -60,7 +61,7 @@ func TestNewGormConfig(t *testing.T) {
 func TestNewGormDB_SQLite(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -86,7 +87,7 @@ func TestNewGormDB_SQLite(t *testing.T) {
 func TestNewGormDB_UnsupportedType(t *testing.T) {
 	c := &config.DBConf{
 		Type: "unsupported",
-		Dns:  "test",
+		Dsn:  "test",
 	}
 
 	gc := NewGormConfig(nil)
@@ -103,7 +104,7 @@ func TestNewGormDB_UnsupportedType(t *testing.T) {
 func TestNewGormDB_InvalidDNS(t *testing.T) {
 	c := &config.DBConf{
 		Type: "mysql",
-		Dns:  "invalid-dns-string",
+		Dsn:  "invalid-dns-string",
 	}
 
 	gc := NewGormConfig(nil)
@@ -116,7 +117,7 @@ func TestNewGormDB_InvalidDNS(t *testing.T) {
 func TestCloseGormDB(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -149,7 +150,7 @@ func TestCloseGormDB_Nil(t *testing.T) {
 func TestCloseGormDB_FailedGetDB(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
@@ -171,7 +172,7 @@ func TestCloseGormDB_FailedGetDB(t *testing.T) {
 func TestNewGormDB_Postgres(t *testing.T) {
 	c := &config.DBConf{
 		Type: "postgres",
-		Dns:  "host=localhost port=5432 user=test dbname=test password=test sslmode=disable",
+		Dsn:  "host=localhost port=5432 user=test dbname=test password=test sslmode=disable",
 	}
 
 	gc := NewGormConfig(nil)
@@ -184,7 +185,7 @@ func TestNewGormDB_Postgres(t *testing.T) {
 func TestNewGormDB_MySQL(t *testing.T) {
 	c := &config.DBConf{
 		Type: "mysql",
-		Dns:  "root:password@tcp(localhost:3306)/testdb?charset=utf8mb4&parseTime=True&loc=Local",
+		Dsn:  "root:password@tcp(localhost:3306)/testdb?charset=utf8mb4&parseTime=True&loc=Local",
 	}
 
 	gc := NewGormConfig(nil)
@@ -197,7 +198,7 @@ func TestNewGormDB_MySQL(t *testing.T) {
 func TestNewGormDB_SQLServer(t *testing.T) {
 	c := &config.DBConf{
 		Type: "sqlserver",
-		Dns:  "sqlserver://sa:password@localhost:1433?database=testdb",
+		Dsn:  "sqlserver://sa:password@localhost:1433?database=testdb",
 	}
 
 	gc := NewGormConfig(nil)
@@ -210,7 +211,7 @@ func TestNewGormDB_SQLServer(t *testing.T) {
 func TestNewGormDB_OpenGauss(t *testing.T) {
 	c := &config.DBConf{
 		Type: "opengauss",
-		Dns:  "host=localhost port=5432 user=test password=test dbname=test",
+		Dsn:  "host=localhost port=5432 user=test password=test dbname=test",
 	}
 
 	gc := NewGormConfig(nil)
@@ -223,7 +224,7 @@ func TestNewGormDB_OpenGauss(t *testing.T) {
 func TestConnectionPoolSettings(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    5,
 		MaxOpenConns:    50,
 		ConnMaxLifetime: time.Minute * 10,
@@ -248,7 +249,7 @@ func TestConnectionPoolSettings(t *testing.T) {
 func TestGormDB_Query(t *testing.T) {
 	c := &config.DBConf{
 		Type:            "sqlite",
-		Dns:             ":memory:",
+		Dsn:             ":memory:",
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: time.Hour,
