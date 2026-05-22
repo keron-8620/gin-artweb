@@ -8,7 +8,6 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/glebarez/sqlite"
-	"gorm.io/driver/gaussdb"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
@@ -16,7 +15,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"gin-artweb/internal/shared/config"
-	// "gin-artweb/internal/shared/database/driver/opengauss"
+	"gin-artweb/internal/shared/database/driver/opengauss"
 )
 
 // NewGormConfig 创建 gorm 配置
@@ -58,11 +57,7 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 	case "sqlserver":
 		db, openErr = gorm.Open(sqlserver.Open(c.Dsn), gc)
 	case "opengauss":
-		db, openErr = gorm.Open(gaussdb.New(gaussdb.Config{
-			DSN:                  c.Dsn,
-			PreferSimpleProtocol: true,
-			WithoutReturning:     false,
-		}), gc)
+		db, openErr = gorm.Open(opengauss.Open(c.Dsn), gc)
 	default:
 		// 不支持的数据库驱动类型
 		return nil, errors.NewWithDetails("不支持的数据库驱动类型: %s", c.Type)

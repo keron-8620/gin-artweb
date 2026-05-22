@@ -45,8 +45,13 @@ mon_check_files:                                       # mon获取检查文件�
   - "CrdSecuritySectorDetail.csv"
 #  - "CustTradingBlocklist.csv"
 
+# mon保存xcounter导出的broker文件路径
+mon_save_counter_path: "/home/monuser/mon/config-upload/config-counter/01"
+# mon自身导出的文件从art回传回mon的路径
+mon_save_self_path: "/home/monuser/mon/config-upload/config-counter/01"
+# mon自身导出的文件从art回传回mon的文件列表
 mon_crd_cp_files:
-  - "{{ local_path_oes_home_mon_colodir }}/CrdSecuritySector.csv"
+  - "CrdSecuritySector.csv"
 ################# mon 相关配置 ##################
 
 ################# counter 相关配置 ##############
@@ -186,17 +191,20 @@ csdc_cp_files:
   - name: "ipogh*.txt"
     se: "sh"
     from_way: "dir"
+  - name: "ipogh*.zip"
+    se: "sh"
+    from_way: "dir"
   - name: "zqy*.dbf"
     se: "sh"
     from_way: "dir"
-  - name: "SJSKS*.DBF"
+  - name: "SJSKS.DBF"
     se: "sz"
     from_way: "dir"
-  - name: "SJSFX*.DBF"
+  - name: "SJSFX.DBF"
     se: "sz"
     from_way: "dir"
 
-csdc_check_files:                                         # 中登清算文件检查列表
+csdc_check_files: []                                        # 中登清算文件检查列表
 #- ipogh.txt
 #- zqy.dbf
 #- SJSKS.DBF

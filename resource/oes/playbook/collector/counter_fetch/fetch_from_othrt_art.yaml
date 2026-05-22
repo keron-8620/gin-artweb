@@ -1,14 +1,24 @@
 ---
 
+- name: create local dir
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ local_path_oes_home_counter_colodir_data_broker }}"
+    - "{{ local_path_oes_home_counter_colodir_logs }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+
 - name: fetch data/broker from other art
-  command: rsync -az -e 'ssh -p {{ counter_master_port }}' {{ counter_master_user }}@{{ counter_master_host }}:{{ counter_master_path }} {{ local_path_oes_home_counter_colodir_data_broker }}/
+  command: rsync -az -e 'ssh -p {{ counter_master_port }}' {{ counter_master_user }}@{{ counter_master_host }}:{{ counter_master_path }}/data/broker/* {{ local_path_oes_home_counter_colodir_data_broker }}
   delegate_to: 127.0.0.1
   run_once: true
   ignore_errors: yes
   register: broker_dep_result
 
 - name: fetch xcounter2oes.log from other art
-  command: rsync -az  -e 'ssh -p {{ counter_master_port }}' {{ counter_master_user }}@{{ counter_master_host }}:{{ counter_master_path }} {{ local_path_oes_home_counter_colodir_logs }}/
+  command: rsync -az  -e 'ssh -p {{ counter_master_port }}' {{ counter_master_user }}@{{ counter_master_host }}:{{ counter_master_path }}/logs/* {{ local_path_oes_home_counter_colodir_logs }}
   delegate_to: 127.0.0.1
   run_once: true
   ignore_errors: yes

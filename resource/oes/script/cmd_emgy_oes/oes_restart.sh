@@ -17,6 +17,6 @@ fi
 
 echo "is_clear: $is_clear"
 
-shift 1
+shift 2
 
 ./playbook.py --playbook_path emergency/restart_main.yaml --colony_num $colony_num --extravars "is_clear=$is_clear" "$@"

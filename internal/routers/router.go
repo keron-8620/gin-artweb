@@ -60,6 +60,15 @@ func NewRouter(
 		})
 	})
 
+	// 部署路径接口
+	r.GET("/api/v1/deploypath", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"msg":  config.BaseDir,
+			"data": nil,
+		})
+	})
+
 	// 配置 Swagger 文档
 	if init.Conf.Server.Swagger {
 		docs.SwaggerInfo.Title = "artweb"

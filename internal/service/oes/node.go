@@ -57,12 +57,24 @@ func (s *OesNodeService) CreateOesNode(
 		return nil, errors.NewGormError(err, nil)
 	}
 
+	// 查询oes节点关联数据
+	node, rErr := s.FindOesNodeByID(ctx, []string{"OesColony", "Host"}, m.ID)
+	if rErr != nil {
+		log.Error(
+			"创建oes节点:查询关联数据失败",
+			zap.Error(rErr),
+			zap.Uint32("oes_node_id", node.ID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, rErr
+	}
+
 	// 导出oes节点缓存数据
-	if err := s.OutPortOesNodeData(ctx, &m); err != nil {
+	if err := s.OutPortOesNodeData(ctx, node); err != nil {
 		log.Error(
 			"创建oes节点:导出缓存数据失败",
 			zap.Error(err),
-			zap.Uint32("oes_node_id", m.ID),
+			zap.Uint32("oes_node_id", node.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, err
@@ -70,10 +82,10 @@ func (s *OesNodeService) CreateOesNode(
 
 	log.Info(
 		"创建oes节点:执行成功",
-		zap.Uint32("oes_node_id", m.ID),
+		zap.Uint32("oes_node_id", node.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return &m, nil
+	return node, nil
 }
 
 func (s *OesNodeService) UpdateOesNodeByID(

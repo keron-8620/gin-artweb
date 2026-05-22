@@ -1,3 +1,20 @@
+0.17.7.0.5
+1. 修复了oes应急脚本cancel_onload_restart.sh到不到对应playbook的问题
+2. 删除了running的flag标识
+3. 修复了单边冻结时，从节点拉取文件多了broker目录
+4. 修复了对automatic.yaml中is_enable_counter_unilateral_freeze配置项不加""不识别的问题
+5. 同步更新了art-0.16.0.3.51中automatic.yaml配置文件中的拉取和校验的文件
+6. 修改了playbook多变量之间的间隔符从;改成,
+7. 将计划任务脚本的配置从配置id改为配置脚本名称和标签
+8. 新增了盘前分发的时候，将CrdSecuritySector.csv分发到mon指定目录下，用于mon盘中同步集中度
+9. 修复了删除正在使用的程序包时会导致对应的oes和mds节点也被删除的问题
+10. 简化了手动执行脚本时需要手动设置环境的步骤
+11. 修复了oes应急重启时无法识别是否清除txlog参数的问题
+12. oes两融的automatic.yaml新增配置项mon_save_counter_path和mon_save_self_path
+13. 修复了上海产品文件中默认的reff0302文件名缺少YYYY的问题
+14. 新增了脚本批量查询参数，通过多脚本名称和标签过滤筛选
+15. 修改默认用户名为ansible, 默认密码为Quant360@
+
 - 0.17.7.0.4
 1. 修复了mysql数据库在执行多个sql语句时会提示需要分开执行的问题
 2. 修复了mysql数据库不兼容bool的sql语句问题

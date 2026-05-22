@@ -15,10 +15,10 @@ server: # 服务配置
   swagger: true # 是否启用swagger
 
 database: # 数据库配置
-  type: "opengauss" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
-  # dsn: "artweb.db" # sqlite3数据库配置
+  type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
+  dsn: "artweb.db" # sqlite3数据库配置
   # dsn: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
-  dsn: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_artweb sslmode=disable" # PostgreSql/OpenGauss配置
+  # dsn: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_artweb sslmode=disable" # PostgreSql/OpenGauss配置
   # dsn: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
@@ -63,7 +63,7 @@ security: # 安全配置
     max_failed_attempts: 5 # 登录失败最大次数
     lock_duration: 30m # 登录失败锁定时间
   password: # 密码策略
-    strength_level: 3 # 密码强度等级(0-4)
+    strength_level: 2 # 密码强度等级(0-4)
   token: # token相关配置
     access_duration: 3600s # token有效时间
     refresh_duration: 3h # token刷新时间

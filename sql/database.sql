@@ -232,7 +232,19 @@ insert into sys_menu_api(menu_id,api_id) values('86','2006');
 insert into sys_menu_api(menu_id,api_id) values('86','2012');
 insert into sys_menu_api(menu_id,api_id) values('86','2013');
 insert into sys_menu_api(menu_id,api_id) values('86','2016');
-
+insert into sys_menu_api(menu_id,api_id) values(83,2001);
+insert into sys_menu_api(menu_id,api_id) values(83,2002);
+insert into sys_menu_api(menu_id,api_id) values(83,2003);
+insert into sys_menu_api(menu_id,api_id) values(83,2004);
+insert into sys_menu_api(menu_id,api_id) values(83,2005);
+insert into sys_menu_api(menu_id,api_id) values(83,2006);
+insert into sys_menu_api(menu_id,api_id) values(83,2007);
+insert into sys_menu_api(menu_id,api_id) values(83,2008);
+insert into sys_menu_api(menu_id,api_id) values(83,2011);
+insert into sys_menu_api(menu_id,api_id) values(83,2012);
+insert into sys_menu_api(menu_id,api_id) values(83,2013);
+insert into sys_menu_api(menu_id,api_id) values(83,2016);
+insert into sys_menu_api(menu_id,api_id) values(83,2017);
 
 
 insert into sys_role(id, name,descr) values('1','admin','系统管理员');
@@ -367,7 +379,7 @@ insert into sys_role_menu(role_id,menu_id) values('1','86');
 
 
 
-insert into sys_user(username,password,is_active,is_staff,role_id) values('mon','$2a$12$vmjs0S6AShmCBJSsXpJ2d.as4F2w0ywm5yzQmn8JLU9UTyM5qwf1i',1,1,'1');
+insert into sys_user(username,password,is_active,is_staff,role_id) values('ansible','$2a$12$ODe3DS0fpGGRPAl05lMcCefm8ykfqgx312jx9lTOWjBd5Q5fEAIka',1,1,'1');
 
 
 
@@ -415,7 +427,7 @@ insert into job_script(name,descr,param_desc,project,label,language,status,is_bu
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('shutoff.sh','oes下线','$1:集群号名称|字符串|必填|示例:01','oes','control','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('stop.sh','oes停止','$1:集群号名称|字符串|必填|示例:01','oes','control','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('cancel_onload_restart.sh','oes重启onload','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');
-insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_colony_restart.sh','oes集群拉取上场文件重启','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_colony_restart.sh','oes集群拉取上场文件重启','$1:集群号名称|字符串|必填|示例:01;$2:进程名称|字符串(all/reporter/receiver)|必填|示例:onload','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_fixed_start.sh','oes主备切换重启','$1:集群号名称|字符串|必填|示例:01;$2:节点角色|字符串(master/follow/ arbiter)|必填|示例:master','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_killall.sh','强杀oes','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_okflag.sh','生成oes的flag标识','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','mon');

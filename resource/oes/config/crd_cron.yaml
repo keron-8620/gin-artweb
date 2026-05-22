@@ -2,31 +2,39 @@
 # 本配置仅用于创建crd集群时自动注册的计划任务时间
 # 计划任务实际注册时间以数据库为准
 mon: 
-  script_id: 26
+  script_name: mon.sh
+  script_label: cmd
   specification: "30 6 * * 1-5"
 counter_fetch: 
-  script_id: 27
+  script_name: counter_fetch.sh
+  script_label: cmd
   specification: "30 7 * * 1-5"
 counter_distribute: 
-  script_id: 28
+  script_name: counter_distribute.sh
+  script_label: cmd
   specification: "40 7 * * 1-5"
 sse: 
-  script_id: 30
+  script_name: sse.sh
+  script_label: cmd
   specification: "5 8 * * 1-5"
 szse: 
-  script_id: 31
+  script_name: szse.sh
+  script_label: cmd
   specification: "36 7 * * 1-5"
 csdc: 
-  script_id: 32
+  script_name: csdc.sh
+  script_label: cmd
   specification: "35 7 * * 1-5"
 sse_late: 
-  script_id: 33
+  script_name: sse_late.sh
+  script_label: cmd
   specification: "5 8 * * 1-5"
 szse_late: 
-  script_id: 34
+  script_name: szse_late.sh
+  script_label: cmd
   specification: "36 7 * * 1-5"
 backup: 
-  script_id: 35
+  script_name: backup.sh
+  script_label: cmd
   specification: "0 20 * * 1-5"
 ################ crd计划任务 #######################
-

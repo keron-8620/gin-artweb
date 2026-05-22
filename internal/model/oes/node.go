@@ -17,7 +17,7 @@ type OesNodeModel struct {
 	OesColonyID uint32             `gorm:"column:oes_colony_id;not null;comment:oes集群ID" json:"oes_colony_id"`
 	OesColony   OesColonyModel     `gorm:"foreignKey:OesColonyID;references:ID;constraint:OnDelete:CASCADE" json:"oes_colony"`
 	HostID      uint32             `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        resource.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	Host        resource.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:RESTRICT" json:"host"`
 }
 
 func (m *OesNodeModel) TableName() string {

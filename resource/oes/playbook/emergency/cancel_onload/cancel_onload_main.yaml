@@ -2,7 +2,7 @@
 - hosts: all
 
   vars_files:
-    - ../common/base_vars.yaml
+    - ../../common/base_vars.yaml
 
   tasks:
     - include_tasks: ./restart_all.yaml

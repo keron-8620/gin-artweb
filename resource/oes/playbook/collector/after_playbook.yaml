@@ -30,13 +30,6 @@
   delegate_to: 127.0.0.1
   run_once: yes
 
-- name: clear running flag
-  file:
-    path: "{{ local_path_oes_home_flag_colodir }}/{{ flag_running }}"
-    state: absent
-  delegate_to: 127.0.0.1
-  run_once: true
-
 - name: set exit code
   fail:
      msg: "Check result indicates failure: {{ check_result }}"

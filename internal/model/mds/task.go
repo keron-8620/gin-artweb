@@ -6,6 +6,12 @@ import (
 	jobmodel "gin-artweb/internal/model/job"
 )
 
+type MdsCronConf struct {
+	ScriptName    string `yaml:"script_name"`
+	ScriptLabel   string `yaml:"script_label"`
+	Specification string `yaml:"specification"`
+}
+
 type MdsCronTask struct {
 	ScriptID      uint32 `yaml:"script_id"`
 	Specification string `yaml:"specification"`

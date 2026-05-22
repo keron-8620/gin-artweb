@@ -58,12 +58,24 @@ func (s *MdsNodeService) CreateMdsNode(
 		return nil, errors.NewGormError(err, nil)
 	}
 
+	// 查询mds节点关联数据
+	node, rErr := s.FindMdsNodeByID(ctx, []string{"MdsColony", "Host"}, m.ID)
+	if rErr != nil {
+		log.Error(
+			"创建mds节点:查询mds节点关联数据失败",
+			zap.Error(rErr),
+			zap.Uint32("mds_node_id", node.ID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, rErr
+	}
+
 	// 导出mds节点缓存数据
-	if err := s.OutPortMdsNodeData(ctx, &m); err != nil {
+	if err := s.OutPortMdsNodeData(ctx, node); err != nil {
 		log.Error(
 			"创建mds节点:导出mds节点缓存数据失败",
 			zap.Error(err),
-			zap.Uint32("mds_node_id", m.ID),
+			zap.Uint32("mds_node_id", node.ID),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, err
@@ -71,10 +83,10 @@ func (s *MdsNodeService) CreateMdsNode(
 
 	log.Info(
 		"创建mds节点:执行成功",
-		zap.Uint32("mds_node_id", m.ID),
+		zap.Uint32("mds_node_id", node.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return &m, nil
+	return node, nil
 }
 
 func (s *MdsNodeService) UpdateMdsNodeByID(

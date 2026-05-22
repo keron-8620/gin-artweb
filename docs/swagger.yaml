@@ -5018,6 +5018,11 @@ paths:
         in: query
         name: label
         type: string
+      - description: 标签列表(多个用,隔开)
+        in: query
+        maxLength: 50
+        name: labels
+        type: string
       - description: 脚本语言
         in: query
         name: language
@@ -5026,6 +5031,11 @@ paths:
         in: query
         maxLength: 50
         name: name
+        type: string
+      - description: 名称列表(多个用,隔开)
+        in: query
+        maxLength: 50
+        name: names
         type: string
       - description: 分页页码
         in: query
@@ -5348,6 +5358,11 @@ paths:
         in: query
         name: label
         type: string
+      - description: 标签列表(多个用,隔开)
+        in: query
+        maxLength: 50
+        name: labels
+        type: string
       - description: 脚本语言
         in: query
         name: language
@@ -5356,6 +5371,11 @@ paths:
         in: query
         maxLength: 50
         name: name
+        type: string
+      - description: 名称列表(多个用,隔开)
+        in: query
+        maxLength: 50
+        name: names
         type: string
       - description: 分页页码
         in: query
@@ -5451,6 +5471,11 @@ paths:
         in: query
         name: label
         type: string
+      - description: 标签列表(多个用,隔开)
+        in: query
+        maxLength: 50
+        name: labels
+        type: string
       - description: 脚本语言
         in: query
         name: language
@@ -5459,6 +5484,11 @@ paths:
         in: query
         maxLength: 50
         name: name
+        type: string
+      - description: 名称列表(多个用,隔开)
+        in: query
+        maxLength: 50
+        name: names
         type: string
       - description: 分页页码
         in: query

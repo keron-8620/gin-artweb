@@ -2847,6 +2847,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签列表(多个用,隔开)",
+                        "name": "labels",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "脚本语言",
                         "name": "language",
@@ -2857,6 +2864,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "名称",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称列表(多个用,隔开)",
+                        "name": "names",
                         "in": "query"
                     },
                     {
@@ -3076,6 +3090,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签列表(多个用,隔开)",
+                        "name": "labels",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "脚本语言",
                         "name": "language",
@@ -3086,6 +3107,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "名称",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称列表(多个用,隔开)",
+                        "name": "names",
                         "in": "query"
                     },
                     {
@@ -3219,6 +3247,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "标签列表(多个用,隔开)",
+                        "name": "labels",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "脚本语言",
                         "name": "language",
@@ -3229,6 +3264,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "名称",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 50,
+                        "type": "string",
+                        "description": "名称列表(多个用,隔开)",
+                        "name": "names",
                         "in": "query"
                     },
                     {

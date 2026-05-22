@@ -7,18 +7,6 @@
   delegate_to: 127.0.0.1
   run_once: true
 
-- name: check flag status
-  stat:
-    path: "{{ local_path_mds_home_flag_colodir }}/{{ flag_running }}"
-  register: flag_running
-  delegate_to: 127.0.0.1
-  run_once: true
-
-- name: echo task is running
-  fail:
-    msg: "{{ cron_job_name }} is running, please wait for it to finish"
-  when: flag_running.stat.exists
-
 - name: rm success or failed flag
   file:
     path: "{{ local_path_mds_home_flag_colodir }}/{{ item }}"
@@ -31,13 +19,6 @@
     - "{{ flag_crash }}"
   delegate_to: 127.0.0.1
   run_once: true
-
-- name: touch running flag
-  file:
-    path: "{{ local_path_mds_home_flag_colodir }}/{{ flag_running }}"
-    state: touch
-  delegate_to: 127.0.0.1
-  run_once: yes
 
 - name: print curr_date
   debug:

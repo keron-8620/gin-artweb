@@ -29,6 +29,6 @@
 
       - include_tasks: ./counter_checker.yaml
       
-      when: is_enable_counter_unilateral_freeze == "yes"
+      when: is_enable_counter_unilateral_freeze
 
     - include_tasks: ./set_status.yaml

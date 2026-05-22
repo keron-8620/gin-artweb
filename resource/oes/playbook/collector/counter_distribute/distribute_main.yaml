@@ -16,7 +16,7 @@
       when: xcounter_freezed_ok.stat.exists
 
     - include_tasks: ./local_to_mon.yaml
-      when: system_type == "crd"
+      when: system_type == "CRD"
 
     - include_tasks: ./counter_checker.yaml
 

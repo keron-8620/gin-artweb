@@ -3,18 +3,23 @@
 # 计划任务实际注册时间以数据库为准
 
 mon: 
-  script_id: 4
+  script_name: mon.sh
+  script_label: cmd
   specification: "30 6 * * 1-5"
 bse: 
-  script_id: 5
+  script_name: bse.sh
+  script_label: cmd
   specification: "2 8 * * 1-5"
 sse: 
-  script_id: 6
+  script_name: sse.sh
+  script_label: cmd
   specification: "5 8 * * 1-5"
 szse: 
-  script_id: 7
+  script_name: szse.sh
+  script_label: cmd
   specification: "36 7 * * 1-5"
 backup: 
-  script_id: 8
+  script_name: backup.sh
+  script_label: cmd
   specification: "0 20 * * 1-5"
 ################ mds计划任务 #######################

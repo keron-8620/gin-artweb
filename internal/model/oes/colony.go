@@ -19,11 +19,11 @@ type OesColonyModel struct {
 	ExtractedName string                `gorm:"column:extracted_name;type:varchar(50);comment:解压后名称" json:"extracted_name"`
 	IsEnable      bool                  `gorm:"column:is_enable;type:boolean;comment:是否启用" json:"is_enable"`
 	PackageID     uint32                `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
-	Package       resource.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:CASCADE" json:"package"`
+	Package       resource.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:RESTRICT" json:"package"`
 	XCounterID    uint32                `gorm:"column:xcounter_id;comment:xcounter包ID" json:"xcounter_id"`
-	XCounter      resource.PackageModel `gorm:"foreignKey:XCounterID;references:ID;constraint:OnDelete:CASCADE" json:"xcounter"`
+	XCounter      resource.PackageModel `gorm:"foreignKey:XCounterID;references:ID;constraint:OnDelete:RESTRICT" json:"xcounter"`
 	MonNodeID     uint32                `gorm:"column:mon_node_id;not null;comment:mon节点ID" json:"mon_node_id"`
-	MonNode       mon.MonNodeModel      `gorm:"foreignKey:MonNodeID;references:ID;constraint:OnDelete:CASCADE" json:"mon_node"`
+	MonNode       mon.MonNodeModel      `gorm:"foreignKey:MonNodeID;references:ID;constraint:OnDelete:RESTRICT" json:"mon_node"`
 }
 
 func (m *OesColonyModel) TableName() string {

@@ -17,7 +17,7 @@ type MdsNodeModel struct {
 	MdsColonyID uint32             `gorm:"column:mds_colony_id;not null;comment:mds集群ID" json:"mds_colony_id"`
 	MdsColony   MdsColonyModel     `gorm:"foreignKey:MdsColonyID;references:ID;constraint:OnDelete:CASCADE" json:"mds_colony"`
 	HostID      uint32             `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        resource.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	Host        resource.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:RESTRICT" json:"host"`
 }
 
 func (m *MdsNodeModel) TableName() string {

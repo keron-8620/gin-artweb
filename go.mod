@@ -4,7 +4,6 @@ go 1.24.6
 
 require (
 	emperror.dev/errors v0.8.1
-	gitee.com/opengauss/openGauss-connector-go-pq v1.0.7
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/glebarez/sqlite v1.11.0
@@ -21,6 +20,7 @@ require (
 	go.uber.org/zap v1.27.1
 	golang.org/x/time v0.14.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+	gorm.io/driver/gaussdb v0.1.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
@@ -29,7 +29,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.6.0 // indirect
+	gitee.com/opengauss/openGauss-connector-go-pq v1.0.7 // indirect
 	github.com/HuaweiCloudDeveloper/gaussdb-go v1.0.0-rc1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
@@ -52,7 +52,6 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/microsoft/go-mssqldb v1.9.5 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nicksnyder/go-i18n/v2 v2.6.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -71,9 +70,8 @@ require (
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/gaussdb v0.1.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect

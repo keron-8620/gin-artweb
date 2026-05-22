@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"mime/multipart"
+	"strings"
 	"time"
 
 	"go.uber.org/zap/zapcore"
@@ -156,6 +157,9 @@ type ListScriptDTO struct {
 	// 名称
 	Name string `form:"name" binding:"omitempty,max=50"`
 
+	// 名称列表(多个用,隔开)
+	Names string `form:"names" binding:"omitempty,max=50"`
+
 	// 描述信息
 	Descr string `form:"descr" binding:"omitempty,max=254"`
 
@@ -164,6 +168,9 @@ type ListScriptDTO struct {
 
 	// 标签
 	Label string `form:"label" binding:"omitempty"`
+
+	// 标签列表(多个用,隔开)
+	Labels string `form:"labels" binding:"omitempty,max=50"`
 
 	// 脚本语言
 	Language string `form:"language" binding:"omitempty"`
@@ -186,9 +193,11 @@ func (dto *ListScriptDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 		return err
 	}
 	enc.AddString("name", dto.Name)
+	enc.AddString("names", dto.Names)
 	enc.AddString("descr", dto.Descr)
 	enc.AddString("project", dto.Project)
 	enc.AddString("label", dto.Label)
+	enc.AddString("labels", dto.Labels)
 	enc.AddString("language", dto.Language)
 	if dto.Status != nil {
 		enc.AddBool("status", *dto.Status)
@@ -205,6 +214,19 @@ func (dto *ListScriptDTO) ToQueryMap() map[string]any {
 	if dto.Name != "" {
 		queryMap["name like ?"] = "%" + dto.Name + "%"
 	}
+	if dto.Names != "" {
+		rawNames := strings.Split(dto.Names, ",")
+		var names []string
+		for _, name := range rawNames {
+			trimmedName := strings.TrimSpace(name)
+			if trimmedName != "" { // 过滤掉空标签
+				names = append(names, trimmedName)
+			}
+		}
+		if len(names) > 0 {
+			queryMap["name in ?"] = names
+		}
+	}
 	if dto.Descr != "" {
 		queryMap["descr like ?"] = "%" + dto.Descr + "%"
 	}
@@ -213,6 +235,19 @@ func (dto *ListScriptDTO) ToQueryMap() map[string]any {
 	}
 	if dto.Label != "" {
 		queryMap["label = ?"] = dto.Label
+	}
+	if dto.Labels != "" {
+		rawLabels := strings.Split(dto.Labels, ",")
+		var labels []string
+		for _, label := range rawLabels {
+			trimmedLabel := strings.TrimSpace(label)
+			if trimmedLabel != "" { // 过滤掉空标签
+				labels = append(labels, trimmedLabel)
+			}
+		}
+		if len(labels) > 0 {
+			queryMap["label in ?"] = labels
+		}
 	}
 	if dto.Language != "" {
 		queryMap["language = ?"] = dto.Language

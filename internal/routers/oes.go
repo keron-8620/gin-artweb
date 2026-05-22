@@ -1,12 +1,15 @@
 package routers
 
 import (
+	"context"
 	golog "log"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	handler "gin-artweb/internal/handler/oes"
+	jobmodel "gin-artweb/internal/model/job"
 	oesmodel "gin-artweb/internal/model/oes"
 	oesrepo "gin-artweb/internal/repo/oes"
 	oessvc "gin-artweb/internal/service/oes"
@@ -21,21 +24,10 @@ func newOesRouter(
 	loggers *config.Loggers,
 	jobsvc *JobServices,
 ) {
-	var (
-		stkCronConf map[string]oesmodel.OesCronTask
-		crdCronConf map[string]oesmodel.OesCronTask
-		optCronConf map[string]oesmodel.OesCronTask
-	)
-	cronConfDir := filepath.Join(config.ResourceDir, "oes", "config")
-	if _, err := serializer.ReadYAML(filepath.Join(cronConfDir, "stk_cron.yaml"), &stkCronConf); err != nil {
-		golog.Fatalf("加载stk_cron.yaml失败: %v", err)
-	}
-	if _, err := serializer.ReadYAML(filepath.Join(cronConfDir, "crd_cron.yaml"), &crdCronConf); err != nil {
-		golog.Fatalf("加载crd_cron.yaml失败: %v", err)
-	}
-	if _, err := serializer.ReadYAML(filepath.Join(cronConfDir, "opt_cron.yaml"), &optCronConf); err != nil {
-		golog.Fatalf("加载opt_cron.yaml失败: %v", err)
-	}
+
+	stkCronConf := newOesCronConf(jobsvc, "stk_cron.yaml")
+	crdCronConf := newOesCronConf(jobsvc, "crd_cron.yaml")
+	optCronConf := newOesCronConf(jobsvc, "opt_cron.yaml")
 
 	colonyRepo := oesrepo.NewOesColonyRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 	nodeRepo := oesrepo.NewOesNodeRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
@@ -59,4 +51,58 @@ func newOesRouter(
 	colonyHandler.LoadRouter(appRouter)
 	nodeHandler.LoadRouter(appRouter)
 	confHandler.LoadRouter(appRouter)
+}
+
+func newOesCronConf(jobsvc *JobServices, cronConfName string) map[string]oesmodel.OesCronTask {
+	cronConfPath := filepath.Join(config.ResourceDir, "oes", "config", cronConfName)
+	yamlConf := make(map[string]oesmodel.OesCronConf)
+	if _, err := serializer.ReadYAML(cronConfPath, &yamlConf); err != nil {
+		golog.Fatalf("加载 %s 失败: %v", cronConfPath, err)
+	}
+	labelSet := make(map[string]struct{})
+	nameSet := make(map[string]struct{})
+	for _, cronConf := range yamlConf {
+		labelSet[cronConf.ScriptLabel] = struct{}{}
+		nameSet[cronConf.ScriptName] = struct{}{}
+	}
+	scriptLabels := make([]string, 0, len(labelSet))
+	scriptNames := make([]string, 0, len(nameSet))
+	for label := range labelSet {
+		scriptLabels = append(scriptLabels, label)
+	}
+	for name := range nameSet {
+		scriptNames = append(scriptNames, name)
+	}
+
+	scriptStatus := true
+	scriptBuiltin := true
+	_, scripts, err := jobsvc.Script.ListScript(
+		context.Background(), 1, 20, jobmodel.ListScriptDTO{
+			Project:   "oes",
+			Names:     strings.Join(scriptNames, ","),
+			Labels:    strings.Join(scriptLabels, ","),
+			IsBuiltin: &scriptBuiltin,
+			Status:    &scriptStatus,
+		})
+	if err != nil {
+		golog.Fatalf("获取脚本列表失败: %v", err)
+	}
+	scriptMap := make(map[string]jobmodel.ScriptModel)
+	for _, m := range scripts {
+		key := m.Project + "_" + m.Label + "_" + m.Name
+		scriptMap[key] = m
+	}
+	cronTasks := make(map[string]oesmodel.OesCronTask, len(yamlConf))
+	for taskName, cronConf := range yamlConf {
+		key := "oes_" + cronConf.ScriptLabel + "_" + cronConf.ScriptName
+		script, ok := scriptMap[key]
+		if !ok {
+			golog.Fatalf("脚本 %s 不存在", key)
+		}
+		cronTasks[taskName] = oesmodel.OesCronTask{
+			ScriptID:      script.ID,
+			Specification: cronConf.Specification,
+		}
+	}
+	return cronTasks
 }

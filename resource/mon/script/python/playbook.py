@@ -3,35 +3,31 @@ from typing import Dict
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 import argparse
 import json
 import tempfile
 import shutil
+import uuid
 
 import ansible_runner
 
-JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
-if not JOB_RECORD_ID:
-    JOB_RECORD_ID = 0
-
-JOB_LOG_PATH = os.getenv("JOB_LOG_PATH")
-if not JOB_LOG_PATH:
-    JOB_LOG_PATH = "/var/log/gin-artweb"
-    # raise AssertionError("环境变量没有设置JOB_LOG_PATH")
-
-JOB_BASE_DIR = os.getenv("JOB_BASE_DIR")
-if not JOB_BASE_DIR:
-    JOB_BASE_DIR = "/var/lib/gin-artweb"
-    # raise AssertionError("环境变量没有设置JOB_BASE_DIR")
-
-BASE_DIR = Path(ANSIBLE_BASE_DIR)
+BASE_DIR = Path(__file__).resolve().parents[4]
 STORAGE_DIR = BASE_DIR.joinpath("storage")
 HOST_CONF_DIR = STORAGE_DIR.joinpath("host_vars")
 MON_DIR = STORAGE_DIR.joinpath("mon")
 RESOURCE_DIR = BASE_DIR.joinpath("resource")
 SCRIPT_DIR = RESOURCE_DIR.joinpath("mon", "script")
 PLAYBOOK_DIR = RESOURCE_DIR.joinpath("mon", "playbook")
+
+JOB_LOG_PATH = os.getenv("JOB_LOG_PATH")
+if not JOB_LOG_PATH or not os.path.exists(JOB_LOG_PATH):
+    JOB_LOG_PATH = STORAGE_DIR.joinpath("logs", datetime.now().strftime("%Y%m%d"), f"{uuid.uuid4()}.log").as_posix()
+
+JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
+if not JOB_RECORD_ID:
+    JOB_RECORD_ID = 0
 
 
 def get_curr_date() -> str:
@@ -52,7 +48,7 @@ def init_vars(mon_host_id: int, extravars: str = ""):
     with open(mon_path, "r") as f:
         vars = json.load(f)
     if extravars:
-        for item in extravars.split(";"):
+        for item in extravars.split(","):
             if "=" in item:
                 key, value = item.split("=", 1)
                 vars[key.strip()] = value.strip()
@@ -88,15 +84,17 @@ def main(options):
         raise ValueError("参数mon_host_id是必填项")
     vars = init_vars(mon_id, options.extravars)
     hosts = {f"mon_{mon_id}": init_hosts(vars["host_id"])}
+    envvars = {}
+    if options.enable_ansible_log:
+        envvars["ANSIBLE_LOG_PATH"] = JOB_LOG_PATH
+    if not options.enable_ansible_color:
+        envvars["ANSIBLE_NOCOLOR"] = "1"
     tmpdir = tempfile.mkdtemp()
     try:
         return ansible_runner.run(
             inventory={"all": {"hosts": hosts, "vars": vars}},
             playbook=str(playbook_path),
-            envvars={
-                "ANSIBLE_NOCOLOR": "1", 
-                "ANSIBLE_LOG_PATH": options.log_path,
-            },
+            envvars=envvars,
             verbosity=options.verbosity,
             private_data_dir=tmpdir
         )
@@ -119,12 +117,6 @@ if __name__ == "__main__":
         required=True
     )
     parser.add_argument(
-        "--log_path", 
-        type=str, 
-        help="请输入日志文件路径",
-        required=True
-    )
-    parser.add_argument(
         "--verbosity", 
         type=int, 
         choices=range(0, 5),
@@ -137,6 +129,18 @@ if __name__ == "__main__":
         default="",
         help="请输入额外的变量(a=b,c=d)",
     )
+    parser.add_argument(
+        "--enable_ansible_log", 
+        type=bool,
+        default=False,
+        help="是否启用ansible日志",
+    )
+    parser.add_argument(
+        "--enable_ansible_color", 
+        type=bool,
+        default=False,
+        help="是否启用ansible颜色输出",
+    )
     options = parser.parse_args()
-    result = main(options)
+    result = main(options)        
     sys.exit(0) if result.status == "successful" else sys.exit(1)

@@ -58,11 +58,6 @@ func ReadYAML(filePath string, v any, opts ...SerializerOption) (*ReadResult, er
 		return nil, errors.Errorf("YAML文件为空, 文件路径=%s", filePath)
 	}
 
-	// 检查上下文是否已取消
-	if ctxErr := options.Context.Err(); ctxErr != nil {
-		return nil, errors.WithMessage(ctxErr, "上下文已取消")
-	}
-
 	// 解析YAML
 	if err := yaml.Unmarshal(data, v); err != nil {
 		return nil, errors.WithMessagef(err, "解析YAML文件失败, 文件路径=%s", filePath)
@@ -96,19 +91,9 @@ func WriteYAML(filePath string, data any, opts ...SerializerOption) (*WriteResul
 		return writeYAMLAtomic(filePath, data, options, startTime)
 	}
 
-	// 检查上下文是否已取消
-	if ctxErr := options.Context.Err(); ctxErr != nil {
-		return nil, errors.WithMessage(ctxErr, "上下文已取消")
-	}
-
 	// 确保目录存在
 	if err := os.MkdirAll(filepath.Dir(filePath), options.DirMode); err != nil {
 		return nil, errors.Errorf("创建目录失败, 目录路径=%s", filepath.Dir(filePath))
-	}
-
-	// 检查上下文是否已取消
-	if ctxErr := options.Context.Err(); ctxErr != nil {
-		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 序列化为 YAML 字节流
@@ -120,11 +105,6 @@ func WriteYAML(filePath string, data any, opts ...SerializerOption) (*WriteResul
 	// 检查文件大小限制
 	if options.MaxFileSize > 0 && int64(len(out)) > options.MaxFileSize {
 		return nil, errors.Errorf("YAML文件大小超过限制, 文件路径=%s, 最大限制=%d, 当前大小=%d", filePath, options.MaxFileSize, int64(len(out)))
-	}
-
-	// 检查上下文是否已取消
-	if ctxErr := options.Context.Err(); ctxErr != nil {
-		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 写入文件（会覆盖已有内容）
@@ -150,11 +130,6 @@ func writeYAMLAtomic(filePath string, data any, options SerializerOptions, start
 	// 确保目录存在
 	if err := os.MkdirAll(filepath.Dir(filePath), options.DirMode); err != nil {
 		return nil, errors.WithMessagef(err, "创建目录失败, 目录路径=%s", filepath.Dir(filePath))
-	}
-
-	// 检查上下文是否已取消
-	if ctxErr := options.Context.Err(); ctxErr != nil {
-		return nil, errors.WithMessage(ctxErr, "上下文已取消")
 	}
 
 	// 创建临时文件

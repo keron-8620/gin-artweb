@@ -77,7 +77,7 @@ sse_cp_files:                                             # 上海产品文件�
   - "cpxx0202{{ curr_date[4:] }}.txt"
   - "zhcl03{{ curr_date[4:] }}.txt"
   - "reff03{{ curr_date[4:] }}.txt"
-  - "reff0302{{ curr_date[4:] }}.xml"
+  - "reff0302{{ curr_date }}.xml"
   - "bondinfo{{ curr_date }}.txt"
   - "bondinfo{{ curr_date }}.zip"
   - "archive_bondinfo{{ curr_date }}.zip"
@@ -86,7 +86,7 @@ sse_check_files:
   - "cpxx0201{{ curr_date[4:] }}.txt"
   - "cpxx0202{{ curr_date[4:] }}.txt"
   - "zhcl03{{ curr_date[4:] }}.txt"
-  - "reff0302{{ curr_date[4:] }}.xml"
+  - "reff0302{{ curr_date }}.xml"
   - "bondinfo{{ curr_date }}.txt"
 
 sse_etf_cp_files: []

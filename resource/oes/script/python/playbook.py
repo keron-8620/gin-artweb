@@ -3,27 +3,17 @@ from typing import List, Dict
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 import tempfile
 import shutil
 import argparse
+import uuid
 
 import yaml
 import ansible_runner
 
-JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
-if not JOB_RECORD_ID:
-    JOB_RECORD_ID = 0
-
-JOB_LOG_PATH = os.getenv("JOB_LOG_PATH")
-if not JOB_LOG_PATH:
-    raise AssertionError("环境变量没有设置JOB_LOG_PATH")
-
-JOB_BASE_DIR = os.getenv("JOB_BASE_DIR")
-if not JOB_BASE_DIR:
-    raise AssertionError("环境变量没有设置JOB_BASE_DIR")
-
-BASE_DIR = Path(JOB_BASE_DIR)
+BASE_DIR = Path(__file__).resolve().parents[4]
 STORAGE_DIR = BASE_DIR.joinpath("storage")
 HOST_CONF_DIR = STORAGE_DIR.joinpath("host_vars")
 MON_DIR = STORAGE_DIR.joinpath("mon")
@@ -31,6 +21,14 @@ OES_DIR = STORAGE_DIR.joinpath("oes")
 RESOURCE_DIR = BASE_DIR.joinpath("resource")
 SCRIPT_DIR = RESOURCE_DIR.joinpath("oes", "script")
 PLAYBOOK_DIR = RESOURCE_DIR.joinpath("oes", "playbook")
+
+JOB_LOG_PATH = os.getenv("JOB_LOG_PATH")
+if not JOB_LOG_PATH or not os.path.exists(JOB_LOG_PATH):
+    JOB_LOG_PATH = STORAGE_DIR.joinpath("logs", datetime.now().strftime("%Y%m%d"), f"{uuid.uuid4()}.log").as_posix()
+
+JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
+if not JOB_RECORD_ID:
+    JOB_RECORD_ID = 0
 
 
 def get_curr_date() -> str:
@@ -146,7 +144,7 @@ def init_vars(config_dir: Path, extravars: str = ""):
         raise AssertionError(f"oes_{vars['colony_num']}集群被禁用")
     vars["mon_host"] = load_mon_conf(vars["mon_node_id"])
     if extravars:
-        for item in extravars.split(";"):
+        for item in extravars.split(","):
             if "=" in item:
                 key, value = item.split("=", 1)
                 vars[key.strip()] = value.strip()
