@@ -1,3 +1,7 @@
+insert into sys_menu_api(menu_id,api_id) values(62,2001);
+insert into sys_menu_api(menu_id,api_id) values(62,2012);
+insert into sys_menu_api(menu_id,api_id) values(72,2001);
+insert into sys_menu_api(menu_id,api_id) values(72,2012);
 
 insert into sys_menu_api(menu_id,api_id) values(83,2001);
 insert into sys_menu_api(menu_id,api_id) values(83,2002);
