@@ -15,7 +15,16 @@
         - "{{ fetch_szse_ok }}"
         - "{{ fetch_mon_ok }}"
 
-    - name: load_data
+    - name: master load data
       command: ./oes load -D -N
       args:
         chdir: "{{ slave_path_oes_home_bin }}"
+      when: node_role == "master"
+      ignore_errors: True
+
+    - name: other load data
+      command: ./oes load -D -N
+      args:
+        chdir: "{{ slave_path_oes_home_bin }}"
+      when: node_role != "master"
+      ignore_errors: True

@@ -13,3 +13,4 @@
         - "{{ fetch_sse_ok }}"
         - "{{ fetch_szse_ok }}"
         - "{{ fetch_mon_ok }}"
+        - "{{ fetch_bse_ok }}"

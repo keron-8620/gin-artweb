@@ -12,6 +12,7 @@ flag_path=$(cd "$basepath/../../../../storage/mds/flags/$colony_num" && pwd)
 
 ################### success标志文件列表 ##################
 mon_success_flag=$flag_path/mon_collector_$nowdate.success
+bse_success_flag=$flag_path/bse_collector_$nowdate.success
 sse_success_flag=$flag_path/sse_collector_$nowdate.success
 szse_success_flag=$flag_path/szse_collector_$nowdate.success
 
@@ -22,6 +23,20 @@ if [ ! -f $mon_success_flag ];then
 	sleep 5
 	echo "sh mon.sh $colony_num $@"
 	cd $basepath/cmd/;sh mon.sh $colony_num "$@"
+fi
+# bse的success标志文件未生成
+if [ ! -f $bse_success_flag ];then
+	echo "拉取北京产品文件成功标志文件未生成, 重新拉取北京产品文件"
+	sleep 5
+	echo "sh bse.sh $colony_num $@"
+	cd $basepath/cmd/;sh bse.sh $colony_num "$@"
+fi
+# sse的success标志文件未生成
+if [ ! -f $sse_success_flag ];then
+	echo "拉取上海产品文件成功标志文件未生成, 重新拉取上海产品文件"
+	sleep 5
+	echo "sh sse.sh $colony_num $@"
+	cd $basepath/cmd/;sh sse.sh $colony_num "$@"
 fi
 # sse的success标志文件未生成
 if [ ! -f $sse_success_flag ];then
@@ -38,7 +53,7 @@ if [ ! -f $szse_success_flag ];then
 	cd $basepath/cmd/;sh szse.sh $colony_num "$@"
 fi
 # 检测所有success标志文件都生成
-if [ -f $mon_success_flag ]&&[ -f $sse_success_flag ]&&[ -f $szse_success_flag ];then
+if [ -f $mon_success_flag ]&&[ -f $bse_success_flag ]&&[ -f $sse_success_flag ]&&[ -f $sse_success_flag ]&&[ -f $szse_success_flag ];then
 	echo "所有标志文件都已经生成, 开始重启mds集群服务器"
 	sleep 5
 	echo "sh mds_cleartx_start.sh $colony_num;sh mds_set_status.sh $colony_num RESET 5"
