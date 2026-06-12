@@ -6,3 +6,4 @@ artweb.pid
 *.db
 .env
 artweb-*.tar.gz
+.temp/

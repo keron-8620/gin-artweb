@@ -307,3 +307,10 @@ func ListHostModelToStandardOut(
 	}
 	return mso
 }
+
+// HostSSHDTO 主机SSH连接参数
+type HostSSHDTO struct {
+	HostID  uint32 `json:"host_id" form:"host_id" binding:"required"`
+	Columns int    `json:"columns" form:"columns" binding:"omitempty,gt=0"`
+	Rows    int    `json:"rows" form:"rows" binding:"omitempty,gt=0"`
+}

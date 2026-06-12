@@ -8,7 +8,7 @@ basepath=$(cd `dirname $0`/..; pwd)
 colony_num=$1
 shift 1
 
-flag_path=$(cd $basepath/../../../storage/oes/flags/$colony_num; pwd)
+flag_path=$(cd $basepath/../../../../storage/oes/flags/$colony_num; pwd)
 
 ################### success标志文件列表 ##################
 mon_success_flag=$flag_path/mon_collector_$nowdate.success
@@ -69,8 +69,8 @@ fi
 if [ -f $mon_success_flag ]&&[ -f $counter_fetch_success_flag ]&&[ -f $counter_distribute_success_flag ]&&[ -f $sse_success_flag ]&&[ -f $szse_success_flag ]&&[ -f $csdc_success_flag ];then
 	echo "所有标志文件都已经生成, 开始重启oes集群服务器"
 	sleep 5
-	echo "sh oes_restart.sh $colony_num;sh oes_set_status.sh $colony_num --extravars 'oes_runner_nodes=master,follow,arbiter;task_name=RESET;task_status=5'"
-	cd $basepath/cmd_emgy_oes;sh oes_restart.sh $colony_num "$@";sh oes_set_status.sh $colony_num --extravars 'oes_runner_nodes=master,follow,arbiter;task_name=RESET;task_status=5' "$@"
+	echo "sh oes_restart.sh $colony_num;sh oes_set_status.sh $colony_num RESET 5"
+	cd $basepath/cmd_emgy_oes;sh oes_restart.sh $colony_num "$@";sh oes_set_status.sh $colony_num RESET 5 "$@"
 else
 	echo "标志文件未完全生成, 请检查"
 	exit 1

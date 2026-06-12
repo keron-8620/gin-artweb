@@ -203,7 +203,7 @@ func (s *MenuService) UpdateMenuByID(
 
 	apis, rErr := s.getApis(ctx, dto.ApiIDs)
 	if rErr != nil {
-		log.Debug(
+		log.Error(
 			"更新菜单:查询菜单关联的权限列表失败",
 			zap.Error(rErr),
 			zap.Uint32s("api_ids", dto.ApiIDs),

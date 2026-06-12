@@ -6,18 +6,21 @@
 
   tasks:
     - name: load automatic variables
-      include_vars: "{{ local_path_mds_home_config_all }}/automatic.yaml"
+      include_vars: "{{ local_path_oes_home_config_all }}/automatic.yaml"
       delegate_to: 127.0.0.1
       run_once: true
 
-    - name: start mds disaster recovery
-      shell: "nohup {{ ansible_python_interpreter }} art/watch.py -s {{ zb_host }} -p {{ zb_port }} -u {{ zb_user }} -d {{ zb_path }} -l {{ zb_dir }} >/dev/null 2>&1 &"
-      args:
-        chdir: "{{ slave_path_mds_home }}"
-      when: is_enable_zb and node_role == 'follow' and zb_active == "start"
+    - name: fetch remote mds_zb file
+      command: "rsync -az --exclude='*/' -e 'ssh -p {{ zb_port }}' {{ zb_user }}@{{ zb_host }}:{{ zb_path }}/{{ item }}/ {{ local_path_oes_home_zb_colodir }}/{{ item }}/"
+      with_items: "{{ zb_dir.split(',') }}"
+      ignore_errors: yes
+      delegate_to: 127.0.0.1
+      run_once: true
 
-    - name: stop mds disaster recovery
-      shell: "pkill -f '{{ ansible_python_interpreter }} art/watch.py -s {{ zb_host }} -p {{ zb_port }} -u {{ zb_user }} -d {{ zb_path }} -l {{ zb_dir }}'"
-      args:
-        chdir: "{{ slave_path_mds_home }}"
-      when: is_enable_zb and node_role == 'follow' and zb_active == "stop"
+    - name: send zb file to mds
+      synchronize:
+        src: "{{ local_path_mds_home_zb_colodir }}/{{ item }}/"
+        dest: "{{ slave_path_mds_home }}/{{ item }}/"
+        checksum: yes
+      with_items: "{{ zb_dir.split(',') }}"
+      ignore_errors: yes

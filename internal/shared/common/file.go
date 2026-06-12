@@ -96,7 +96,7 @@ func UploadFile(
 ) *errors.Error {
 	if upFile.Size > maxSize {
 		logger.Error(
-			"上传的程序包文件过大",
+			"上传的文件过大",
 			zap.Int64("file_size", upFile.Size),
 			zap.Int64("max_size", maxSize),
 		)

@@ -1,36 +1,60 @@
-#!/usr/local/lib/python3.11/bin/python3.11
+#!/usr/bin/env python3
 import time
 import os
 import argparse
 import subprocess
+from datetime import datetime
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 
 def exec_rsync(ssh_host, ssh_port, ssh_user, src_dir, dest_dir):
-    command = "rsync -e 'ssh -p %s' -apz --delete %s/ %s@%s:%s/" % (
-        ssh_port, src_dir, ssh_user, ssh_host, dest_dir
-    )
-    print(command)
+    cmd = [
+        "rsync",
+        "-e", f"ssh -p {ssh_port}",
+        "-apz", "--delete",
+        f"{src_dir}/",
+        f"{ssh_user}@{ssh_host}:{dest_dir}/"
+    ]
+    print(" ".join(cmd))
     try:
-        subprocess.run(command, shell=True)
+        result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        return True, result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"同步失败: {e.stderr}")
+        return False, e.stderr
     except Exception as e:
-        print(e)
+        print(f"执行异常: {str(e)}")
+        return False, str(e)
 
 
 class FileEventHandler(FileSystemEventHandler):
-    def __init__(self, ssh_host, ssh_port, ssh_user, src_dirs, ssh_path):
+    def __init__(self, ssh_host, ssh_port, ssh_user, src_dir, dst_dir, sync_interval= 2):
+        super().__init__()
         self.ssh_host = ssh_host
         self.ssh_port = ssh_port
         self.ssh_user = ssh_user
-        self.ssh_path = ssh_path
-        self.src_dirs = src_dirs
-        FileSystemEventHandler.__init__(self)
+        self.src_dir = src_dir
+        self.dst_dir = dst_dir
+        self.sync_interval = sync_interval
+        self.last_sync = datetime.now()
 
-    def on_any_event(self, event):
-        for src_dir in self.src_dirs:
-            exec_rsync(self.ssh_host, self.ssh_port, self.ssh_user, src_dir, self.ssh_path)
+    def on_modified(self, event):
+        self._sync_with_debounce()
+
+    def on_created(self, event):
+        self._sync_with_debounce()
+
+    def on_deleted(self, event):
+        self._sync_with_debounce()
+
+    def _sync_with_debounce(self):
+        now = datetime.now()
+        if (now - self.last_sync).seconds < self.sync_interval:
+            return
+        self.last_sync = now
+        exec_rsync(self.ssh_host, self.ssh_port, self.ssh_user, self.src_dir, self.dst_dir)
 
 
 if __name__ == "__main__":

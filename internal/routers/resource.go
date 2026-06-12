@@ -18,8 +18,9 @@ import (
 )
 
 type ResourceServices struct {
-	Host *resosvc.HostService
-	Pkg  *resosvc.PackageService
+	Host     *resosvc.HostService
+	Pkg      *resosvc.PackageService
+	Terminal *resosvc.TerminalService
 }
 
 func newResourceRouter(
@@ -48,9 +49,11 @@ func newResourceRouter(
 
 	hostService := resosvc.NewHostService(loggers.Service, hostRepo, sshTimeout, ssh.PublicKeys(signers...), pubKeys)
 	pkgService := resosvc.NewPackageService(loggers.Service, pkgRepo, filepath.Join(config.StorageDir, "packages"))
+	terminalService := resosvc.NewTerminalService(loggers.Service, hostRepo, []ssh.AuthMethod{ssh.PublicKeys(signers...)})
 
 	hostHandler := handler.NewHostHandler(loggers.Handler, hostService)
 	pkgHandler := handler.NewPackageHandler(loggers.Handler, pkgService, int64(init.Conf.Upload.MaxPkgSize)*1024*1024)
+	terminalHandler := handler.NewTerminalHandler(loggers.Handler, terminalService)
 
 	appRouter := router.Group("/v1/resource")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
@@ -59,8 +62,12 @@ func newResourceRouter(
 	hostHandler.LoadRouter(appRouter)
 	pkgHandler.LoadRouter(appRouter)
 
+	wsRouter := router.Group("/v1/ws")
+	wsRouter.GET("/terminal", terminalHandler.HandleWebSocket)
+
 	return &ResourceServices{
-		Host: hostService,
-		Pkg:  pkgService,
+		Host:     hostService,
+		Pkg:      pkgService,
+		Terminal: terminalService,
 	}
 }

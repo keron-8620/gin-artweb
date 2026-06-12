@@ -69,6 +69,11 @@ func NewRouter(
 		})
 	})
 
+	// 终端页面
+	r.GET("/terminal", func(c *gin.Context) {
+		c.File(filepath.Join(htmlDir, "terminal.html"))
+	})
+
 	// 配置 Swagger 文档
 	if init.Conf.Server.Swagger {
 		docs.SwaggerInfo.Title = "artweb"

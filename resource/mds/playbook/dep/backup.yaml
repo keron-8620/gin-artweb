@@ -11,28 +11,17 @@
         chdir: "{{ slave_path_mds_home_bin }}"
       ignore_errors: yes
 
-    - name: find mds package exclude txlog
-      find:
-        paths: "{{ slave_path_mds_home }}"
-        file_type: any
-        recurse: yes
-        excludes: txlog
-      register: files_to_backup
-
     - name: archive mds package
       archive:
-        path: "{{ files_to_backup.files | map(attribute='path') | list }}"
-        dest: "{{ slave_path_user_home }}/{{ pkg_name }}_{{ version }}.tar.gz"
+        path:
+          - "{{ slave_path_mds_home_bin }}"
+          - "{{ slave_path_mds_home_conf }}"
+          - "{{ slave_path_mds_home_data }}"
+          - "{{ slave_path_mds_home_logs }}"
+          - "{{ slave_path_mds_home_art }}"
+          - "{{ slave_path_mds_home_sbin }}"
+          - "{{ slave_path_mds_home_sample }}"
+        dest: "{{ slave_backup_path }}/{{ pkg_name }}.tar.gz"
         remove: False
-        format: gz
-
-    - name: get datetime
-      command: 'date +%Y%m%d-%H%M%S'
-      register: curr_time
-      delegate_to: 127.0.0.1
       run_once: true
-
-    - name: save mds package archive to backup dir
-      copy:
-        src: "{{ slave_path_user_home }}/{{ pkg_name }}_{{ version }}.tar.gz"
-        dest: "{{ slave_backup_path }}/{{ pkg_name }}_{{ version }}_{{ curr_time.stdout.strip() }}.tar.gz"
+      ignore_errors: True
