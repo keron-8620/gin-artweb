@@ -3,7 +3,7 @@
 #获取当前时间-YYYYMMDD
 nowdate=$(date +%Y%m%d)
 # 获取脚本当前路径
-basepath=$(cd `dirname $0`/..; pwd)
+basepath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
 colony_num=$1
 shift 1

@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
@@ -286,53 +285,41 @@ func (suite *PackageTestSuite) TestRemovePackageFile() {
 }
 
 func (suite *PackageTestSuite) TestOperationsWithTimeout() {
-	// 创建测试数据
 	pm := CreateTestPackageModel()
 	err := suite.packageRepo.CreateModel(context.Background(), pm)
 	suite.NoError(err, "创建Package用于超时测试应该成功")
 
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
+	timeoutCtx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的查询操作
 	_, err = suite.packageRepo.GetModel(timeoutCtx, "id = ?", pm.ID)
-	suite.Error(err, "上下文超时后查询Package应该返回错误")
+	suite.Error(err, "上下文取消后查询Package应该返回错误")
 
-	// 测试超时后的创建操作
 	pm2 := CreateTestPackageModel()
 	err = suite.packageRepo.CreateModel(timeoutCtx, pm2)
-	suite.Error(err, "上下文超时后创建Package应该返回错误")
+	suite.Error(err, "上下文取消后创建Package应该返回错误")
 
-	// 测试超时后的删除操作
 	err = suite.packageRepo.DeleteModel(timeoutCtx, "id = ?", pm.ID)
-	suite.Error(err, "上下文超时后删除Package应该返回错误")
+	suite.Error(err, "上下文取消后删除Package应该返回错误")
 
-	// 测试超时后的列表操作
 	qp := database.QueryParams{}
 	_, err = suite.packageRepo.ListModel(timeoutCtx, qp)
-	suite.Error(err, "上下文超时后查询Package列表应该返回错误")
+	suite.Error(err, "上下文取消后查询Package列表应该返回错误")
 
-	// 测试超时后的计数操作
 	_, err = suite.packageRepo.CountModel(timeoutCtx, map[string]any{"label": "test"})
-	suite.Error(err, "上下文超时后计数Package应该返回错误")
+	suite.Error(err, "上下文取消后计数Package应该返回错误")
 
-	// 测试超时后的保存操作
 	testContent := "test package content"
 	reader := strings.NewReader(testContent)
 	tempFile := fmt.Sprintf("/tmp/test-package-timeout-%s.tar.gz", uuid.NewString())
 	defer os.Remove(tempFile)
 
 	err = suite.packageRepo.SavePackageFile(timeoutCtx, reader, tempFile, false)
-	suite.Error(err, "上下文超时后保存程序包文件应该返回错误")
+	suite.Error(err, "上下文取消后保存程序包文件应该返回错误")
 
-	// 测试超时后的删除文件操作
 	tempFile2 := fmt.Sprintf("/tmp/test-package-remove-timeout-%s.tar.gz", uuid.NewString())
 	err = suite.packageRepo.RemovePackageFile(timeoutCtx, tempFile2)
-	suite.Error(err, "上下文超时后删除程序包文件应该返回错误")
+	suite.Error(err, "上下文取消后删除程序包文件应该返回错误")
 }
 
 func TestPackageTestSuite(t *testing.T) {

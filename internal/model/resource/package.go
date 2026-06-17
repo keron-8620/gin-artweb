@@ -54,7 +54,7 @@ func ListPackageModelToUint32s(ms []PackageModel) []uint32 {
 
 type UploadPackageDTO struct {
 	// 标签
-	Label string `form:"label" binding:"required,oneof=mds stk crd opt xcounter"`
+	Label string `form:"label" binding:"required,oneof=mds stk crd opt xcounter agw"`
 
 	// 版本号
 	Version string `form:"version" binding:"required"`
@@ -191,7 +191,7 @@ type PackageResp = common.APIResp[PackageStandardOut]
 // PagPackageResp程序包的分页响应结构
 type PagPackageResp = common.APIResp[*common.Pag[PackageStandardOut]]
 
-func PackageModelToOutBase(
+func PackageModelToBaseOut(
 	m PackageModel,
 ) *PackageStandardOut {
 	return &PackageStandardOut{
@@ -212,7 +212,7 @@ func ListPkgModelToOut(
 	mso := make([]PackageStandardOut, 0, len(ms))
 	if len(ms) > 0 {
 		for _, m := range ms {
-			mo := PackageModelToOutBase(m)
+			mo := PackageModelToBaseOut(m)
 			mso = append(mso, *mo)
 		}
 	}

@@ -11,7 +11,7 @@
         chdir: "{{ slave_path_oes_home_bin }}"
 
     - name: clear txlog
-      command: tar -zcf txlog_bak.tar.gz txlog && rm -rf ./txlog/TXLOG_*
+      shell: tar -zcf txlog_bak.tar.gz txlog && rm -rf ./txlog/TXLOG_*
       args:
         chdir: "{{ slave_path_oes_home }}"
       when: is_clear is defined and is_clear == "ct"

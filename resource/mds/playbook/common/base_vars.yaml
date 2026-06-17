@@ -26,6 +26,8 @@ local_path_mds_home_szse_etf: "{{ local_path_mds_home }}/szse_etf"
 local_path_mds_home_szse_etf_colodir: "{{ local_path_mds_home_szse_etf }}/{{ colony_num }}"
 local_path_mds_home_szse_late: "{{ local_path_mds_home }}/szse_late"
 local_path_mds_home_szse_late_colodir: "{{ local_path_mds_home_szse_late }}/{{ colony_num }}"
+local_path_mds_home_zb: "{{ local_path_mds_home }}/zb"
+local_path_mds_home_zb_colodir: "{{ local_path_mds_home_zb }}/{{ colony_num }}"
 
 local_path_script_home_slave: "{{ local_path_script_home }}/slave"
 ###################### local工作目录相关文件位置 ####################

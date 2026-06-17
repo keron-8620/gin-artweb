@@ -15,13 +15,13 @@
         path: "{{ local_path_oes_home_zb_colodir }}/{{ item }}"
         state: directory
         mode: '0755'
-      with_items: "{{ zb_dir.split(',') | select('length', '>', 0) | list }}"
+      with_items: "{{ zb_dir.split(',') | reject('equalto', '') | list }}"
       delegate_to: 127.0.0.1
       run_once: true
 
     - name: fetch remote oes_zb file
       command: "rsync -az --exclude='*/' -e 'ssh -p {{ zb_port }}' {{ zb_user }}@{{ zb_host }}:{{ zb_path }}/{{ item }}/ {{ local_path_oes_home_zb_colodir }}/{{ item }}/"
-      with_items: "{{ zb_dir.split(',') | select('length', '>', 0) | list }}"
+      with_items: "{{ zb_dir.split(',') | reject('equalto', '') | list }}"
       ignore_errors: yes
       delegate_to: 127.0.0.1
       run_once: true
@@ -31,12 +31,12 @@
         path: "{{ slave_path_oes_home }}/{{ item }}"
         state: directory
         mode: '0755'
-      with_items: "{{ zb_dir.split(',') | select('length', '>', 0) | list }}"
+      with_items: "{{ zb_dir.split(',') | reject('equalto', '') | list }}"
 
     - name: send zb file to oes
       synchronize:
         src: "{{ local_path_oes_home_zb_colodir }}/{{ item }}/"
         dest: "{{ slave_path_oes_home }}/{{ item }}/"
         checksum: yes
-      with_items: "{{ zb_dir.split(',') | select('length', '>', 0) | list }}"
+      with_items: "{{ zb_dir.split(',') | reject('equalto', '') | list }}"
       ignore_errors: yes

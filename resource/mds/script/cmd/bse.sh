@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # 处理$0在sh中可能的兼容性问题，且给变量加引号避免空格问题
-basepath=$(cd "$(dirname "$0")" || exit; pwd)
+basepath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
 # 切换目录前检查目录是否存在，避免cd失败导致后续操作异常
 cd "$basepath/../python" || {

@@ -99,7 +99,7 @@ func (h *PackageHandler) UploadPackage(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, &resomodel.PackageResp{
 		Code: http.StatusCreated,
-		Data: *resomodel.PackageModelToOutBase(*pkg),
+		Data: *resomodel.PackageModelToBaseOut(*pkg),
 	})
 }
 
@@ -178,7 +178,7 @@ func (h *PackageHandler) GetPackage(c *gin.Context) {
 		return
 	}
 
-	mo := resomodel.PackageModelToOutBase(*m)
+	mo := resomodel.PackageModelToBaseOut(*m)
 	c.JSON(http.StatusOK, &resomodel.PackageResp{
 		Code: http.StatusOK,
 		Data: *mo,

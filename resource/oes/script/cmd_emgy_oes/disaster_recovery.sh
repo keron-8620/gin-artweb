@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-basepath=$(cd `dirname $0`; pwd)
+basepath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
 cd $basepath/../python
 

@@ -259,7 +259,7 @@ func MdsColonyToDetailOut(
 ) *MdsColonyDetailOut {
 	return &MdsColonyDetailOut{
 		MdsColonyStandardOut: *MdsColonyToStandardOut(m),
-		Package:              resource.PackageModelToOutBase(m.Package),
+		Package:              resource.PackageModelToBaseOut(m.Package),
 		MonNode:              mon.MonNodeToBaseOut(m.MonNode),
 	}
 }

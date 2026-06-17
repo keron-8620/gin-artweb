@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -309,21 +308,15 @@ func (suite *OesColonyTestSuite) TestListModel() {
 }
 
 func (suite *OesColonyTestSuite) TestContextTimeout() {
-	// 创建测试数据
 	cm := CreateTestOesColonyModel()
 	err := suite.colonyRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建OesColony用于超时测试应该成功")
 
-	// 测试上下文超时情况
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
+	timeoutCtx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	// 等待超时
-	time.Sleep(time.Millisecond * 2)
-
-	// 测试超时后的操作
 	_, err = suite.colonyRepo.GetModel(timeoutCtx, nil, "id = ?", cm.ID)
-	suite.Error(err, "上下文超时后查询OesColony应该返回错误")
+	suite.Error(err, "上下文取消后查询OesColony应该返回错误")
 }
 
 func (suite *OesColonyTestSuite) TestCountModel() {

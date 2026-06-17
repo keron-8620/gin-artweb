@@ -301,8 +301,8 @@ func OesColonyToDetailOut(
 ) *OesColonyDetailOut {
 	return &OesColonyDetailOut{
 		OesColonyStandardOut: *OesColonyToStandardOut(m),
-		Package:              resource.PackageModelToOutBase(m.Package),
-		XCounter:             resource.PackageModelToOutBase(m.XCounter),
+		Package:              resource.PackageModelToBaseOut(m.Package),
+		XCounter:             resource.PackageModelToBaseOut(m.XCounter),
 		MonNode:              mon.MonNodeToBaseOut(m.MonNode),
 	}
 }
