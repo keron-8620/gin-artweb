@@ -72,7 +72,7 @@ func newMdsCronConf(jobsvc *JobServices) map[string]mdsmodel.MdsCronTask {
 	scriptStatus := true
 	scriptBuiltin := true
 	_, scripts, err := jobsvc.Script.ListScript(
-		context.Background(), 1, 20, jobmodel.ListScriptDTO{
+		context.Background(), 1, 1000, jobmodel.ListScriptDTO{
 			Project:   "mds",
 			Names:     strings.Join(scriptNames, ","),
 			Labels:    strings.Join(scriptLabels, ","),

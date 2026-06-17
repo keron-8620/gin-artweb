@@ -80,18 +80,18 @@ func main() {
 
 	// 初始化服务器日志记录器
 	serverWrite := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "server.log"))
-	handlerWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "handler.log"))
-	serviceWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "service.log"))
-	repoWrire := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "repo.log"))
+	handlerWriter := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "handler.log"))
+	serviceWriter := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "service.log"))
+	repoWriter := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "repo.log"))
 	loggers := &config.Loggers{
 		Server:  log.NewZapLoggerMust(sysConf.Log.Level, serverWrite),
-		Handler: log.NewZapLoggerMust(sysConf.Log.Level, handlerWrire),
-		Service: log.NewZapLoggerMust(sysConf.Log.Level, serviceWrire),
-		Repo:    log.NewZapLoggerMust(sysConf.Log.Level, repoWrire),
+		Handler: log.NewZapLoggerMust(sysConf.Log.Level, handlerWriter),
+		Service: log.NewZapLoggerMust(sysConf.Log.Level, serviceWriter),
+		Repo:    log.NewZapLoggerMust(sysConf.Log.Level, repoWriter),
 	}
 
 	if migrate {
-		db, err := initGromDB(sysConf)
+		db, err := initGormDB(sysConf)
 		if err != nil {
 			golog.Fatalf("数据库初始化失败: %v", err)
 		}
@@ -115,7 +115,7 @@ func main() {
 		}
 
 		// 初始化数据库
-		db, err := initGromDB(sysConf)
+		db, err := initGormDB(sysConf)
 		if err != nil {
 			golog.Fatalf("数据库初始化失败: %v", err)
 		}
@@ -272,8 +272,8 @@ func newSystemConf(configPath string) *config.SystemConf {
 // 返回值3: 初始化过程中发生的错误
 func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.SystemInit, func(), error) {
 	jwtConf := config.NewJWTConfig(
-		time.Duration(conf.Security.Token.AccessDuration)*time.Minute,
-		time.Duration(conf.Security.Token.RefreshDuration)*time.Minute,
+		conf.Security.Token.AccessDuration,
+		conf.Security.Token.RefreshDuration,
 		conf.Security.Token.AccessMethod,
 		conf.Security.Token.RefreshMethod,
 		[]byte(os.Getenv("JWT_ACCESS_SECRET")),
@@ -307,7 +307,7 @@ func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.Sy
 	}
 
 	// 初始化数据库连接
-	db, err := initGromDB(conf)
+	db, err := initGormDB(conf)
 	if err != nil {
 		loggers.Server.Error("数据库初始化失败", zap.Error(err))
 		return nil, nil, err
@@ -350,7 +350,7 @@ func newSystemInit(conf *config.SystemConf, loggers *config.Loggers) (*config.Sy
 		}, nil
 }
 
-func initGromDB(conf *config.SystemConf) (*gorm.DB, error) {
+func initGormDB(conf *config.SystemConf) (*gorm.DB, error) {
 	// 创建GORM数据库配置并连接数据库
 	var dbLog *golog.Logger
 	if conf.Database.LogSQL {

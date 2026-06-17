@@ -40,13 +40,13 @@ func newOesRouter(
 	crdService := oessvc.NewCrdTaskService(loggers.Service, jobsvc.Record, colonyRepo)
 	optService := oessvc.NewOptTaskService(loggers.Service, jobsvc.Record, colonyRepo)
 
-	colonyHandler := handler.NewOesColonyHandler(loggers.Service, colonyService, stkService, crdService, optService)
-	nodeHandler := handler.NewOesNodeHandler(loggers.Service, nodeService)
-	confHandler := handler.NewOesConfHandler(loggers.Service, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
+	colonyHandler := handler.NewOesColonyHandler(loggers.Handler, colonyService, stkService, crdService, optService)
+	nodeHandler := handler.NewOesNodeHandler(loggers.Handler, nodeService)
+	confHandler := handler.NewOesConfHandler(loggers.Handler, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/oes")
-	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Service))
-	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Service))
+	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
+	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Handler))
 
 	colonyHandler.LoadRouter(appRouter)
 	nodeHandler.LoadRouter(appRouter)
@@ -77,7 +77,7 @@ func newOesCronConf(jobsvc *JobServices, cronConfName string) map[string]oesmode
 	scriptStatus := true
 	scriptBuiltin := true
 	_, scripts, err := jobsvc.Script.ListScript(
-		context.Background(), 1, 20, jobmodel.ListScriptDTO{
+		context.Background(), 1, 1000, jobmodel.ListScriptDTO{
 			Project:   "oes",
 			Names:     strings.Join(scriptNames, ","),
 			Labels:    strings.Join(scriptLabels, ","),

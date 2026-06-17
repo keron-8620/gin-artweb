@@ -106,23 +106,26 @@ func NewRouter(
 		// 从配置中获取时间戳容差参数，如果没有配置则使用默认值
 		tolerance := init.Conf.Security.Timestamp.Tolerance
 		if tolerance <= 0 {
-			tolerance = 300000 // 默认5分钟（毫秒）
+			tolerance = 300 * time.Second // 默认5分钟
 		}
 
 		futureTolerance := init.Conf.Security.Timestamp.FutureTolerance
 		if futureTolerance <= 0 {
-			futureTolerance = 60000 // 默认1分钟（毫秒）
+			futureTolerance = 60 * time.Second // 默认1分钟
 		}
 
+		toleranceMs := int64(tolerance / time.Millisecond)
+		futureToleranceMs := int64(futureTolerance / time.Millisecond)
+
 		// 默认过期时间(ms)
-		defaultExpiration := time.Duration(max(tolerance, futureTolerance)) * time.Millisecond
+		defaultExpiration := time.Duration(max(toleranceMs, futureToleranceMs)) * time.Millisecond
 
 		// 设置缓存过期时间为容忍度+未来容忍度，确保过期的nonce自动清除
 		nonceCache := cache.New(defaultExpiration, 1*time.Minute)
 		r.Use(middleware.TimestampMiddleware(
 			nonceCache, loggers.Handler,
-			int64(tolerance),
-			int64(futureTolerance),
+			toleranceMs,
+			futureToleranceMs,
 			defaultExpiration,
 		))
 	}

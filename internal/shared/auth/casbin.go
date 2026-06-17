@@ -88,12 +88,6 @@ func AddPolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]string) er
 			)
 		}
 	}
-	// if _, err := enf.AddPolicies(rules); err != nil {
-	// 	return errors.WrapIfWithDetails(
-	// 		err, "添加Casbin策略失败",
-	// 		"rules", rules,
-	// 	)
-	// }
 	return nil
 }
 
@@ -120,12 +114,6 @@ func RemovePolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]string)
 			)
 		}
 	}
-	// if _, err := enf.RemovePolicies(rules); err != nil {
-	// 	return errors.WrapIfWithDetails(
-	// 		err, "移除Casbin策略失败",
-	// 		"rules", rules,
-	// 	)
-	// }
 	return nil
 }
 
@@ -151,12 +139,6 @@ func AddGroupPolicies(ctx context.Context, enf *casbin.Enforcer, rules [][]strin
 			)
 		}
 	}
-	// if _, err := enf.AddGroupingPolicies(rules); err != nil {
-	// 	return errors.WrapIfWithDetails(
-	// 		err, "添加Casbin组策略失败",
-	// 		"rules", rules,
-	// 	)
-	// }
 	return nil
 }
 

@@ -44,11 +44,15 @@ type JwtClaims struct {
 
 func NewUserClaims(c *config.JWTConfig, u UserInfo, tt TokenType) JwtClaims {
 	now := time.Now()
+	expiration := c.AccessTokenExpiration
+	if tt == TokenTypeRefresh {
+		expiration = c.RefreshTokenExpiration
+	}
 	return JwtClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    c.Issuer,
 			Subject:   u.Username,
-			ExpiresAt: jwt.NewNumericDate(now.Add(c.AccessTokenExpiration)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ID:        uuid.NewString(),

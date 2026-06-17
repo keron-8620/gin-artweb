@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
@@ -9,41 +10,70 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
+type ipLimiterEntry struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
 // IPRateLimiter IP限流器管理
 type IPRateLimiter struct {
-	limiters map[string]*rate.Limiter
+	limiters map[string]*ipLimiterEntry
 	mu       sync.RWMutex
 	r        rate.Limit
 	b        int
+	ttl      time.Duration
 }
 
 // NewIPRateLimiter 创建IP限流器管理器
 func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
-	return &IPRateLimiter{
-		limiters: make(map[string]*rate.Limiter),
+	rl := &IPRateLimiter{
+		limiters: make(map[string]*ipLimiterEntry),
 		r:        r,
 		b:        b,
+		ttl:      10 * time.Minute,
+	}
+	go rl.cleanup()
+	return rl
+}
+
+func (i *IPRateLimiter) cleanup() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		i.mu.Lock()
+		now := time.Now()
+		for ip, entry := range i.limiters {
+			if now.Sub(entry.lastSeen) > i.ttl {
+				delete(i.limiters, ip)
+			}
+		}
+		i.mu.Unlock()
 	}
 }
 
 // GetLimiter 获取指定IP的限流器
 func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	i.mu.RLock()
-	limiter, exists := i.limiters[ip]
+	entry, exists := i.limiters[ip]
 	i.mu.RUnlock()
 
-	if !exists {
-		i.mu.Lock()
-		// 双重检查防止并发创建
-		limiter, exists = i.limiters[ip]
-		if !exists {
-			limiter = rate.NewLimiter(i.r, i.b)
-			i.limiters[ip] = limiter
-		}
-		i.mu.Unlock()
+	if exists {
+		entry.lastSeen = time.Now()
+		return entry.limiter
 	}
 
-	return limiter
+	i.mu.Lock()
+	entry, exists = i.limiters[ip]
+	if !exists {
+		entry = &ipLimiterEntry{
+			limiter:  rate.NewLimiter(i.r, i.b),
+			lastSeen: time.Now(),
+		}
+		i.limiters[ip] = entry
+	}
+	i.mu.Unlock()
+
+	return entry.limiter
 }
 
 // GlobalRateLimiterMiddleware 全局限流中间件

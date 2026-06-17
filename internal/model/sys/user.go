@@ -310,11 +310,9 @@ func ListUserModelToDetailOut(
 		return []UserDetailOut{}
 	}
 	mso := make([]UserDetailOut, 0, len(ums))
-	if len(ums) > 0 {
-		for _, m := range ums {
-			mo := UserModelToDetailOut(m)
-			mso = append(mso, *mo)
-		}
+	for _, m := range ums {
+		mo := UserModelToDetailOut(m)
+		mso = append(mso, *mo)
 	}
 	return mso
 }
@@ -339,11 +337,9 @@ func ListLoginRecordModelToStandardOut(
 		return []LoginRecordStandardOut{}
 	}
 	mso := make([]LoginRecordStandardOut, 0, len(ms))
-	if len(ms) > 0 {
-		for _, m := range ms {
-			mo := LoginRecordModelToStandardOut(m)
-			mso = append(mso, *mo)
-		}
+	for _, m := range ms {
+		mo := LoginRecordModelToStandardOut(m)
+		mso = append(mso, *mo)
 	}
 	return mso
 }

@@ -128,13 +128,13 @@ func (q *StandardModelQuery) ToQueryMap(l int) map[string]any {
 	if q.BeforeUpdateAt != "" {
 		but, err := time.Parse(time.RFC3339, q.BeforeUpdateAt)
 		if err == nil {
-			query["update_at < ?"] = but
+			query["updated_at < ?"] = but
 		}
 	}
 	if q.AfterUpdateAt != "" {
 		aut, err := time.Parse(time.RFC3339, q.AfterUpdateAt)
 		if err == nil {
-			query["update_at > ?"] = aut
+			query["updated_at > ?"] = aut
 		}
 	}
 	return query

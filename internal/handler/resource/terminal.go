@@ -19,7 +19,17 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+		allowedOrigins := []string{"http://", "https://"}
+		for _, allowed := range allowedOrigins {
+			if len(origin) > len(allowed) && origin[:len(allowed)] == allowed {
+				return true
+			}
+		}
+		return false
 	},
 }
 

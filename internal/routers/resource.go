@@ -3,7 +3,6 @@ package routers
 import (
 	"encoding/base64"
 	"path/filepath"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -43,7 +42,7 @@ func newResourceRouter(
 		pubKeys[i] = base64.StdEncoding.EncodeToString(pubKeyBytes)
 	}
 
-	sshTimeout := time.Duration(init.Conf.SSH.Timeout) * time.Second
+	sshTimeout := init.Conf.SSH.Timeout
 	hostRepo := resorepo.NewHostRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 	pkgRepo := resorepo.NewPackageRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 
@@ -63,6 +62,8 @@ func newResourceRouter(
 	pkgHandler.LoadRouter(appRouter)
 
 	wsRouter := router.Group("/v1/ws")
+	wsRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
+	wsRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Handler))
 	wsRouter.GET("/terminal", terminalHandler.HandleWebSocket)
 
 	return &ResourceServices{
