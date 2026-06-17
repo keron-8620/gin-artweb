@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,7 @@ import (
 
 type ipLimiterEntry struct {
 	limiter  *rate.Limiter
-	lastSeen time.Time
+	lastSeen atomic.Int64
 }
 
 // IPRateLimiter IP限流器管理
@@ -41,9 +42,9 @@ func (i *IPRateLimiter) cleanup() {
 	defer ticker.Stop()
 	for range ticker.C {
 		i.mu.Lock()
-		now := time.Now()
+		now := time.Now().UnixNano()
 		for ip, entry := range i.limiters {
-			if now.Sub(entry.lastSeen) > i.ttl {
+			if now-entry.lastSeen.Load() > int64(i.ttl) {
 				delete(i.limiters, ip)
 			}
 		}
@@ -58,7 +59,7 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	i.mu.RUnlock()
 
 	if exists {
-		entry.lastSeen = time.Now()
+		entry.lastSeen.Store(time.Now().UnixNano())
 		return entry.limiter
 	}
 
@@ -66,9 +67,9 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	entry, exists = i.limiters[ip]
 	if !exists {
 		entry = &ipLimiterEntry{
-			limiter:  rate.NewLimiter(i.r, i.b),
-			lastSeen: time.Now(),
+			limiter: rate.NewLimiter(i.r, i.b),
 		}
+		entry.lastSeen.Store(time.Now().UnixNano())
 		i.limiters[ip] = entry
 	}
 	i.mu.Unlock()
