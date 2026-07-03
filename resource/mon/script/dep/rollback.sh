@@ -8,4 +8,4 @@ mon_id=$1
 
 shift 1
 
-./playbook.py --playbook_path dep/rollback.yaml --mon_id $mon_id "$@"
+./mon_playbook.py --playbook_path dep/rollback.yaml --mon_id $mon_id "$@"

@@ -39,12 +39,12 @@ func NewMdsConfHandler(
 // @Accept multipart/form-data
 // @Produce json
 // @Param colony_num path string true "集群编号"
-// @Param dir_name path string true "目录名称"
+// @Param dir_name query string true "目录名称"
 // @Param file formData file true "配置文件"
 // @Success 200 {object} commodel.MapAPIResp "上传成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/{colony_num}/conf/{dir_name} [post]
+// @Router /api/v1/mds/conf/{colony_num} [post]
 // @Security ApiKeyAuth
 // UploadMdsConf 上传mds配置文件
 func (s *MdsConfHandler) UploadMdsConf(c *gin.Context) {
@@ -53,8 +53,8 @@ func (s *MdsConfHandler) UploadMdsConf(c *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info("上传mds配置文件:开始执行")
 
-	var pathReq mdsmodel.GetMdsConfDTO
-	if !common.ShouldBindUri(c, log, &pathReq, "上传mds配置文件:绑定上传的mds配置文件路径参数失败") {
+	var uri mdsmodel.MdsConfUriDTO
+	if !common.ShouldBindUri(c, log, &uri, "上传mds配置文件:绑定上传的mds配置文件路径参数失败") {
 		return
 	}
 
@@ -64,8 +64,8 @@ func (s *MdsConfHandler) UploadMdsConf(c *gin.Context) {
 	}
 
 	// 3. 将配置文件保存到指定的位置
-	dirName := mdsvc.GetMdsColonyConfigDir(pathReq.ColonyNum)
-	savePath := filepath.Join(dirName, pathReq.DirName, formReq.File.Filename)
+	dirName := mdsvc.GetMdsColonyConfigDir(uri.ColonyNum)
+	savePath := filepath.Join(dirName, formReq.DirName, formReq.File.Filename)
 	if err := common.UploadFile(c, log, s.maxSize, savePath, formReq.File, 0o644); err != nil {
 		errors.RespondWithError(c, err)
 		return
@@ -73,8 +73,8 @@ func (s *MdsConfHandler) UploadMdsConf(c *gin.Context) {
 
 	log.Info(
 		"上传mds配置文件:执行成功",
-		zap.String("colony_num", pathReq.ColonyNum),
-		zap.String("dir_name", pathReq.DirName),
+		zap.String("colony_num", uri.ColonyNum),
+		zap.String("dir_name", formReq.DirName),
 		zap.String("filename", formReq.File.Filename),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -89,12 +89,12 @@ func (s *MdsConfHandler) UploadMdsConf(c *gin.Context) {
 // @Accept json
 // @Produce octet-stream
 // @Param colony_num path string true "集群编号"
-// @Param dir_name path string true "目录名称"
-// @Param filename path string true "文件名"
+// @Param dir_name query string true "目录名称"
+// @Param filename query string true "文件名"
 // @Success 200 "下载成功，返回文件流"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/{colony_num}/conf/{dir_name}/{filename} [get]
+// @Router /api/v1/mds/conf/{colony_num}/download [get]
 // @Security ApiKeyAuth
 func (s *MdsConfHandler) DownloadMdsConf(c *gin.Context) {
 	startTime := time.Now()
@@ -102,13 +102,17 @@ func (s *MdsConfHandler) DownloadMdsConf(c *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info("下载mds配置文件:开始执行")
 
-	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if !common.ShouldBindUri(c, log, &req, "下载mds配置文件:绑定下载的mds配置文件路径参数失败") {
+	var uri mdsmodel.MdsConfUriDTO
+	if !common.ShouldBindUri(c, log, &uri, "下载mds配置文件:绑定下载的mds配置文件路径参数失败") {
+		return
+	}
+	var query mdsmodel.MdsConfFileQueryDTO
+	if !common.ShouldBindQuery(c, log, &query, "下载mds配置文件:绑定下载的mds配置文件查询参数失败") {
 		return
 	}
 
-	dirName := mdsvc.GetMdsColonyConfigDir(req.ColonyNum)
-	filePath := filepath.Join(dirName, req.DirName, req.Filename)
+	dirName := mdsvc.GetMdsColonyConfigDir(uri.ColonyNum)
+	filePath := filepath.Join(dirName, query.DirName, query.Filename)
 	if err := common.DownloadFile(c, log, filePath, ""); err != nil {
 		log.Error(
 			"下载mds配置文件:执行失败",
@@ -134,12 +138,12 @@ func (s *MdsConfHandler) DownloadMdsConf(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param colony_num path string true "集群编号"
-// @Param dir_name path string true "目录名称"
-// @Param filename path string true "文件名"
+// @Param dir_name query string true "目录名称"
+// @Param filename query string true "文件名"
 // @Success 200 {object} commodel.MapAPIResp "删除成功"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/{colony_num}/conf/{dir_name}/{filename} [delete]
+// @Router /api/v1/mds/conf/{colony_num} [delete]
 // @Security ApiKeyAuth
 func (s *MdsConfHandler) DeleteMdsConf(c *gin.Context) {
 	startTime := time.Now()
@@ -147,13 +151,17 @@ func (s *MdsConfHandler) DeleteMdsConf(c *gin.Context) {
 	log := ctxutil.NewLogger(s.log, ctx)
 	log.Info("删除mds配置文件:开始执行")
 
-	var req mdsmodel.DownloadOrDeleteMdsConfRequest
-	if !common.ShouldBindUri(c, log, &req, "删除mds配置文件:绑定删除的mds配置文件路径参数失败") {
+	var uri mdsmodel.MdsConfUriDTO
+	if !common.ShouldBindUri(c, log, &uri, "删除mds配置文件:绑定删除的mds配置文件路径参数失败") {
+		return
+	}
+	var query mdsmodel.MdsConfFileQueryDTO
+	if !common.ShouldBindQuery(c, log, &query, "删除mds配置文件:绑定删除的mds配置文件查询参数失败") {
 		return
 	}
 
-	dirName := mdsvc.GetMdsColonyConfigDir(req.ColonyNum)
-	savePath := filepath.Join(dirName, req.DirName, req.Filename)
+	dirName := mdsvc.GetMdsColonyConfigDir(uri.ColonyNum)
+	savePath := filepath.Join(dirName, query.DirName, query.Filename)
 	if err := fileutil.Remove(ctx, savePath); err != nil {
 		log.Error(
 			"删除mds配置文件:执行失败",
@@ -185,14 +193,14 @@ func (s *MdsConfHandler) DeleteMdsConf(c *gin.Context) {
 // @Success 200 {object} mdsmodel.PagMdsConfResp "成功返回配置文件列表"
 // @Failure 400 {object} errors.Error "请求参数错误"
 // @Failure 500 {object} errors.Error "服务器内部错误"
-// @Router /api/v1/mds/{colony_num}/conf [get]
+// @Router /api/v1/mds/conf/{colony_num} [get]
 // @Security ApiKeyAuth
 func (s *MdsConfHandler) ListMdsConf(c *gin.Context) {
 	startTime := time.Now()
 	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	var req mdsmodel.ListMdsConfDTO
+	var req mdsmodel.MdsConfUriDTO
 	if !common.ShouldBindUri(c, log, &req, "获取mds配置文件列表:绑定mds配置文件路径参数失败") {
 		return
 	}
@@ -218,8 +226,8 @@ func (s *MdsConfHandler) ListMdsConf(c *gin.Context) {
 }
 
 func (s *MdsConfHandler) LoadRouter(r *gin.RouterGroup) {
-	r.POST("/:colony_num/conf/:dir_name", s.UploadMdsConf)
-	r.GET("/:colony_num/conf/:dir_name/:filename", s.DownloadMdsConf)
-	r.DELETE("/:colony_num/conf/:dir_name/:filename", s.DeleteMdsConf)
-	r.GET("/:colony_num/conf", s.ListMdsConf)
+	r.POST("/conf/:colony_num", s.UploadMdsConf)
+	r.DELETE("/conf/:colony_num", s.DeleteMdsConf)
+	r.GET("/conf/:colony_num", s.ListMdsConf)
+	r.GET("/conf/:colony_num/download", s.DownloadMdsConf)
 }

@@ -7,3 +7,4 @@ artweb.pid
 .env
 artweb-*.tar.gz
 .temp/
+__pycache__/

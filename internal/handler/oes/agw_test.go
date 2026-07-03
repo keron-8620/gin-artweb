@@ -15,7 +15,7 @@ type AgwHandlerTestSuite struct {
 func (s *AgwHandlerTestSuite) TestNewAgwHandler() {
 	logger := test.NewTestZapLogger()
 
-	handler := NewAgwHandler(logger, nil)
+	handler := NewOesAgwHandler(logger, nil)
 
 	s.NotNil(handler)
 	s.NotNil(handler.log)

@@ -1,0 +1,18 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/agw_vars.yaml
+
+  tasks:
+    - name: stop agw
+      command: ./agw stop -F
+      args:
+        chdir: "{{ slave_path_agw_home_bin }}"
+      ignore_errors: yes
+
+    - name: unarchive agw package
+      unarchive:
+        src: "{{ slave_path_agw_home }}/agw.tar.gz"
+        dest: "{{ slave_path_agw_home }}"
+        remote_src: yes

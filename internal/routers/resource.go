@@ -62,8 +62,6 @@ func newResourceRouter(
 	pkgHandler.LoadRouter(appRouter)
 
 	wsRouter := router.Group("/v1/ws")
-	wsRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
-	wsRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Handler))
 	wsRouter.GET("/terminal", terminalHandler.HandleWebSocket)
 
 	return &ResourceServices{

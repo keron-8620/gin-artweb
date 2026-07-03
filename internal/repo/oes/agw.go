@@ -14,20 +14,20 @@ import (
 	"gin-artweb/internal/shared/database"
 )
 
-type AgwRepo struct {
+type OesAgwRepo struct {
 	log           *zap.Logger
 	gormDB        *gorm.DB
 	timeouts      *config.DBTimeout
 	slowThreshold *config.DBSlowThreshold
 }
 
-func NewAgwRepo(
+func NewOesAgwRepo(
 	log *zap.Logger,
 	gormDB *gorm.DB,
 	timeouts *config.DBTimeout,
 	slowThreshold *config.DBSlowThreshold,
-) *AgwRepo {
-	return &AgwRepo{
+) *OesAgwRepo {
+	return &OesAgwRepo{
 		log:           log,
 		gormDB:        gormDB,
 		timeouts:      timeouts,
@@ -35,9 +35,9 @@ func NewAgwRepo(
 	}
 }
 
-func (r *AgwRepo) CreateModel(
+func (r *OesAgwRepo) CreateModel(
 	ctx context.Context,
-	m *oesmodel.AgwModel,
+	m *oesmodel.OesAgwModel,
 ) error {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
@@ -65,7 +65,7 @@ func (r *AgwRepo) CreateModel(
 	defer cancel()
 
 	createStartTime := time.Now()
-	err := database.DBCreate(dbCtx, r.gormDB, &oesmodel.AgwModel{}, m)
+	err := database.DBCreate(dbCtx, r.gormDB, &oesmodel.OesAgwModel{}, m)
 	createDuration := time.Since(createStartTime)
 	if err != nil {
 		log.Error(
@@ -88,7 +88,7 @@ func (r *AgwRepo) CreateModel(
 	return nil
 }
 
-func (r *AgwRepo) UpdateModel(
+func (r *OesAgwRepo) UpdateModel(
 	ctx context.Context,
 	updateData map[string]any,
 	conds ...any,
@@ -119,7 +119,7 @@ func (r *AgwRepo) UpdateModel(
 	defer cancel()
 
 	updateStartTime := time.Now()
-	err := database.DBUpdateTx(dbCtx, r.gormDB, &oesmodel.AgwModel{}, updateData, conds...)
+	err := database.DBUpdateTx(dbCtx, r.gormDB, &oesmodel.OesAgwModel{}, updateData, conds...)
 	updateDuration := time.Since(updateStartTime)
 	if err != nil {
 		log.Error(
@@ -142,7 +142,7 @@ func (r *AgwRepo) UpdateModel(
 	return nil
 }
 
-func (r *AgwRepo) DeleteModel(
+func (r *OesAgwRepo) DeleteModel(
 	ctx context.Context,
 	conds ...any,
 ) error {
@@ -158,7 +158,7 @@ func (r *AgwRepo) DeleteModel(
 	defer cancel()
 
 	deleteStartTime := time.Now()
-	err := database.DBDeleteTx(dbCtx, r.gormDB, &oesmodel.AgwModel{}, conds...)
+	err := database.DBDeleteTx(dbCtx, r.gormDB, &oesmodel.OesAgwModel{}, conds...)
 	deleteDuration := time.Since(deleteStartTime)
 	if err != nil {
 		log.Error(
@@ -180,11 +180,11 @@ func (r *AgwRepo) DeleteModel(
 	return nil
 }
 
-func (r *AgwRepo) GetModel(
+func (r *OesAgwRepo) GetModel(
 	ctx context.Context,
 	preloads []string,
 	conds ...any,
-) (*oesmodel.AgwModel, error) {
+) (*oesmodel.OesAgwModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
@@ -193,7 +193,7 @@ func (r *AgwRepo) GetModel(
 		zap.Any("conds", conds),
 	)
 
-	var m oesmodel.AgwModel
+	var m oesmodel.OesAgwModel
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ReadTimeout)
 	defer cancel()
@@ -226,10 +226,10 @@ func (r *AgwRepo) GetModel(
 	return &m, nil
 }
 
-func (r *AgwRepo) ListModel(
+func (r *OesAgwRepo) ListModel(
 	ctx context.Context,
 	qp database.QueryParams,
-) ([]oesmodel.AgwModel, error) {
+) ([]oesmodel.OesAgwModel, error) {
 	startTime := time.Now()
 	log := ctxutil.NewLogger(r.log, ctx)
 
@@ -238,13 +238,13 @@ func (r *AgwRepo) ListModel(
 		zap.Object("query_params", &qp),
 	)
 
-	var ms []oesmodel.AgwModel
+	var ms []oesmodel.OesAgwModel
 
 	dbCtx, cancel := context.WithTimeout(ctx, r.timeouts.ListTimeout)
 	defer cancel()
 
 	listStartTime := time.Now()
-	err := database.DBList(dbCtx, r.gormDB, &oesmodel.AgwModel{}, &ms, qp)
+	err := database.DBList(dbCtx, r.gormDB, &oesmodel.OesAgwModel{}, &ms, qp)
 	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
@@ -271,7 +271,7 @@ func (r *AgwRepo) ListModel(
 	return ms, nil
 }
 
-func (r *AgwRepo) CountModel(
+func (r *OesAgwRepo) CountModel(
 	ctx context.Context,
 	query map[string]any,
 ) (int64, error) {
@@ -288,7 +288,7 @@ func (r *AgwRepo) CountModel(
 	defer cancel()
 
 	countStartTime := time.Now()
-	count, err := database.DBCount(dbCtx, r.gormDB, &oesmodel.AgwModel{}, query)
+	count, err := database.DBCount(dbCtx, r.gormDB, &oesmodel.OesAgwModel{}, query)
 	countDuration := time.Since(countStartTime)
 	if err != nil {
 		log.Error(

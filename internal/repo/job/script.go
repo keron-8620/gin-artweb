@@ -536,7 +536,11 @@ func (r *ScriptRepo) ListProjects(
 	var projects []string
 
 	listStartTime := time.Now()
-	err := r.gormDB.WithContext(dbCtx).Model(&jobmodel.ScriptModel{}).Where(query).Distinct("project").Pluck("project", &projects).Error
+	mdb := r.gormDB.WithContext(dbCtx).Model(&jobmodel.ScriptModel{})
+	for k, v := range query {
+		mdb = mdb.Where(k, v)
+	}
+	err := mdb.Distinct("project").Pluck("project", &projects).Error
 	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(
@@ -597,7 +601,11 @@ func (r *ScriptRepo) ListLabels(
 
 	// 查询所有唯一的标签名称
 	listStartTime := time.Now()
-	err := r.gormDB.WithContext(dbCtx).Model(&jobmodel.ScriptModel{}).Where(query).Distinct("label").Pluck("label", &labels).Error
+	mdb := r.gormDB.WithContext(dbCtx).Model(&jobmodel.ScriptModel{})
+	for k, v := range query {
+		mdb = mdb.Where(k, v)
+	}
+	err := mdb.Distinct("label").Pluck("label", &labels).Error
 	listDuration := time.Since(listStartTime)
 	if err != nil {
 		log.Error(

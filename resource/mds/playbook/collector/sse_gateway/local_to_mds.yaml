@@ -7,3 +7,10 @@
     checksum: yes
   register: collector_sse_files_result
   ignore_errors: yes
+
+
+- name: send sse etf file to mds
+  synchronize:
+    src: "{{ local_path_mds_home_sse_etf_colodir }}/"
+    dest: "{{ slave_path_mds_home_data_exchange_sse_etf }}/"
+  ignore_errors: yes

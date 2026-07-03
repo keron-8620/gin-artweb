@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
 
 # 处理$0在sh中可能的兼容性问题，且给变量加引号避免空格问题
-basepath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+dirpath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
 # 切换目录前检查目录是否存在，避免cd失败导致后续操作异常
-cd "$basepath/../python" || {
-    echo "错误:目录 $basepath/../python 不存在!"
+cd "$dirpath/../python" || {
+    echo "错误:目录 $dirpath/../python 不存在!"
     exit 1
 }
 
@@ -19,7 +19,7 @@ colony_num=$1
 shift 1
 
 # 定义标志目录路径
-flag_rel_path="$basepath/../../../../storage/oes/flags/$colony_num"
+flag_rel_path="$dirpath/../../../../storage/oes/flags/$colony_num"
 
 # 创建目录（如果不存在）
 mkdir -p "$flag_rel_path" || {
@@ -48,4 +48,4 @@ if [ ! -z "$JOB_RECORD_ID" ]; then
     fi
 fi
 
-./playbook.py --playbook_path collector/szse_late_gateway/szse_late_main.yaml --colony_num $colony_num "$@"
+./oes_playbook.py --playbook_path collector/szse_late_gateway/szse_late_main.yaml --colony_num $colony_num "$@"

@@ -51,6 +51,7 @@ insert into sys_api(id,url,method,label,descr) values('2012','/api/v1/jobs/recor
 insert into sys_api(id,url,method,label,descr) values('2013','/api/v1/jobs/record/:id','GET','job','查询单个脚本执行记录');
 insert into sys_api(id,url,method,label,descr) values('2016','/api/v1/jobs/record/:id/log','GET','job','下载脚本执行日志');
 insert into sys_api(id,url,method,label,descr) values('2017','/api/v1/jobs/record/:id','DELETE','job','对正在执行的脚本发送终止信号');
+insert into sys_api(id,url,method,label,descr) values('2018','/api/v1/jobs/record/:id/log/stream','GET','job','获取脚本执行日志流');
 insert into sys_api(id,url,method,label,descr) values('2021','/api/v1/jobs/schedule','GET','job','查询计划任务列表');
 insert into sys_api(id,url,method,label,descr) values('2022','/api/v1/jobs/schedule','POST','job','新增计划任务');
 insert into sys_api(id,url,method,label,descr) values('2023','/api/v1/jobs/schedule/:id','GET','job','查询单个计划任务');
@@ -73,10 +74,10 @@ insert into sys_api(id,url,method,label,descr) values('4012','/api/v1/mds/node',
 insert into sys_api(id,url,method,label,descr) values('4013','/api/v1/mds/node/:id','GET','mds','查询单个mds节点');
 insert into sys_api(id,url,method,label,descr) values('4014','/api/v1/mds/node/:id','PUT','mds','修改单个mds节点');
 insert into sys_api(id,url,method,label,descr) values('4015','/api/v1/mds/node/:id','DELETE','mds','删除单个mds节点');
-insert into sys_api(id,url,method,label,descr) values('4021','/api/v1/mds/:colony_num/conf','GET','mds','获取mds配置文件列表');
-insert into sys_api(id,url,method,label,descr) values('4022','/api/v1/mds/:colony_num/conf/:dir_name','POST','mds','上传mds配置文件');
-insert into sys_api(id,url,method,label,descr) values('4025','/api/v1/mds/:colony_num/conf/:dir_name/:filename','DELETE','mds','删除mds配置文件');
-insert into sys_api(id,url,method,label,descr) values('4026','/api/v1/mds/:colony_num/conf/:dir_name/:filename','GET','mds','下载mds配置文件');
+insert into sys_api(id,url,method,label,descr) values('4021','/api/v1/mds/conf/:colony_num','GET','mds','获取mds配置文件列表');
+insert into sys_api(id,url,method,label,descr) values('4022','/api/v1/mds/conf/:colony_num','POST','mds','上传mds配置文件');
+insert into sys_api(id,url,method,label,descr) values('4025','/api/v1/mds/conf/:colony_num','DELETE','mds','删除mds配置文件');
+insert into sys_api(id,url,method,label,descr) values('4026','/api/v1/mds/conf/:colony_num/download','GET','mds','下载mds配置文件');
 insert into sys_api(id,url,method,label,descr) values('5001','/api/v1/oes/colony','GET','oes','查询oes集群列表');
 insert into sys_api(id,url,method,label,descr) values('5002','/api/v1/oes/colony','POST','oes','新增oes集群');
 insert into sys_api(id,url,method,label,descr) values('5003','/api/v1/oes/colony/:id','GET','oes','查询单个oes集群');
@@ -91,11 +92,15 @@ insert into sys_api(id,url,method,label,descr) values('5012','/api/v1/oes/node',
 insert into sys_api(id,url,method,label,descr) values('5013','/api/v1/oes/node/:id','GET','oes','查询单个oes节点');
 insert into sys_api(id,url,method,label,descr) values('5014','/api/v1/oes/node/:id','PUT','oes','修改单个oes节点');
 insert into sys_api(id,url,method,label,descr) values('5015','/api/v1/oes/node/:id','DELETE','oes','删除单个oes集群');
-insert into sys_api(id,url,method,label,descr) values('5021','/api/v1/oes/:colony_num/conf','GET','oes','获取oes配置文件列表');
-insert into sys_api(id,url,method,label,descr) values('5022','/api/v1/oes/:colony_num/conf/:dir_name','POST','oes','上传oes配置文件');
-insert into sys_api(id,url,method,label,descr) values('5025','/api/v1/oes/:colony_num/conf/:dir_name/:filename','DELETE','oes','删除oes配置文件');
-insert into sys_api(id,url,method,label,descr) values('5026','/api/v1/oes/:colony_num/conf/:dir_name/:filename','GET','oes','下载oes配置文件');
-
+insert into sys_api(id,url,method,label,descr) values('5021','/api/v1/oes/conf/:colony_num','GET','oes','获取oes配置文件列表');
+insert into sys_api(id,url,method,label,descr) values('5022','/api/v1/oes/conf/:colony_num','POST','oes','上传oes配置文件');
+insert into sys_api(id,url,method,label,descr) values('5025','/api/v1/oes/conf/:colony_num','DELETE','oes','删除oes配置文件');
+insert into sys_api(id,url,method,label,descr) values('5026','/api/v1/oes/conf/:colony_num/download','GET','oes','下载oes配置文件');
+insert into sys_api(id,url,method,label,descr) values('5031','/api/v1/oes/agw','GET','oes','查询agw列表');
+insert into sys_api(id,url,method,label,descr) values('5032','/api/v1/oes/agw','POST','oes','新增agw');
+insert into sys_api(id,url,method,label,descr) values('5033','/api/v1/oes/agw/:id','GET','oes','查询单个agw');
+insert into sys_api(id,url,method,label,descr) values('5034','/api/v1/oes/agw/:id','PUT','oes','修改单个agw');
+insert into sys_api(id,url,method,label,descr) values('5035','/api/v1/oes/agw/:id','DELETE','oes','删除单个agw');
 
 
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values('4','/jobs','/jobs','JOBS','{"title":"运维管理","icon":""}','5','1','运维管理',null);
@@ -249,6 +254,12 @@ insert into sys_menu_api(menu_id,api_id) values(83,2012);
 insert into sys_menu_api(menu_id,api_id) values(83,2013);
 insert into sys_menu_api(menu_id,api_id) values(83,2016);
 insert into sys_menu_api(menu_id,api_id) values(83,2017);
+insert into sys_menu_api(menu_id,api_id) values(84,2018);
+insert into sys_menu_api(menu_id,api_id) values(80,2018);
+insert into sys_menu_api(menu_id,api_id) values(83,2018);
+insert into sys_menu_api(menu_id,api_id) values(81,2018);
+insert into sys_menu_api(menu_id,api_id) values(85,2018);
+insert into sys_menu_api(menu_id,api_id) values(86,2018);
 
 
 insert into sys_role(id, name,descr) values('1','admin','系统管理员');
@@ -304,12 +315,13 @@ insert into sys_role_api(role_id,api_id) values('1','2011');
 insert into sys_role_api(role_id,api_id) values('1','2012');
 insert into sys_role_api(role_id,api_id) values('1','2013');
 insert into sys_role_api(role_id,api_id) values('1','2016');
+insert into sys_role_api(role_id,api_id) values('1','2017');
+insert into sys_role_api(role_id,api_id) values('1','2018');
 insert into sys_role_api(role_id,api_id) values('1','2021');
 insert into sys_role_api(role_id,api_id) values('1','2022');
 insert into sys_role_api(role_id,api_id) values('1','2023');
 insert into sys_role_api(role_id,api_id) values('1','2024');
 insert into sys_role_api(role_id,api_id) values('1','2025');
-insert into sys_role_api(role_id,api_id) values('1','2017');
 insert into sys_role_api(role_id,api_id) values('1','3001');
 insert into sys_role_api(role_id,api_id) values('1','3002');
 insert into sys_role_api(role_id,api_id) values('1','3003');
@@ -351,7 +363,11 @@ insert into sys_role_api(role_id,api_id) values('1','2007');
 insert into sys_role_api(role_id,api_id) values('1','2008');
 insert into sys_role_api(role_id,api_id) values('1','5009');
 insert into sys_role_api(role_id,api_id) values('1','4007');
-
+insert into sys_role_api(role_id,api_id) values('1','5031');
+insert into sys_role_api(role_id,api_id) values('1','5032');
+insert into sys_role_api(role_id,api_id) values('1','5033');
+insert into sys_role_api(role_id,api_id) values('1','5034');
+insert into sys_role_api(role_id,api_id) values('1','5035');
 
 
 insert into sys_role_menu(role_id,menu_id) values('1','1');
@@ -410,6 +426,7 @@ insert into job_script(name,descr,param_desc,project,label,language,status,is_bu
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_set_status.sh','设置mds指定任务状态','$1:集群号名称|字符串|必填|示例:01;$2:任务名称|字符串|必填|示例:reset、reset2、ezoes_oiw_check、ezstep_oiw_check等;$3:任务状态|字符串(0:初始,1:就绪,2:运行中,3:等待结束,4:失败,5:成功)|必填|示例:5','mds','cmd_emgy_mds','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('mds_zb_control.sh','mds灾备','$1:集群号名称|字符串|必填|示例:01;$2:执行操作|字符串(start/stop)|必填|示例:start','mds','cmd_emgy_mds','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('disaster_recovery.sh','mds灾备恢复','$1:集群号名称|字符串|必填|示例:01','mds','cmd_emgy_mds','shell','1','1','ansible');
+
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('deploy.sh','部署oes集群','$1:集群号名称|字符串|必填|示例:01','oes','dep','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('backup.sh','备份oes集群','$1:集群号名称|字符串|必填|示例:01','oes','dep','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('rollback.sh','回滚oes集群','$1:集群号名称|字符串|必填|示例:01','oes','dep','shell','1','1','ansible');
@@ -442,8 +459,14 @@ insert into job_script(name,descr,param_desc,project,label,language,status,is_bu
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_set_status.sh','设置oes指定任务状态','$1:集群号名称|字符串|必填|示例:01;$2:任务名称|字符串|必填|示例:reset、reset2、ezoes_oiw_check、ezstep_oiw_check等;$3:任务状态|字符串(0:初始,1:就绪,2:运行中,3:等待结束,4:失败,5:成功)|必填|示例:5','oes','cmd_emgy_oes','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('oes_zb_control.sh','oes灾备','$1:集群号名称|字符串|必填|示例:01;$2:执行操作|字符串(start/stop)|必填|示例:start','oes','cmd_emgy_oes','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('disaster_recovery.sh','oes灾备恢复','$1:集群号名称|字符串|必填|示例:01','oes','cmd_emgy_oes','shell','1','1','ansible');
+
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('start.sh','启动mon','$1:节点号|字符串|必填|示例:01','mon','cmd','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('stop.sh','停止mon','$1:节点号|字符串|必填|示例:01','mon','cmd','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('backup.sh','备份mon','$1:节点号|字符串|必填|示例:01','mon','dep','shell','1','1','ansible');
 insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('rollback.sh','回滚mon','$1:节点号|字符串|必填|示例:01','mon','dep','shell','1','1','ansible');
 
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('deploy.sh','部署agw','$1:编号|int|必填|示例:1','oes','agw','shell','1','1','ansible');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('backup.sh','备份agw','$1:编号|int|必填|示例:1','oes','agw','shell','1','1','ansible');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('rollback.sh','回滚agw','$1:编号|int|必填|示例:1','oes','agw','shell','1','1','ansible');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('start.sh','启动agw','$1:编号|int|必填|示例:1','oes','agw','shell','1','1','ansible');
+insert into job_script(name,descr,param_desc,project,label,language,status,is_builtin,username) values('stop.sh','停止agw','$1:编号|int|必填|示例:1','oes','agw','shell','1','1','ansible');

@@ -210,6 +210,38 @@ definitions:
         example: 100
         type: integer
     type: object
+  common.Pag-oes_AgwDetailOut:
+    properties:
+      items:
+        description: 对象数组
+        items:
+          $ref: '#/definitions/oes.AgwDetailOut'
+        type: array
+      page:
+        description: |-
+          当前页码
+          Example: 1
+        example: 1
+        type: integer
+      pages:
+        description: |-
+          总页数
+          Example: 10
+        example: 10
+        type: integer
+      size:
+        description: |-
+          每页数量
+          Example: 10
+        example: 10
+        type: integer
+      total:
+        description: |-
+          总记录数
+          Example: 100
+        example: 100
+        type: integer
+    type: object
   common.Pag-oes_OesColonyDetailOut:
     properties:
       items:
@@ -1612,6 +1644,77 @@ definitions:
           Example: "success"
         type: string
     type: object
+  oes.AgwDetailOut:
+    properties:
+      created_at:
+        description: 创建时间
+        example: "2023-01-01 12:00:00"
+        type: string
+      deploy_path:
+        description: 部署路径
+        example: ""
+        type: string
+      host:
+        allOf:
+        - $ref: '#/definitions/resource.HostBaseOut'
+        description: 主机
+      id:
+        description: 计划任务ID
+        example: 1
+        type: integer
+      name:
+        description: 名称
+        example: test
+        type: string
+      package:
+        allOf:
+        - $ref: '#/definitions/resource.PackageStandardOut'
+        description: 程序包
+      updated_at:
+        description: 更新时间
+        example: "2023-01-01 12:00:00"
+        type: string
+    type: object
+  oes.AgwResp:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/oes.AgwDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
+  oes.AgwUpsertDTO:
+    properties:
+      deploy_path:
+        description: 部署路径
+        type: string
+      host_id:
+        description: 主机ID
+        type: integer
+      name:
+        description: 名称
+        maxLength: 50
+        type: string
+      package_id:
+        description: 程序包ID
+        type: integer
+    required:
+    - deploy_path
+    - host_id
+    - name
+    - package_id
+    type: object
   oes.ListOesTasksInfoResp:
     properties:
       code:
@@ -1833,6 +1936,25 @@ definitions:
     - host_id
     - node_role
     - oes_colony_id
+    type: object
+  oes.PagAgwResp:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/common.Pag-oes_AgwDetailOut'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
   oes.PagOesColonyResp:
     properties:
@@ -5566,157 +5688,6 @@ paths:
       summary: 登陆接口
       tags:
       - 用户管理
-  /api/v1/mds/{colony_num}/conf:
-    get:
-      consumes:
-      - application/json
-      description: 获取指定目录下的mds配置文件列表
-      parameters:
-      - description: 集群编号
-        in: path
-        name: colony_num
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功返回配置文件列表
-          schema:
-            $ref: '#/definitions/mds.PagMdsConfResp'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取mds配置文件列表
-      tags:
-      - mds配置管理
-  /api/v1/mds/{colony_num}/conf/{dir_name}:
-    post:
-      consumes:
-      - multipart/form-data
-      description: 上传mds配置文件到指定目录
-      parameters:
-      - description: 集群编号
-        in: path
-        name: colony_num
-        required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
-        required: true
-        type: string
-      - description: 配置文件
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 上传成功
-          schema:
-            $ref: '#/definitions/common.MapAPIResp'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 上传mds配置文件
-      tags:
-      - mds配置管理
-  /api/v1/mds/{colony_num}/conf/{dir_name}/{filename}:
-    delete:
-      consumes:
-      - application/json
-      description: 删除指定的mds配置文件
-      parameters:
-      - description: 集群编号
-        in: path
-        name: colony_num
-        required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
-        required: true
-        type: string
-      - description: 文件名
-        in: path
-        name: filename
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 删除成功
-          schema:
-            $ref: '#/definitions/common.MapAPIResp'
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 删除mds配置文件
-      tags:
-      - mds配置管理
-    get:
-      consumes:
-      - application/json
-      description: 下载指定的mds配置文件
-      parameters:
-      - description: 集群编号
-        in: path
-        name: colony_num
-        required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
-        required: true
-        type: string
-      - description: 文件名
-        in: path
-        name: filename
-        required: true
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: 下载成功，返回文件流
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/errors.Error'
-      security:
-      - ApiKeyAuth: []
-      summary: 下载mds配置文件
-      tags:
-      - mds配置管理
   /api/v1/mds/colony:
     get:
       consumes:
@@ -6030,6 +6001,156 @@ paths:
       summary: 查询mds集群列表的任务状态
       tags:
       - mds集群管理
+  /api/v1/mds/conf/{colony_num}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的mds配置文件
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除mds配置文件
+      tags:
+      - mds配置管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定目录下的mds配置文件列表
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回配置文件列表
+          schema:
+            $ref: '#/definitions/mds.PagMdsConfResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取mds配置文件列表
+      tags:
+      - mds配置管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传mds配置文件到指定目录
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 配置文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传mds配置文件
+      tags:
+      - mds配置管理
+  /api/v1/mds/conf/{colony_num}/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定的mds配置文件
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 下载成功，返回文件流
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载mds配置文件
+      tags:
+      - mds配置管理
   /api/v1/mds/node:
     get:
       consumes:
@@ -6472,24 +6593,74 @@ paths:
       summary: 更新mon节点
       tags:
       - mon节点管理
-  /api/v1/oes/{colony_num}/conf:
+  /api/v1/oes/agw:
     get:
       consumes:
       - application/json
-      description: 获取指定目录下的oes配置文件列表
+      description: 本接口用于查询agw列表
       parameters:
-      - description: 集群编号
-        in: path
-        name: colony_num
-        required: true
+      - description: |-
+          创建时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_created_at
         type: string
+      - description: |-
+          更新时间之后的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: after_updated_at
+        type: string
+      - description: |-
+          创建时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_created_at
+        type: string
+      - description: |-
+          更新时间之前的记录 (RFC3339格式)
+          example: 2023-01-01T00:00:00Z
+        in: query
+        name: before_updated_at
+        type: string
+      - description: 主机ID
+        in: query
+        name: host_id
+        type: integer
+      - description: 唯一标识
+        in: query
+        name: id
+        type: integer
+      - description: '"唯一标识列表(多个用,隔开)"'
+        in: query
+        maxLength: 100
+        name: ids
+        type: string
+      - description: 名称
+        in: query
+        name: name
+        type: string
+      - description: 程序包ID
+        in: query
+        name: package_id
+        type: integer
+      - description: 分页页码
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 分页大小
+        in: query
+        minimum: 1
+        name: size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: 成功返回配置文件列表
+          description: 成功返回agw列表
           schema:
-            $ref: '#/definitions/oes.PagOesConfResp'
+            $ref: '#/definitions/oes.PagAgwResp'
         "400":
           description: 请求参数错误
           schema:
@@ -6500,37 +6671,27 @@ paths:
             $ref: '#/definitions/errors.Error'
       security:
       - ApiKeyAuth: []
-      summary: 获取oes配置文件列表
+      summary: 查询agw列表
       tags:
-      - oes配置管理
-  /api/v1/oes/{colony_num}/conf/{dir_name}:
+      - agw管理
     post:
       consumes:
-      - multipart/form-data
-      description: 上传oes配置文件到指定目录
+      - application/json
+      description: 本接口用于新增agw
       parameters:
-      - description: 集群编号
-        in: path
-        name: colony_num
+      - description: 创建agw请求
+        in: body
+        name: request
         required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
-        required: true
-        type: string
-      - description: 配置文件
-        in: formData
-        name: file
-        required: true
-        type: file
+        schema:
+          $ref: '#/definitions/oes.AgwUpsertDTO'
       produces:
       - application/json
       responses:
-        "200":
-          description: 上传成功
+        "201":
+          description: 创建agw成功
           schema:
-            $ref: '#/definitions/common.MapAPIResp'
+            $ref: '#/definitions/oes.AgwResp'
         "400":
           description: 请求参数错误
           schema:
@@ -6541,30 +6702,20 @@ paths:
             $ref: '#/definitions/errors.Error'
       security:
       - ApiKeyAuth: []
-      summary: 上传oes配置文件
+      summary: 新增agw
       tags:
-      - oes配置管理
-  /api/v1/oes/{colony_num}/conf/{dir_name}/{filename}:
+      - agw管理
+  /api/v1/oes/agw/{id}:
     delete:
       consumes:
       - application/json
-      description: 删除指定的oes配置文件
+      description: 本接口用于删除指定ID的agw
       parameters:
-      - description: 集群编号
+      - description: agw编号
         in: path
-        name: colony_num
+        name: id
         required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
-        required: true
-        type: string
-      - description: 文件名
-        in: path
-        name: filename
-        required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -6576,53 +6727,93 @@ paths:
           description: 请求参数错误
           schema:
             $ref: '#/definitions/errors.Error'
+        "404":
+          description: agw未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
         "500":
           description: 服务器内部错误
           schema:
             $ref: '#/definitions/errors.Error'
       security:
       - ApiKeyAuth: []
-      summary: 删除oes配置文件
+      summary: 删除agw
       tags:
-      - oes配置管理
+      - agw管理
     get:
       consumes:
       - application/json
-      description: 下载指定的oes配置文件
+      description: 本接口用于查询指定ID的agw
       parameters:
-      - description: 集群编号
+      - description: agw编号
         in: path
-        name: colony_num
+        name: id
         required: true
-        type: string
-      - description: 目录名称
-        in: path
-        name: dir_name
-        required: true
-        type: string
-      - description: 文件名
-        in: path
-        name: filename
-        required: true
-        type: string
+        type: integer
       produces:
-      - application/octet-stream
+      - application/json
       responses:
         "200":
-          description: 下载成功，返回文件流
+          description: 获取agw详情成功
+          schema:
+            $ref: '#/definitions/oes.AgwResp'
         "400":
           description: 请求参数错误
           schema:
             $ref: '#/definitions/errors.Error'
+        "404":
+          description: agw未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
         "500":
           description: 服务器内部错误
           schema:
             $ref: '#/definitions/errors.Error'
       security:
       - ApiKeyAuth: []
-      summary: 下载oes配置文件
+      summary: 查询agw
       tags:
-      - oes配置管理
+      - agw管理
+    put:
+      consumes:
+      - application/json
+      description: 本接口用于更新指定ID的agw
+      parameters:
+      - description: agw编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新agw请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/oes.AgwUpsertDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新agw成功
+          schema:
+            $ref: '#/definitions/oes.AgwResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "404":
+          description: agw未找到
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新agw
+      tags:
+      - agw管理
   /api/v1/oes/colony:
     get:
       consumes:
@@ -7186,6 +7377,156 @@ paths:
       summary: 查询oes现货集群列表的任务状态
       tags:
       - oes集群管理
+  /api/v1/oes/conf/{colony_num}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的oes配置文件
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除oes配置文件
+      tags:
+      - oes配置管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定目录下的oes配置文件列表
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回配置文件列表
+          schema:
+            $ref: '#/definitions/oes.PagOesConfResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取oes配置文件列表
+      tags:
+      - oes配置管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传oes配置文件到指定目录
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 配置文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传oes配置文件
+      tags:
+      - oes配置管理
+  /api/v1/oes/conf/{colony_num}/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定的oes配置文件
+      parameters:
+      - description: 集群编号
+        in: path
+        name: colony_num
+        required: true
+        type: string
+      - description: 目录名称
+        in: query
+        name: dir_name
+        required: true
+        type: string
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 下载成功，返回文件流
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载oes配置文件
+      tags:
+      - oes配置管理
   /api/v1/oes/node:
     get:
       consumes:

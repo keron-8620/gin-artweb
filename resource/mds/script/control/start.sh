@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
 
-basepath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+dirpath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
-cd $basepath/../python
+cd $dirpath/../python
 
 colony_num=$1
 
 shift 1
 
-./playbook.py --playbook_path control/start_main.yaml --colony_num $colony_num "$@"
+./mds_playbook.py --playbook_path control/start_main.yaml --colony_num $colony_num "$@"

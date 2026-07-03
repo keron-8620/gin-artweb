@@ -15,18 +15,18 @@ import (
 	"gin-artweb/internal/shared/errors"
 )
 
-// AgwHandler 处理agw相关的请求
+// OesAgwHandler 处理agw相关的请求
 // 包含日志记录和agw服务的引用
-type AgwHandler struct {
-	log    *zap.Logger        // 日志记录器
-	agwSvc *oessvc.AgwService // agw服务
+type OesAgwHandler struct {
+	log    *zap.Logger           // 日志记录器
+	agwSvc *oessvc.OesAgwService // agw服务
 }
 
-func NewAgwHandler(
+func NewOesAgwHandler(
 	logger *zap.Logger,
-	agwSvc *oessvc.AgwService,
-) *AgwHandler {
-	return &AgwHandler{
+	agwSvc *oessvc.OesAgwService,
+) *OesAgwHandler {
+	return &OesAgwHandler{
 		log:    logger,
 		agwSvc: agwSvc,
 	}
@@ -43,7 +43,7 @@ func NewAgwHandler(
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/agw [post]
 // @Security ApiKeyAuth
-func (h *AgwHandler) CreateAgw(c *gin.Context) {
+func (h *OesAgwHandler) CreateAgw(c *gin.Context) {
 	startTime := time.Now()
 	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
@@ -91,7 +91,7 @@ func (h *AgwHandler) CreateAgw(c *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/agw/{id} [put]
 // @Security ApiKeyAuth
-func (h *AgwHandler) UpdateAgw(c *gin.Context) {
+func (h *OesAgwHandler) UpdateAgw(c *gin.Context) {
 	startTime := time.Now()
 	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
@@ -144,7 +144,7 @@ func (h *AgwHandler) UpdateAgw(c *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/agw/{id} [delete]
 // @Security ApiKeyAuth
-func (h *AgwHandler) DeleteAgw(c *gin.Context) {
+func (h *OesAgwHandler) DeleteAgw(c *gin.Context) {
 	startTime := time.Now()
 	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
@@ -188,7 +188,7 @@ func (h *AgwHandler) DeleteAgw(c *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/agw/{id} [get]
 // @Security ApiKeyAuth
-func (h *AgwHandler) GetAgw(c *gin.Context) {
+func (h *OesAgwHandler) GetAgw(c *gin.Context) {
 	startTime := time.Now()
 	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
@@ -228,7 +228,7 @@ func (h *AgwHandler) GetAgw(c *gin.Context) {
 // @Failure 500 {object} errors.Error "服务器内部错误"
 // @Router /api/v1/oes/agw [get]
 // @Security ApiKeyAuth
-func (h *AgwHandler) ListAgw(c *gin.Context) {
+func (h *OesAgwHandler) ListAgw(c *gin.Context) {
 	startTime := time.Now()
 	ctx := c.Request.Context()
 	log := ctxutil.NewLogger(h.log, ctx)
@@ -260,7 +260,7 @@ func (h *AgwHandler) ListAgw(c *gin.Context) {
 	})
 }
 
-func (h *AgwHandler) LoadRouter(r *gin.RouterGroup) {
+func (h *OesAgwHandler) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/agw", h.CreateAgw)
 	r.PUT("/agw/:id", h.UpdateAgw)
 	r.DELETE("/agw/:id", h.DeleteAgw)

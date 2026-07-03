@@ -60,15 +60,6 @@ func NewRouter(
 		})
 	})
 
-	// 部署路径接口
-	r.GET("/api/v1/deploypath", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"code": http.StatusOK,
-			"msg":  config.BaseDir,
-			"data": nil,
-		})
-	})
-
 	// 终端页面
 	r.GET("/terminal", func(c *gin.Context) {
 		c.File(filepath.Join(htmlDir, "terminal.html"))

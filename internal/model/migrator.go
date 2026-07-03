@@ -42,5 +42,6 @@ func DBAutoMigrate(db *gorm.DB) error {
 		&oes.OesColonyModel{},
 		&oes.OesNodeModel{},
 		&oes.OesCronModel{},
+		&oes.OesAgwModel{},
 	)
 }

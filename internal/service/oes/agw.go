@@ -22,25 +22,25 @@ import (
 	"gin-artweb/pkg/serializer"
 )
 
-type AgwService struct {
+type OesAgwService struct {
 	log     *zap.Logger
-	agwRepo *oesrepo.AgwRepo
+	agwRepo *oesrepo.OesAgwRepo
 }
 
-func NewAgwService(
+func NewOesAgwService(
 	log *zap.Logger,
-	agwRepo *oesrepo.AgwRepo,
-) *AgwService {
-	return &AgwService{
+	agwRepo *oesrepo.OesAgwRepo,
+) *OesAgwService {
+	return &OesAgwService{
 		log:     log,
 		agwRepo: agwRepo,
 	}
 }
 
-func (s *AgwService) CreateAgw(
+func (s *OesAgwService) CreateAgw(
 	ctx context.Context,
 	dto oesmodel.AgwUpsertDTO,
-) (*oesmodel.AgwModel, *errors.Error) {
+) (*oesmodel.OesAgwModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
@@ -63,7 +63,20 @@ func (s *AgwService) CreateAgw(
 		return nil, errors.NewGormError(err, nil)
 	}
 
-	if err := s.OutportAgwData(ctx, &m); err != nil {
+	preloads := []string{"Host", "Package"}
+	agw, rErr := s.FindAgwByID(ctx, preloads, m.ID)
+	if rErr != nil {
+		log.Error(
+			"创建agw节点:查询agw集群数据失败",
+			zap.Error(rErr),
+			zap.Uint32("agw_id", m.ID),
+			zap.Strings("preloads", preloads),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, rErr
+	}
+
+	if err := s.OutportAgwData(ctx, agw); err != nil {
 		log.Error(
 			"创建agw节点:导出节点文件失败",
 			zap.Error(err),
@@ -78,14 +91,14 @@ func (s *AgwService) CreateAgw(
 		zap.Uint32("agw_id", m.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return s.FindAgwByID(ctx, []string{"Host", "Package"}, m.ID)
+	return agw, nil
 }
 
-func (s *AgwService) UpdateAgwByID(
+func (s *OesAgwService) UpdateAgwByID(
 	ctx context.Context,
 	agwID uint32,
 	dto oesmodel.AgwUpsertDTO,
-) (*oesmodel.AgwModel, *errors.Error) {
+) (*oesmodel.OesAgwModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
@@ -139,7 +152,7 @@ func (s *AgwService) UpdateAgwByID(
 	return m, nil
 }
 
-func (s *AgwService) DeleteAgwByID(
+func (s *OesAgwService) DeleteAgwByID(
 	ctx context.Context,
 	agwID uint32,
 ) *errors.Error {
@@ -172,11 +185,11 @@ func (s *AgwService) DeleteAgwByID(
 	return nil
 }
 
-func (s *AgwService) FindAgwByID(
+func (s *OesAgwService) FindAgwByID(
 	ctx context.Context,
 	preloads []string,
 	agwID uint32,
-) (*oesmodel.AgwModel, *errors.Error) {
+) (*oesmodel.OesAgwModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
 		return nil, errors.FromError(ctx.Err())
@@ -202,11 +215,11 @@ func (s *AgwService) FindAgwByID(
 	return m, nil
 }
 
-func (s *AgwService) ListAgw(
+func (s *OesAgwService) ListAgw(
 	ctx context.Context,
 	page, size int,
 	dto oesmodel.ListAgwDTO,
-) (int64, []oesmodel.AgwModel, *errors.Error) {
+) (int64, []oesmodel.OesAgwModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
 		return 0, nil, errors.FromError(ctx.Err())
@@ -261,9 +274,9 @@ func (s *AgwService) ListAgw(
 	return count, ms, nil
 }
 
-func (s *AgwService) OutportAgwData(
+func (s *OesAgwService) OutportAgwData(
 	ctx context.Context,
-	m *oesmodel.AgwModel,
+	m *oesmodel.OesAgwModel,
 ) *errors.Error {
 	startTime := time.Now()
 	if ctx.Err() != nil {

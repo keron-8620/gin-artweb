@@ -18,6 +18,8 @@
         - "{{ slave_path_mds_home_data }}"
         - "{{ slave_path_mds_home_data_flags }}"
         - "{{ slave_path_mds_home_data_exchange }}"
+        - "{{ slave_path_mds_home_data_exchange_sse_etf }}"
+        - "{{ slave_path_mds_home_data_exchange_szse_etf }}"
         - "{{ slave_path_mds_home_data_monitor }}"
 
     - name: copy mds files to slave

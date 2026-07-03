@@ -1,0 +1,25 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/agw_vars.yaml
+
+  tasks:
+    - name: stop agw
+      command: ./agw stop -F
+      args:
+        chdir: "{{ slave_path_agw_home_bin }}"
+      ignore_errors: yes
+
+    - name: archive agw package
+      archive:
+        path:
+          - "{{ slave_path_agw_home_bin }}"
+          - "{{ slave_path_agw_home_conf }}"
+          - "{{ slave_path_agw_home_data }}"
+          - "{{ slave_path_agw_home_logs }}"
+          - "{{ slave_path_agw_home_sbin }}"
+          - "{{ slave_path_agw_home_sample }}"
+        dest: "{{ slave_path_agw_home }}/agw.tar.gz"
+        remove: False
+      ignore_errors: True

@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 
-basepath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+dirpath=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
-cd $basepath/../python
+cd $dirpath/../python
 
 colony_num=$1
 
@@ -12,4 +12,4 @@ task_status=$3
 
 shift 3
 
-./playbook.py --playbook_path emergency/set_status_main.yaml --colony_num $colony_num --extravars "task_name=$task_name,task_status=$task_status" "$@"
+./oes_playbook.py --playbook_path emergency/set_status_main.yaml --colony_num $colony_num --extravars "task_name=$task_name,task_status=$task_status" "$@"

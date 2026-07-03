@@ -35,6 +35,7 @@ sse_host: "192.168.11.189"
 sse_port: 22
 sse_user: "monuser"
 gateway_path_root_exchange_sse: /mnt/quant360/import/sse
+gateway_path_root_exchange_sse_etf: /mnt/quant360/import/sse  # 上海etf文件获取文件网关目录
 
 sse_cp_files_list:
   - "cpxx0201{{ curr_date[4:] }}.txt"
@@ -54,13 +55,22 @@ sse_check_files_list:
   - "reff0302{{ curr_date }}.xml"
   - "gzlx.{{ gzlx_mm.stdout[:-1].lstrip('0') }}{{ curr_date[-2:] }}"
   - "bondinfo{{ curr_date }}.txt"
+
+sse_etf_cp_files:                                         # 上海etf产品文件拷贝列表， 支持正则
+  - "ssepcf_*_{{ curr_date }}.xml"
+
+sse_etf_check_files: []                                     # 上交所获取etf文件检查列表
+
+sse_etf_check_mon_files: no                              # 是否校验mon维护的上海etf文件
+sse_etf_check_counter_files: no                           # 是否校验主柜维护的上海etf文件
 ###################### sse设置 #################
 
 ###################### szse设置 ################
 szse_host: "192.168.11.189"
 szse_port: 22
 szse_user: "monuser"
-gateway_path_root_exchange_szse: /mnt/quant360/import/szse
+gateway_path_root_exchange_szse: /mnt/quant360/import/szse # 深交所etf文件获取文件网关目录
+gateway_path_root_exchange_szse_etf: /mnt/quant360/import/szse  # 深交所etf文件获取文件网关目录
 
 szse_cp_files_list:
   - "cashauctionparams_{{ curr_date }}.xml"
@@ -73,6 +83,14 @@ szse_check_files_list:
   - "cashauctionparams_{{ curr_date }}.xml"
   - "securities_{{ curr_date }}.xml"
   - "derivativeauctionparams_{{ curr_date }}.xml"
+
+szse_etf_cp_files:                                          # 深圳etf产品文件拷贝列表， 支持正则
+  - "pcf_*_{{ curr_date }}.xml"
+
+szse_etf_check_files: []                                      # 深交所文件检查列表
+
+szse_etf_check_mon_files: no                               # 是否校验mon维护的深圳etf文件
+szse_etf_check_counter_files: no                            # 是否校验主柜维护的深圳etf文件
 ###################### szse设置 ################
 
 ################# 备份配置  #####################

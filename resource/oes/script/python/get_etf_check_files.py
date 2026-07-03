@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import Optional, List, Dict
+from typing import Any, Optional, List, Dict
 from pathlib import Path
 import time
 import argparse
@@ -43,9 +43,7 @@ def get_etc_check_files(path: Path):
             if str(line.SecurityId) == "*":
                 continue
             if int(line.market) == Market.sh_mkt.value:
-                sh_files.append(
-                    f"({line.security_id}{{{{ curr_date[4:] }}}}.(?i)ETF|{line.security_id}{{{{ curr_date[4:] }}}}2.(?i)ETF|ssepcf_{line.security_id}_{{{{ curr_date }}}}.xml)"
-                )
+                sh_files.append(f"(ssepcf_{line.security_id}_{{{{ curr_date }}}}.xml)")
             elif int(line.market) == Market.sz_mkt.value:
                 # pcf_159942_20180201.xml
                 sz_files.append(f"pcf_{line.security_id}_{{{{ curr_date }}}}.xml")
@@ -59,7 +57,7 @@ def get_etc_check_files(path: Path):
 def create_sse_var_file(automatic: Dict, mon_etf_path: Path, counter_etf_path: Path, tmp_path: Path):
     sse_etf_check_mon_files = automatic["sse_etf_check_mon_files"] or []
     sse_etf_check_counter_files = automatic["sse_etf_check_counter_files"]
-    all_etf_files = automatic["sse_etf_check_files"] or []
+    all_etf_files: Any | list[Any] = automatic["sse_etf_check_files"] or []
     if sse_etf_check_mon_files:
         mon_etf_files, _ = get_etc_check_files(mon_etf_path)
         all_etf_files += mon_etf_files

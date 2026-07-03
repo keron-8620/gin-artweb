@@ -1,0 +1,27 @@
+###################### local工作目录相关文件位置 ####################
+local_path_agw_home_bin: "{{ local_path_agw_home }}/bin"
+local_path_agw_home_bin_id: "{{ local_path_agw_home_bin }}/{{ agw_id }}"
+local_path_agw_home_config: "{{ local_path_agw_home }}/config"
+local_path_agw_home_config_id: "{{ local_path_agw_home_config }}/{{ agw_id }}"
+local_path_agw_home_backup: "{{ local_path_agw_home }}/backup"
+local_path_agw_home_backup_id: "{{ local_path_agw_home_backup }}/{{ agw_id }}"
+local_path_agw_home_tmp: "{{ local_path_agw_home }}/.tmp"
+local_path_agw_home_tmp_id: "{{ local_path_agw_home_tmp }}/{{ agw_id }}"
+
+local_path_script_home_python: "{{ local_path_script_home }}/python"
+local_path_script_home_dep: "{{ local_path_script_home }}/dep"
+local_path_script_home_cmd: "{{ local_path_script_home }}/cmd"
+local_path_script_home_control: "{{ local_path_script_home }}/control"
+local_path_script_home_emergency: "{{ local_path_script_home }}/emergency"
+local_path_script_home_slave: "{{ local_path_script_home }}/slave"
+local_path_script_home_agw: "{{ local_path_script_home }}/agw"
+###################### local工作目录相关文件位置 ####################
+
+#################被控机相关目录######################################
+slave_path_agw_home_bin: "{{ slave_path_agw_home }}/bin"
+slave_path_agw_home_conf: "{{ slave_path_agw_home }}/conf"
+slave_path_agw_home_data: "{{ slave_path_agw_home }}/data"
+slave_path_agw_home_logs: "{{ slave_path_agw_home }}/logs"
+slave_path_agw_home_sample: "{{ slave_path_agw_home }}/sample"
+slave_path_agw_home_sbin: "{{ slave_path_agw_home }}/sbin"
+#################被控机相关目录#######################################

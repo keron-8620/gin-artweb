@@ -96,13 +96,9 @@ sse_check_files:
   - "bondinfo{{ curr_date }}.txt"
 
 sse_etf_cp_files:                                         # 上海etf产品文件拷贝列表， 支持正则
-  - "*{{ curr_date[4:] }}.ETF"
-  - "*{{ curr_date[4:] }}2.ETF"
   - "ssepcf_*_{{ curr_date }}.xml"
 
-sse_etf_check_files:                                      # 上交所获取etf文件检查列表
-  - "(510050{{ curr_date[4:] }}2.ETF|50__{{ curr_date[4:] }}.ETF)"
-  - "(510300{{ curr_date[4:] }}2.ETF|510300{{ curr_date[4:] }}.ETF)"
+sse_etf_check_files: []                                   # 上交所获取etf文件检查列表
 
 sse_etf_check_mon_files: yes                              # 是否校验mon维护的上海etf文件
 sse_etf_check_counter_files: no                           # 是否校验主柜维护的上海etf文件
@@ -136,9 +132,7 @@ szse_check_files:                                           # 深交所文件检
 szse_etf_cp_files:                                          # 深圳etf产品文件拷贝列表， 支持正则
   - "pcf_*_{{ curr_date }}.xml"
 
-szse_etf_check_files:                                       # 深交所文件检查列表
-  - "pcf_159001_{{ curr_date }}.xml"
-  - "pcf_159003_{{ curr_date }}.xml"
+szse_etf_check_files: []                                    # 深交所文件检查列表
 
 szse_etf_check_mon_files: yes                               # 是否校验mon维护的深圳etf文件
 szse_etf_check_counter_files: no                            # 是否校验主柜维护的深圳etf文件
@@ -166,7 +160,7 @@ csdc_ftp_root: KSJY                                   # FTP服务获取根目录
 # xter  柜台 脚本生成
 # 文件从远程目录拷贝过来时， 支持正则
 csdc_cp_files:
-  - name: "ipogh.*.txt"
+  - name: "ipogh*.txt"
     se: "sh"
     from_way: "dir"
   - name: "ipogh*.zip"

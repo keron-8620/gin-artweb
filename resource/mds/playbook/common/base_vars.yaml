@@ -29,6 +29,11 @@ local_path_mds_home_szse_late_colodir: "{{ local_path_mds_home_szse_late }}/{{ c
 local_path_mds_home_zb: "{{ local_path_mds_home }}/zb"
 local_path_mds_home_zb_colodir: "{{ local_path_mds_home_zb }}/{{ colony_num }}"
 
+local_path_script_home_python: "{{ local_path_script_home }}/python"
+local_path_script_home_dep: "{{ local_path_script_home }}/dep"
+local_path_script_home_cmd: "{{ local_path_script_home }}/cmd"
+local_path_script_home_control: "{{ local_path_script_home }}/control"
+local_path_script_home_emergency: "{{ local_path_script_home }}/emergency"
 local_path_script_home_slave: "{{ local_path_script_home }}/slave"
 ###################### local工作目录相关文件位置 ####################
 
@@ -45,6 +50,8 @@ slave_path_mds_home_sample: "{{ slave_path_mds_home }}/sample"
 slave_path_mds_home_data: "{{ slave_path_mds_home }}/data"
 slave_path_mds_home_data_flags: "{{ slave_path_mds_home_data }}/flags"
 slave_path_mds_home_data_exchange: "{{ slave_path_mds_home_data }}/exchange"
+slave_path_mds_home_data_exchange_sse_etf: "{{ slave_path_mds_home_data_exchange }}/sse_etf"
+slave_path_mds_home_data_exchange_szse_etf: "{{ slave_path_mds_home_data_exchange }}/szse_etf"
 slave_path_mds_home_data_monitor: "{{ slave_path_mds_home_data }}/monitor"
 slave_path_mds_home_sbin: "{{ slave_path_mds_home }}/sbin"
 

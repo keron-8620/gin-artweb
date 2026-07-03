@@ -10,7 +10,7 @@ import (
 	"gin-artweb/internal/shared/database"
 )
 
-type AgwModel struct {
+type OesAgwModel struct {
 	database.StandardModel
 	Name       string                `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
 	DeployPath string                `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
@@ -20,11 +20,11 @@ type AgwModel struct {
 	Package    resource.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:RESTRICT" json:"package"`
 }
 
-func (m *AgwModel) TableName() string {
+func (m *OesAgwModel) TableName() string {
 	return "oes_agw"
 }
 
-func (m *AgwModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+func (m *OesAgwModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if err := m.StandardModel.MarshalLogObject(enc); err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (m *AgwModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func ListAgwModelToUint32s(ms []AgwModel) []uint32 {
+func ListAgwModelToUint32s(ms []OesAgwModel) []uint32 {
 	if len(ms) == 0 {
 		return []uint32{}
 	}
@@ -50,7 +50,7 @@ func ListAgwModelToUint32s(ms []AgwModel) []uint32 {
 type OesAgwVars struct {
 	ID         uint32 `json:"id" yaml:"id"`
 	Name       string `json:"name" yaml:"name"`
-	DeployPath string `json:"slave_path_mon_home" yaml:"slave_path_mon_home"`
+	DeployPath string `json:"slave_path_agw_home" yaml:"slave_path_agw_home"`
 	HostID     uint32 `json:"host_id" yaml:"host_id"`
 	PackageID  uint32 `json:"package_id" yaml:"package_id"`
 }
@@ -58,13 +58,13 @@ type OesAgwVars struct {
 func (vs *OesAgwVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddUint32("id", vs.ID)
 	enc.AddString("name", vs.Name)
-	enc.AddString("slave_path_mon_home", vs.DeployPath)
+	enc.AddString("slave_path_agw_home", vs.DeployPath)
 	enc.AddUint32("host_id", vs.HostID)
 	enc.AddUint32("package_id", vs.PackageID)
 	return nil
 }
 
-func AgwModelToAgwVars(m AgwModel) OesAgwVars {
+func AgwModelToAgwVars(m OesAgwModel) OesAgwVars {
 	return OesAgwVars{
 		ID:         m.ID,
 		Name:       m.Name,
@@ -96,8 +96,8 @@ func (dto *AgwUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func (dto *AgwUpsertDTO) ToModel() AgwModel {
-	return AgwModel{
+func (dto *AgwUpsertDTO) ToModel() OesAgwModel {
+	return OesAgwModel{
 		Name:       dto.Name,
 		DeployPath: dto.DeployPath,
 		HostID:     dto.HostID,
@@ -189,7 +189,7 @@ type AgwResp = common.APIResp[AgwDetailOut]
 type PagAgwResp = common.APIResp[*common.Pag[AgwDetailOut]]
 
 func AgwToBaseOut(
-	m AgwModel,
+	m OesAgwModel,
 ) *AgwBaseOut {
 	return &AgwBaseOut{
 		ID:         m.ID,
@@ -199,7 +199,7 @@ func AgwToBaseOut(
 }
 
 func AgwToStandardOut(
-	m AgwModel,
+	m OesAgwModel,
 ) *AgwStandardOut {
 	return &AgwStandardOut{
 		AgwBaseOut: *AgwToBaseOut(m),
@@ -209,7 +209,7 @@ func AgwToStandardOut(
 }
 
 func AgwToDetailOut(
-	m AgwModel,
+	m OesAgwModel,
 ) *AgwDetailOut {
 	return &AgwDetailOut{
 		AgwStandardOut: *AgwToStandardOut(m),
@@ -219,7 +219,7 @@ func AgwToDetailOut(
 }
 
 func ListAgwToDetailOut(
-	ms []AgwModel,
+	ms []OesAgwModel,
 ) []AgwDetailOut {
 	if len(ms) == 0 {
 		return []AgwDetailOut{}

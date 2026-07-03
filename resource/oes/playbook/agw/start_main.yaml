@@ -1,0 +1,16 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/agw_vars.yaml
+
+  tasks:
+    - name: agw start
+      command: ./agw st
+      args:
+        chdir: "{{ slave_path_agw_home_bin }}"
+
+    - name: agw open
+      command: ./agw open
+      args:
+        chdir: "{{ slave_path_agw_home_bin }}"

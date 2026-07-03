@@ -1,0 +1,11 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/agw_vars.yaml
+
+  tasks:
+    - name: agw stop
+      command: ./agw stop -F
+      args:
+        chdir: "{{ slave_path_agw_home_bin }}"

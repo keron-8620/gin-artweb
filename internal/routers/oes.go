@@ -32,10 +32,12 @@ func newOesRouter(
 	colonyRepo := oesrepo.NewOesColonyRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 	nodeRepo := oesrepo.NewOesNodeRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 	cronRepo := oesrepo.NewOesCronRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
+	agwRepo := oesrepo.NewOesAgwRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 
 	cronService := oessvc.NewOesCronService(loggers.Service, jobsvc.Schedule, cronRepo, stkCronConf, crdCronConf, optCronConf)
 	colonyService := oessvc.NewOesColonyService(loggers.Service, colonyRepo, cronService)
 	nodeService := oessvc.NewOesNodeService(loggers.Service, nodeRepo)
+	agwService := oessvc.NewOesAgwService(loggers.Service, agwRepo)
 	stkService := oessvc.NewStkTaskService(loggers.Service, jobsvc.Record, colonyRepo)
 	crdService := oessvc.NewCrdTaskService(loggers.Service, jobsvc.Record, colonyRepo)
 	optService := oessvc.NewOptTaskService(loggers.Service, jobsvc.Record, colonyRepo)
@@ -43,6 +45,7 @@ func newOesRouter(
 	colonyHandler := handler.NewOesColonyHandler(loggers.Handler, colonyService, stkService, crdService, optService)
 	nodeHandler := handler.NewOesNodeHandler(loggers.Handler, nodeService)
 	confHandler := handler.NewOesConfHandler(loggers.Handler, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
+	agwHandler := handler.NewOesAgwHandler(loggers.Handler, agwService)
 
 	appRouter := router.Group("/v1/oes")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
@@ -51,6 +54,7 @@ func newOesRouter(
 	colonyHandler.LoadRouter(appRouter)
 	nodeHandler.LoadRouter(appRouter)
 	confHandler.LoadRouter(appRouter)
+	agwHandler.LoadRouter(appRouter)
 }
 
 func newOesCronConf(jobsvc *JobServices, cronConfName string) map[string]oesmodel.OesCronTask {
