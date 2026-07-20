@@ -43,7 +43,7 @@ is_enable_counter_unilateral_freeze: no               # 是否启用主柜单边
 counter_master_host: "xxx.xxx.xxx.xxx"
 counter_master_port: 22
 counter_master_user: "ansible"
-counter_master_path: "/path/to/save"
+counter_master_path: "/home/ansible/art-web/storage/oes/counter/01"
 
 counter_check_files:                                   # 主柜台获取检查文件列表
   - "CashAcct{{ curr_date[4:] }}.csv"
@@ -59,6 +59,7 @@ bse_host: "192.168.11.189"
 bse_port: 22
 bse_user: "monuser"
 gateway_path_root_exchange_bse: /mnt/quant360/import/bse
+min_file_size: 256 # 最小文件大小(字节)
 
 bse_cp_files_list:
   - "NQXX.DBF"
@@ -166,7 +167,7 @@ csdc_cp_files:
   - name: "ipogh*.zip"
     se: "sh"
     from_way: "dir"
-  - name: "zqy*.dbf"
+  - name: "zqy*.zip"
     se: "sh"
     from_way: "dir"
   - name: "SJSKS.DBF"

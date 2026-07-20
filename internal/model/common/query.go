@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"go.uber.org/zap/zapcore"
+
+	"gin-artweb/internal/shared/common"
 )
 
 type IDUri struct {
@@ -16,12 +18,6 @@ type IDUri struct {
 type ModelQuerier interface {
 	Query() map[string]any
 }
-
-var (
-	DefaultPage int = 1
-	DefaultSize int = 10
-	MaxSize     int = 100
-)
 
 type BaseModelQuery struct {
 	// 分页页码
@@ -51,14 +47,14 @@ func (dto *BaseModelQuery) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 func (q *BaseModelQuery) GetPageParam() (int, int) {
 	page := q.Page
 	if page < 1 {
-		page = DefaultPage
+		page = common.DefaultPage
 	}
 	size := q.Size
 	if size < 1 {
-		size = DefaultSize
+		size = common.DefaultSize
 	}
-	if size > MaxSize {
-		size = MaxSize
+	if size > common.MaxSize {
+		size = common.MaxSize
 	}
 	return page, size
 }

@@ -1,8 +1,14 @@
 ---
 
-- name: yhzq crd personalization
-  command: "rsync -az --exclude='*/' -e 'ssh -p {{ mon_host.ansible_port }}' {{ local_path_oes_home_mon_colodir }}/CrdSecuritySector.csv {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_host.slave_path_mon_home }}/config-upload/config-counter/{{ items }}"
-  ignore_errors: yes
-  with_items: "{{ art_to_mon_files }}"
+- name: create mon save self directory
+  command: ssh -p {{ mon_host.ansible_port }} {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }} "rm -rf {{ mon_save_self_path }} && mkdir -p {{ mon_save_self_path }}"
   delegate_to: 127.0.0.1
   run_once: true
+  ignore_errors: yes
+
+- name: copy crd files to mon
+  command: rsync -az -e 'ssh -p {{ mon_host.ansible_port }}' {{ local_path_oes_home_mon_colodir }}/{{ item }} {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_host.slave_path_mon_home }}/config-upload/config-counter/"
+  with_items: "{{ mon_crd_cp_files }}"
+  delegate_to: 127.0.0.1
+  run_once: true
+  ignore_errors: yes

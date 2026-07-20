@@ -235,6 +235,17 @@ func (s *OesColonyService) DeleteOesColonyByID(
 		zap.Uint32("oes_colony_id", oesColonyID),
 	)
 
+	colony, rErr := s.FindOesColonyByID(ctx, nil, oesColonyID)
+	if rErr != nil {
+		log.Error(
+			"删除oes集群:删除前查询oes集群数据失败",
+			zap.Error(rErr),
+			zap.Uint32("mds_colony_id", colony.ID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return rErr
+	}
+
 	if err := s.cronSvc.DeleteCornByColonyID(ctx, oesColonyID); err != nil {
 		log.Error(
 			"删除oes集群:清理计划任务失败",
@@ -253,6 +264,35 @@ func (s *OesColonyService) DeleteOesColonyByID(
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": oesColonyID})
+	}
+
+	confPath := GetOesColonyConfigDir(colony.ColonyNum)
+	if _, statErr := os.Stat(confPath); statErr == nil {
+		savePath := GetOesColonyBackupDir(colony.ColonyNum)
+		if err := fileutil.RemoveAll(ctx, savePath); err != nil {
+			log.Error(
+				"删除oes集群:清理原备份文件失败",
+				zap.String("clear_path", savePath),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.ErrUnknown.WithCause(err).WithField("clear_path", savePath)
+		}
+
+		if err := s.colonyRepo.MoveConfigFile(ctx, confPath, savePath); err != nil {
+			log.Error(
+				"删除mds集群:迁移mds原配置文件失败",
+				zap.Error(err),
+				zap.String("coluny_num", colony.ColonyNum),
+				zap.String("src_path", confPath),
+				zap.String("dst_path", savePath),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.ErrUnknown.WithCause(err).WithFields(map[string]any{
+				"coluny_num": colony.ColonyNum,
+				"src_path":   confPath,
+				"dst_path":   savePath,
+			})
+		}
 	}
 
 	log.Info(
@@ -548,4 +588,8 @@ func GetOesColonyBinDir(colonyNum string) string {
 
 func GetOesColonyConfigDir(colonyNum string) string {
 	return filepath.Join(config.StorageDir, "oes", "config", colonyNum)
+}
+
+func GetOesColonyBackupDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "oes", "config", "backup", colonyNum)
 }

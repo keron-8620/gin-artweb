@@ -51,11 +51,12 @@ func CorsMiddleware(cfg *config.AllowConfig) gin.HandlerFunc {
 			return
 		}
 
-		// 设置 CORS 头
-		if allowAllOrigins {
+		// 携带凭据时规范禁止 Access-Control-Allow-Origin 使用通配符。
+		if allowAllOrigins && !cfg.AllowCredentials {
 			c.Header("Access-Control-Allow-Origin", "*")
 		} else {
 			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin")
 		}
 
 		if len(cfg.AllowMethods) > 0 {

@@ -234,6 +234,17 @@ func (s *MdsColonyService) DeleteMdsColonyByID(
 		zap.Uint32("mds_colony_id", mdsColonyID),
 	)
 
+	colony, rErr := s.FindMdsColonyByID(ctx, nil, mdsColonyID)
+	if rErr != nil {
+		log.Error(
+			"删除mds集群:删除前查询mds集群数据失败",
+			zap.Error(rErr),
+			zap.Uint32("mds_colony_id", colony.ID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return rErr
+	}
+
 	if err := s.cronSvc.DeleteCornByColonyID(ctx, mdsColonyID); err != nil {
 		log.Error(
 			"删除mds集群:清理计划任务失败",
@@ -252,6 +263,35 @@ func (s *MdsColonyService) DeleteMdsColonyByID(
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": mdsColonyID})
+	}
+
+	confPath := GetMdsColonyConfigDir(colony.ColonyNum)
+	if _, statErr := os.Stat(confPath); statErr == nil {
+		savePath := GetMdsColonyBackupDir(colony.ColonyNum)
+		if err := fileutil.RemoveAll(ctx, savePath); err != nil {
+			log.Error(
+				"删除mds集群:清理原备份文件失败",
+				zap.String("clear_path", savePath),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.ErrUnknown.WithCause(err).WithField("clear_path", savePath)
+		}
+
+		if err := s.colonyRepo.MoveConfigFile(ctx, confPath, savePath); err != nil {
+			log.Error(
+				"删除mds集群:迁移mds原配置文件失败",
+				zap.Error(err),
+				zap.String("coluny_num", colony.ColonyNum),
+				zap.String("src_path", confPath),
+				zap.String("dst_path", savePath),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.ErrUnknown.WithCause(err).WithFields(map[string]any{
+				"coluny_num": colony.ColonyNum,
+				"src_path":   confPath,
+				"dst_path":   savePath,
+			})
+		}
 	}
 
 	log.Info(
@@ -510,4 +550,8 @@ func GetMdsColonyBinDir(colonyNum string) string {
 
 func GetMdsColonyConfigDir(colonyNum string) string {
 	return filepath.Join(config.StorageDir, "mds", "config", colonyNum)
+}
+
+func GetMdsColonyBackupDir(colonyNum string) string {
+	return filepath.Join(config.StorageDir, "mds", "config", "backup", colonyNum)
 }

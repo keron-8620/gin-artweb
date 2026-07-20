@@ -8,3 +8,5 @@ artweb.pid
 artweb-*.tar.gz
 .temp/
 __pycache__/
+.python-version
+uv.lock

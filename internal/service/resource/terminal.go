@@ -13,7 +13,6 @@ import (
 	resomodel "gin-artweb/internal/model/resource"
 	hostrepo "gin-artweb/internal/repo/resource"
 	"gin-artweb/internal/shared/ctxutil"
-	"gin-artweb/internal/shared/shell"
 )
 
 type TerminalService struct {
@@ -70,7 +69,7 @@ func (s *TerminalService) CreateSession(
 ) (*TerminalSession, error) {
 	log := ctxutil.NewLogger(s.logger, ctx)
 
-	client, err := shell.NewSSHClient(ctx, host.SSHIP, host.SSHPort, host.SSHUser, s.auths, false, 30*time.Second)
+	client, err := s.hostRepo.NewSSHClient(ctx, host.SSHIP, host.SSHPort, host.SSHUser, s.auths, 30*time.Second)
 	if err != nil {
 		log.Error("创建SSH客户端失败", zap.Error(err),
 			zap.String("ssh_ip", host.SSHIP),

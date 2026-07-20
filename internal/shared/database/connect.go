@@ -29,7 +29,7 @@ func NewGormConfig(dbLog *log.Logger) *gorm.Config {
 			SlowThreshold:             time.Second,
 			Colorful:                  false,
 			IgnoreRecordNotFoundError: false,
-			ParameterizedQueries:      false,
+			ParameterizedQueries:      true,
 			LogLevel:                  logger.Info,
 		})
 	}
@@ -65,7 +65,7 @@ func NewGormDB(c *config.DBConf, gc *gorm.Config) (*gorm.DB, error) {
 		), gc)
 	default:
 		// 不支持的数据库驱动类型
-		return nil, errors.NewWithDetails("不支持的数据库驱动类型: %s", c.Type)
+		return nil, errors.NewWithDetails("不支持的数据库驱动类型", "type", c.Type)
 	}
 
 	// 如果数据库连接打开失败，返回错误

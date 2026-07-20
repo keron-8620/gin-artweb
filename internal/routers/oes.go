@@ -45,7 +45,7 @@ func newOesRouter(
 	colonyHandler := handler.NewOesColonyHandler(loggers.Handler, colonyService, stkService, crdService, optService)
 	nodeHandler := handler.NewOesNodeHandler(loggers.Handler, nodeService)
 	confHandler := handler.NewOesConfHandler(loggers.Handler, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
-	agwHandler := handler.NewOesAgwHandler(loggers.Handler, agwService)
+	agwHandler := handler.NewOesAgwHandler(loggers.Handler, agwService, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/oes")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))

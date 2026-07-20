@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"strings"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
@@ -15,21 +16,52 @@ import (
 
 // extractToken 从不同位置提取 token
 func extractToken(c *gin.Context) string {
-	// 检查是否为 WebSocket 升级请求
-	if c.GetHeader("Connection") == "upgrade" &&
-		c.GetHeader("Upgrade") == "websocket" {
-		// WebSocket 请求优先从查询参数获取，其次从头部获取
-		if token := c.Query("Authorization"); token != "" {
-			return token
-		}
-		if token := c.GetHeader("Sec-WebSocket-Protocol"); token != "" {
-			return token
-		}
-		return ""
+	// 1. 从 Authorization 头提取：必须严格是 Bearer
+	auth := c.GetHeader("Authorization")
+	if token := strictBearerExtract(auth); token != "" {
+		return token
 	}
 
-	// HTTP 请求从 Authorization 头部获取
-	return c.GetHeader("Authorization")
+	// 2. WebSocket 场景：Authorization 头宽松匹配，再回退到子协议
+	if strings.EqualFold(c.GetHeader("Upgrade"), "websocket") {
+		if token := looseTokenExtract(auth); token != "" {
+			return token
+		}
+		protocols := strings.Split(c.GetHeader("Sec-WebSocket-Protocol"), ",")
+		if len(protocols) > 0 {
+			first := strings.TrimSpace(protocols[0])
+			if token := looseTokenExtract(first); token != "" {
+				return token
+			}
+		}
+	}
+	return ""
+}
+
+// strictBearerExtract 仅用于标准头：非 Bearer 一律视为无效
+func strictBearerExtract(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	fields := strings.Fields(value)
+	if len(fields) >= 2 && strings.EqualFold(fields[0], "Bearer") {
+		return fields[1]
+	}
+	return ""
+}
+
+// looseTokenExtract 用于 WebSocket 回退：支持 Bearer，也支持纯 token
+func looseTokenExtract(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	fields := strings.Fields(value)
+	if len(fields) >= 2 && strings.EqualFold(fields[0], "Bearer") {
+		return fields[1] // 带了 Bearer 前缀，取后面的
+	}
+	return value // 没有 Bearer 前缀，把整个字符串当作 token
 }
 
 func JWTAuthMiddleware(c *config.JWTConfig, logger *zap.Logger) gin.HandlerFunc {

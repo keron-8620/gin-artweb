@@ -84,6 +84,26 @@ func TestDBCreateTX(t *testing.T) {
 	}
 }
 
+func TestDBCreateTX_RecoversPanicAsError(t *testing.T) {
+	db := setupTestDB(t)
+	defer func() { _ = CloseGormDB(db) }()
+
+	callbackName := "test:panic_before_create"
+	if err := db.Callback().Create().Before("gorm:create").Register(callbackName, func(*gorm.DB) {
+		panic("forced transaction panic")
+	}); err != nil {
+		t.Fatalf("failed to register callback: %v", err)
+	}
+	defer func() {
+		_ = db.Callback().Create().Remove(callbackName)
+	}()
+
+	err := DBCreateTX(context.Background(), db, &User{}, &User{Name: "panic_test"})
+	if err == nil {
+		t.Fatal("expected recovered panic to be returned as error")
+	}
+}
+
 func TestDBUpdate(t *testing.T) {
 	db := setupTestDB(t)
 	defer func() { _ = CloseGormDB(db) }()

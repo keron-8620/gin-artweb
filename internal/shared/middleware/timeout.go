@@ -90,82 +90,41 @@ func TimeoutMiddleware(logger *zap.Logger, defaultTimeout time.Duration, options
 			}
 		}
 
-		parentCtx := c.Request.Context()
-		ctx, cancel := context.WithTimeout(parentCtx, timeout)
-		defer func() {
-			cancel()
-			log.Debug("请求处理完成",
-				zap.String("request_uri", c.Request.RequestURI),
-				zap.String("request_method", c.Request.Method),
-				zap.Duration("elapsed", time.Since(startTime)),
-				zap.Duration("timeout", timeout),
-				zap.Bool("timeout", ctx.Err() == context.DeadlineExceeded),
-			)
-		}()
+		if timeout <= 0 {
+			c.Next()
+			return
+		}
 
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
 		c.Request = c.Request.WithContext(ctx)
 
-		done := make(chan struct{})
-		panicChan := make(chan any, 1)
+		// Gin Context 和 ResponseWriter 不能由多个 goroutine 并发操作。
+		// 这里仅传播 deadline，由下游数据库、SSH 和业务逻辑主动响应取消。
+		c.Next()
 
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					panicChan <- r
-				}
-				select {
-				case done <- struct{}{}:
-				case <-ctx.Done():
-				}
-			}()
-			c.Next()
-		}()
-
-		select {
-		case <-done:
-			select {
-			case r := <-panicChan:
-				log.Error("请求处理发生panic",
-					zap.Any("panic", r),
-					zap.String("request_uri", c.Request.RequestURI),
-					zap.String("request_method", c.Request.Method),
-				)
-				if !c.Writer.Written() {
-					errors.RespondWithError(c, errors.ErrUnknown)
-				}
-				c.Abort()
-				panic(r)
-			default:
-			}
-			return
-
-		case r := <-panicChan:
-			log.Error("请求处理发生panic",
-				zap.Any("panic", r),
-				zap.String("request_uri", c.Request.RequestURI),
-				zap.String("request_method", c.Request.Method),
-			)
-			if !c.Writer.Written() {
-				errors.RespondWithError(c, errors.ErrUnknown)
-			}
-			c.Abort()
-			panic(r)
-
-		case <-ctx.Done():
-			log.Error("请求超时",
+		timedOut := ctx.Err() == context.DeadlineExceeded
+		if timedOut {
+			log.Error("请求处理超过超时限制",
 				zap.String("request_uri", c.Request.RequestURI),
 				zap.String("request_method", c.Request.Method),
 				zap.Duration("timeout", timeout),
 				zap.Duration("elapsed", time.Since(startTime)),
 			)
-
 			if !c.Writer.Written() {
 				c.Header("X-Request-Timeout", "true")
 				c.Header("Retry-After", "5")
-				c.Header("Content-Type", "application/json; charset=utf-8")
 				errors.RespondWithError(c, errors.ErrRequestTimeout)
+				c.Abort()
 			}
-			c.Abort()
 		}
+
+		log.Debug("请求处理完成",
+			zap.String("request_uri", c.Request.RequestURI),
+			zap.String("request_method", c.Request.Method),
+			zap.Duration("elapsed", time.Since(startTime)),
+			zap.Duration("timeout", timeout),
+			zap.Bool("timeout", timedOut),
+		)
 	}
 }

@@ -11,16 +11,19 @@ func NewJWTConfig(
 	accessMethodstr, refreshMethodstr string,
 	accessSecret, refreshSecret []byte,
 ) *JWTConfig {
-	accessMethod := jwt.GetSigningMethod(accessMethodstr)
-	if accessMethod == nil {
+	if _, ok := supportedJWTMethods[accessMethodstr]; !ok {
 		panic("invalid access method")
 	}
-	refreshMethod := jwt.GetSigningMethod(refreshMethodstr)
-	if refreshMethod == nil {
+	if _, ok := supportedJWTMethods[refreshMethodstr]; !ok {
 		panic("invalid refresh method")
 	}
-	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
-		panic("JWT_ACCESS_SECRET or JWT_REFRESH_SECRET is empty")
+	accessMethod := jwt.GetSigningMethod(accessMethodstr)
+	refreshMethod := jwt.GetSigningMethod(refreshMethodstr)
+	if len(accessSecret) < 32 || len(refreshSecret) < 32 {
+		panic("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be at least 32 bytes")
+	}
+	if string(accessSecret) == string(refreshSecret) {
+		panic("JWT access and refresh secrets must be different")
 	}
 	return &JWTConfig{
 		AccessTokenExpiration:  accessExpiration,

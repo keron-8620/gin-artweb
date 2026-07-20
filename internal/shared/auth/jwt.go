@@ -90,11 +90,9 @@ func ParseAccessToken(ctx context.Context, c *config.JWTConfig, tokenString stri
 		tokenString,
 		&JwtClaims{},
 		func(token *jwt.Token) (any, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.ErrTokenInvalid
-			}
 			return c.AccessSecret, nil
 		},
+		jwt.WithValidMethods([]string{c.AccessMethod.Alg()}),
 	)
 
 	if err != nil {
@@ -117,11 +115,9 @@ func ParseRefreshToken(ctx context.Context, c *config.JWTConfig, tokenString str
 		tokenString,
 		&JwtClaims{},
 		func(token *jwt.Token) (any, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.ErrTokenInvalid
-			}
 			return c.RefreshSecret, nil
 		},
+		jwt.WithValidMethods([]string{c.RefreshMethod.Alg()}),
 	)
 
 	if err != nil {

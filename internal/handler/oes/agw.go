@@ -2,6 +2,7 @@ package oes
 
 import (
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,22 +14,26 @@ import (
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/fileutil"
 )
 
 // OesAgwHandler 处理agw相关的请求
 // 包含日志记录和agw服务的引用
 type OesAgwHandler struct {
-	log    *zap.Logger           // 日志记录器
-	agwSvc *oessvc.OesAgwService // agw服务
+	log     *zap.Logger           // 日志记录器
+	agwSvc  *oessvc.OesAgwService // agw服务
+	maxSize int64
 }
 
 func NewOesAgwHandler(
 	logger *zap.Logger,
 	agwSvc *oessvc.OesAgwService,
+	maxSize int64,
 ) *OesAgwHandler {
 	return &OesAgwHandler{
-		log:    logger,
-		agwSvc: agwSvc,
+		log:     logger,
+		agwSvc:  agwSvc,
+		maxSize: maxSize,
 	}
 }
 
@@ -260,10 +265,214 @@ func (h *OesAgwHandler) ListAgw(c *gin.Context) {
 	})
 }
 
+// UploadAgwConfDto 上传agw配置文件
+// @Summary 上传agw配置文件
+// @Description 上传agw配置文件到指定目录
+// @Tags agw配置管理
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path uint true "agw编号"
+// @Param file formData file true "配置文件"
+// @Success 200 {object} commodel.MapAPIResp "上传成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/agw/conf/{id} [post]
+// @Security ApiKeyAuth
+func (h *OesAgwHandler) UploadAgwConf(c *gin.Context) {
+	startTime := time.Now()
+	ctx := c.Request.Context()
+	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("上传agw配置文件:开始执行")
+
+	// 1. 绑定URL路径参数和查询参数
+	var uri commodel.IDUri
+	if !common.ShouldBindUri(c, log, &uri, "上传agw配置文件:绑定上传的agw配置文件路径参数失败") {
+		return
+	}
+
+	// 2. 绑定表单数据（包含文件）
+	var formReq oesmodel.UploadAgwConfDto
+	if !common.ShouldBind(c, log, &formReq, "上传agw配置文件:绑定上传的agw配置文件表单参数失败") {
+		return
+	}
+
+	// 3. 将配置文件保存到指定的位置
+	dirName := oessvc.GetAgwConfigDir(uri.ID)
+	savePath := filepath.Join(dirName, formReq.File.Filename)
+	if err := common.UploadFile(c, log, h.maxSize, savePath, formReq.File, 0o644); err != nil {
+		log.Error(
+			"上传agw配置文件:执行失败",
+			zap.Error(err),
+			zap.String("save_path", savePath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		errors.RespondWithError(c, err)
+		return
+	}
+
+	log.Info(
+		"上传agw配置文件:执行成功",
+		zap.Uint32("agw_id", uri.ID),
+		zap.String("dir_name", dirName),
+		zap.String("filename", formReq.File.Filename),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+}
+
+// DownloadAgwConf 下载agw配置文件
+// @Summary 下载agw配置文件
+// @Description 下载指定的agw配置文件
+// @Tags agw配置管理
+// @Accept json
+// @Produce octet-stream
+// @Param id path uint true "agw编号"
+// @Param filename query string true "文件名"
+// @Success 200 "下载成功，返回文件流"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/agw/conf/{id}/download [get]
+// @Security ApiKeyAuth
+func (h *OesAgwHandler) DownloadAgwConf(c *gin.Context) {
+	startTime := time.Now()
+	ctx := c.Request.Context()
+	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("下载agw配置文件:开始执行")
+
+	var uri commodel.IDUri
+	if !common.ShouldBindUri(c, log, &uri, "下载agw配置文件:绑定下载的agw配置文件路径参数失败") {
+		return
+	}
+	var query oesmodel.AgwConfFileQueryDTO
+	if !common.ShouldBindQuery(c, log, &query, "下载agw配置文件:绑定下载的agw配置文件查询参数失败") {
+		return
+	}
+
+	dirName := oessvc.GetAgwConfigDir(uri.ID)
+	filePath := filepath.Join(dirName, query.Filename)
+	if err := common.DownloadFile(c, log, filePath, ""); err != nil {
+		log.Error(
+			"下载agw配置文件:执行失败",
+			zap.Error(err),
+			zap.String("save_path", filePath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		errors.RespondWithError(c, err)
+		return
+	}
+
+	log.Info(
+		"下载agw配置文件:执行成功",
+		zap.Uint32("agw_id", uri.ID),
+		zap.String("dir_name", dirName),
+		zap.String("filename", query.Filename),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+}
+
+// DeleteAgwConf 删除agw配置文件
+// @Summary 删除agw配置文件
+// @Description 删除指定的agw配置文件
+// @Tags agw配置管理
+// @Accept json
+// @Produce json
+// @Param id path uint true "agw编号"
+// @Param filename query string true "文件名"
+// @Success 200 {object} commodel.MapAPIResp "删除成功"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/agw/conf/{id} [delete]
+// @Security ApiKeyAuth
+func (h *OesAgwHandler) DeleteAgwConf(c *gin.Context) {
+	startTime := time.Now()
+	ctx := c.Request.Context()
+	log := ctxutil.NewLogger(h.log, ctx)
+	log.Info("删除agw配置文件:开始执行")
+
+	var uri commodel.IDUri
+	if !common.ShouldBindUri(c, log, &uri, "删除agw配置文件:绑定删除的agw配置文件路径参数失败") {
+		return
+	}
+	var query oesmodel.AgwConfFileQueryDTO
+	if !common.ShouldBindQuery(c, log, &query, "删除agw配置文件:绑定删除的agw配置文件查询参数失败") {
+		return
+	}
+
+	dirName := oessvc.GetAgwConfigDir(uri.ID)
+	savePath := filepath.Join(dirName, query.Filename)
+	if err := fileutil.Remove(ctx, savePath); err != nil {
+		log.Error(
+			"删除agw配置文件:删除失败",
+			zap.Error(err),
+			zap.String("save_path", savePath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		rErr := errors.FromError(err)
+		errors.RespondWithError(c, rErr)
+		return
+	}
+	log.Info(
+		"删除agw配置文件:执行成功",
+		zap.Uint32("agw_id", uri.ID),
+		zap.String("dir_name", dirName),
+		zap.String("filename", query.Filename),
+		zap.Duration("total_duration", time.Since(startTime)),
+	)
+
+	c.JSON(commodel.NoDataResp.Code, commodel.NoDataResp)
+}
+
+// ListAgwConf 获取agw配置文件列表
+// @Summary 获取agw配置文件列表
+// @Description 获取指定目录下的agw配置文件列表
+// @Tags agw配置管理
+// @Accept json
+// @Produce json
+// @Param id path uint true "agw编号"
+// @Success 200 {object} oesmodel.PagAgwConfResp "成功返回配置文件列表"
+// @Failure 400 {object} errors.Error "请求参数错误"
+// @Failure 500 {object} errors.Error "服务器内部错误"
+// @Router /api/v1/oes/agw/conf/{id} [get]
+// @Security ApiKeyAuth
+func (h *OesAgwHandler) ListAgwConf(c *gin.Context) {
+	startTime := time.Now()
+	ctx := c.Request.Context()
+	log := ctxutil.NewLogger(h.log, ctx)
+
+	var uri commodel.IDUri
+	if !common.ShouldBindUri(c, log, &uri, "获取agw配置文件列表:绑定agw配置文件路径参数失败") {
+		return
+	}
+
+	dirName := oessvc.GetAgwConfigDir(uri.ID)
+	info, err := fileutil.ListFileInfo(ctx, dirName)
+	if err != nil {
+		log.Error(
+			"获取agw配置文件列表:查询失败",
+			zap.Error(err),
+			zap.String("dir_name", dirName),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		rErr := errors.FromError(err)
+		errors.RespondWithError(c, rErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, oesmodel.PagAgwConfResp{
+		Code: http.StatusOK,
+		Data: info,
+	})
+}
+
 func (h *OesAgwHandler) LoadRouter(r *gin.RouterGroup) {
 	r.POST("/agw", h.CreateAgw)
 	r.PUT("/agw/:id", h.UpdateAgw)
 	r.DELETE("/agw/:id", h.DeleteAgw)
 	r.GET("/agw/:id", h.GetAgw)
 	r.GET("/agw", h.ListAgw)
+	r.POST("/agw/conf/:id", h.UploadAgwConf)
+	r.DELETE("/agw/conf/:id", h.DeleteAgwConf)
+	r.GET("/agw/conf/:id/download", h.DownloadAgwConf)
+	r.GET("/agw/conf/:id", h.ListAgwConf)
 }

@@ -123,20 +123,26 @@ type TimeoutConfig struct {
 
 // ServerConfig 服务器配置
 type ServerConfig struct {
-	Host    string          `yaml:"host"`
-	Port    int             `yaml:"port"`
-	SSL     SSLConfig       `yaml:"ssl"`
-	Rate    RateLimitConfig `yaml:"rate"`
-	Timeout TimeoutConfig   `yaml:"timeout"`
-	Swagger bool            `yaml:"swagger"`
+	Host           string          `yaml:"host"`
+	Port           int             `yaml:"port"`
+	SSL            SSLConfig       `yaml:"ssl"`
+	Rate           RateLimitConfig `yaml:"rate"`
+	Timeout        TimeoutConfig   `yaml:"timeout"`
+	Swagger        bool            `yaml:"swagger"`
+	EnableMetrics  bool            `yaml:"enable_metrics"`
+	EnablePprof    bool            `yaml:"enable_pprof"`
+	TrustedProxies []string        `yaml:"trusted_proxies"`
 }
 
 type SSHConfig struct {
 	// 私钥路径
-	Private string `mapstructure:"private" json:"private"`
+	Private string `mapstructure:"private" json:"private" yaml:"private"`
 
-	// 连接超时时间（秒）
-	Timeout time.Duration `mapstructure:"timeout" json:"timeout"`
+	// 连接超时时间
+	Timeout time.Duration `mapstructure:"timeout" json:"timeout" yaml:"timeout"`
+
+	// 是否校验远端主机指纹；生产环境必须开启。
+	UseKnownHosts bool `mapstructure:"use_known_hosts" json:"use_known_hosts" yaml:"use_known_hosts"`
 }
 
 // UploadConfig 上传配置

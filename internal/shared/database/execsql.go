@@ -10,12 +10,23 @@ import (
 )
 
 // ExecSQLFile 执行 SQL 脚本文件，支持所有数据库 + 所有注释类型
-func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
+func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) (err error) {
 	// 读取SQL文件
 	content, readErr := os.ReadFile(filePath) // #nosec G304
 	if readErr != nil {
 		return errors.WithMessagef(readErr, "读取SQL文件失败, 路径: %s", filePath)
 	}
+
+	var tx *gorm.DB
+	committed := false
+	defer func() {
+		if err != nil && tx != nil && !committed {
+			if rollbackErr := tx.Rollback().Error; rollbackErr != nil {
+				err = errors.Wrap(rollbackErr, "执行SQL语句时回滚失败")
+			}
+		}
+		err = DBPanic(ctx, tx, err)
+	}()
 
 	// 核心：清理所有注释（// -- # /* */）
 	sqlClean := cleanSQLComments(string(content))
@@ -23,17 +34,10 @@ func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
 	sqlList := splitSQL(sqlClean)
 
 	// 开启事务
-	tx := db.WithContext(ctx).Begin()
+	tx = db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return errors.Wrap(tx.Error, "执行SQL语句时开启事务失败")
 	}
-
-	var err error
-
-	// 捕获异常，使用事务对象tx确保在panic时能正确回滚事务
-	defer func() {
-		err = DBPanic(ctx, tx, err)
-	}()
 
 	// 逐条执行
 	for _, sql := range sqlList {
@@ -41,17 +45,16 @@ func ExecSQLFile(ctx context.Context, db *gorm.DB, filePath string) error {
 			continue
 		}
 		// 使用事务对象执行SQL，确保所有操作都在同一事务中
-		if err = tx.Exec(sql).Error; err != nil {
-			tx.Rollback()
-			return errors.Wrap(err, "执行SQL语句时执行失败")
+		if execErr := tx.Exec(sql).Error; execErr != nil {
+			return errors.Wrap(execErr, "执行SQL语句时执行失败")
 		}
 	}
 
 	// 提交事务
-	if err = tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return errors.Wrap(err, "执行SQL语句时提交事务失败")
+	if commitErr := tx.Commit().Error; commitErr != nil {
+		return errors.Wrap(commitErr, "执行SQL语句时提交事务失败")
 	}
+	committed = true
 	return nil
 }
 

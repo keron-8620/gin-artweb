@@ -1937,6 +1937,25 @@ definitions:
     - node_role
     - oes_colony_id
     type: object
+  oes.PagAgwConfResp:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/fileutil.FileInfo'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
+    type: object
   oes.PagAgwResp:
     properties:
       code:
@@ -6814,6 +6833,141 @@ paths:
       summary: 更新agw
       tags:
       - agw管理
+  /api/v1/oes/agw/conf/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的agw配置文件
+      parameters:
+      - description: agw编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除agw配置文件
+      tags:
+      - agw配置管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定目录下的agw配置文件列表
+      parameters:
+      - description: agw编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回配置文件列表
+          schema:
+            $ref: '#/definitions/oes.PagAgwConfResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取agw配置文件列表
+      tags:
+      - agw配置管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传agw配置文件到指定目录
+      parameters:
+      - description: agw编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 配置文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传agw配置文件
+      tags:
+      - agw配置管理
+  /api/v1/oes/agw/conf/{id}/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定的agw配置文件
+      parameters:
+      - description: agw编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 下载成功，返回文件流
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载agw配置文件
+      tags:
+      - agw配置管理
   /api/v1/oes/colony:
     get:
       consumes:

@@ -86,8 +86,8 @@ func TestNewJWTConfig(t *testing.T) {
 			refreshExp:       24 * time.Hour,
 			accessMethod:     "HS256",
 			refreshMethod:    "HS256",
-			accessSecret:     []byte("test-access-secret"),
-			refreshSecret:    []byte("test-refresh-secret"),
+			accessSecret:     []byte("test-access-secret-key-1234567890123456"),
+			refreshSecret:    []byte("test-refresh-secret-key-123456789012345"),
 			expectPanic:      false,
 			wantAccessMethod: jwt.SigningMethodHS256,
 		},
@@ -97,8 +97,8 @@ func TestNewJWTConfig(t *testing.T) {
 			refreshExp:       7 * 24 * time.Hour,
 			accessMethod:     "HS512",
 			refreshMethod:    "HS512",
-			accessSecret:     []byte("long-test-access-secret-key"),
-			refreshSecret:    []byte("long-test-refresh-secret-key"),
+			accessSecret:     []byte("long-test-access-secret-key-1234567890"),
+			refreshSecret:    []byte("long-test-refresh-secret-key-123456789"),
 			expectPanic:      false,
 			wantAccessMethod: jwt.SigningMethodHS512,
 		},
@@ -202,6 +202,61 @@ func TestNewJWTConfig(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestSystemConfValidate(t *testing.T) {
+	valid := validSystemConf()
+	if err := valid.Validate(); err != nil {
+		t.Fatalf("有效配置校验失败: %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		mutate func(*SystemConf)
+	}{
+		{name: "缺少配置段", mutate: func(c *SystemConf) { c.Database = nil }},
+		{name: "非法端口", mutate: func(c *SystemConf) { c.Server.Port = 70000 }},
+		{name: "非法限流", mutate: func(c *SystemConf) { c.Server.Rate.RPS = 0 }},
+		{name: "危险CORS", mutate: func(c *SystemConf) { c.CORS.AllowOrigins = []string{"*"} }},
+		{name: "非法JWT算法", mutate: func(c *SystemConf) { c.Security.Token.AccessMethod = "RS256" }},
+		{name: "刷新令牌期限过短", mutate: func(c *SystemConf) { c.Security.Token.RefreshDuration = time.Minute }},
+		{name: "业务超时超过总超时", mutate: func(c *SystemConf) { c.API.BizCreateTimeout = 2 * c.API.TotalTimeout }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := validSystemConf()
+			tt.mutate(conf)
+			if err := conf.Validate(); err == nil {
+				t.Fatal("期望配置校验失败")
+			}
+		})
+	}
+}
+
+func validSystemConf() *SystemConf {
+	return &SystemConf{
+		Server: &ServerConfig{
+			Host: "127.0.0.1", Port: 8080,
+			Rate:    RateLimitConfig{RPS: 10, Burst: 20},
+			Timeout: TimeoutConfig{Request: time.Minute, Shutdown: 30 * time.Second},
+		},
+		Database: &DBConf{
+			Type: "sqlite", Dsn: "test.db", MaxIdleConns: 1, MaxOpenConns: 1,
+			ReadTimeout: time.Second, WriteTimeout: time.Second, ListTimeout: time.Second,
+			ReadSlow: time.Millisecond, WriteSlow: time.Millisecond, ListSlow: time.Millisecond,
+		},
+		Log:  &LogConfig{Level: "info", MaxSize: 10, MaxAge: 7, MaxBackups: 3},
+		CORS: &AllowConfig{AllowOrigins: []string{"http://localhost"}, AllowCredentials: true, AllowMethods: []string{"GET"}, AllowHeaders: []string{"Authorization"}},
+		Security: &SecurityConfig{
+			Token:    TokenConfig{AccessDuration: time.Hour, RefreshDuration: 24 * time.Hour, AccessMethod: "HS256", RefreshMethod: "HS256"},
+			Login:    LoginSecurityConfig{MaxFailedAttempts: 5, LockDuration: time.Minute},
+			Password: PasswordConfig{StrengthLevel: 2},
+		},
+		SSH:    &SSHConfig{Private: "id_rsa", Timeout: time.Second, UseKnownHosts: true},
+		Upload: &UploadConfig{MaxPkgSize: 100, MaxScriptSize: 1, MaxConfSize: 1},
+		API:    &APIConfig{TotalTimeout: 10 * time.Second, BizCreateTimeout: 5 * time.Second, BizUpdateTimeout: 5 * time.Second, BizQueryTimeout: 5 * time.Second, BizDeleteTimeout: 5 * time.Second},
 	}
 }
 

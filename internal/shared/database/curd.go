@@ -70,70 +70,71 @@ func DBCreate(ctx context.Context, db *gorm.DB, model, value any) error {
 	return nil
 }
 
-func DBCreateTX(ctx context.Context, db *gorm.DB, model, value any) error {
-	// 开启事务处理
+// withTransaction 统一处理事务提交、回滚和 panic 恢复，确保 panic 不会被吞掉。
+func withTransaction(ctx context.Context, db *gorm.DB, fn func(tx *gorm.DB) error) (err error) {
+	if db == nil {
+		return errors.New("数据库实例为空")
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	tx := db.WithContext(ctx).Begin()
 	if tx.Error != nil {
-		// 事务开启失败时记录错误日志
 		return errors.WrapIf(tx.Error, "数据库事务开启失败")
 	}
 
-	var err error
-
-	// 设置panic处理
 	defer func() {
-		err = DBPanic(ctx, tx, err)
+		if recovered := recover(); recovered != nil {
+			rollbackErr := tx.Rollback().Error
+			err = errors.NewWithDetails(
+				"数据库事务发生 panic",
+				"panic", recovered,
+				"stack", string(debug.Stack()),
+			)
+			if rollbackErr != nil {
+				err = errors.WrapWithDetails(err, "数据库事务回滚失败", "rollback_error", rollbackErr)
+			}
+			return
+		}
+
+		if err != nil {
+			if rollbackErr := tx.Rollback().Error; rollbackErr != nil {
+				err = errors.WrapWithDetails(err, "数据库事务回滚失败", "rollback_error", rollbackErr)
+			}
+		}
 	}()
 
-	// 创建主表数据
-	if err = tx.Model(model).Create(value).Error; err != nil {
-		tx.Rollback()
-		return errors.WrapIf(err, "创建数据库记录失败")
+	if err = fn(tx); err != nil {
+		return err
 	}
-
-	// 提交事务
 	if err = tx.Commit().Error; err != nil {
-		tx.Rollback()
 		return errors.WrapIf(err, "数据库事务提交失败")
 	}
 	return nil
 }
 
-func DBCreateRelationTx(ctx context.Context, db *gorm.DB, model, value any, upmap map[string]any) error {
-	// 开启事务处理
-	tx := db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		// 事务开启失败时记录错误日志
-		return errors.WrapIf(tx.Error, "数据库事务开启失败")
-	}
-
-	var err error
-
-	// 设置panic处理
-	defer func() {
-		err = DBPanic(ctx, tx, err)
-	}()
-
-	// 创建主表数据
-	if err = tx.Model(model).Create(value).Error; err != nil {
-		tx.Rollback()
-		return errors.WrapIf(err, "创建数据库记录失败")
-	}
-
-	// 遍历关联关系映射，逐个更新关联字段
-	for k, v := range upmap {
-		if err = tx.Model(value).Association(k).Append(v); err != nil {
-			tx.Rollback()
-			return errors.WrapIf(err, "更新关联关系失败")
+func DBCreateTX(ctx context.Context, db *gorm.DB, model, value any) error {
+	return withTransaction(ctx, db, func(tx *gorm.DB) error {
+		if err := tx.Model(model).Create(value).Error; err != nil {
+			return errors.WrapIf(err, "创建数据库记录失败")
 		}
-	}
+		return nil
+	})
+}
 
-	// 提交事务
-	if err = tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return errors.WrapIf(err, "数据库事务提交失败")
-	}
-	return nil
+func DBCreateRelationTx(ctx context.Context, db *gorm.DB, model, value any, upmap map[string]any) error {
+	return withTransaction(ctx, db, func(tx *gorm.DB) error {
+		if err := tx.Model(model).Create(value).Error; err != nil {
+			return errors.WrapIf(err, "创建数据库记录失败")
+		}
+		for k, v := range upmap {
+			if err := tx.Model(value).Association(k).Append(v); err != nil {
+				return errors.WrapIf(err, "更新关联关系失败")
+			}
+		}
+		return nil
+	})
 }
 
 // DBUpdate 更新数据库记录，支持关联关系更新
@@ -172,33 +173,12 @@ func DBUpdateTx(ctx context.Context, db *gorm.DB, m any, data map[string]any, co
 		return errors.WithStack(gorm.ErrMissingWhereClause)
 	}
 
-	// 开启事务处理（有关联关系更新时必须使用事务）
-	tx := db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		return errors.WrapIf(tx.Error, "数据库事务开启失败")
-	}
-
-	var err error
-
-	// 设置panic处理
-	defer func() {
-		err = DBPanic(ctx, tx, err)
-	}()
-
-	// 更新主表数据
-	if err = tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
-		tx.Rollback()
-		return errors.WrapIf(err, "更新数据库记录失败")
-	}
-
-	// 提交事务
-	if err = tx.Commit().Error; err != nil {
-		// 提交失败时回滚并返回提交错误
-		tx.Rollback()
-		return errors.WrapIf(err, "数据库事务提交失败")
-	}
-
-	return nil
+	return withTransaction(ctx, db, func(tx *gorm.DB) error {
+		if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
+			return errors.WrapIf(err, "更新数据库记录失败")
+		}
+		return nil
+	})
 }
 
 func DBUpdateRelationTx(ctx context.Context, db *gorm.DB, m any, data map[string]any, upmap map[string]any, conds ...any) error {
@@ -207,52 +187,27 @@ func DBUpdateRelationTx(ctx context.Context, db *gorm.DB, m any, data map[string
 		return errors.WithStack(gorm.ErrMissingWhereClause)
 	}
 
-	// 开启事务处理（有关联关系更新时必须使用事务）
-	tx := db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		return errors.WrapIf(tx.Error, "数据库事务开启失败")
-	}
-
-	var err error
-
-	// 设置panic处理
-	defer func() {
-		err = DBPanic(ctx, tx, err)
-	}()
-
-	// 更新主表数据
-	if len(data) > 0 {
-		if err = tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
-			tx.Rollback()
-			return errors.WrapIf(err, "更新数据库记录失败")
+	return withTransaction(ctx, db, func(tx *gorm.DB) error {
+		if len(data) > 0 {
+			if err := tx.Model(m).Where(conds[0], conds[1:]...).Updates(data).Error; err != nil {
+				return errors.WrapIf(err, "更新数据库记录失败")
+			}
 		}
-	}
 
-	// 先查询出具体的记录
-	if err = tx.Where(conds[0], conds[1:]...).First(m).Error; err != nil {
-		tx.Rollback()
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.WrapIf(err, "记录不存在")
+		if err := tx.Where(conds[0], conds[1:]...).First(m).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.WrapIf(err, "记录不存在")
+			}
+			return errors.WrapIf(err, "查询记录失败")
 		}
-		return errors.WrapIf(err, "查询记录失败")
-	}
 
-	// 遍历关联关系映射，逐个更新关联字段
-	for k, v := range upmap {
-		if err = tx.Model(m).Association(k).Replace(v); err != nil {
-			tx.Rollback()
-			return errors.WrapIf(err, "更新关联关系失败")
+		for k, v := range upmap {
+			if err := tx.Model(m).Association(k).Replace(v); err != nil {
+				return errors.WrapIf(err, "更新关联关系失败")
+			}
 		}
-	}
-
-	// 提交事务
-	if err = tx.Commit().Error; err != nil {
-		// 提交失败时回滚并返回提交错误
-		tx.Rollback()
-		return errors.WrapIf(err, "数据库事务提交失败")
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // DBDeleteTx 删除数据库记录
@@ -267,33 +222,12 @@ func DBDeleteTx(ctx context.Context, db *gorm.DB, model any, conds ...any) error
 		return gorm.ErrMissingWhereClause
 	}
 
-	// 开启事务处理（有关联关系更新时必须使用事务）
-	tx := db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		return errors.WrapIf(tx.Error, "数据库事务开启失败")
-	}
-
-	var err error
-
-	// 设置panic处理
-	defer func() {
-		err = DBPanic(ctx, tx, err)
-	}()
-
-	// 执行删除操作
-	if err = tx.Delete(model, conds...).Error; err != nil {
-		tx.Rollback()
-		return errors.WrapIf(err, "删除数据库记录失败")
-	}
-
-	// 提交事务
-	if err = tx.Commit().Error; err != nil {
-		// 提交失败时回滚并返回提交错误
-		tx.Rollback()
-		return errors.WrapIf(err, "删除数据库记录提交失败")
-	}
-
-	return nil
+	return withTransaction(ctx, db, func(tx *gorm.DB) error {
+		if err := tx.Delete(model, conds...).Error; err != nil {
+			return errors.WrapIf(err, "删除数据库记录失败")
+		}
+		return nil
+	})
 }
 
 // DBGet 查询单条数据库记录，支持预加载关联关系

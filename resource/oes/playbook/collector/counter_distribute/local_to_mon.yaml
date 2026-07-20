@@ -6,21 +6,8 @@
   run_once: true
   ignore_errors: yes
 
-- name: create mon save self directory
-  command: ssh -p {{ mon_host.ansible_port }} {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }} "rm -rf {{ mon_save_self_path }} && mkdir -p {{ mon_save_self_path }}"
-  delegate_to: 127.0.0.1
-  run_once: true
-  ignore_errors: yes
-
 - name: send xcounter files to mon
   command: rsync -az -e 'ssh -p {{ mon_host.ansible_port }}' {{ local_path_oes_home_counter_colodir_data_broker }}/ {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_save_counter_path }}/
-  delegate_to: 127.0.0.1
-  run_once: true
-  ignore_errors: yes
-
-- name: copy crd files to mon
-  command: rsync -az -e 'ssh -p {{ mon_host.ansible_port }}' {{ local_path_oes_home_mon_colodir }}/{{ item }} {{ mon_host.ansible_user }}@{{ mon_host.ansible_host }}:{{ mon_save_self_path }}/
-  with_items: "{{ mon_crd_cp_files }}"
   delegate_to: 127.0.0.1
   run_once: true
   ignore_errors: yes

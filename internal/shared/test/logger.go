@@ -1,17 +1,8 @@
 package test
 
-import (
-	"github.com/google/uuid"
-	"go.uber.org/zap"
-)
+import "go.uber.org/zap"
 
+// NewTestZapLogger 默认返回静默日志器，避免正常的错误分支测试输出大量堆栈。
 func NewTestZapLogger() *zap.Logger {
-	logger, err := zap.NewDevelopment(zap.Fields(
-		zap.String("trace_id", uuid.NewString()),
-		zap.Uint32("user_id", 1),
-	))
-	if err != nil {
-		panic(err)
-	}
-	return logger
+	return zap.NewNop()
 }

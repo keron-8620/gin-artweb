@@ -13,13 +13,17 @@ server: # 服务配置
     request: 60s # 请求超时时间
     shutdown: 30s # 关闭超时时间
   swagger: true # 是否启用swagger
+  enable_metrics: false # 是否暴露Prometheus指标，生产环境建议仅在管理网络开启
+  enable_pprof: false # 是否暴露pprof，生产环境默认关闭
+  trusted_proxies: [] # 受信任反向代理CIDR；为空时不信任X-Forwarded-For
 
 database: # 数据库配置
   type: "sqlite" # 数据库类型(mysql/postgresql/opengauss/sqlserver/sqlite)
   dsn: "artweb.db" # sqlite3数据库配置
-  # dsn: "root:Quant360@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
-  # dsn: "host=192.168.11.113 port=5432 user=judgement password=Quant360 dbname=gin_artweb sslmode=disable" # PostgreSql/OpenGauss配置
-  # dsn: "sqlserver://sa:Quant360@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
+  # dsn: "root:your-password@tcp(127.0.0.1:3306)/artweb?charset=utf8mb4&parseTime=True&loc=Local" # MySql/OceanBase配置
+  # dsn: "host=127.0.0.1 port=5432 user=gaussdb password=your-password dbname=artweb sslmode=disable" # PostgreSql/OpenGauss配置
+  # dsn: "sqlserver://sa:your-password@127.0.0.1:1433?database=artweb&encrypt=disable&charset=utf8" # SqlServer配置
+
   max_idle_conns: 10 # 最大空闲连接数
   max_open_conns: 10 # 最大打开连接数
   log_sql: true # 是否记录sql日志
@@ -41,13 +45,23 @@ log: # 日志服务
   format: "json" # 日志格式
 
 cors: # 跨域服务
-  allow_origins: # 允许的源
-    - "*"
+  allow_origins: # 允许的源，生产环境应配置明确的前端域名
+    - "http://192.168.10.12:8621"
   allow_credentials: true # 是否允许携带cookie
   allow_methods: # 允许的方法
-    - "*"
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "PATCH"
+    - "DELETE"
+    - "OPTIONS"
   allow_headers: # 允许的请求头
-    - "*"
+    - "Origin"
+    - "Content-Type"
+    - "Accept"
+    - "Authorization"
+    - "X-Timestamp"
+    - "X-Nonce"
 
 security: # 安全配置
   host_guard: # host请求头配置
@@ -80,6 +94,7 @@ api:
 ssh: # ssh服务
   private: "id_rsa" # ssh私钥的文件名
   timeout: 5s # ssh连接超时时间
+  use_known_hosts: false # 严格校验 ~/.ssh/known_hosts；未知主机直接拒绝
 
 upload: # 文件上传
   max_script_size: 1 # 上传脚本大小限制(MB)

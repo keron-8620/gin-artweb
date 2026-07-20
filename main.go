@@ -71,12 +71,16 @@ func main() {
 		}
 	}
 
-	// 加载环境变量
-	if err := godotenv.Load(filepath.Join(config.BaseDir, ".env")); err != nil {
+	// .env 仅用于本地开发；生产环境可直接通过进程环境或 Secret 注入。
+	if err := godotenv.Load(filepath.Join(config.BaseDir, ".env")); err != nil && !os.IsNotExist(err) {
 		golog.Fatalf("加载环境变量失败: %v", err)
 	}
-	// 加载系统配置
-	sysConf := newSystemConf(filepath.Join(config.ConfigDir, configPath))
+	// 加载系统配置；绝对路径直接使用，相对路径基于 config 目录解析。
+	if !filepath.IsAbs(configPath) {
+		configPath = filepath.Join(config.ConfigDir, configPath)
+	}
+	sysConf := newSystemConf(configPath)
+	validateRuntimeSecrets(sysConf)
 
 	// 初始化服务器日志记录器
 	serverWrite := log.NewLumLogger(sysConf.Log, filepath.Join(config.LogDir, "server.log"))
@@ -159,6 +163,9 @@ func main() {
 		Addr:              fmt.Sprintf("%s:%d", i.Conf.Server.Host, i.Conf.Server.Port),
 		Handler:           r,
 		ReadHeaderTimeout: sysConf.Server.Timeout.Request,
+		ReadTimeout:       sysConf.Server.Timeout.Request,
+		WriteTimeout:      sysConf.Server.Timeout.Request,
+		IdleTimeout:       2 * sysConf.Server.Timeout.Request,
 	}
 
 	// 启动一个 goroutine 来异步启动 HTTP/HTTPS 服务
@@ -232,6 +239,22 @@ func main() {
 	loggers.Server.Info("服务器已退出")
 }
 
+func validateRuntimeSecrets(conf *config.SystemConf) {
+	accessSecret := os.Getenv("JWT_ACCESS_SECRET")
+	refreshSecret := os.Getenv("JWT_REFRESH_SECRET")
+	if len(accessSecret) < 32 || len(refreshSecret) < 32 {
+		golog.Fatal("JWT_ACCESS_SECRET 和 JWT_REFRESH_SECRET 必须分别为至少32字节")
+	}
+	if accessSecret == refreshSecret {
+		golog.Fatal("JWT_ACCESS_SECRET 和 JWT_REFRESH_SECRET 必须使用不同的值")
+	}
+	if conf.Server.EnableMetrics || conf.Server.EnablePprof {
+		if len(os.Getenv("DIAGNOSTICS_TOKEN")) < 32 {
+			golog.Fatal("启用 metrics 或 pprof 时 DIAGNOSTICS_TOKEN 必须至少32字节")
+		}
+	}
+}
+
 // newSystemConf 加载系统配置文件
 func newSystemConf(configPath string) *config.SystemConf {
 	if configPath == "" {
@@ -256,6 +279,9 @@ func newSystemConf(configPath string) *config.SystemConf {
 	// 解析YAML配置
 	if err := yaml.Unmarshal(data, conf); err != nil {
 		golog.Fatalf("FATAL: 配置文件解析失败: %v", err)
+	}
+	if err := conf.Validate(); err != nil {
+		golog.Fatalf("FATAL: 配置文件校验失败: %v", err)
 	}
 
 	if conf.Database.Type == "sqlite" && !filepath.IsAbs(conf.Database.Dsn) {

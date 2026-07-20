@@ -84,7 +84,6 @@ func NewSSHClient(
 	return ssh.NewClient(clientConn, chans, reqs), nil
 }
 
-// getHostKeyCallback 获取主机密钥验证回调函数
 func getHostKeyCallback(ctx context.Context, useKnownHosts bool) (ssh.HostKeyCallback, error) {
 	// 检查上下文是否已取消
 	select {
@@ -98,24 +97,18 @@ func getHostKeyCallback(ctx context.Context, useKnownHosts bool) (ssh.HostKeyCal
 		return ssh.InsecureIgnoreHostKey(), nil
 	}
 
-	// 尝试使用默认的known_hosts路径
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		// 如果无法获取用户目录，回退到不安全的回调
 		return nil, errors.WithMessage(err, "获取用户主目录失败")
 	}
-
 	knownHostsPath := filepath.Join(homeDir, ".ssh", "known_hosts")
-
-	// 检查known_hosts文件是否存在
-	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
-		return nil, errors.WithMessagef(err, "known_hosts文件不存在，路径: %s", knownHostsPath)
+	if _, err := os.Stat(knownHostsPath); err != nil {
+		return nil, errors.WithMessage(err, "known_hosts 文件不可用，生产模式拒绝首次自动信任")
 	}
 
 	callback, err := knownhosts.New(knownHostsPath)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "创建known_hosts回调失败，路径: %s", knownHostsPath)
+		return nil, errors.WithMessage(err, "加载 known_hosts 失败")
 	}
-
 	return callback, nil
 }

@@ -16,7 +16,7 @@
 
 
 - name: fetch remote bse file
-  command: "rsync -az --exclude='*/' -e 'ssh -p {{ bse_port }}' {{ bse_user }}@{{ bse_host }}:{{ gateway_path_root_exchange_bse }}/{{ item }} {{ local_path_mds_home_bse_colodir }}/"
+  command: "rsync -az --min-size={{ min_file_size }} --exclude='*/' -e 'ssh -p {{ bse_port }}' {{ bse_user }}@{{ bse_host }}:{{ gateway_path_root_exchange_bse }}/{{ item }} {{ local_path_mds_home_bse_colodir }}/"
   with_items: "{{ bse_cp_files_list }}"
   ignore_errors: yes
   delegate_to: 127.0.0.1

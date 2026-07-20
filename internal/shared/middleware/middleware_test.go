@@ -65,20 +65,32 @@ func TestExtractToken(t *testing.T) {
 		expectedToken string
 	}{
 		{
-			name:          "HTTP请求从Authorization头部获取token",
+			name:          "HTTP请求从Authorization头部获取Bearer token",
 			headers:       map[string]string{"Authorization": "Bearer token123"},
 			queryParams:   nil,
-			expectedToken: "Bearer token123",
+			expectedToken: "token123",
 		},
 		{
-			name:          "WebSocket请求从查询参数获取token",
+			name:          "HTTP请求直接使用原始token（缺少Bearer前缀，拒绝）",
+			headers:       map[string]string{"Authorization": "raw-token-abc"},
+			queryParams:   nil,
+			expectedToken: "",
+		},
+		{
+			name:          "WebSocket请求拒绝查询参数token",
 			headers:       map[string]string{"Connection": "upgrade", "Upgrade": "websocket"},
 			queryParams:   map[string]string{"Authorization": "ws-token"},
-			expectedToken: "ws-token",
+			expectedToken: "",
 		},
 		{
-			name:          "WebSocket请求从Sec-WebSocket-Protocol获取token",
-			headers:       map[string]string{"Connection": "upgrade", "Upgrade": "websocket", "Sec-WebSocket-Protocol": "ws-protocol-token"},
+			name:          "WebSocket请求优先使用Authorization头",
+			headers:       map[string]string{"Connection": "keep-alive, Upgrade", "Upgrade": "websocket", "Authorization": "header-token"},
+			queryParams:   nil,
+			expectedToken: "header-token",
+		},
+		{
+			name:          "WebSocket请求从Sec-WebSocket-Protocol获取Bearer token",
+			headers:       map[string]string{"Connection": "upgrade", "Upgrade": "websocket", "Sec-WebSocket-Protocol": "Bearer ws-protocol-token"},
 			queryParams:   nil,
 			expectedToken: "ws-protocol-token",
 		},
@@ -128,6 +140,8 @@ func TestJWTAuthMiddleware(t *testing.T) {
 	jwtConfig := newTestJWTConfig()
 	userInfo := newTestUserInfo()
 
+	rawToken := newTestAccessToken(t, jwtConfig, userInfo)
+
 	tests := []struct {
 		name           string
 		token          string
@@ -136,8 +150,8 @@ func TestJWTAuthMiddleware(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "有效token",
-			token:          newTestAccessToken(t, jwtConfig, userInfo),
+			name:           "有效Bearer token",
+			token:          "Bearer " + rawToken,
 			setToken:       true,
 			expectError:    false,
 			expectedStatus: http.StatusOK,

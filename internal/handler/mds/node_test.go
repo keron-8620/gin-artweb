@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 
 	mdsmodel "gin-artweb/internal/model/mds"
 	resomodel "gin-artweb/internal/model/resource"
@@ -23,7 +24,7 @@ import (
 
 func createTestMdsColonySetup() *mdsmodel.MdsColonyModel {
 	return &mdsmodel.MdsColonyModel{
-		ColonyNum:     fmt.Sprintf("0%d", uuid.New().ID()%100),
+		ColonyNum:     nextTestMdsColonyNum(),
 		ExtractedName: "mds-test",
 		IsEnable:      true,
 	}
@@ -50,6 +51,7 @@ func createTestMdsNodeUpsertDTO(colonyID, hostID uint32) mdsmodel.MdsNodeUpsertD
 
 type MdsNodeHandlerTestSuite struct {
 	suite.Suite
+	db           *gorm.DB
 	router       *gin.Engine
 	handler      *MdsNodeHandler
 	nodeRepo     *mdsrepo.MdsNodeRepo
@@ -63,64 +65,49 @@ type MdsNodeHandlerTestSuite struct {
 func (s *MdsNodeHandlerTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
-	db := test.NewTestGormDBWithConfig(nil)
-	_ = db.AutoMigrate(
+	s.db = test.NewNamedTestGormDBWithConfig("handler_mds_node", nil)
+	s.Require().NoError(s.db.AutoMigrate(
 		&mdsmodel.MdsNodeModel{},
 		&mdsmodel.MdsColonyModel{},
 		&resomodel.HostModel{},
-	)
+	))
 
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
 	slowThreshold := test.NewTestDBSlowThreshold()
 
-	s.nodeRepo = mdsrepo.NewMdsNodeRepo(logger, db, dbTimeout, slowThreshold)
-	s.colonyRepo = mdsrepo.NewMdsColonyRepo(logger, db, dbTimeout, slowThreshold)
-	s.hostRepo = resorepo.NewHostRepo(logger, db, dbTimeout, slowThreshold)
+	s.nodeRepo = mdsrepo.NewMdsNodeRepo(logger, s.db, dbTimeout, slowThreshold)
+	s.colonyRepo = mdsrepo.NewMdsColonyRepo(logger, s.db, dbTimeout, slowThreshold)
+	s.hostRepo = resorepo.NewHostRepo(logger, s.db, dbTimeout, slowThreshold)
 
 	nodeSvc := mdssvc.NewMdsNodeService(logger, s.nodeRepo)
 	s.handler = NewMdsNodeHandler(logger, nodeSvc)
 
-	s.router = gin.Default()
+	s.router = gin.New()
 	group := s.router.Group("/api/v1/mds")
 	s.handler.LoadRouter(group)
+}
 
-	colony := createTestMdsColonySetup()
-	_ = s.colonyRepo.CreateModel(context.Background(), colony)
-	s.testColonyID = colony.ID
-
-	host := createTestHostForMds()
-	_ = s.hostRepo.CreateModel(context.Background(), host)
-	s.testHostID = host.ID
-
-	nodeDTO := createTestMdsNodeUpsertDTO(s.testColonyID, s.testHostID)
-	node := nodeDTO.ToModel()
-	_ = s.nodeRepo.CreateModel(context.Background(), &node)
-	s.testNodeID = node.ID
+func (s *MdsNodeHandlerTestSuite) TearDownSuite() {
+	s.Require().NoError(test.CloseTestGormDB(s.db))
 }
 
 func (s *MdsNodeHandlerTestSuite) SetupTest() {
-	db := test.NewTestGormDBWithConfig(nil)
-	_ = db.Exec("DELETE FROM mds_node").Error
-	_ = db.Exec("DELETE FROM mds_colony").Error
-	_ = db.Exec("DELETE FROM resource_host").Error
-	_ = db.AutoMigrate(
-		&mdsmodel.MdsNodeModel{},
-		&mdsmodel.MdsColonyModel{},
-		&resomodel.HostModel{},
-	)
+	s.Require().NoError(s.db.Exec("DELETE FROM mds_node").Error)
+	s.Require().NoError(s.db.Exec("DELETE FROM mds_colony").Error)
+	s.Require().NoError(s.db.Exec("DELETE FROM resource_host").Error)
 
 	colony := createTestMdsColonySetup()
-	_ = s.colonyRepo.CreateModel(context.Background(), colony)
+	s.Require().NoError(s.colonyRepo.CreateModel(context.Background(), colony))
 	s.testColonyID = colony.ID
 
 	host := createTestHostForMds()
-	_ = s.hostRepo.CreateModel(context.Background(), host)
+	s.Require().NoError(s.hostRepo.CreateModel(context.Background(), host))
 	s.testHostID = host.ID
 
 	nodeDTO := createTestMdsNodeUpsertDTO(s.testColonyID, s.testHostID)
 	node := nodeDTO.ToModel()
-	_ = s.nodeRepo.CreateModel(context.Background(), &node)
+	s.Require().NoError(s.nodeRepo.CreateModel(context.Background(), &node))
 	s.testNodeID = node.ID
 }
 
@@ -209,7 +196,7 @@ func (s *MdsNodeHandlerTestSuite) TestListMdsNode_Success() {
 	for i := 0; i < 3; i++ {
 		nodeDTO := createTestMdsNodeUpsertDTO(s.testColonyID, s.testHostID)
 		node := nodeDTO.ToModel()
-		_ = s.nodeRepo.CreateModel(context.Background(), &node)
+		s.Require().NoError(s.nodeRepo.CreateModel(context.Background(), &node))
 	}
 
 	req := httptest.NewRequest("GET", "/api/v1/mds/node?page=1&size=10", nil)

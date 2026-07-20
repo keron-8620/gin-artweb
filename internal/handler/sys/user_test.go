@@ -79,8 +79,8 @@ func (s *UserHandlerTestSuite) SetupSuite() {
 		time.Minute*10,
 		"HS256",
 		"HS256",
-		[]byte("test_access_secret"),
-		[]byte("test_refresh_secret"),
+		[]byte("test-access-secret-key-1234567890123456"),
+		[]byte("test-refresh-secret-key-123456789012345"),
 	)
 
 	s.userService = syssvc.NewUserService(

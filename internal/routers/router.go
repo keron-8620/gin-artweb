@@ -1,10 +1,13 @@
 package routers
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +28,10 @@ func NewRouter(
 	version, htmlDir string,
 ) *gin.Engine {
 	r := gin.New()
+	if err := r.SetTrustedProxies(init.Conf.Server.TrustedProxies); err != nil {
+		loggers.Server.Warn("配置受信任代理失败，将不信任代理转发头")
+		_ = r.SetTrustedProxies(nil)
+	}
 
 	// 配置静态文件处理
 	htmlPath := filepath.Join(htmlDir, "index.html")
@@ -42,13 +49,22 @@ func NewRouter(
 	staticPath := filepath.Join(htmlDir, "static")
 	r.Static("/static", staticPath)
 
-	// 健康检查接口
+	// 存活检查只反映 HTTP 进程状态。
+	r.GET("/livez", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "msg": "ok", "data": nil})
+	})
+	// 就绪检查验证数据库连接，供负载均衡和编排系统摘流。
+	r.GET("/readyz", func(c *gin.Context) {
+		sqlDB, err := init.DB.DB()
+		if err != nil || sqlDB.PingContext(c.Request.Context()) != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"code": http.StatusServiceUnavailable, "msg": "database unavailable", "data": nil})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "msg": "ok", "data": nil})
+	})
+	// 保留旧健康检查路径以兼容已有部署。
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"code": http.StatusOK,
-			"msg":  time.Now().Format(time.DateTime),
-			"data": nil,
-		})
+		c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "msg": time.Now().Format(time.DateTime), "data": nil})
 	})
 
 	// 版本信息接口
@@ -75,11 +91,19 @@ func NewRouter(
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
-	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
-	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
-	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+	diagnostics := r.Group("")
+	diagnostics.Use(diagnosticsAuth(os.Getenv("DIAGNOSTICS_TOKEN")))
+	if init.Conf.Server.EnableMetrics {
+		diagnostics.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	}
+	if init.Conf.Server.EnablePprof {
+		diagnostics.GET("/debug/pprof/", gin.WrapF(pprof.Index))
+		diagnostics.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+		diagnostics.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+		diagnostics.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+		diagnostics.POST("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+		diagnostics.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+	}
 
 	// 注册跨域请求处理中间件
 	r.Use(middleware.CorsMiddleware(init.Conf.CORS))
@@ -140,4 +164,21 @@ func NewRouter(
 	newMdsRouter(apiRouter, init, loggers, jobService)
 	newOesRouter(apiRouter, init, loggers, jobService)
 	return r
+}
+
+func diagnosticsAuth(expected string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		provided := strings.TrimSpace(c.GetHeader("Authorization"))
+		provided = strings.TrimSpace(strings.TrimPrefix(provided, "Bearer "))
+		if expected == "" || len(provided) != len(expected) || subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) != 1 {
+			c.Header("WWW-Authenticate", `Bearer realm="diagnostics"`)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"code": http.StatusUnauthorized,
+				"msg":  "diagnostics authentication required",
+				"data": nil,
+			})
+			return
+		}
+		c.Next()
+	}
 }

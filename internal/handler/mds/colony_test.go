@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 
 	mdsmodel "gin-artweb/internal/model/mds"
 	monmodel "gin-artweb/internal/model/mon"
@@ -43,9 +45,15 @@ func createTestMonNodeForMds(hostID uint32) *monmodel.MonNodeModel {
 	}
 }
 
+var mdsColonySequence atomic.Uint32
+
+func nextTestMdsColonyNum() string {
+	return fmt.Sprintf("%02d", mdsColonySequence.Add(1)%100)
+}
+
 func createTestMdsColonyDTO(packageID, monNodeID uint32) mdsmodel.MdsColonyUpsertDTO {
 	return mdsmodel.MdsColonyUpsertDTO{
-		ColonyNum:     fmt.Sprintf("0%d", uuid.New().ID()%100),
+		ColonyNum:     nextTestMdsColonyNum(),
 		ExtractedName: "mds-extracted",
 		IsEnable:      true,
 		PackageID:     packageID,
@@ -55,6 +63,7 @@ func createTestMdsColonyDTO(packageID, monNodeID uint32) mdsmodel.MdsColonyUpser
 
 type MdsColonyHandlerTestSuite struct {
 	suite.Suite
+	db            *gorm.DB
 	router        *gin.Engine
 	handler       *MdsColonyHandler
 	colonyRepo    *mdsrepo.MdsColonyRepo
@@ -70,69 +79,42 @@ type MdsColonyHandlerTestSuite struct {
 func (s *MdsColonyHandlerTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
-	db := test.NewTestGormDBWithConfig(nil)
-	_ = db.AutoMigrate(
+	s.db = test.NewNamedTestGormDBWithConfig("handler_mds_colony", nil)
+	s.Require().NoError(s.db.AutoMigrate(
 		&mdsmodel.MdsColonyModel{},
 		&mdsmodel.MdsNodeModel{},
 		&monmodel.MonNodeModel{},
 		&resomodel.PackageModel{},
 		&resomodel.HostModel{},
-	)
+	))
 
 	dbTimeout := test.NewTestDBTimeouts()
 	logger := test.NewTestZapLogger()
 	slowThreshold := test.NewTestDBSlowThreshold()
 
-	s.colonyRepo = mdsrepo.NewMdsColonyRepo(logger, db, dbTimeout, slowThreshold)
-	s.packageRepo = resorepo.NewPackageRepo(logger, db, dbTimeout, slowThreshold)
-	s.monNodeRepo = monrepo.NewMonNodeRepo(logger, db, dbTimeout, slowThreshold)
-	s.hostRepo = resorepo.NewHostRepo(logger, db, dbTimeout, slowThreshold)
+	s.colonyRepo = mdsrepo.NewMdsColonyRepo(logger, s.db, dbTimeout, slowThreshold)
+	s.packageRepo = resorepo.NewPackageRepo(logger, s.db, dbTimeout, slowThreshold)
+	s.monNodeRepo = monrepo.NewMonNodeRepo(logger, s.db, dbTimeout, slowThreshold)
+	s.hostRepo = resorepo.NewHostRepo(logger, s.db, dbTimeout, slowThreshold)
 
 	colonySvc := mdssvc.NewMdsColonyService(logger, s.colonyRepo, nil)
 	s.handler = NewMdsColonyHandler(logger, colonySvc, nil)
 
-	s.router = gin.Default()
+	s.router = gin.New()
 	group := s.router.Group("/api/v1/mds")
 	s.handler.LoadRouter(group)
+}
 
-	host := &resomodel.HostModel{
-		Name:    "mds-host",
-		Label:   "mds",
-		SSHIP:   "192.168.1.1",
-		SSHPort: 22,
-		SSHUser: "root",
-	}
-	_ = s.hostRepo.CreateModel(context.Background(), host)
-	s.testHostID = host.ID
-
-	pkg := createTestPackageForMds()
-	_ = s.packageRepo.CreateModel(context.Background(), pkg)
-	s.testPackageID = pkg.ID
-
-	monNode := createTestMonNodeForMds(s.testHostID)
-	_ = s.monNodeRepo.CreateModel(context.Background(), monNode)
-	s.testMonNodeID = monNode.ID
-
-	colonyDTO := createTestMdsColonyDTO(s.testPackageID, s.testMonNodeID)
-	colony := colonyDTO.ToModel()
-	_ = s.colonyRepo.CreateModel(context.Background(), &colony)
-	s.testColonyID = colony.ID
+func (s *MdsColonyHandlerTestSuite) TearDownSuite() {
+	s.Require().NoError(test.CloseTestGormDB(s.db))
 }
 
 func (s *MdsColonyHandlerTestSuite) SetupTest() {
-	db := test.NewTestGormDBWithConfig(nil)
-	_ = db.Exec("DELETE FROM mds_node").Error
-	_ = db.Exec("DELETE FROM mds_colony").Error
-	_ = db.Exec("DELETE FROM mon_node").Error
-	_ = db.Exec("DELETE FROM resource_package").Error
-	_ = db.Exec("DELETE FROM resource_host").Error
-	_ = db.AutoMigrate(
-		&mdsmodel.MdsColonyModel{},
-		&mdsmodel.MdsNodeModel{},
-		&monmodel.MonNodeModel{},
-		&resomodel.PackageModel{},
-		&resomodel.HostModel{},
-	)
+	s.Require().NoError(s.db.Exec("DELETE FROM mds_node").Error)
+	s.Require().NoError(s.db.Exec("DELETE FROM mds_colony").Error)
+	s.Require().NoError(s.db.Exec("DELETE FROM mon_node").Error)
+	s.Require().NoError(s.db.Exec("DELETE FROM resource_package").Error)
+	s.Require().NoError(s.db.Exec("DELETE FROM resource_host").Error)
 
 	host := &resomodel.HostModel{
 		Name:    "mds-host",
@@ -141,20 +123,20 @@ func (s *MdsColonyHandlerTestSuite) SetupTest() {
 		SSHPort: 22,
 		SSHUser: "root",
 	}
-	_ = s.hostRepo.CreateModel(context.Background(), host)
+	s.Require().NoError(s.hostRepo.CreateModel(context.Background(), host))
 	s.testHostID = host.ID
 
 	pkg := createTestPackageForMds()
-	_ = s.packageRepo.CreateModel(context.Background(), pkg)
+	s.Require().NoError(s.packageRepo.CreateModel(context.Background(), pkg))
 	s.testPackageID = pkg.ID
 
 	monNode := createTestMonNodeForMds(s.testHostID)
-	_ = s.monNodeRepo.CreateModel(context.Background(), monNode)
+	s.Require().NoError(s.monNodeRepo.CreateModel(context.Background(), monNode))
 	s.testMonNodeID = monNode.ID
 
 	colonyDTO := createTestMdsColonyDTO(s.testPackageID, s.testMonNodeID)
 	colony := colonyDTO.ToModel()
-	_ = s.colonyRepo.CreateModel(context.Background(), &colony)
+	s.Require().NoError(s.colonyRepo.CreateModel(context.Background(), &colony))
 	s.testColonyID = colony.ID
 }
 
@@ -243,8 +225,7 @@ func (s *MdsColonyHandlerTestSuite) TestListMdsColony_Success() {
 	for i := 0; i < 3; i++ {
 		colonyDTO := createTestMdsColonyDTO(s.testPackageID, s.testMonNodeID)
 		colony := colonyDTO.ToModel()
-		colony.ColonyNum = fmt.Sprintf("0%d", (i+5)*10)
-		_ = s.colonyRepo.CreateModel(context.Background(), &colony)
+		s.Require().NoError(s.colonyRepo.CreateModel(context.Background(), &colony))
 	}
 
 	req := httptest.NewRequest("GET", "/api/v1/mds/colony?page=1&size=10", nil)

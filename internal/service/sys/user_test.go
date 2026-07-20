@@ -117,8 +117,8 @@ func (suite *UserTestSuite) SetupSuite() {
 			time.Duration(10)*time.Minute,
 			"HS256",
 			"HS256",
-			[]byte("test_access_secret"),
-			[]byte("test_refresh_secret"),
+			[]byte("test-access-secret-key-1234567890123456"),
+			[]byte("test-refresh-secret-key-123456789012345"),
 		),
 		SecuritySettings{
 			MaxFailedAttempts: 2,

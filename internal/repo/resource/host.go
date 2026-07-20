@@ -24,6 +24,7 @@ type HostRepo struct {
 	gormDB        *gorm.DB                // GORM数据库连接
 	timeouts      *config.DBTimeout       // 数据库操作超时配置
 	slowThreshold *config.DBSlowThreshold // 数据库操作慢查询阈值配置
+	useKnownHosts bool                    // 是否校验 SSH 主机指纹
 }
 
 // NewHostRepo 创建主机仓库实例
@@ -50,6 +51,11 @@ func NewHostRepo(
 		timeouts:      timeouts,
 		slowThreshold: slowThreshold,
 	}
+}
+
+// SetUseKnownHosts 设置 SSH 主机指纹校验策略。
+func (r *HostRepo) SetUseKnownHosts(enabled bool) {
+	r.useKnownHosts = enabled
 }
 
 // CreateModel 创建主机模型
@@ -456,7 +462,7 @@ func (r *HostRepo) NewSSHClient(
 	)
 
 	connectsshStartTime := time.Now()
-	client, err := shell.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, false, timeout)
+	client, err := shell.NewSSHClient(ctx, sshIP, sshPort, sshUser, sshAuths, r.useKnownHosts, timeout)
 	connectsshDuration := time.Since(connectsshStartTime)
 	if err != nil {
 		log.Error(

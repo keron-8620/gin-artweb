@@ -1,6 +1,7 @@
 package oes
 
 import (
+	"mime/multipart"
 	"time"
 
 	"go.uber.org/zap/zapcore"
@@ -8,6 +9,7 @@ import (
 	"gin-artweb/internal/model/common"
 	"gin-artweb/internal/model/resource"
 	"gin-artweb/internal/shared/database"
+	"gin-artweb/pkg/fileutil"
 )
 
 type OesAgwModel struct {
@@ -233,3 +235,17 @@ func ListAgwToDetailOut(
 	}
 	return mso
 }
+
+type UploadAgwConfDto struct {
+	// 上传的agw配置文件
+	File *multipart.FileHeader `form:"file" binding:"required"`
+}
+
+// AgwConfFileQueryDTO agw配置文件名查询参数
+type AgwConfFileQueryDTO struct {
+	// 配置文件名称
+	Filename string `form:"filename" binding:"required"`
+}
+
+// PagAgwConfResp 配置文件名列表结构
+type PagAgwConfResp = common.APIResp[*fileutil.FileInfo]

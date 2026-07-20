@@ -382,7 +382,8 @@ func (suite *RecordServiceTestSuite) TestCancel() {
 	}
 
 	record, err := suite.recordService.CreateScriptRecord(ctx, execBiz)
-	suite.Nil(err, "CreateScriptRecord should succeed")
+	suite.Require().Nil(err, "CreateScriptRecord should succeed")
+	suite.Require().NotNil(record, "Record should not be nil")
 
 	suite.recordService.Cancel(ctx, record.ID)
 

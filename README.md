@@ -15,7 +15,9 @@
 7. 启动bin目录下的可执行程序，通过浏览器访问页面
    启动命令: sh cmd/start.sh
    停止命令: sh cmd/stop.sh
-   默认的用户名为mon, 密码为Quant360\@mon
+   初始管理员凭据必须通过部署流程安全下发，禁止使用或记录默认密码。
+   JWT_ACCESS_SECRET、JWT_REFRESH_SECRET 必须分别配置为不同的至少32字节随机值。
+   启用 metrics 或 pprof 时，还必须设置 DIAGNOSTICS_TOKEN。
    注: 系统默认的脚本使用python3解释器，建议在虚拟环境
 
 \################################ Web程序部署 ##################################

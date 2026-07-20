@@ -1,15 +1,15 @@
-.PHONY: build test clean docker-build docker-push run help version
+.PHONY: build test verify coverage clean docker-build docker-push run help version
 
-# 项目配置
-BINARY_NAME=gin-artweb
-VERSION?=0.17.7.0.1
-COMMIT_ID?=$(shell git rev-parse --short HEAD)
+# 项目配置：版本默认来自 Git，发布时可通过 VERSION=x.y.z 覆盖。
+BINARY_NAME=artweb
+# VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION=0.17.7.0.8
+COMMIT_ID?=$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_TIME?=$(shell date +"%Y-%m-%d %H:%M:%S")
 DOCKER_IMAGE?=swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb
 DOCKER_TAG?=$(VERSION)
 
 # 环境变量
-export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH=amd64
 
@@ -20,7 +20,7 @@ help:  ## 显示帮助信息
 
 build:  ## 构建二进制文件
 	@echo "构建项目..."
-	@go build \
+	@CGO_ENABLED=0 go build \
 		-trimpath \
 		-ldflags "-s -w \
 			-X 'main.version=$(VERSION)' \
@@ -32,10 +32,31 @@ build:  ## 构建二进制文件
 		-o bin/$(BINARY_NAME) main.go
 	@echo "构建完成: bin/$(BINARY_NAME)"
 
-test:  ## 运行测试
-	@echo "运行测试..."
-	@go test -v ./...
-	@echo "测试完成"
+swag:  ## 生成swagger文档
+	@echo "开始生成生成swagger文档..."
+	@swag init
+	@echo "生成swagger文档完成"
+
+verify:  ## 执行格式、静态检查、竞争检测和安全扫描
+
+	@echo "===== go vet 静态检查 ====="
+	@go vet ./...
+
+	@echo "===== golangci-lint 代码规范 ====="
+	@golangci-lint run --timeout 5m
+
+	@echo "===== gosec 安全漏洞扫描 ====="
+	@gosec -quiet --exclude-dir=.venv ./...
+
+	@echo "===== go test 单元测试（含竞争检测） ====="
+	@CGO_ENABLED=1 go test -race -timeout 300s -parallel $(shell nproc) -coverprofile=coverage.out -failfast ./...
+
+
+coverage:  ## 生成覆盖率报告
+	@mkdir -p html
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o html/coverage.html
+	@go tool cover -func=coverage.out | tail -1
 
 clean:  ## 清理构建产物
 	@echo "清理构建产物..."

@@ -725,7 +725,24 @@ func (s *UserService) RefreshTokens(
 		)
 		return "", "", errors.ErrTokenInvalid
 	}
-	accessToken, err := auth.NewAccessJWT(ctx, s.jwt, claims.UserInfo)
+	// 刷新时重新读取用户状态和权限，避免继续使用旧 Claims 延长已失效权限。
+	user, userErr := s.FindUserByID(ctx, nil, claims.UserID)
+	if userErr != nil || user.Username != claims.Username || !user.IsActive {
+		log.Warn(
+			"刷新令牌:用户不存在、已禁用或令牌主体不匹配",
+			zap.Uint32("user_id", claims.UserID),
+			zap.String("username", claims.Username),
+		)
+		return "", "", errors.ErrTokenInvalid
+	}
+	currentUserInfo := auth.UserInfo{
+		UserID:   user.ID,
+		Username: user.Username,
+		RoleID:   user.RoleID,
+		IsStaff:  user.IsStaff,
+	}
+
+	accessToken, err := auth.NewAccessJWT(ctx, s.jwt, currentUserInfo)
 	if err != nil {
 		log.Error(
 			"刷新令牌:生成访问令牌失败",
@@ -734,7 +751,7 @@ func (s *UserService) RefreshTokens(
 		)
 		return "", "", errors.FromError(err)
 	}
-	refreshToken, err := auth.NewRefreshJWT(ctx, s.jwt, claims.UserInfo)
+	refreshToken, err := auth.NewRefreshJWT(ctx, s.jwt, currentUserInfo)
 	if err != nil {
 		log.Error(
 			"刷新令牌:生成刷新令牌失败",

@@ -395,7 +395,7 @@ func (s *ScheduleService) AddJob(
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	entryID, err := s.crontab.AddJob(m.Specification, cron.FuncJob(func() {
+	job := cron.FuncJob(func() {
 		execReq := jobmodel.ExecuteScriptDTO{
 			CommandArgs: m.CommandArgs,
 			EnvVars:     m.EnvVars,
@@ -412,26 +412,43 @@ func (s *ScheduleService) AddJob(
 			maxRetryCount = m.MaxRetries + 1 // 总尝试次数 = 初始执行 + 重试次数
 		}
 
+		jobCtx := context.Background()
+		cancel := func() {}
+		if m.Timeout > 0 {
+			jobCtx, cancel = context.WithTimeout(jobCtx, time.Duration(m.Timeout)*time.Second)
+		}
+		defer cancel()
+
 		for retryCount < maxRetryCount {
-			taskinfo, err := s.recordService.SyncExecuteScript(context.Background(), execReq)
+			taskinfo, err := s.recordService.SyncExecuteScript(jobCtx, execReq)
 			if err == nil && taskinfo.Status == 2 {
 				break
-			} else {
-				retryCount++
-				if retryCount < maxRetryCount {
-					waitTime := time.Duration(m.RetryInterval) * time.Second
-					time.Sleep(waitTime)
-				} else {
-					log.Debug(
-						"计划任务最终执行失败，已达到最大重试次数",
-						zap.Uint32("schedule_id", m.ID),
-						zap.Int("attempt", retryCount),
-						zap.Int("max_attempts", maxRetryCount),
-					)
+			}
+
+			retryCount++
+			if retryCount >= maxRetryCount {
+				log.Debug(
+					"计划任务最终执行失败，已达到最大重试次数",
+					zap.Uint32("schedule_id", m.ID),
+					zap.Int("attempt", retryCount),
+					zap.Int("max_attempts", maxRetryCount),
+				)
+				break
+			}
+
+			timer := time.NewTimer(time.Duration(m.RetryInterval) * time.Second)
+			select {
+			case <-jobCtx.Done():
+				if !timer.Stop() {
+					<-timer.C
 				}
+				return
+			case <-timer.C:
 			}
 		}
-	}))
+	})
+	// 同一任务上一次尚未结束时跳过本次触发，防止并发重入。
+	entryID, err := s.crontab.AddJob(m.Specification, cron.SkipIfStillRunning(cron.DefaultLogger)(job))
 	if err != nil {
 		log.Error(
 			"添加计划任务到调度器中失败",
@@ -653,6 +670,9 @@ func (s *ScheduleService) CreateSchedules(
 		}
 	}
 	for _, m := range schedules {
+		if !m.IsEnabled {
+			continue
+		}
 		if err := s.AddJob(ctx, m); err != nil {
 			log.Error(
 				"批量创建计划任务:添加计划任务失败",
@@ -687,6 +707,24 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 		zap.Uint32s("schedule_ids", scheduleIDs),
 	)
 
+	oldSchedules, err := s.scheduleRepo.ListModel(ctx, database.QueryParams{
+		Preloads: []string{"Script"},
+		Query:    map[string]any{"id in ?": scheduleIDs},
+	})
+	if err != nil {
+		log.Error(
+			"批量更新计划任务:查询更新前的计划任务详情失败",
+			zap.Error(err),
+			zap.Uint32s("schedule_ids", scheduleIDs),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.NewGormError(err, nil)
+	}
+	oldScheduleMap := make(map[uint32]jobmodel.ScheduleModel, len(oldSchedules))
+	for _, oldSchedule := range oldSchedules {
+		oldScheduleMap[oldSchedule.ID] = oldSchedule
+	}
+
 	updateData["username"] = claims.Username
 	if err := s.scheduleRepo.UpdateModel(ctx, updateData, "id IN ?", scheduleIDs); err != nil {
 		log.Error(
@@ -700,7 +738,8 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 	}
 
 	ms, err := s.scheduleRepo.ListModel(ctx, database.QueryParams{
-		Query: map[string]any{"id in ?": scheduleIDs},
+		Preloads: []string{"Script"},
+		Query:    map[string]any{"id in ?": scheduleIDs},
 	})
 	if err != nil {
 		log.Error(
@@ -711,6 +750,51 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 		return errors.NewGormError(err, nil)
 	}
 
+	processedIDs := make([]uint32, 0, len(ms))
+	rollback := func() {
+		rollbackCtx := context.Background()
+		processedSet := make(map[uint32]struct{}, len(processedIDs))
+		for _, id := range processedIDs {
+			processedSet[id] = struct{}{}
+			if err := s.RemoveJob(rollbackCtx, id); err != nil {
+				log.Error(
+					"批量更新计划任务:移除已变更计划任务失败",
+					zap.Error(err),
+					zap.Uint32("schedule_id", id),
+					zap.Duration("total_duration", time.Since(startTime)),
+				)
+			}
+		}
+
+		for id, oldSchedule := range oldScheduleMap {
+			if err := s.scheduleRepo.UpdateModel(rollbackCtx, oldSchedule.ToUpdateMap(), "id = ?", id); err != nil {
+				log.Error(
+					"批量更新计划任务:回滚数据库模型失败",
+					zap.Error(err),
+					zap.Uint32("schedule_id", id),
+					zap.Duration("total_duration", time.Since(startTime)),
+				)
+			}
+		}
+
+		for _, oldSchedule := range oldSchedules {
+			if _, ok := processedSet[oldSchedule.ID]; !ok {
+				continue
+			}
+			if !oldSchedule.IsEnabled {
+				continue
+			}
+			if err := s.AddJob(rollbackCtx, oldSchedule); err != nil {
+				log.Error(
+					"批量更新计划任务:回滚调度任务失败",
+					zap.Error(err),
+					zap.Uint32("schedule_id", oldSchedule.ID),
+					zap.Duration("total_duration", time.Since(startTime)),
+				)
+			}
+		}
+	}
+
 	for _, m := range ms {
 		if err := s.RemoveJob(ctx, m.ID); err != nil {
 			log.Error(
@@ -719,8 +803,10 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 				zap.Uint32("schedule_id", m.ID),
 				zap.Duration("total_duration", time.Since(startTime)),
 			)
+			rollback()
 			return err
 		}
+		processedIDs = append(processedIDs, m.ID)
 
 		// 添加新的计划任务
 		if m.IsEnabled {
@@ -731,6 +817,7 @@ func (s *ScheduleService) UpdateScheduleByIDs(
 					zap.Uint32("schedule_id", m.ID),
 					zap.Duration("total_duration", time.Since(startTime)),
 				)
+				rollback()
 				return err
 			}
 		}
