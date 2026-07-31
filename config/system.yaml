@@ -37,7 +37,7 @@ database: # 数据库配置
   list_slow: 80ms # 查询列表慢查询阈值
 
 log: # 日志服务
-  level: "DEBUG" # 日志级别
+  level: "INFO" # 日志级别
   max_size: 10 # 日志文件大小限制(MB)
   max_age: 7 # 日志文件保存天数
   max_backups: 5 # 日志文件备份数量
@@ -46,7 +46,7 @@ log: # 日志服务
 
 cors: # 跨域服务
   allow_origins: # 允许的源，生产环境应配置明确的前端域名
-    - "http://192.168.10.12:8621"
+    - "http://127.0.0.1:8621"
   allow_credentials: true # 是否允许携带cookie
   allow_methods: # 允许的方法
     - "GET"

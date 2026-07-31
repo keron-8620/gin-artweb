@@ -197,10 +197,10 @@ csdc_cp_files:
   - name: "zqy*.zip"
     se: "sh"
     from_way: "dir"
-  - name: "SJSKS.DBF"
+  - name: "SJSKS{{ pre_trd_date[4:] }}.DBF"
     se: "sz"
     from_way: "dir"
-  - name: "SJSFX.DBF"
+  - name: "SJSFX{{ pre_trd_date[4:] }}.DBF"
     se: "sz"
     from_way: "dir"
 

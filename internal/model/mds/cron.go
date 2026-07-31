@@ -9,9 +9,9 @@ import (
 
 type MdsCronModel struct {
 	database.BaseModel
-	MdsColonyID uint32            `gorm:"column:mds_colony_id;not null;comment:mds集群ID" json:"mds_colony_id"`
+	MdsColonyID uint32            `gorm:"column:mds_colony_id;not null;uniqueIndex:uk_mds_cron_colony_schedule;comment:mds集群ID"`
 	MdsColony   MdsColonyModel    `gorm:"foreignKey:MdsColonyID;references:ID;constraint:OnDelete:CASCADE" json:"mds_colony"`
-	ScheduleID  uint32            `gorm:"column:schedule_id;not null;comment:计划任务ID" json:"schedule_id"`
+	ScheduleID  uint32            `gorm:"column:schedule_id;not null;uniqueIndex:uk_mds_cron_colony_schedule;comment:计划任务ID"`
 	Schedule    job.ScheduleModel `gorm:"foreignKey:ScheduleID;references:ID;constraint:OnDelete:CASCADE" json:"schedule"`
 }
 

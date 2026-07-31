@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 
 	jobmodel "gin-artweb/internal/model/job"
 	mdsmodel "gin-artweb/internal/model/mds"
@@ -23,7 +24,8 @@ func CreateTestMdsCronModel(mdsColonyID, scheduleID uint32) *mdsmodel.MdsCronMod
 }
 
 func (suite *MdsCronTestSuite) createTestMdsCron() *mdsmodel.MdsCronModel {
-	cm := CreateTestMdsCronModel(1, 1)
+	suite.nextScheduleID++
+	cm := CreateTestMdsCronModel(1, suite.nextScheduleID)
 	err := suite.cronRepo.CreateModel(context.Background(), cm)
 	suite.NoError(err, "创建测试MdsCron应该成功")
 	return cm
@@ -31,7 +33,13 @@ func (suite *MdsCronTestSuite) createTestMdsCron() *mdsmodel.MdsCronModel {
 
 type MdsCronTestSuite struct {
 	suite.Suite
-	cronRepo *MdsCronRepo
+	cronRepo       *MdsCronRepo
+	nextScheduleID uint32
+}
+
+func (suite *MdsCronTestSuite) SetupTest() {
+	suite.nextScheduleID = 0
+	suite.NoError(suite.cronRepo.gormDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&mdsmodel.MdsCronModel{}).Error)
 }
 
 func (suite *MdsCronTestSuite) SetupSuite() {

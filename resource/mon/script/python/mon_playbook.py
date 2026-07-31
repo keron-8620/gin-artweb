@@ -29,7 +29,6 @@ JOB_RECORD_ID = os.getenv("JOB_RECORD_ID")
 if not JOB_RECORD_ID:
     JOB_RECORD_ID = 0
 
-
 def get_curr_date() -> str:
     return time.strftime('%Y%m%d', time.localtime())
 

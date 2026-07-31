@@ -112,25 +112,25 @@ func (q *StandardModelQuery) ToQueryMap(l int) map[string]any {
 	if q.BeforeCreateAt != "" {
 		bft, err := time.Parse(time.RFC3339, q.BeforeCreateAt)
 		if err == nil {
-			query["created_at < ?"] = bft
+			query["created_at <= ?"] = bft
 		}
 	}
 	if q.AfterCreateAt != "" {
 		act, err := time.Parse(time.RFC3339, q.AfterCreateAt)
 		if err == nil {
-			query["created_at > ?"] = act
+			query["created_at >= ?"] = act
 		}
 	}
 	if q.BeforeUpdateAt != "" {
 		but, err := time.Parse(time.RFC3339, q.BeforeUpdateAt)
 		if err == nil {
-			query["updated_at < ?"] = but
+			query["updated_at <= ?"] = but
 		}
 	}
 	if q.AfterUpdateAt != "" {
 		aut, err := time.Parse(time.RFC3339, q.AfterUpdateAt)
 		if err == nil {
-			query["updated_at > ?"] = aut
+			query["updated_at >= ?"] = aut
 		}
 	}
 	return query

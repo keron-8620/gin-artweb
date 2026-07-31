@@ -121,8 +121,8 @@ insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id)
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(61,'oes_nodes','oes_nodes','oes_nodes','{"title":"OES主机","icon":""}',2,1,'OES主机',2);
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(62,'oes_conf','oes_conf','oes_conf','{"title":"OES配置文件","icon":""}',3,1,'OES配置文件',2);
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(63,'oes_pkg','oes_pkg','oes_pkg','{"title":"OES程序包","icon":""}',4,1,'OES程序包',2);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(64,'agw','agw','Agw','{"title":"agw","icon":""}',5,1,'agw',2);
-insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(65,'agw_conf','agw_conf','agw_conf','{"title":"agw配置文件","icon":""}',6,1,'agw配置文件',2);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(64,'agw','agw','Agw','{"title":"Agw","icon":""}',5,1,'agw',2);
+insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(65,'agw_conf','agw_conf','agw_conf','{"title":"Agw配置文件","icon":""}',6,1,'agw配置文件',2);
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(70,'mds_colony','mds_colony','mds_colony','{"title":"MDS集群","icon":""}',1,1,'MDS集群',3);
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(71,'mds_nodes','mds_nodes','mds_nodes','{"title":"MDS主机","icon":""}',2,1,'MDS主机',3);
 insert into sys_menu(id,path,component,name,meta,sort,is_active,descr,parent_id) values(72,'mds_conf','mds_conf','mds_conf','{"title":"MDS配置文件","icon":""}',3,1,'MDS配置文件',3);

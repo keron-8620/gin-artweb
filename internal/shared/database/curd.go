@@ -6,11 +6,22 @@ import (
 	"context"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/gorm"
 )
+
+func contextError(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if deadline, ok := ctx.Deadline(); ok && time.Now().After(deadline) {
+		return context.DeadlineExceeded
+	}
+	return nil
+}
 
 // DBPanic 通用 GORM 数据库操作 panic 捕获函数（必须配合 defer 使用）
 // 功能:1. 捕获 panic 并转为标准错误 2. 事务回滚（仅事务场景）3. 记录详细日志（含堆栈、SQL 上下文）
@@ -64,6 +75,10 @@ func DBPanic(ctx context.Context, db *gorm.DB, bizErr error) error {
 // value: 要创建的数据
 // 返回操作可能产生的错误
 func DBCreate(ctx context.Context, db *gorm.DB, model, value any) error {
+	if err := contextError(ctx); err != nil {
+		return err
+	}
+
 	if err := db.WithContext(ctx).Model(model).Create(value).Error; err != nil {
 		return errors.WrapIf(err, "创建数据库记录失败")
 	}
@@ -77,6 +92,9 @@ func withTransaction(ctx context.Context, db *gorm.DB, fn func(tx *gorm.DB) erro
 	}
 	if ctx == nil {
 		ctx = context.Background()
+	}
+	if err := contextError(ctx); err != nil {
+		return err
 	}
 
 	tx := db.WithContext(ctx).Begin()
@@ -146,6 +164,10 @@ func DBCreateRelationTx(ctx context.Context, db *gorm.DB, model, value any, upma
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, conds ...any) error {
+	if err := contextError(ctx); err != nil {
+		return err
+	}
+
 	// 如果没有需要更新的内容，直接返回
 	if len(data) == 0 {
 		return nil
@@ -163,6 +185,10 @@ func DBUpdate(ctx context.Context, db *gorm.DB, m any, data map[string]any, cond
 }
 
 func DBUpdateTx(ctx context.Context, db *gorm.DB, m any, data map[string]any, conds ...any) error {
+	if err := contextError(ctx); err != nil {
+		return err
+	}
+
 	// 如果没有需要更新的内容，直接返回
 	if len(data) == 0 {
 		return nil
@@ -217,6 +243,10 @@ func DBUpdateRelationTx(ctx context.Context, db *gorm.DB, m any, data map[string
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBDeleteTx(ctx context.Context, db *gorm.DB, model any, conds ...any) error {
+	if err := contextError(ctx); err != nil {
+		return err
+	}
+
 	// 检查是否提供了查询条件
 	if len(conds) == 0 {
 		return gorm.ErrMissingWhereClause
@@ -238,6 +268,10 @@ func DBDeleteTx(ctx context.Context, db *gorm.DB, model any, conds ...any) error
 // conds: 查询条件
 // 返回操作可能产生的错误
 func DBGet(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...any) error {
+	if err := contextError(ctx); err != nil {
+		return err
+	}
+
 	dbCtx := db.WithContext(ctx)
 
 	// 预加载关联关系
@@ -258,6 +292,10 @@ func DBGet(ctx context.Context, db *gorm.DB, preloads []string, m any, conds ...
 // query: 查询参数
 // 返回记录总数和操作可能产生的错误
 func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParams) error {
+	if err := contextError(ctx); err != nil {
+		return err
+	}
+
 	// 初始化查询构建器
 	mdb := db.WithContext(ctx).Model(model)
 
@@ -304,6 +342,10 @@ func DBList(ctx context.Context, db *gorm.DB, model, value any, query QueryParam
 }
 
 func DBCount(ctx context.Context, db *gorm.DB, model any, query map[string]any) (int64, error) {
+	if err := contextError(ctx); err != nil {
+		return 0, err
+	}
+
 	// 初始化查询构建器
 	mdb := db.WithContext(ctx).Model(model)
 

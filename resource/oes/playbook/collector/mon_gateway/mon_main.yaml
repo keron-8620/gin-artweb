@@ -17,6 +17,6 @@
     - include_tasks: ./mon_checker.yaml
 
     - include_tasks: ./crd_personalization.yaml
-      when: system_type == "crd"
+      when: system_type == "CRD"
 
     - include_tasks: ../after_playbook.yaml

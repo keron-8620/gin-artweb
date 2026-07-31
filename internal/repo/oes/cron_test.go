@@ -19,12 +19,13 @@ import (
 
 type OesCronTestSuite struct {
 	suite.Suite
-	cronRepo    *OesCronRepo
-	oesColonyID uint32
-	scheduleID  uint32
-	log         *zap.Logger
-	gormDB      *gorm.DB
-	timeouts    *config.DBTimeout
+	cronRepo       *OesCronRepo
+	oesColonyID    uint32
+	scheduleID     uint32
+	log            *zap.Logger
+	gormDB         *gorm.DB
+	timeouts       *config.DBTimeout
+	nextScheduleID uint32
 }
 
 func (suite *OesCronTestSuite) SetupSuite() {
@@ -86,14 +87,16 @@ func (suite *OesCronTestSuite) SetupSuite() {
 
 // SetupTest 在每个测试方法运行前执行
 func (suite *OesCronTestSuite) SetupTest() {
-	// 可以在这里添加每个测试前的初始化逻辑
+	suite.nextScheduleID = 0
+	suite.NoError(suite.gormDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&oesmodel.OesCronModel{}).Error)
 }
 
 // createTestOesCronModel 创建测试用的 OesCronModel
 func (suite *OesCronTestSuite) createTestOesCronModel() *oesmodel.OesCronModel {
+	suite.nextScheduleID++
 	return &oesmodel.OesCronModel{
 		OesColonyID: suite.oesColonyID,
-		ScheduleID:  suite.scheduleID,
+		ScheduleID:  suite.nextScheduleID,
 	}
 }
 

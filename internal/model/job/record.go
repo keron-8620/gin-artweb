@@ -189,7 +189,7 @@ func (t *ListScriptRecordDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 }
 
 func (dto *ListScriptRecordDTO) ToQueryMap() map[string]any {
-	queryMap := dto.BaseModelQuery.ToQueryMap(11)
+	queryMap := dto.StandardModelQuery.ToQueryMap(11)
 	if dto.TriggerType != "" {
 		queryMap["trigger_type = ?"] = dto.TriggerType
 	}

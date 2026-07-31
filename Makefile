@@ -1,9 +1,9 @@
-.PHONY: build test verify coverage clean docker-build docker-push run help version
+.PHONY: build test verify coverage clean docker-build docker-push run dist help version
 
 # 项目配置：版本默认来自 Git，发布时可通过 VERSION=x.y.z 覆盖。
 BINARY_NAME=artweb
 # VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-VERSION=0.17.7.0.8
+VERSION=0.17.7.0.9
 COMMIT_ID?=$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_TIME?=$(shell date +"%Y-%m-%d %H:%M:%S")
 DOCKER_IMAGE?=swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb
@@ -64,6 +64,12 @@ clean:  ## 清理构建产物
 		rm -f bin/$(BINARY_NAME); \
 		echo "已删除 bin/$(BINARY_NAME)"; \
 	fi
+	@for f in artweb-*.tar.gz; do \
+		if [ -f "$$f" ]; then \
+			rm -f "$$f"; \
+			echo "已删除 $$f"; \
+		fi \
+	done
 	@echo "清理完成"
 
 docker-build:  ## 构建 Docker 镜像
@@ -79,6 +85,20 @@ docker-push:  ## 推送 Docker 镜像
 run:  ## 运行应用
 	@echo "运行应用..."
 	@go run main.go
+
+dist: build  ## 打包发布包 (tar.gz)
+	@echo "为 resource/*/script/ 添加可执行权限..."
+	@find resource -path '*/script/*' -type f -exec chmod +x {} + 2>/dev/null || true
+	@echo "打包为 artweb-$(VERSION).tar.gz ..."
+	@mkdir -p /tmp/artweb-dist/artweb-$(VERSION)
+	@for item in config bin .env cmd sql resource html README.md; do \
+		if [ -e "$$item" ]; then \
+			cp -r "$$item" /tmp/artweb-dist/artweb-$(VERSION)/; \
+		fi \
+	done
+	@tar -czf artweb-$(VERSION).tar.gz -C /tmp/artweb-dist artweb-$(VERSION)
+	@rm -rf /tmp/artweb-dist
+	@echo "打包成功: artweb-$(VERSION).tar.gz ($$(du -h artweb-$(VERSION).tar.gz | awk '{print $$1}'))"
 
 version:  ## 显示版本信息
 	@go run main.go -v
