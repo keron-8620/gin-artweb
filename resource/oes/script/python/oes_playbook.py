@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from typing import List, Dict
 import os
 import sys
 import time
@@ -31,11 +30,16 @@ if not JOB_RECORD_ID:
     JOB_RECORD_ID = 0
 
 
+TRD_CHECK_WHITE_LIST = [
+    PLAYBOOK_DIR.joinpath("collector/counter_fetch/fetch_main.yaml").as_posix(),
+]
+
+
 def get_curr_date() -> str:
     return time.strftime('%Y%m%d', time.localtime())
 
 
-def next_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> str:
+def next_trd_date(trd_dates: dict, date: int, the_year: int) -> str:
     if not date:
         raise AssertionError('日期不能为空')
     trdDateList = trd_dates.get(f'trd_date_{the_year}_list', [])
@@ -58,7 +62,7 @@ def next_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> 
         return next_trd_date(trd_dates, new_date, the_year)
 
 
-def pre_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> str:
+def pre_trd_date(trd_dates: dict, date: int, the_year: int) -> str:
     if not date:
         raise AssertionError('日期不能为空')
     trdDateList = trd_dates.get(f'trd_date_{the_year}_list', [])
@@ -80,7 +84,7 @@ def pre_trd_date(trd_dates: Dict[str, List[int]], date: int, the_year: int) -> s
         return pre_trd_date(trd_dates, last_date, the_year)
 
 
-def parse_calendar(csv_path: Path) -> Dict[str, List[int]]:
+def parse_calendar(csv_path: Path) -> dict:
     """
     导出交易日历
 
@@ -107,7 +111,7 @@ def parse_calendar(csv_path: Path) -> Dict[str, List[int]]:
     return trd_info
 
 
-def load_mon_conf(mon_id: int) -> Dict:
+def load_mon_conf(mon_id: int) -> dict:
     """
     加载mon配置
 
@@ -127,7 +131,7 @@ def load_mon_conf(mon_id: int) -> Dict:
     return {**mon_vars, **mon_host}
 
 
-def init_vars(config_dir: Path, extravars: str = ""):
+def init_vars(config_dir: Path, extravars: str = "") -> dict:
     """
     初始化vars配置
 
@@ -174,7 +178,7 @@ def init_vars(config_dir: Path, extravars: str = ""):
     return vars
 
 
-def init_hosts(colony_num: str, config_dir: Path) -> Dict:
+def init_hosts(colony_num: str, config_dir: Path) -> dict:
     """
     初始化hosts配置
 
@@ -210,6 +214,8 @@ def main(options):
     if not config_dir.exists():
         raise FileNotFoundError(f"没有这个目录: {config_dir}")
     vars = init_vars(config_dir, options.extravars)
+    if options.trd_check and not vars.get("is_trading_day", False) and playbook_path.as_posix() in TRD_CHECK_WHITE_LIST:
+        raise ValueError(f"交易日历校验失败, {vars['curr_date']}不是交易日")
     hosts = init_hosts(colony_num, config_dir)
     envvars = {}
     if options.enable_ansible_log:
@@ -255,6 +261,12 @@ if __name__ == "__main__":
         type=str, 
         default="",
         help="请输入额外的变量(a=b,c=d)",
+    )
+    parser.add_argument(
+        "--trd_check", 
+        type=bool, 
+        default=True,
+        help="是否校验交易日",
     )
     parser.add_argument(
         "--enable_ansible_log", 

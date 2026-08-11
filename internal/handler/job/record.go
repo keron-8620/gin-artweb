@@ -169,8 +169,7 @@ func (h *ScriptRecordHandler) ListScriptRecord(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.recordSvc.ListScriptRecord(ctx, page, size, &req)
+	page, size, total, ms, err := h.recordSvc.ListScriptRecord(ctx, &req)
 	if err != nil {
 		log.Error(
 			"查询脚本执行记录列表:执行失败",

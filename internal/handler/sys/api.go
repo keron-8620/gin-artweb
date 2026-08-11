@@ -235,8 +235,7 @@ func (h *ApiHandler) ListApi(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.apiSvc.ListApi(ctx, page, size, req)
+	page, size, total, ms, err := h.apiSvc.ListApi(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询API列表:执行失败",

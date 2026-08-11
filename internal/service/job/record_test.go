@@ -231,8 +231,7 @@ func (suite *RecordServiceTestSuite) TestListScriptRecord() {
 	}
 
 	listDTO := &jobmodel.ListScriptRecordDTO{}
-	page, size := 1, 10
-	count, records, err := suite.recordService.ListScriptRecord(ctx, page, size, listDTO)
+	_, _, count, records, err := suite.recordService.ListScriptRecord(ctx, listDTO)
 
 	suite.Nil(err, "ListScriptRecord should succeed")
 	suite.GreaterOrEqual(count, int64(3), "Count should be at least 3")
@@ -245,7 +244,7 @@ func (suite *RecordServiceTestSuite) TestListScriptRecord_ContextError() {
 	cancel()
 
 	listDTO := &jobmodel.ListScriptRecordDTO{}
-	_, _, err := suite.recordService.ListScriptRecord(ctx, 1, 10, listDTO)
+	_, _, _, _, err := suite.recordService.ListScriptRecord(ctx, listDTO)
 
 	suite.NotNil(err, "ListScriptRecord should fail with cancelled context")
 }
@@ -284,8 +283,7 @@ func (suite *RecordServiceTestSuite) TestListScriptRecord_EmptyResult() {
 	ctx := createRecordTestContext()
 
 	listDTO := &jobmodel.ListScriptRecordDTO{ScriptID: 99999}
-	page, size := 1, 10
-	count, records, err := suite.recordService.ListScriptRecord(ctx, page, size, listDTO)
+	_, _, count, records, err := suite.recordService.ListScriptRecord(ctx, listDTO)
 
 	suite.Nil(err, "ListScriptRecord should succeed")
 	suite.Equal(int64(0), count, "Count should be 0 for non-existent records")

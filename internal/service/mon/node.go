@@ -3,6 +3,7 @@ package mon
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -10,11 +11,13 @@ import (
 
 	monmodel "gin-artweb/internal/model/mon"
 	monrepo "gin-artweb/internal/repo/mon"
+	resocvs "gin-artweb/internal/service/resource"
 	"gin-artweb/internal/shared/common"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/ctxutil"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/errors"
+	"gin-artweb/pkg/archive"
 	"gin-artweb/pkg/fileutil"
 	"gin-artweb/pkg/serializer"
 )
@@ -60,13 +63,22 @@ func (s *MonNodeService) CreateMonNode(
 		return nil, errors.NewGormError(err, nil)
 	}
 
-	outputPath := GetMonNodeExportPath(m.ID)
-	if err := s.ExportMonNode(ctx, m, outputPath); err != nil {
+	created, rErr := s.FindMonNodeByID(ctx, []string{"Host", "Package", "Jdk"}, m.ID)
+	if rErr != nil {
+		log.Error(
+			"创建mon节点:查询创建后的mon节点失败",
+			zap.Error(rErr),
+			zap.Object("mon_node_model", &m),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return nil, rErr
+	}
+
+	if err := s.OutportMonData(ctx, *created); err != nil {
 		log.Error(
 			"创建mon节点:导出节点文件失败",
 			zap.Error(err),
-			zap.Object("mon_node_model", &m),
-			zap.String("output_path", outputPath),
+			zap.Object("mon_node_model", created),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return nil, err
@@ -74,10 +86,10 @@ func (s *MonNodeService) CreateMonNode(
 
 	log.Info(
 		"创建mon节点:执行成功",
-		zap.Uint32("mon_node_id", m.ID),
+		zap.Uint32("mon_node_id", created.ID),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
-	return s.FindMonNodeByID(ctx, []string{"Host"}, m.ID)
+	return created, nil
 }
 
 func (s *MonNodeService) UpdateMonNodeByID(
@@ -109,7 +121,7 @@ func (s *MonNodeService) UpdateMonNodeByID(
 		return nil, errors.NewGormError(err, nil)
 	}
 
-	m, rErr := s.FindMonNodeByID(ctx, []string{"Host"}, nodeID)
+	m, rErr := s.FindMonNodeByID(ctx, []string{"Host", "Package", "Jdk"}, nodeID)
 	if rErr != nil {
 		log.Error(
 			"更新mon节点:查询更新后的mon节点失败",
@@ -120,8 +132,7 @@ func (s *MonNodeService) UpdateMonNodeByID(
 		return nil, rErr
 	}
 
-	outputPath := GetMonNodeExportPath(nodeID)
-	if rErr := s.ExportMonNode(ctx, *m, outputPath); rErr != nil {
+	if rErr := s.OutportMonData(ctx, *m); rErr != nil {
 		log.Error(
 			"更新mon节点:导出节点文件失败",
 			zap.Error(rErr),
@@ -164,12 +175,23 @@ func (s *MonNodeService) DeleteMonNodeByID(
 		return errors.NewGormError(err, map[string]any{"id": nodeID})
 	}
 
-	outportPath := GetMonNodeExportPath(nodeID)
-	if err := fileutil.Remove(ctx, outportPath); err != nil {
+	monNodeBin := GetMonNodeBinDir(nodeID)
+	if err := fileutil.RemoveAll(ctx, monNodeBin); err != nil {
 		log.Error(
-			"删除mon节点:删除节点文件失败, 请手动删除",
+			"删除mon节点:删除节点程序包文件失败, 请手动删除",
 			zap.Error(err),
-			zap.String("outport_path", outportPath),
+			zap.String("outport_path", monNodeBin),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.ErrDeleteCacheFileFailed.WithCause(err)
+	}
+
+	monNodeConf := GetMonNodeConfDir(nodeID)
+	if err := fileutil.RemoveAll(ctx, monNodeConf); err != nil {
+		log.Error(
+			"删除mon节点:删除节点配置文件失败, 请手动删除",
+			zap.Error(err),
+			zap.String("outport_path", monNodeConf),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.ErrDeleteCacheFileFailed.WithCause(err)
@@ -215,22 +237,20 @@ func (s *MonNodeService) FindMonNodeByID(
 
 func (s *MonNodeService) ListMonNode(
 	ctx context.Context,
-	page, size int,
 	dto monmodel.ListMonNodeDTO,
-) (int64, []monmodel.MonNodeModel, *errors.Error) {
+) (int, int, int64, []monmodel.MonNodeModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询mon节点列表:参数详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("list_mon_node_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Host"},
@@ -248,7 +268,7 @@ func (s *MonNodeService) ListMonNode(
 			zap.Any("query", qp.Query),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -256,7 +276,7 @@ func (s *MonNodeService) ListMonNode(
 			"查询mon节点列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.nodeRepo.ListModel(ctx, qp)
@@ -267,31 +287,119 @@ func (s *MonNodeService) ListMonNode(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
-func (s *MonNodeService) ExportMonNode(
+func (s *MonNodeService) OutportMonData(
 	ctx context.Context,
 	m monmodel.MonNodeModel,
-	outputPath string,
 ) *errors.Error {
 	startTime := time.Now()
+	if ctx.Err() != nil {
+		return errors.FromError(ctx.Err())
+	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
-	log.Debug(
-		"导出mon节点文件:入参详情",
+	log.Info(
+		"解压mon程序包并初始化配置文件:开始执行",
 		zap.Object("mon_node_model", &m),
-		zap.String("output_path", outputPath),
 	)
 
-	monNodeVars := monmodel.MonNodeModelToNodeVars(m)
-	if _, err := serializer.WriteYAML(outputPath, monNodeVars); err != nil {
+	monNodeBin := GetMonNodeBinDir(m.ID)
+	if _, err := os.Stat(monNodeBin); !os.IsNotExist(err) {
+		if err := os.RemoveAll(monNodeBin); err != nil {
+			log.Error(
+				"解压mon程序包并初始化配置文件:清理原mon节点程序包文件夹失败",
+				zap.Error(err),
+				zap.String("path", monNodeBin),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.ErrDeleteCacheFileFailed.WithCause(err)
+		}
+	}
+
+	tmpDir, mErr := os.MkdirTemp("/tmp", "mon-")
+	if mErr != nil {
 		log.Error(
-			"导出mon节点文件:写入文件失败",
+			"解压mon程序包并初始化配置文件:创建临时文件夹失败",
+			zap.Error(mErr),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.FromError(mErr)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			log.Error(
+				"解压mon程序包并初始化配置文件:删除临时文件夹失败",
+				zap.Error(err),
+				zap.String("path", tmpDir),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+		}
+	}()
+
+	monPkgPath := resocvs.GetPackageStoragePath(m.Package.StorageFilename)
+	monUnTarDirName, valiErr := archive.ValidateSingleDirTarGz(monPkgPath)
+	if valiErr != nil {
+		log.Error(
+			"解压mon程序包并初始化配置文件:mon程序包校验失败",
+			zap.Error(valiErr),
+			zap.String("path", monPkgPath),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.ErrValidationFailed.WithCause(valiErr)
+	}
+
+	if err := archive.UntarGz(monPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
+		log.Error(
+			"解压mon程序包并初始化配置文件:解压mon程序包失败",
 			zap.Error(err),
-			zap.String("path", outputPath),
+			zap.Uint32("mon_id", m.ID),
+			zap.String("src_path", monPkgPath),
+			zap.String("dest_path", tmpDir),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.ErrUnZIPFailed.WithCause(err)
+	}
+
+	monTmpDir := filepath.Join(tmpDir, monUnTarDirName)
+	if err := fileutil.CopyDir(ctx, monTmpDir, monNodeBin, true); err != nil {
+		log.Error(
+			"解压mon程序包并初始化配置文件:复制mon程序包解压目录失败",
+			zap.Error(err),
+			zap.String("src_path", monTmpDir),
+			zap.String("dst_path", monNodeBin),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.FromError(err)
+	}
+
+	// 处理配置文件
+	monNodeConf := GetMonNodeConfDir(m.ID)
+	if _, err := os.Stat(monNodeConf); os.IsNotExist(err) {
+		monNodeBinConf := filepath.Join(monNodeBin, "conf")
+		if err := fileutil.CopyDir(ctx, monNodeBinConf, monNodeConf, true); err != nil {
+			log.Error(
+				"解压mon程序包并初始化配置文件:复制mon配置文件失败",
+				zap.Error(err),
+				zap.String("src_path", monNodeBinConf),
+				zap.String("dst_path", monNodeConf),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.FromError(err)
+		}
+	}
+
+	monConfPath := filepath.Join(monNodeConf, "mon.yaml")
+	monNodeVars := monmodel.MonNodeModelToNodeVars(m)
+	if _, err := serializer.WriteYAML(monConfPath, monNodeVars); err != nil {
+		log.Error(
+			"解压mon程序包并初始化配置文件:写入文件失败",
+			zap.Error(err),
+			zap.String("path", monConfPath),
 			zap.Object("mon_node_vars", &monNodeVars),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -300,6 +408,10 @@ func (s *MonNodeService) ExportMonNode(
 	return nil
 }
 
-func GetMonNodeExportPath(pk uint32) string {
-	return filepath.Join(config.StorageDir, "mon", "config", fmt.Sprintf("%d", pk), "mon.yaml")
+func GetMonNodeBinDir(monID uint32) string {
+	return filepath.Join(config.StorageDir, "mon", "bin", fmt.Sprintf("%d", monID))
+}
+
+func GetMonNodeConfDir(monID uint32) string {
+	return filepath.Join(config.StorageDir, "mon", "config", fmt.Sprintf("%d", monID))
 }

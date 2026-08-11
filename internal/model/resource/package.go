@@ -54,7 +54,7 @@ func ListPackageModelToUint32s(ms []PackageModel) []uint32 {
 
 type UploadPackageDTO struct {
 	// 标签
-	Label string `form:"label" binding:"required,oneof=mds stk crd opt xcounter agw"`
+	Label string `form:"label" binding:"required,oneof=mds stk crd opt xcounter agw mon jdk"`
 
 	// 版本号
 	Version string `form:"version" binding:"required"`

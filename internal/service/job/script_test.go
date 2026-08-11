@@ -134,8 +134,7 @@ func (suite *ScriptTestSuite) TestListScript() {
 
 	// 测试列出所有脚本
 	listDTO := jobmodel.ListScriptDTO{}
-	page, size := 1, 10
-	count, scriptList, err := suite.scriptService.ListScript(ctx, page, size, listDTO)
+	_, _, count, scriptList, err := suite.scriptService.ListScript(ctx, listDTO)
 	suite.Nil(err, "列出脚本应该成功")
 	suite.GreaterOrEqual(int(count), scriptCount, "返回的脚本数量应该大于等于创建的数量")
 	suite.NotNil(scriptList, "返回的脚本列表不应该为nil")
@@ -234,7 +233,7 @@ func (suite *ScriptTestSuite) TestListScript_ContextError() {
 
 	// 尝试使用已取消的上下文列出脚本
 	listDTO := jobmodel.ListScriptDTO{}
-	_, _, err := suite.scriptService.ListScript(ctx, 1, 10, listDTO)
+	_, _, _, _, err := suite.scriptService.ListScript(ctx, listDTO)
 	suite.NotNil(err, "上下文错误时列出脚本应该失败")
 }
 
@@ -376,8 +375,7 @@ func (suite *ScriptTestSuite) TestListScript_EmptyResult() {
 	ctx := createScriptTestContext()
 
 	listDTO := jobmodel.ListScriptDTO{Project: "non_existent_project"}
-	page, size := 1, 10
-	count, scriptList, err := suite.scriptService.ListScript(ctx, page, size, listDTO)
+	_, _, count, scriptList, err := suite.scriptService.ListScript(ctx, listDTO)
 	suite.Nil(err, "列出脚本应该成功")
 	suite.Equal(int64(0), count, "Count should be 0 for non-existent project")
 	suite.Nil(scriptList, "Script list should be nil for empty result")

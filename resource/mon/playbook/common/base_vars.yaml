@@ -1,16 +1,17 @@
 ###################### local工作目录相关文件位置 ####################
+local_path_mon_home_bin: "{{ local_path_mon_home }}/bin"
+local_path_mon_home_bin_id: "{{ local_path_mon_home_bin }}/{{ id }}"
 local_path_mon_home_config: "{{ local_path_mon_home }}/config"
-local_path_mon_home_config_colodir: "{{ local_path_mon_home_config }}/{{ colony_num }}"
+local_path_mon_home_config_id: "{{ local_path_mon_home_config }}/{{ id }}"
 local_path_mon_home_flag: "{{ local_path_mon_home }}/flags"
-local_path_mon_home_flag_colodir: "{{ local_path_mon_home_flag }}/{{ colony_num }}"
+local_path_mon_home_flag_id: "{{ local_path_mon_home_flag }}/{{ id }}"
 local_path_mon_home_backup: "{{ local_path_mon_home }}/backup"
-local_path_mon_home_backup_colodir: "{{ local_path_mon_home_backup }}/{{ colony_num }}"
+local_path_mon_home_backup_id: "{{ local_path_mon_home_backup }}/{{ id }}"
 local_path_mon_home_tmp: "{{ local_path_mon_home }}/.tmp"
-local_path_mon_home_tmp_colodir: "{{ local_path_mon_home_tmp }}/{{ colony_num }}"
+local_path_mon_home_tmp_id: "{{ local_path_mon_home_tmp }}/{{ id }}"
 ###################### local工作目录相关文件位置 ####################
 
 ##################### 被控机相关目录 ##############################
-slave_path_mon_home: ""
 slave_path_mon_home_art: "{{ slave_path_mon_home }}/art"
 slave_path_mon_home_config: "{{ slave_path_mon_home }}/config"
 slave_path_mon_home_database: "{{ slave_path_mon_home }}/database"

@@ -16,7 +16,6 @@ counter_fetch_success_flag=$flag_path/counter_fetch_$nowdate.success
 counter_distribute_success_flag=$flag_path/counter_distribute_$nowdate.success
 sse_success_flag=$flag_path/sse_collector_$nowdate.success
 szse_success_flag=$flag_path/szse_collector_$nowdate.success
-csdc_success_flag=$flag_path/csdc_collector_$nowdate.success
 
 
 fetch_OK_flag="fetch_$nowdate.ok"
@@ -58,15 +57,9 @@ if [ ! -f $szse_success_flag ];then
 	echo "sh szse.sh $colony_num $@"
 	cd $dirpath/../cmd/;sh szse.sh $colony_num "$@"
 fi
-# csdc的success标志文件未生成
-if [ ! -f $csdc_success_flag ];then
-	echo "拉取中登文件成功标志文件未生成, 重新拉取中登文件"
-	sleep 5
-	echo "sh csdc.sh $colony_num $@"
-	cd $dirpath/../cmd/;sh csdc.sh $colony_num "$@"
-fi
+
 # 检测所有success标志文件都生成
-if [ -f $mon_success_flag ]&&[ -f $counter_fetch_success_flag ]&&[ -f $counter_distribute_success_flag ]&&[ -f $sse_success_flag ]&&[ -f $szse_success_flag ]&&[ -f $csdc_success_flag ];then
+if [ -f $mon_success_flag ]&&[ -f $counter_fetch_success_flag ]&&[ -f $counter_distribute_success_flag ]&&[ -f $sse_success_flag ]&&[ -f $szse_success_flag ];then
 	echo "所有标志文件都已经生成, 开始重启oes集群服务器"
 	sleep 5
 	echo "sh oes_restart.sh $colony_num;sh oes_set_status.sh $colony_num RESET 5"

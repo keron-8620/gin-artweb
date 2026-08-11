@@ -20,10 +20,12 @@ func newMonRouter(
 	nodeService := monsvc.NewMonNodeService(loggers.Service, nodeRepo)
 
 	nodeHandler := handler.NewNodeHandler(loggers.Handler, nodeService)
+	confHandler := handler.NewMonConfHandler(loggers.Handler, int64(init.Conf.Upload.MaxConfSize)*1024*1024)
 
 	appRouter := router.Group("/v1/mon")
 	appRouter.Use(middleware.JWTAuthMiddleware(init.JwtConf, loggers.Handler))
 	appRouter.Use(middleware.CasbinAuthMiddleware(init.Enforcer, loggers.Handler))
 
 	nodeHandler.LoadRouter(appRouter)
+	confHandler.LoadRouter(appRouter)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	handler "gin-artweb/internal/handler/mds"
+	commodel "gin-artweb/internal/model/common"
 	jobmodel "gin-artweb/internal/model/job"
 	mdsmodel "gin-artweb/internal/model/mds"
 	mdsrepo "gin-artweb/internal/repo/mds"
@@ -71,8 +72,14 @@ func newMdsCronConf(jobsvc *JobServices) map[string]mdsmodel.MdsCronTask {
 
 	scriptStatus := true
 	scriptBuiltin := true
-	_, scripts, err := jobsvc.Script.ListScript(
-		context.Background(), 1, 1000, jobmodel.ListScriptDTO{
+	_, _, _, scripts, err := jobsvc.Script.ListScript(
+		context.Background(), jobmodel.ListScriptDTO{
+			StandardModelQuery: commodel.StandardModelQuery{
+				BaseModelQuery: commodel.BaseModelQuery{
+					Page: 1,
+					Size: 1000,
+				},
+			},
 			Project:   "mds",
 			Names:     strings.Join(scriptNames, ","),
 			Labels:    strings.Join(scriptLabels, ","),

@@ -4681,6 +4681,216 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/mon/conf/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定mon节点配置目录下的文件列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon配置管理"
+                ],
+                "summary": "获取mon节点配置文件列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回配置文件列表",
+                        "schema": {
+                            "$ref": "#/definitions/mon.PagMonConfResp"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "上传mon节点配置文件到指定节点配置目录",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon配置管理"
+                ],
+                "summary": "上传mon节点配置文件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "配置文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "上传成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIResp"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定的mon节点配置文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mon配置管理"
+                ],
+                "summary": "删除mon节点配置文件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件名",
+                        "name": "filename",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/common.MapAPIResp"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/mon/conf/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "下载指定的mon节点配置文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "mon配置管理"
+                ],
+                "summary": "下载mon节点配置文件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "mon节点编号",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件名",
+                        "name": "filename",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "下载成功，返回文件流"
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/mon/node": {
             "get": {
                 "security": [
@@ -4744,9 +4954,21 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "jdk包ID",
+                        "name": "jdk_id",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "名称",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "程序包ID",
+                        "name": "package_id",
                         "in": "query"
                     },
                     {
@@ -9421,6 +9643,14 @@ const docTemplate = `{
                     "type": "string",
                     "example": ""
                 },
+                "jdk": {
+                    "description": "jdk包",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/resource.PackageStandardOut"
+                        }
+                    ]
+                },
                 "name": {
                     "description": "名称",
                     "type": "string",
@@ -9430,6 +9660,14 @@ const docTemplate = `{
                     "description": "导出路径",
                     "type": "string",
                     "example": ""
+                },
+                "package": {
+                    "description": "程序包",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/resource.PackageStandardOut"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "description": "更新时间",
@@ -9469,8 +9707,10 @@ const docTemplate = `{
             "required": [
                 "deploy_path",
                 "host_id",
+                "jdk_id",
                 "name",
-                "outport_path"
+                "outport_path",
+                "package_id"
             ],
             "properties": {
                 "deploy_path": {
@@ -9485,6 +9725,10 @@ const docTemplate = `{
                     "description": "JAVA_HOME",
                     "type": "string"
                 },
+                "jdk_id": {
+                    "description": "jdk包ID",
+                    "type": "integer"
+                },
                 "name": {
                     "description": "名称",
                     "type": "string",
@@ -9494,8 +9738,33 @@ const docTemplate = `{
                     "description": "导出路径",
                     "type": "string"
                 },
+                "package_id": {
+                    "description": "程序包ID",
+                    "type": "integer"
+                },
                 "url": {
                     "description": "URL地址",
+                    "type": "string"
+                }
+            }
+        },
+        "mon.PagMonConfResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "状态码\nExample: 200",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "数据\n可以是任意类型的数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fileutil.FileInfo"
+                        }
+                    ]
+                },
+                "msg": {
+                    "description": "信息\nExample: \"success\"",
                     "type": "string"
                 }
             }

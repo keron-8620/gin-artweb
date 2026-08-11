@@ -189,7 +189,7 @@ func (suite *UserTestSuite) TestListUser() {
 	}
 
 	// 测试查询用户列表
-	count, users, err := suite.uc.ListUser(context.Background(), 1, 10, sysmodel.ListUserDTO{})
+	_, _, count, users, err := suite.uc.ListUser(context.Background(), sysmodel.ListUserDTO{})
 	suite.Nil(err, "查询用户列表应该成功")
 	suite.GreaterOrEqual(int(count), userCount, "用户数量应该大于或等于创建的数量")
 	suite.NotNil(users, "用户列表不应该为空")
@@ -400,7 +400,7 @@ func (suite *UserTestSuite) TestWithContextError() {
 	suite.NotNil(err, "FindUserByName 上下文错误应该返回错误")
 
 	// 测试 ListUser 上下文错误
-	_, _, err = suite.uc.ListUser(ctx, 1, 10, sysmodel.ListUserDTO{})
+	_, _, _, _, err = suite.uc.ListUser(ctx, sysmodel.ListUserDTO{})
 	suite.NotNil(err, "ListUser 上下文错误应该返回错误")
 
 	// 测试 ListLoginRecord 上下文错误

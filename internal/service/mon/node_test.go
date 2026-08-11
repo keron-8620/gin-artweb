@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,9 +16,13 @@ import (
 	monmodel "gin-artweb/internal/model/mon"
 	resourceModel "gin-artweb/internal/model/resource"
 	monrepo "gin-artweb/internal/repo/mon"
+	resourceService "gin-artweb/internal/service/resource"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
 	"gin-artweb/internal/shared/test"
+	"gin-artweb/pkg/archive"
+	"gin-artweb/pkg/fileutil"
+	"gin-artweb/pkg/serializer"
 )
 
 type monNodeServiceTestContext struct {
@@ -46,7 +49,11 @@ func newMonNodeServiceTestContext(t *testing.T) *monNodeServiceTestContext {
 		t.Fatalf("failed to enable foreign keys: %v", err)
 	}
 
-	if err := db.AutoMigrate(&monmodel.MonNodeModel{}, &resourceModel.HostModel{}); err != nil {
+	if err := db.AutoMigrate(
+		&resourceModel.HostModel{},
+		&resourceModel.PackageModel{},
+		&monmodel.MonNodeModel{},
+	); err != nil {
 		t.Fatalf("failed to migrate mon node model: %v", err)
 	}
 
@@ -99,8 +106,44 @@ func createTestMonNodeDTO(t *testing.T, hostID uint32) monmodel.MonNodeUpsertDTO
 	}
 }
 
-func createTestMonNodeModel(t *testing.T, ctx *monNodeServiceTestContext, hostID uint32) *monmodel.MonNodeModel {
+func createTestPackageModel(t *testing.T, ctx *monNodeServiceTestContext, label, version string) *resourceModel.PackageModel {
+	filename := fmt.Sprintf("%s-%s-%s.tar.gz", label, version, uuid.NewString())
+	packageModel := &resourceModel.PackageModel{
+		Label:           label,
+		StorageFilename: filename,
+		OriginFilename:  filename,
+		Version:         version,
+	}
+
+	storagePath := resourceService.GetPackageStoragePath(filename)
+	sourceDir := t.TempDir()
+	rootDir := filepath.Join(sourceDir, "mon-package")
+	if err := os.MkdirAll(filepath.Join(rootDir, "conf"), 0750); err != nil {
+		t.Fatalf("failed to create test package directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(rootDir, "conf", "default.conf"), []byte("test"), 0600); err != nil {
+		t.Fatalf("failed to create test package config: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(storagePath), 0750); err != nil {
+		t.Fatalf("failed to create package storage directory: %v", err)
+	}
+	if err := archive.TarGz(rootDir, storagePath); err != nil {
+		t.Fatalf("failed to create test package archive: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Remove(storagePath) })
+	if err := ctx.db.Create(packageModel).Error; err != nil {
+		t.Fatalf("failed to create test package model: %v", err)
+	}
+
+	return packageModel
+}
+
+func createTestMonNodeModelWithoutArchive(t *testing.T, ctx *monNodeServiceTestContext, hostID uint32) *monmodel.MonNodeModel {
 	dto := createTestMonNodeDTO(t, hostID)
+	monPackage := createTestPackageRecord(t, ctx, "mon", uuid.NewString())
+	jdkPackage := createTestPackageRecord(t, ctx, "jdk", uuid.NewString())
+	dto.PackageID = monPackage.ID
+	dto.JdkID = jdkPackage.ID
 	m := dto.ToModel()
 	if err := ctx.nodeRepo.CreateModel(context.Background(), &m); err != nil {
 		t.Fatalf("failed to create mon node model: %v", err)
@@ -108,12 +151,43 @@ func createTestMonNodeModel(t *testing.T, ctx *monNodeServiceTestContext, hostID
 	return &m
 }
 
-func TestMonNodeService_CreateMonNode(t *testing.T) {
-	t.Parallel()
+func createTestPackageRecord(t *testing.T, ctx *monNodeServiceTestContext, label, version string) *resourceModel.PackageModel {
+	packageModel := &resourceModel.PackageModel{
+		Label:           label,
+		StorageFilename: fmt.Sprintf("%s-%s-%s.tar.gz", label, version, uuid.NewString()),
+		OriginFilename:  "test.tar.gz",
+		Version:         version,
+	}
+	if err := ctx.db.Create(packageModel).Error; err != nil {
+		t.Fatalf("failed to create test package model: %v", err)
+	}
+	return packageModel
+}
 
+func createTestMonNodeModel(t *testing.T, ctx *monNodeServiceTestContext, hostID uint32) *monmodel.MonNodeModel {
+	dto := createTestMonNodeDTO(t, hostID)
+	monPackage := createTestPackageModel(t, ctx, "mon", "1.0.0")
+	jdkPackage := createTestPackageModel(t, ctx, "jdk", "17")
+	dto.PackageID = monPackage.ID
+	dto.JdkID = jdkPackage.ID
+	m := dto.ToModel()
+	if err := ctx.nodeRepo.CreateModel(context.Background(), &m); err != nil {
+		t.Fatalf("failed to create mon node model: %v", err)
+	}
+	if err := ctx.db.Preload("Host").Preload("Package").Preload("Jdk").First(&m, m.ID).Error; err != nil {
+		t.Fatalf("failed to preload test mon node relations: %v", err)
+	}
+	return &m
+}
+
+func TestMonNodeService_CreateMonNode(t *testing.T) {
 	ctx := newMonNodeServiceTestContext(t)
 	host := createTestHostModelForMon(t, ctx)
 	dto := createTestMonNodeDTO(t, host.ID)
+	monPackage := createTestPackageModel(t, ctx, "mon", "1.0.0")
+	jdkPackage := createTestPackageModel(t, ctx, "jdk", "17")
+	dto.PackageID = monPackage.ID
+	dto.JdkID = jdkPackage.ID
 
 	result, svcErr := ctx.nodeService.CreateMonNode(context.Background(), dto)
 	if svcErr != nil {
@@ -133,6 +207,18 @@ func TestMonNodeService_CreateMonNode(t *testing.T) {
 	}
 	if result.HostID != dto.HostID {
 		t.Errorf("HostID不匹配: expected %d, got %d", dto.HostID, result.HostID)
+	}
+	if result.PackageID != dto.PackageID {
+		t.Errorf("PackageID不匹配: expected %d, got %d", dto.PackageID, result.PackageID)
+	}
+	if result.JdkID != dto.JdkID {
+		t.Errorf("JdkID不匹配: expected %d, got %d", dto.JdkID, result.JdkID)
+	}
+	if result.Package.ID != dto.PackageID {
+		t.Errorf("程序包关联不匹配: expected %d, got %d", dto.PackageID, result.Package.ID)
+	}
+	if result.Jdk.ID != dto.JdkID {
+		t.Errorf("JDK关联不匹配: expected %d, got %d", dto.JdkID, result.Jdk.ID)
 	}
 }
 
@@ -178,8 +264,6 @@ func TestMonNodeService_CreateMonNode_DatabaseError(t *testing.T) {
 }
 
 func TestMonNodeService_UpdateMonNodeByID(t *testing.T) {
-	t.Parallel()
-
 	ctx := newMonNodeServiceTestContext(t)
 	host := createTestHostModelForMon(t, ctx)
 	original := createTestMonNodeModel(t, ctx, host.ID)
@@ -191,6 +275,8 @@ func TestMonNodeService_UpdateMonNodeByID(t *testing.T) {
 		JavaHome:    "/updated/java",
 		URL:         "http://updated:8080",
 		HostID:      host.ID,
+		PackageID:   original.PackageID,
+		JdkID:       original.JdkID,
 	}
 
 	result, svcErr := ctx.nodeService.UpdateMonNodeByID(context.Background(), original.ID, updateDTO)
@@ -205,6 +291,12 @@ func TestMonNodeService_UpdateMonNodeByID(t *testing.T) {
 	}
 	if result.DeployPath != updateDTO.DeployPath {
 		t.Errorf("DeployPath不匹配: expected %s, got %s", updateDTO.DeployPath, result.DeployPath)
+	}
+	if result.PackageID != updateDTO.PackageID {
+		t.Errorf("PackageID不匹配: expected %d, got %d", updateDTO.PackageID, result.PackageID)
+	}
+	if result.JdkID != updateDTO.JdkID {
+		t.Errorf("JdkID不匹配: expected %d, got %d", updateDTO.JdkID, result.JdkID)
 	}
 }
 
@@ -250,6 +342,8 @@ func TestMonNodeService_DeleteMonNodeByID(t *testing.T) {
 	ctx := newMonNodeServiceTestContext(t)
 	host := createTestHostModelForMon(t, ctx)
 	original := createTestMonNodeModel(t, ctx, host.ID)
+	_ = fileutil.RemoveAll(context.Background(), GetMonNodeBinDir(original.ID))
+	_ = fileutil.RemoveAll(context.Background(), GetMonNodeConfDir(original.ID))
 
 	svcErr := ctx.nodeService.DeleteMonNodeByID(context.Background(), original.ID)
 	if svcErr != nil {
@@ -347,22 +441,19 @@ func TestMonNodeService_ListMonNode(t *testing.T) {
 	host := createTestHostModelForMon(t, ctx)
 
 	for i := 0; i < 3; i++ {
-		dto := monmodel.MonNodeUpsertDTO{
-			Name:        fmt.Sprintf("mon-node-%d", i),
-			DeployPath:  "/opt/mon",
-			OutportPath: "/opt/mon/out",
-			JavaHome:    "/usr/local/java",
-			URL:         fmt.Sprintf("http://192.168.1.%d:8080/list-%d", i+1, i),
-			HostID:      host.ID,
-		}
-		m := dto.ToModel()
-		if err := ctx.nodeRepo.CreateModel(context.Background(), &m); err != nil {
-			t.Fatalf("创建MonNode应该成功: %v", err)
+		m := createTestMonNodeModelWithoutArchive(t, ctx, host.ID)
+		m.Name = fmt.Sprintf("mon-node-%d", i)
+		m.URL = fmt.Sprintf("http://192.168.1.%d:8080/list-%d", i+1, i)
+		if err := ctx.db.Model(&monmodel.MonNodeModel{}).Where("id = ?", m.ID).Updates(map[string]any{
+			"name": m.Name,
+			"url":  m.URL,
+		}).Error; err != nil {
+			t.Fatalf("更新测试MonNode应该成功: %v", err)
 		}
 	}
 
 	dto := monmodel.ListMonNodeDTO{}
-	count, list, svcErr := ctx.nodeService.ListMonNode(context.Background(), 1, 10, dto)
+	_, _, count, list, svcErr := ctx.nodeService.ListMonNode(context.Background(), dto)
 	if svcErr != nil {
 		t.Fatalf("查询MonNode列表应该成功: %v", svcErr)
 	}
@@ -386,7 +477,7 @@ func TestMonNodeService_ListMonNode_ContextCanceled(t *testing.T) {
 	cancel()
 
 	dto := monmodel.ListMonNodeDTO{}
-	_, _, svcErr := ctx.nodeService.ListMonNode(canceledCtx, 1, 10, dto)
+	_, _, _, _, svcErr := ctx.nodeService.ListMonNode(canceledCtx, dto)
 	if svcErr == nil {
 		t.Error("上下文取消后查询MonNode列表应该返回错误")
 	}
@@ -400,7 +491,7 @@ func TestMonNodeService_ListMonNode_ZeroCount(t *testing.T) {
 	dto := monmodel.ListMonNodeDTO{
 		Name: "non-existent-mon",
 	}
-	count, list, svcErr := ctx.nodeService.ListMonNode(context.Background(), 1, 10, dto)
+	_, _, count, list, svcErr := ctx.nodeService.ListMonNode(context.Background(), dto)
 	if svcErr != nil {
 		t.Fatalf("查询不存在的MonNode列表应该成功: %v", svcErr)
 	}
@@ -420,6 +511,10 @@ func TestMonNodeService_ListMonNode_WithHostIDFilter(t *testing.T) {
 
 	dto := createTestMonNodeDTO(t, host.ID)
 	dto.Name = "specific-mon-node"
+	monPackage := createTestPackageRecord(t, ctx, "mon", uuid.NewString())
+	jdkPackage := createTestPackageRecord(t, ctx, "jdk", uuid.NewString())
+	dto.PackageID = monPackage.ID
+	dto.JdkID = jdkPackage.ID
 	m := dto.ToModel()
 	if err := ctx.nodeRepo.CreateModel(context.Background(), &m); err != nil {
 		t.Fatalf("创建MonNode应该成功: %v", err)
@@ -428,7 +523,7 @@ func TestMonNodeService_ListMonNode_WithHostIDFilter(t *testing.T) {
 	filterDTO := monmodel.ListMonNodeDTO{
 		HostID: host.ID,
 	}
-	count, list, svcErr := ctx.nodeService.ListMonNode(context.Background(), 1, 10, filterDTO)
+	_, _, count, list, svcErr := ctx.nodeService.ListMonNode(context.Background(), filterDTO)
 	if svcErr != nil {
 		t.Fatalf("带HostID过滤条件查询MonNode列表应该成功: %v", svcErr)
 	}
@@ -443,32 +538,51 @@ func TestMonNodeService_ListMonNode_WithHostIDFilter(t *testing.T) {
 	}
 }
 
-func TestMonNodeService_ExportMonNode(t *testing.T) {
-	t.Parallel()
-
+func TestMonNodeService_OutportMonData(t *testing.T) {
 	ctx := newMonNodeServiceTestContext(t)
 	host := createTestHostModelForMon(t, ctx)
 	m := createTestMonNodeModel(t, ctx, host.ID)
 
-	outputPath := GetMonNodeExportPath(m.ID)
-	svcErr := ctx.nodeService.ExportMonNode(context.Background(), *m, outputPath)
+	confDir := GetMonNodeConfDir(m.ID)
+	t.Cleanup(func() { _ = os.RemoveAll(confDir) })
+	svcErr := ctx.nodeService.OutportMonData(context.Background(), *m)
 	if svcErr != nil {
-		t.Fatalf("导出MonNode应该成功: %v", svcErr)
+		t.Fatalf("导出MonNode配置应该成功: %v", svcErr)
 	}
 
-	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-		t.Errorf("导出文件应该存在: %s", outputPath)
+	outputPath := filepath.Join(confDir, "mon.yaml")
+	var vars monmodel.MonNodeVars
+	if _, err := serializer.ReadYAML(outputPath, &vars); err != nil {
+		t.Fatalf("导出的MonNode配置应该可以解析: %v", err)
+	}
+	if vars.ID != m.ID {
+		t.Errorf("导出ID不匹配: expected %d, got %d", m.ID, vars.ID)
+	}
+	if vars.Name != m.Name {
+		t.Errorf("导出Name不匹配: expected %s, got %s", m.Name, vars.Name)
+	}
+	if vars.DeployPath != m.DeployPath {
+		t.Errorf("导出DeployPath不匹配: expected %s, got %s", m.DeployPath, vars.DeployPath)
+	}
+	if vars.OutportPath != m.OutportPath {
+		t.Errorf("导出OutportPath不匹配: expected %s, got %s", m.OutportPath, vars.OutportPath)
+	}
+	if vars.JavaHome != m.JavaHome {
+		t.Errorf("导出JavaHome不匹配: expected %s, got %s", m.JavaHome, vars.JavaHome)
+	}
+	if vars.URL != m.URL {
+		t.Errorf("导出URL不匹配: expected %s, got %s", m.URL, vars.URL)
+	}
+	if vars.HostID != m.HostID {
+		t.Errorf("导出HostID不匹配: expected %d, got %d", m.HostID, vars.HostID)
 	}
 }
 
-func TestGetMonNodeExportPath(t *testing.T) {
+func TestGetMonNodeConfDir(t *testing.T) {
 	nodeID := uint32(123)
-	path := GetMonNodeExportPath(nodeID)
-	expectedDir := filepath.Join(config.StorageDir, "mon", "config", "123")
-	if !strings.Contains(path, expectedDir) {
-		t.Errorf("路径应该包含 %s, got: %s", expectedDir, path)
-	}
-	if !strings.Contains(path, "mon.yaml") {
-		t.Errorf("路径应该包含 mon.yaml, got: %s", path)
+	path := GetMonNodeConfDir(nodeID)
+	expectedPath := filepath.Join(config.StorageDir, "mon", "config", "123")
+	if path != expectedPath {
+		t.Errorf("配置目录不匹配: expected %s, got: %s", expectedPath, path)
 	}
 }

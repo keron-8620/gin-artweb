@@ -245,8 +245,7 @@ func (h *MenuHandler) ListMenu(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.menuSvc.ListMenu(ctx, page, size, req)
+	page, size, total, ms, err := h.menuSvc.ListMenu(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询菜单列表:查询菜单列表失败",

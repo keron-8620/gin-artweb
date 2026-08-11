@@ -258,8 +258,7 @@ func (h *ScheduleHandler) ListSchedule(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.scheduleSvc.ListSchedule(ctx, page, size, req)
+	page, size, total, ms, err := h.scheduleSvc.ListSchedule(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询计划任务列表:查询计划任务列表失败",

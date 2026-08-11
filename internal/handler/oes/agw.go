@@ -243,8 +243,7 @@ func (h *OesAgwHandler) ListAgw(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, rErr := h.agwSvc.ListAgw(ctx, page, size, req)
+	page, size, total, ms, rErr := h.agwSvc.ListAgw(ctx, req)
 	if rErr != nil {
 		log.Error(
 			"查询agw列表:执行失败",

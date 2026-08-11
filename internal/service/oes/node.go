@@ -2,6 +2,7 @@ package oes
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -163,6 +164,17 @@ func (s *OesNodeService) DeleteOesNodeByID(
 		zap.Uint32("oes_node_id", oesNodeID),
 	)
 
+	m, err := s.nodeRepo.GetModel(ctx, []string{"OesColony"}, oesNodeID)
+	if err != nil {
+		log.Error(
+			"查询oes删除oes节点节点:查询数据库模型失败",
+			zap.Error(err),
+			zap.Uint32("oes_node_id", oesNodeID),
+			zap.Duration("total_duration", time.Since(startTime)),
+		)
+		return errors.NewGormError(err, map[string]any{"id": oesNodeID})
+	}
+
 	if err := s.nodeRepo.DeleteModel(ctx, oesNodeID); err != nil {
 		log.Error(
 			"删除oes节点:删除数据库模型失败",
@@ -171,6 +183,21 @@ func (s *OesNodeService) DeleteOesNodeByID(
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.NewGormError(err, map[string]any{"id": oesNodeID})
+	}
+
+	specdir := RoleToSpecdir(m.NodeRole)
+	oesNodeConf := filepath.Join(GetOesColonyConfigDir(m.OesColony.ColonyNum), specdir)
+
+	if _, err := os.Stat(oesNodeConf); !os.IsNotExist(err) {
+		if err := os.RemoveAll(oesNodeConf); err != nil {
+			log.Error(
+				"删除oes节点:清理原oes节点配置文件失败",
+				zap.Error(err),
+				zap.String("path", oesNodeConf),
+				zap.Duration("total_duration", time.Since(startTime)),
+			)
+			return errors.ErrDeleteCacheFileFailed.WithCause(err)
+		}
 	}
 
 	log.Info(
@@ -213,22 +240,20 @@ func (s *OesNodeService) FindOesNodeByID(
 
 func (s *OesNodeService) ListOesNode(
 	ctx context.Context,
-	page, size int,
 	dto oesmodel.ListOesNodeDTO,
-) (int64, []oesmodel.OesNodeModel, *errors.Error) {
+) (int, int, int64, []oesmodel.OesNodeModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询oes节点列表:入参详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("oes_node_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Host", "OesColony"},
@@ -246,7 +271,7 @@ func (s *OesNodeService) ListOesNode(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -254,7 +279,7 @@ func (s *OesNodeService) ListOesNode(
 			"查询oes节点列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.nodeRepo.ListModel(ctx, qp)
@@ -265,9 +290,9 @@ func (s *OesNodeService) ListOesNode(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *OesNodeService) OutPortOesNodeData(
@@ -283,7 +308,7 @@ func (s *OesNodeService) OutPortOesNodeData(
 	)
 
 	specdir := RoleToSpecdir(m.NodeRole)
-	oesColonyConf := GetOesNodeConfigPath(m.OesColony.ColonyNum, specdir)
+	oesNodeConfFile := filepath.Join(GetOesColonyConfigDir(m.OesColony.ColonyNum), specdir, "node.yaml")
 
 	oesVars := oesmodel.OesNodeVars{
 		ID:       m.ID,
@@ -293,13 +318,13 @@ func (s *OesNodeService) OutPortOesNodeData(
 		IsEnable: m.IsEnable,
 	}
 
-	if _, err := serializer.WriteYAML(oesColonyConf, oesVars); err != nil {
+	if _, err := serializer.WriteYAML(oesNodeConfFile, oesVars); err != nil {
 		log.Error(
 			"导出oes节点变量文件:写入文件失败",
 			zap.Error(err),
 			zap.Uint32("oes_node_id", m.ID),
 			zap.String("colony_num", m.OesColony.ColonyNum),
-			zap.String("path", oesColonyConf),
+			zap.String("path", oesNodeConfFile),
 			zap.Object("oes_node_vars", &oesVars),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -317,8 +342,4 @@ func RoleToSpecdir(role string) string {
 	default:
 		return "host_03"
 	}
-}
-
-func GetOesNodeConfigPath(colonyNum, specdir string) string {
-	return filepath.Join(GetOesColonyConfigDir(colonyNum), specdir, "node.yaml")
 }

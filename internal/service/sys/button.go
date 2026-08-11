@@ -395,22 +395,20 @@ func (s *ButtonService) FindButtonByID(
 
 func (s *ButtonService) ListButton(
 	ctx context.Context,
-	page, size int,
 	dto sysmodel.ListButtonDTO,
-) (int64, []sysmodel.ButtonModel, *errors.Error) {
+) (int, int, int64, []sysmodel.ButtonModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询按钮列表:入参详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("list_button_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Limit:   limit,
@@ -427,7 +425,7 @@ func (s *ButtonService) ListButton(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -435,7 +433,7 @@ func (s *ButtonService) ListButton(
 			"查询按钮列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.buttonRepo.ListModel(ctx, qp)
@@ -446,9 +444,9 @@ func (s *ButtonService) ListButton(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *ButtonService) LoadButtonPolicy(

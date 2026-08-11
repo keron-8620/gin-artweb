@@ -162,7 +162,7 @@ func TestHostService_ListHost(t *testing.T) {
 	}
 
 	dto := resomodel.ListHostDTO{}
-	count, list, svcErr := ctx.hostService.ListHost(context.Background(), 1, 10, dto)
+	_, _, count, list, svcErr := ctx.hostService.ListHost(context.Background(), dto)
 	if svcErr != nil {
 		t.Fatalf("查询Host列表应该成功: %v", svcErr)
 	}
@@ -186,7 +186,7 @@ func TestHostService_ListHost_ContextCanceled(t *testing.T) {
 	cancel()
 
 	dto := resomodel.ListHostDTO{}
-	_, _, svcErr := ctx.hostService.ListHost(canceledCtx, 1, 10, dto)
+	_, _, _, _, svcErr := ctx.hostService.ListHost(canceledCtx, dto)
 	if svcErr == nil {
 		t.Error("上下文取消后查询Host列表应该返回错误")
 	}
@@ -200,7 +200,7 @@ func TestHostService_ListHost_ZeroCount(t *testing.T) {
 	dto := resomodel.ListHostDTO{
 		Name: "non-existent-host",
 	}
-	count, list, svcErr := ctx.hostService.ListHost(context.Background(), 1, 10, dto)
+	_, _, count, list, svcErr := ctx.hostService.ListHost(context.Background(), dto)
 	if svcErr != nil {
 		t.Fatalf("查询不存在的Host列表应该成功: %v", svcErr)
 	}
@@ -227,7 +227,7 @@ func TestHostService_ListHost_WithFilters(t *testing.T) {
 	dto := resomodel.ListHostDTO{
 		Label: "specific-label",
 	}
-	count, list, svcErr := ctx.hostService.ListHost(context.Background(), 1, 10, dto)
+	_, _, count, list, svcErr := ctx.hostService.ListHost(context.Background(), dto)
 	if svcErr != nil {
 		t.Fatalf("带过滤条件查询Host列表应该成功: %v", svcErr)
 	}

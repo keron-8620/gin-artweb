@@ -217,22 +217,20 @@ func (s *OesAgwService) FindAgwByID(
 
 func (s *OesAgwService) ListAgw(
 	ctx context.Context,
-	page, size int,
 	dto oesmodel.ListAgwDTO,
-) (int64, []oesmodel.OesAgwModel, *errors.Error) {
+) (int, int, int64, []oesmodel.OesAgwModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询agw节点列表:参数详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("list_agw_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Host", "Package"},
@@ -250,7 +248,7 @@ func (s *OesAgwService) ListAgw(
 			zap.Any("query", qp.Query),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -258,7 +256,7 @@ func (s *OesAgwService) ListAgw(
 			"查询agw节点列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.agwRepo.ListModel(ctx, qp)
@@ -269,9 +267,9 @@ func (s *OesAgwService) ListAgw(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *OesAgwService) OutportAgwData(
@@ -289,14 +287,12 @@ func (s *OesAgwService) OutportAgwData(
 		zap.Object("agw", m),
 	)
 
+	// 清理原agw程序包文件
 	agwBinDir := GetAgwBinDir(m.ID)
-	agwConfDir := GetAgwConfigDir(m.ID)
-
-	// 清理原agw集群配置文件
 	if _, err := os.Stat(agwBinDir); !os.IsNotExist(err) {
 		if err := os.RemoveAll(agwBinDir); err != nil {
 			log.Error(
-				"解压agw程序包并初始化集群配置文件:清理原agw集群配置文件失败",
+				"解压agw程序包并初始化配置文件:清理原agw集群配置文件失败",
 				zap.Error(err),
 				zap.String("path", agwBinDir),
 				zap.Duration("total_duration", time.Since(startTime)),
@@ -309,7 +305,7 @@ func (s *OesAgwService) OutportAgwData(
 	tmpDir, mErr := os.MkdirTemp("/tmp", "agw-")
 	if mErr != nil {
 		log.Error(
-			"解压agw程序包并初始化集群配置文件:创建agw程序包解压的tmp文件夹失败",
+			"解压agw程序包并初始化配置文件:创建agw程序包解压的tmp文件夹失败",
 			zap.Error(mErr),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -319,7 +315,7 @@ func (s *OesAgwService) OutportAgwData(
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			log.Error(
-				"解压agw程序包并初始化集群配置文件:删除agw程序包解压的tmp文件夹失败",
+				"解压agw程序包并初始化配置文件:删除agw程序包解压的tmp文件夹失败",
 				zap.Error(err),
 				zap.String("path", tmpDir),
 			)
@@ -331,7 +327,7 @@ func (s *OesAgwService) OutportAgwData(
 	agwUnTarDirName, valiErr := archive.ValidateSingleDirTarGz(agwPkgPath)
 	if valiErr != nil {
 		log.Error(
-			"解压agw程序包并初始化集群配置文件:agw程序包校验失败",
+			"解压agw程序包并初始化配置文件:agw程序包校验失败",
 			zap.Error(valiErr),
 			zap.String("path", agwPkgPath),
 			zap.Duration("total_duration", time.Since(startTime)),
@@ -341,7 +337,7 @@ func (s *OesAgwService) OutportAgwData(
 
 	if err := archive.UntarGz(agwPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
 		log.Error(
-			"解压agw程序包并初始化集群配置文件:解压agw程序包失败",
+			"解压agw程序包并初始化配置文件:解压agw程序包失败",
 			zap.Error(err),
 			zap.String("src_path", agwPkgPath),
 			zap.String("dst_path", agwBinDir),
@@ -353,7 +349,7 @@ func (s *OesAgwService) OutportAgwData(
 	agwTmpDir := filepath.Join(tmpDir, agwUnTarDirName)
 	if err := fileutil.CopyDir(ctx, agwTmpDir, agwBinDir, true); err != nil {
 		log.Error(
-			"解压agw程序包并初始化集群配置文件:复制agw程序包解压目录失败",
+			"解压agw程序包并初始化配置文件:复制agw程序包解压目录失败",
 			zap.Error(err),
 			zap.String("src_path", agwTmpDir),
 			zap.String("dst_path", agwBinDir),
@@ -363,11 +359,12 @@ func (s *OesAgwService) OutportAgwData(
 	}
 
 	// 处理配置文件
+	agwConfDir := GetAgwConfigDir(m.ID)
 	if _, err := os.Stat(agwConfDir); os.IsNotExist(err) {
 		colonyBinConf := filepath.Join(agwBinDir, "conf")
 		if err := fileutil.CopyDir(ctx, colonyBinConf, agwConfDir, true); err != nil {
 			log.Error(
-				"解压agw程序包并初始化集群配置文件:复制agw集群配置文件失败",
+				"解压agw程序包并初始化配置文件:复制agw集群配置文件失败",
 				zap.Error(err),
 				zap.String("src_path", colonyBinConf),
 				zap.String("dst_path", agwConfDir),
@@ -388,7 +385,7 @@ func (s *OesAgwService) OutportAgwData(
 	agwConfPath := filepath.Join(agwConfDir, "agw.yaml")
 	if _, err := serializer.WriteYAML(agwConfPath, agwVars); err != nil {
 		log.Error(
-			"解压agw程序包并初始化集群配置文件:导出agw集群配置变量文件失败",
+			"解压agw程序包并初始化配置文件:导出agw集群配置变量文件失败",
 			zap.Error(err),
 			zap.String("path", agwConfPath),
 			zap.Object("agw_vars", &agwVars),
@@ -398,7 +395,7 @@ func (s *OesAgwService) OutportAgwData(
 	}
 
 	log.Info(
-		"解压agw程序包并初始化集群配置文件:执行成功",
+		"解压agw程序包并初始化配置文件:执行成功",
 		zap.String("path", agwConfPath),
 		zap.Object("agw_vars", &agwVars),
 		zap.Duration("total_duration", time.Since(startTime)),

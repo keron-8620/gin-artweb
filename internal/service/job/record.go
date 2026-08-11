@@ -592,22 +592,20 @@ func (s *RecordService) FindScriptRecordByID(
 
 func (s *RecordService) ListScriptRecord(
 	ctx context.Context,
-	page, size int,
 	dto *jobmodel.ListScriptRecordDTO,
-) (int64, []jobmodel.ScriptRecordModel, *errors.Error) {
+) (int, int, int64, []jobmodel.ScriptRecordModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询脚本执行记录列表:参数详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("dto", dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Script"},
@@ -625,7 +623,7 @@ func (s *RecordService) ListScriptRecord(
 			zap.Any("query", qp.Query),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -633,7 +631,7 @@ func (s *RecordService) ListScriptRecord(
 			"查询脚本执行记录列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.recordRepo.ListModel(ctx, qp)
@@ -644,9 +642,9 @@ func (s *RecordService) ListScriptRecord(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *RecordService) AsyncExecuteScript(

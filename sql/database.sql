@@ -62,6 +62,10 @@ insert into sys_api(id,url,method,label,descr) values(3002,'/api/v1/mon/node','P
 insert into sys_api(id,url,method,label,descr) values(3003,'/api/v1/mon/node/:id','GET','mon','查询单个mon节点');
 insert into sys_api(id,url,method,label,descr) values(3004,'/api/v1/mon/node/:id','PUT','mon','修改单个mon节点');
 insert into sys_api(id,url,method,label,descr) values(3005,'/api/v1/mon/node/:id','DELETE','mon','删除单个mon节点');
+insert into sys_api(id,url,method,label,descr) values(3011,'/api/v1/mon/conf/:id','GET','mon','查询mon配置文件列表');
+insert into sys_api(id,url,method,label,descr) values(3012,'/api/v1/mon/conf/:id','POST','mon','上传mon配置文件');
+insert into sys_api(id,url,method,label,descr) values(3015,'/api/v1/mon/conf/:id','DELETE','mon','删除mon配置文件');
+insert into sys_api(id,url,method,label,descr) values(3016,'/api/v1/mon/conf/:id/download','GET','mon','下载mon配置文件');
 insert into sys_api(id,url,method,label,descr) values(4001,'/api/v1/mds/colony','GET','mds','查询mds集群列表');
 insert into sys_api(id,url,method,label,descr) values(4002,'/api/v1/mds/colony','POST','mds','新增mds集群');
 insert into sys_api(id,url,method,label,descr) values(4003,'/api/v1/mds/colony/:id','GET','mds','查询单个mds集群');

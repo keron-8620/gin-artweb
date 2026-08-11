@@ -335,22 +335,20 @@ func (s *OesColonyService) FindOesColonyByID(
 
 func (s *OesColonyService) ListOesColony(
 	ctx context.Context,
-	page, size int,
 	dto oesmodel.ListOesColonyDTO,
-) (int64, []oesmodel.OesColonyModel, *errors.Error) {
+) (int, int, int64, []oesmodel.OesColonyModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询mds集群列表:入参详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("oes_colony_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Package", "XCounter", "MonNode"},
@@ -368,7 +366,7 @@ func (s *OesColonyService) ListOesColony(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -376,7 +374,7 @@ func (s *OesColonyService) ListOesColony(
 			"查询oes集群列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.colonyRepo.ListModel(ctx, qp)
@@ -387,9 +385,9 @@ func (s *OesColonyService) ListOesColony(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *OesColonyService) ListOesSchedules(
@@ -421,7 +419,7 @@ func (s *OesColonyService) OutportOesColonyData(
 	if _, err := os.Stat(colonyBinDir); !os.IsNotExist(err) {
 		if err := os.RemoveAll(colonyBinDir); err != nil {
 			log.Error(
-				"解压oes程序包并初始化集群配置文件:清理原oes集群配置文件失败",
+				"解压oes程序包并初始化集群配置文件:清理原oes集群程序包文件夹失败",
 				zap.Error(err),
 				zap.String("path", colonyBinDir),
 				zap.Duration("total_duration", time.Since(startTime)),

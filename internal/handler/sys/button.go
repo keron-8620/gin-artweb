@@ -238,8 +238,7 @@ func (h *ButtonHandler) ListButton(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.buttonSvc.ListButton(ctx, page, size, req)
+	page, size, total, ms, err := h.buttonSvc.ListButton(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询按钮列表:查询按钮列表失败",

@@ -261,12 +261,14 @@ func (s *OesCronService) ListCornByColonyID(
 	dto := jobmodel.ListScheduleDTO{
 		StandardModelQuery: common.StandardModelQuery{
 			BaseModelQuery: common.BaseModelQuery{
-				IDs: strings.Join(scheduleIDs, ","),
+				Page: 1,
+				Size: len(scheduleIDs),
+				IDs:  strings.Join(scheduleIDs, ","),
 			},
 		},
 	}
 
-	_, schedules, rErr := s.scheduleSvc.ListSchedule(ctx, 1, len(scheduleIDs), dto)
+	_, _, _, schedules, rErr := s.scheduleSvc.ListSchedule(ctx, dto)
 	if rErr != nil {
 		log.Error(
 			"查询oes计划任务:获取关联计划任务模型失败",

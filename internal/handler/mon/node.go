@@ -238,8 +238,7 @@ func (h *NodeHandler) ListMonNode(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, rErr := h.nodeSvc.ListMonNode(ctx, page, size, req)
+	page, size, total, ms, rErr := h.nodeSvc.ListMonNode(ctx, req)
 	if rErr != nil {
 		log.Error(
 			"查询mon节点列表:执行失败",

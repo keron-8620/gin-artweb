@@ -1,0 +1,13 @@
+---
+- hosts: all
+
+  vars_files:
+    - ../common/base_vars.yaml
+
+  tasks:
+    - name: create slave directory
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - "{{ local_path_mon_home }}"

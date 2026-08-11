@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	handler "gin-artweb/internal/handler/oes"
+	commodel "gin-artweb/internal/model/common"
 	jobmodel "gin-artweb/internal/model/job"
 	oesmodel "gin-artweb/internal/model/oes"
 	oesrepo "gin-artweb/internal/repo/oes"
@@ -80,8 +81,14 @@ func newOesCronConf(jobsvc *JobServices, cronConfName string) map[string]oesmode
 
 	scriptStatus := true
 	scriptBuiltin := true
-	_, scripts, err := jobsvc.Script.ListScript(
-		context.Background(), 1, 1000, jobmodel.ListScriptDTO{
+	_, _, _, scripts, err := jobsvc.Script.ListScript(
+		context.Background(), jobmodel.ListScriptDTO{
+			StandardModelQuery: commodel.StandardModelQuery{
+				BaseModelQuery: commodel.BaseModelQuery{
+					Page: 1,
+					Size: 1000,
+				},
+			},
 			Project:   "oes",
 			Names:     strings.Join(scriptNames, ","),
 			Labels:    strings.Join(scriptLabels, ","),

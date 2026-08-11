@@ -51,7 +51,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 		return fmt.Errorf("failed to stat source %s: %w", src, err)
 	}
 	if srcInfo.IsDir() {
-		return walkAndProcessTar(src, tarWriter, options, func(path string, info os.FileInfo, header *tar.Header, reader io.Reader, opts ArchiveOptions) error {
+		return walkAndProcessTar(src, options, func(path string, info os.FileInfo, header *tar.Header, reader io.Reader, opts ArchiveOptions) error {
 			relPath, err := filepath.Rel(filepath.Dir(src), path)
 			if err != nil {
 				return fmt.Errorf("failed to calculate relative path for %s: %w", path, err)
@@ -74,7 +74,7 @@ func TarGz(src, dst string, opts ...ArchiveOption) error {
 	return processSingleFileTar(src, srcInfo, tarWriter, options)
 }
 
-func walkAndProcessTar(src string, tarWriter *tar.Writer, options ArchiveOptions, handler fileHandler) error {
+func walkAndProcessTar(src string, options ArchiveOptions, handler fileHandler) error {
 	fileCount := 0
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

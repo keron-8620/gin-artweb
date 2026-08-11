@@ -240,8 +240,7 @@ func (h *HostHandler) ListHost(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.hostSvc.ListHost(ctx, page, size, req)
+	page, size, total, ms, err := h.hostSvc.ListHost(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询主机列表:执行失败",

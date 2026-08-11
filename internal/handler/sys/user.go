@@ -249,8 +249,7 @@ func (h *UserHandler) ListUser(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.userSvc.ListUser(ctx, page, size, req)
+	page, size, total, ms, err := h.userSvc.ListUser(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询用户列表:执行失败",

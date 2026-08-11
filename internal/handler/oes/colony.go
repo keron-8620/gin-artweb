@@ -249,8 +249,7 @@ func (s *OesColonyHandler) ListOesColony(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := s.colonySvc.ListOesColony(ctx, page, size, req)
+	page, size, total, ms, err := s.colonySvc.ListOesColony(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询oes集群列表:执行失败",

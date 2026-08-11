@@ -245,8 +245,7 @@ func (s *MdsColonyHandler) ListMdsColony(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := s.colonySvc.ListMdsColony(ctx, page, size, req)
+	page, size, total, ms, err := s.colonySvc.ListMdsColony(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询mds集群列表失败",

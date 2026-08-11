@@ -245,8 +245,7 @@ func (suite *ScheduleTestSuite) TestListSchedule() {
 
 	// 测试列出所有计划任务
 	listDTO := jobmodel.ListScheduleDTO{}
-	page, size := 1, 10
-	count, scheduleList, err := suite.scheduleService.ListSchedule(ctx, page, size, listDTO)
+	_, _, count, scheduleList, err := suite.scheduleService.ListSchedule(ctx, listDTO)
 	suite.Nil(err, "列出计划任务应该成功")
 	suite.GreaterOrEqual(int(count), scheduleCount, "返回的计划任务数量应该大于等于创建的数量")
 	suite.NotNil(scheduleList, "返回的计划任务列表不应该为nil")
@@ -428,7 +427,7 @@ func (suite *ScheduleTestSuite) TestListSchedule_ContextError() {
 
 	// 尝试使用已取消的上下文列出计划任务
 	listDTO := jobmodel.ListScheduleDTO{}
-	_, _, err := suite.scheduleService.ListSchedule(ctx, 1, 10, listDTO)
+	_, _, _, _, err := suite.scheduleService.ListSchedule(ctx, listDTO)
 	suite.NotNil(err, "上下文错误时列出计划任务应该失败")
 }
 
@@ -624,8 +623,7 @@ func (suite *ScheduleTestSuite) TestListSchedule_EmptyResult() {
 	ctx := createScheduleTestContext()
 
 	listDTO := jobmodel.ListScheduleDTO{Name: "non_existent_schedule"}
-	page, size := 1, 10
-	count, scheduleList, err := suite.scheduleService.ListSchedule(ctx, page, size, listDTO)
+	_, _, count, scheduleList, err := suite.scheduleService.ListSchedule(ctx, listDTO)
 	suite.Nil(err, "列出计划任务应该成功")
 	suite.Equal(int64(0), count, "Count should be 0 for non-existent schedule")
 	suite.Nil(scheduleList, "Schedule list should be nil for empty result")

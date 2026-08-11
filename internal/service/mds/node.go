@@ -164,7 +164,7 @@ func (s *MdsNodeService) DeleteMdsNodeByID(
 		zap.Uint32("mds_node_id", mdsNodeID),
 	)
 
-	m, err := s.nodeRepo.GetModel(ctx, nil, mdsNodeID)
+	m, err := s.nodeRepo.GetModel(ctx, []string{"MdsColony"}, mdsNodeID)
 	if err != nil {
 		log.Error(
 			"查询mds节点:查询数据库模型失败",
@@ -185,12 +185,13 @@ func (s *MdsNodeService) DeleteMdsNodeByID(
 		return errors.NewGormError(err, map[string]any{"id": mdsNodeID})
 	}
 
-	outportPath := GetMdsNodeConfigPath(m.MdsColony.ColonyNum, RoleToSpecdir(m.NodeRole))
-	if err := fileutil.Remove(ctx, outportPath); err != nil {
+	specdir := RoleToSpecdir(m.NodeRole)
+	oesNodeConf := filepath.Join(GetMdsColonyConfigDir(m.MdsColony.ColonyNum), specdir)
+	if err := fileutil.Remove(ctx, oesNodeConf); err != nil {
 		log.Error(
 			"删除mds节点:删除节点文件失败, 请手动删除",
 			zap.Error(err),
-			zap.String("outport_path", outportPath),
+			zap.String("outport_path", oesNodeConf),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.ErrDeleteCacheFileFailed.WithCause(err)
@@ -236,22 +237,20 @@ func (s *MdsNodeService) FindMdsNodeByID(
 
 func (s *MdsNodeService) ListMdsNode(
 	ctx context.Context,
-	page, size int,
 	dto *mdsmodel.ListMdsNodeDTO,
-) (int64, []mdsmodel.MdsNodeModel, *errors.Error) {
+) (int, int, int64, []mdsmodel.MdsNodeModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询mds节点列表:入参详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("mds_node_dto", dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Host", "MdsColony"},
@@ -269,7 +268,7 @@ func (s *MdsNodeService) ListMdsNode(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -277,7 +276,7 @@ func (s *MdsNodeService) ListMdsNode(
 			"查询mds节点列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.nodeRepo.ListModel(ctx, qp)
@@ -288,9 +287,9 @@ func (s *MdsNodeService) ListMdsNode(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *MdsNodeService) OutPortMdsNodeData(
@@ -306,6 +305,8 @@ func (s *MdsNodeService) OutPortMdsNodeData(
 	)
 
 	specdir := RoleToSpecdir(m.NodeRole)
+	mdsNodeConfFile := filepath.Join(GetMdsColonyConfigDir(m.MdsColony.ColonyNum), specdir, "node.yaml")
+
 	mdsVars := mdsmodel.MdsNodeVars{
 		ID:       m.ID,
 		NodeRole: m.NodeRole,
@@ -314,14 +315,13 @@ func (s *MdsNodeService) OutPortMdsNodeData(
 		IsEnable: m.IsEnable,
 	}
 
-	mdsColonyConf := GetMdsNodeConfigPath(m.MdsColony.ColonyNum, specdir)
-	if _, err := serializer.WriteYAML(mdsColonyConf, mdsVars); err != nil {
+	if _, err := serializer.WriteYAML(mdsNodeConfFile, mdsVars); err != nil {
 		log.Error(
 			"导出mds节点变量文件:写入文件失败",
 			zap.Error(err),
 			zap.Uint32("mds_node_id", m.ID),
 			zap.String("colony_num", m.MdsColony.ColonyNum),
-			zap.String("path", mdsColonyConf),
+			zap.String("path", mdsNodeConfFile),
 			zap.Object("mds_colony_vars", &mdsVars),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
@@ -330,7 +330,7 @@ func (s *MdsNodeService) OutPortMdsNodeData(
 
 	log.Info(
 		"导出mds节点变量文件:执行成功",
-		zap.String("path", mdsColonyConf),
+		zap.String("path", mdsNodeConfFile),
 		zap.Object("mds_colony_vars", &mdsVars),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)
@@ -346,8 +346,4 @@ func RoleToSpecdir(role string) string {
 	default:
 		return "host_03"
 	}
-}
-
-func GetMdsNodeConfigPath(colonyNum, specdir string) string {
-	return filepath.Join(GetMdsColonyConfigDir(colonyNum), specdir, "node.yaml")
 }

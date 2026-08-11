@@ -236,8 +236,7 @@ func (s *MdsNodeHandler) ListMdsNode(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := s.nodeSvc.ListMdsNode(ctx, page, size, &req)
+	page, size, total, ms, err := s.nodeSvc.ListMdsNode(ctx, &req)
 	if err != nil {
 		log.Error(
 			"查询mds节点列表失败",

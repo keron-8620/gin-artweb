@@ -235,8 +235,7 @@ func (s *OesNodeHandler) ListOesNode(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, rErr := s.nodeSvc.ListOesNode(ctx, page, size, req)
+	page, size, total, ms, rErr := s.nodeSvc.ListOesNode(ctx, req)
 	if rErr != nil {
 		log.Error(
 			"查询oes节点列表:执行失败",

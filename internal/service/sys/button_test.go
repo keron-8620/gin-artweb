@@ -212,13 +212,13 @@ func (s *ButtonTestSuite) TestListButton() {
 			s.Nil(err)
 		}
 
-		count, list, err := s.buttonService.ListButton(context.Background(), 1, 10, sysmodel.ListButtonDTO{})
+		_, _, count, list, err := s.buttonService.ListButton(context.Background(), sysmodel.ListButtonDTO{})
 		s.Nil(err)
 		s.GreaterOrEqual(int(count), 3)
 		s.NotNil(list)
 	})
 	s.Run("contextCanceled", func() {
-		_, _, err := s.buttonService.ListButton(newCanceledContext(), 1, 10, sysmodel.ListButtonDTO{})
+		_, _, _, _, err := s.buttonService.ListButton(newCanceledContext(), sysmodel.ListButtonDTO{})
 		s.NotNil(err)
 	})
 }

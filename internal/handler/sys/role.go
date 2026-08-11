@@ -236,8 +236,7 @@ func (h *RoleHandler) ListRole(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.roleSvc.ListRole(ctx, page, size, req)
+	page, size, total, ms, err := h.roleSvc.ListRole(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询角色列表:执行失败",

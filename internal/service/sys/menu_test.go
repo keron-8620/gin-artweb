@@ -215,7 +215,7 @@ func (suite *MenuTestSuite) TestListMenu() {
 
 	// 测试列出所有菜单
 	listDTO := sysmodel.ListMenuDTO{}
-	count, menuList, err := suite.menuservice.ListMenu(context.Background(), 1, 10, listDTO)
+	_, _, count, menuList, err := suite.menuservice.ListMenu(context.Background(), listDTO)
 	suite.Nil(err, "列出菜单应该成功")
 	suite.GreaterOrEqual(int(count), menuCount, "返回的菜单数量应该大于等于创建的数量")
 	suite.NotNil(menuList, "返回的菜单列表不应该为nil")
@@ -321,7 +321,7 @@ func (suite *MenuTestSuite) TestContextError() {
 
 	// 测试列出菜单
 	listDTO := sysmodel.ListMenuDTO{}
-	_, _, err = suite.menuservice.ListMenu(ctx, 1, 10, listDTO)
+	_, _, _, _, err = suite.menuservice.ListMenu(ctx, listDTO)
 	suite.NotNil(err, "上下文错误时列出菜单应该失败")
 
 	// 测试加载菜单策略

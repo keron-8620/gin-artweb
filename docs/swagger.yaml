@@ -1562,6 +1562,10 @@ definitions:
         description: JAVA_HOME
         example: ""
         type: string
+      jdk:
+        allOf:
+        - $ref: '#/definitions/resource.PackageStandardOut'
+        description: jdk包
       name:
         description: 名称
         example: test
@@ -1570,6 +1574,10 @@ definitions:
         description: 导出路径
         example: ""
         type: string
+      package:
+        allOf:
+        - $ref: '#/definitions/resource.PackageStandardOut'
+        description: 程序包
       updated_at:
         description: 更新时间
         example: "2023-01-01 12:00:00"
@@ -1609,6 +1617,9 @@ definitions:
       java_home:
         description: JAVA_HOME
         type: string
+      jdk_id:
+        description: jdk包ID
+        type: integer
       name:
         description: 名称
         maxLength: 50
@@ -1616,14 +1627,38 @@ definitions:
       outport_path:
         description: 导出路径
         type: string
+      package_id:
+        description: 程序包ID
+        type: integer
       url:
         description: URL地址
         type: string
     required:
     - deploy_path
     - host_id
+    - jdk_id
     - name
     - outport_path
+    - package_id
+    type: object
+  mon.PagMonConfResp:
+    properties:
+      code:
+        description: |-
+          状态码
+          Example: 200
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/fileutil.FileInfo'
+        description: |-
+          数据
+          可以是任意类型的数据
+      msg:
+        description: |-
+          信息
+          Example: "success"
+        type: string
     type: object
   mon.PagMonNodeResp:
     properties:
@@ -6395,6 +6430,141 @@ paths:
       summary: 更新mds节点
       tags:
       - mds节点管理
+  /api/v1/mon/conf/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的mon节点配置文件
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除mon节点配置文件
+      tags:
+      - mon配置管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定mon节点配置目录下的文件列表
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回配置文件列表
+          schema:
+            $ref: '#/definitions/mon.PagMonConfResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取mon节点配置文件列表
+      tags:
+      - mon配置管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传mon节点配置文件到指定节点配置目录
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 配置文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            $ref: '#/definitions/common.MapAPIResp'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传mon节点配置文件
+      tags:
+      - mon配置管理
+  /api/v1/mon/conf/{id}/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定的mon节点配置文件
+      parameters:
+      - description: mon节点编号
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 文件名
+        in: query
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 下载成功，返回文件流
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/errors.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: 下载mon节点配置文件
+      tags:
+      - mon配置管理
   /api/v1/mon/node:
     get:
       consumes:
@@ -6438,10 +6608,18 @@ paths:
         maxLength: 100
         name: ids
         type: string
+      - description: jdk包ID
+        in: query
+        name: jdk_id
+        type: integer
       - description: 名称
         in: query
         name: name
         type: string
+      - description: 程序包ID
+        in: query
+        name: package_id
+        type: integer
       - description: 分页页码
         in: query
         minimum: 1

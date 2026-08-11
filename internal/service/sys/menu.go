@@ -401,22 +401,20 @@ func (s *MenuService) FindMenuByID(
 
 func (s *MenuService) ListMenu(
 	ctx context.Context,
-	page, size int,
 	dto sysmodel.ListMenuDTO,
-) (int64, []sysmodel.MenuModel, *errors.Error) {
+) (int, int, int64, []sysmodel.MenuModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询菜单列表:入参详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("list_menu_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Limit:   limit,
@@ -433,7 +431,7 @@ func (s *MenuService) ListMenu(
 			zap.Any("query", qp.Query),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -441,7 +439,7 @@ func (s *MenuService) ListMenu(
 			"查询菜单列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.menuRepo.ListModel(ctx, qp)
@@ -452,10 +450,10 @@ func (s *MenuService) ListMenu(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *MenuService) LoadMenuPolicy(

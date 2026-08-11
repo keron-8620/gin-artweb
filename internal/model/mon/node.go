@@ -12,13 +12,17 @@ import (
 
 type MonNodeModel struct {
 	database.StandardModel
-	Name        string             `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	DeployPath  string             `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
-	OutportPath string             `gorm:"column:outport_path;type:varchar(255);comment:导出路径" json:"outport_path"`
-	JavaHome    string             `gorm:"column:java_home;type:varchar(255);comment:JAVA_HOME" json:"java_home"`
-	URL         string             `gorm:"column:url;type:varchar(150);not null;uniqueIndex;comment:URL地址" json:"url"`
-	HostID      uint32             `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        resource.HostModel `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	Name        string                `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	DeployPath  string                `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
+	OutportPath string                `gorm:"column:outport_path;type:varchar(255);comment:导出路径" json:"outport_path"`
+	JavaHome    string                `gorm:"column:java_home;type:varchar(255);comment:JAVA_HOME" json:"java_home"`
+	URL         string                `gorm:"column:url;type:varchar(150);not null;uniqueIndex;comment:URL地址" json:"url"`
+	HostID      uint32                `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
+	Host        resource.HostModel    `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	PackageID   uint32                `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
+	Package     resource.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:RESTRICT" json:"package"`
+	JdkID       uint32                `gorm:"column:jdk_id;comment:JDK包ID" json:"jdk_id"`
+	Jdk         resource.PackageModel `gorm:"foreignKey:JdkID;references:ID;constraint:OnDelete:RESTRICT" json:"jdk"`
 }
 
 func (m *MonNodeModel) TableName() string {
@@ -35,6 +39,8 @@ func (m *MonNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("java_home", m.JavaHome)
 	enc.AddString("url", m.URL)
 	enc.AddUint32("host_id", m.HostID)
+	enc.AddUint32("package_id", m.PackageID)
+	enc.AddUint32("jdk_id", m.JdkID)
 	return nil
 }
 
@@ -58,6 +64,8 @@ type MonNodeVars struct {
 	JavaHome    string `json:"java_home" yaml:"java_home"`
 	URL         string `json:"url" yaml:"url"`
 	HostID      uint32 `json:"host_id" yaml:"host_id"`
+	PackageID   uint32 `json:"package_id" yaml:"package_id"`
+	JdkID       uint32 `json:"jdk_id" yaml:"jdk_id"`
 }
 
 func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -68,6 +76,8 @@ func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("java_home", vs.JavaHome)
 	enc.AddString("url", vs.URL)
 	enc.AddUint32("host_id", vs.HostID)
+	enc.AddUint32("package_id", vs.PackageID)
+	enc.AddUint32("jdk_id", vs.JdkID)
 	return nil
 }
 
@@ -80,6 +90,8 @@ func MonNodeModelToNodeVars(m MonNodeModel) MonNodeVars {
 		JavaHome:    m.JavaHome,
 		URL:         m.URL,
 		HostID:      m.HostID,
+		PackageID:   m.PackageID,
+		JdkID:       m.JdkID,
 	}
 }
 
@@ -104,6 +116,12 @@ type MonNodeUpsertDTO struct {
 
 	// 主机ID
 	HostID uint32 `json:"host_id" form:"host_id" binding:"required"`
+
+	// 程序包ID
+	PackageID uint32 `json:"package_id" form:"package_id" binding:"required"`
+
+	// jdk包ID
+	JdkID uint32 `json:"jdk_id" form:"jdk_id" binding:"required"`
 }
 
 func (dto *MonNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -113,6 +131,8 @@ func (dto *MonNodeUpsertDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("java_home", dto.JavaHome)
 	enc.AddString("url", dto.URL)
 	enc.AddUint32("host_id", dto.HostID)
+	enc.AddUint32("package_id", dto.PackageID)
+	enc.AddUint32("jdk_id", dto.JdkID)
 	return nil
 }
 
@@ -124,6 +144,8 @@ func (dto *MonNodeUpsertDTO) ToModel() MonNodeModel {
 		JavaHome:    dto.JavaHome,
 		URL:         dto.URL,
 		HostID:      dto.HostID,
+		PackageID:   dto.PackageID,
+		JdkID:       dto.JdkID,
 	}
 }
 
@@ -135,6 +157,8 @@ func (dto *MonNodeUpsertDTO) ToUpdateMap() map[string]any {
 		"java_home":    dto.JavaHome,
 		"url":          dto.URL,
 		"host_id":      dto.HostID,
+		"package_id":   dto.PackageID,
+		"jdk_id":       dto.JdkID,
 	}
 }
 
@@ -150,6 +174,12 @@ type ListMonNodeDTO struct {
 
 	// 主机ID
 	HostID uint32 `form:"host_id"`
+
+	// 程序包ID
+	PackageID uint32 `form:"package_id"`
+
+	// jdk包ID
+	JdkID uint32 `form:"jdk_id"`
 }
 
 func (dto *ListMonNodeDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -158,6 +188,8 @@ func (dto *ListMonNodeDTO) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("name", dto.Name)
 	enc.AddUint32("host_id", dto.HostID)
+	enc.AddUint32("package_id", dto.PackageID)
+	enc.AddUint32("jdk_id", dto.JdkID)
 	return nil
 }
 
@@ -168,6 +200,12 @@ func (dto *ListMonNodeDTO) ToQueryMap() map[string]any {
 	}
 	if dto.HostID > 0 {
 		queryMap["host_id = ?"] = dto.HostID
+	}
+	if dto.PackageID > 0 {
+		queryMap["package_id = ?"] = dto.PackageID
+	}
+	if dto.JdkID > 0 {
+		queryMap["jdk_id = ?"] = dto.JdkID
 	}
 	return queryMap
 }
@@ -207,6 +245,12 @@ type MonNodeDetailOut struct {
 
 	// 主机
 	Host *resource.HostBaseOut `json:"host"`
+
+	// 程序包
+	Package *resource.PackageStandardOut
+
+	// jdk包
+	Jdk *resource.PackageStandardOut
 }
 
 // MonNodeResp 程序包响应结构
@@ -244,6 +288,8 @@ func MonNodeToDetailOut(
 	return &MonNodeDetailOut{
 		MonNodeStandardOut: *MonNodeToStandardOut(m),
 		Host:               resource.HostModelToBaseOut(m.Host),
+		Package:            resource.PackageModelToBaseOut(m.Package),
+		Jdk:                resource.PackageModelToBaseOut(m.Jdk),
 	}
 }
 

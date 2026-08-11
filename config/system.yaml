@@ -98,5 +98,5 @@ ssh: # ssh服务
 
 upload: # 文件上传
   max_script_size: 1 # 上传脚本大小限制(MB)
-  max_pkg_size: 100 # 上传程序包大小限制(MB)
+  max_pkg_size: 600 # 上传程序包大小限制(MB)
   max_conf_size: 1 # 上传配置大小限制(MB)

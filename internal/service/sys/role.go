@@ -488,22 +488,20 @@ func (s *RoleService) FindRoleByID(
 
 func (s *RoleService) ListRole(
 	ctx context.Context,
-	page, size int,
 	dto sysmodel.ListRoleDTO,
-) (int64, []sysmodel.RoleModel, *errors.Error) {
+) (int, int, int64, []sysmodel.RoleModel, *errors.Error) {
 	startTime := time.Now()
 	if ctx.Err() != nil {
-		return 0, nil, errors.FromError(ctx.Err())
+		return 0, 0, 0, nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
 
 	log.Debug(
 		"查询角色列表:参数详情",
-		zap.Int("page", page),
-		zap.Int("size", size),
 		zap.Object("list_role_dto", &dto),
 	)
 
+	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
 		Preloads: []string{"Apis", "Menus", "Buttons"},
@@ -521,7 +519,7 @@ func (s *RoleService) ListRole(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
 
 	if count == 0 {
@@ -529,7 +527,7 @@ func (s *RoleService) ListRole(
 			"查询角色列表:数据库模型总数为0",
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, nil
+		return page, size, 0, nil, nil
 	}
 
 	ms, err := s.roleRepo.ListModel(ctx, qp)
@@ -540,9 +538,9 @@ func (s *RoleService) ListRole(
 			zap.Object("query_params", &qp),
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
-		return 0, nil, errors.NewGormError(err, nil)
+		return page, size, 0, nil, errors.NewGormError(err, nil)
 	}
-	return count, ms, nil
+	return page, size, count, ms, nil
 }
 
 func (s *RoleService) LoadRolePolicy(

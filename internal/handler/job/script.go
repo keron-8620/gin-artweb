@@ -298,8 +298,7 @@ func (h *ScriptHandler) ListScript(c *gin.Context) {
 		return
 	}
 
-	page, size := req.StandardModelQuery.GetPageParam()
-	total, ms, err := h.scriptSvc.ListScript(ctx, page, size, req)
+	page, size, total, ms, err := h.scriptSvc.ListScript(ctx, req)
 	if err != nil {
 		log.Error(
 			"查询脚本列表:执行失败",

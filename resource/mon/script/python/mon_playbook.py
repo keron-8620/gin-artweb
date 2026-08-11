@@ -12,6 +12,7 @@ import shutil
 import uuid
 
 import ansible_runner
+import yaml
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 STORAGE_DIR = BASE_DIR.joinpath("storage")
@@ -33,7 +34,7 @@ def get_curr_date() -> str:
     return time.strftime('%Y%m%d', time.localtime())
 
 
-def init_vars(mon_host_id: int, extravars: str = ""):
+def init_vars(mon_id: int, extravars: str = "") -> dict:
     """
     初始化vars配置
 
@@ -41,11 +42,11 @@ def init_vars(mon_host_id: int, extravars: str = ""):
     :param extravars: 额外变量
     :return: vars配置
     """
-    mon_path = MON_DIR.joinpath("config", str(mon_host_id), "mon.json")
+    mon_path = MON_DIR.joinpath("config", str(mon_id), "mon.yaml")
     if not mon_path.exists():
         raise FileNotFoundError(f"没有这个文件: {mon_path}")
     with open(mon_path, "r") as f:
-        vars = json.load(f)
+        vars = yaml.safe_load(f)
     if extravars:
         for item in extravars.split(","):
             if "=" in item:

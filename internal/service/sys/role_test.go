@@ -189,7 +189,7 @@ func (suite *RoleTestSuite) TestListRole() {
 
 	// 测试查询角色列表
 	listDTO := sysmodel.ListRoleDTO{}
-	count, roles, err := suite.roleservice.ListRole(context.Background(), 1, 10, listDTO)
+	_, _, count, roles, err := suite.roleservice.ListRole(context.Background(), listDTO)
 	suite.Nil(err, "查询角色列表应该成功")
 	suite.GreaterOrEqual(int(count), roleCount, "角色数量应该大于或等于创建的数量")
 	suite.NotNil(roles, "角色列表不应该为空")
@@ -366,7 +366,7 @@ func (suite *RoleTestSuite) TestWithContextError() {
 	suite.NotNil(err, "FindRoleByID上下文错误应该返回错误")
 
 	// 测试ListRole上下文错误
-	_, _, err = suite.roleservice.ListRole(ctx, 1, 10, sysmodel.ListRoleDTO{})
+	_, _, _, _, err = suite.roleservice.ListRole(ctx, sysmodel.ListRoleDTO{})
 	suite.NotNil(err, "ListRole上下文错误应该返回错误")
 
 	// 测试LoadRolePolicy上下文错误

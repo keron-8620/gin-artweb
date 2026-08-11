@@ -168,8 +168,7 @@ func (s *apiTestSuite) TestListApi() {
 	}
 
 	listDTO := sysmodel.ListApiDTO{}
-	page, size := listDTO.StandardModelQuery.GetPageParam()
-	count, list, err := s.apiService.ListApi(context.Background(), page, size, listDTO)
+	_, _, count, list, err := s.apiService.ListApi(context.Background(), listDTO)
 
 	s.Nil(err)
 	s.GreaterOrEqual(int(count), len(created))
@@ -272,8 +271,7 @@ func (s *apiTestSuite) TestContextCancelledCases() {
 			"ListApi",
 			func(ctx context.Context) error {
 				listDTO := sysmodel.ListApiDTO{}
-				page, size := listDTO.StandardModelQuery.GetPageParam()
-				_, _, err := s.apiService.ListApi(ctx, page, size, listDTO)
+				_, _, _, _, err := s.apiService.ListApi(ctx, listDTO)
 				return err
 			},
 		},
@@ -355,8 +353,7 @@ func (s *apiTestSuite) TestListApi_WithFilter() {
 		URL:    created.URL,
 		Method: created.Method,
 	}
-	page, size := listDTO.StandardModelQuery.GetPageParam()
-	count, list, err := s.apiService.ListApi(context.Background(), page, size, listDTO)
+	_, _, count, list, err := s.apiService.ListApi(context.Background(), listDTO)
 
 	s.Nil(err)
 	s.GreaterOrEqual(int(count), 1)

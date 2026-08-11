@@ -1,6 +1,7 @@
 package common
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -48,6 +49,26 @@ func isSafePathSegment(s string) bool {
 // IsSafePathSegment 导出供 handler 直接校验时使用。
 func IsSafePathSegment(s string) bool {
 	return isSafePathSegment(s)
+}
+
+// 1. 定义校验函数（白名单：只允许 字母数字 下划线 横杠 点）
+func isPureFilename(filename string) bool {
+
+	// 禁止包含路径分隔符
+	if strings.ContainsAny(filename, "/\\") {
+		return false
+	}
+	// 禁止包含相对路径跳转符（防御 .. 绕过）
+	if strings.Contains(filename, "..") {
+		return false
+	}
+	// 限定字符范围（防止特殊字符导致的意外）
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, filename)
+	return matched
+}
+
+func IsPureFilename(s string) bool {
+	return isPureFilename(s)
 }
 
 func ShouldBind(ctx *gin.Context, logger *zap.Logger, v any, msg string) bool {

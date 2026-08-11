@@ -1,6 +1,7 @@
 logs/
 bin/
 storage/
+storage_bak/
 html/
 artweb.pid
 *.db

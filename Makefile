@@ -3,7 +3,7 @@
 # 项目配置：版本默认来自 Git，发布时可通过 VERSION=x.y.z 覆盖。
 BINARY_NAME=artweb
 # VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-VERSION=0.17.7.0.9
+VERSION=0.17.7.1.0
 COMMIT_ID?=$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_TIME?=$(shell date +"%Y-%m-%d %H:%M:%S")
 DOCKER_IMAGE?=swr.cn-north-4.myhuaweicloud.com/danqingzhao/gin-artweb
