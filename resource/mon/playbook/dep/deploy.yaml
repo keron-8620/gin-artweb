@@ -10,4 +10,40 @@
         path: "{{ item }}"
         state: directory
       with_items:
-        - "{{ local_path_mon_home }}"
+        - "{{ slave_path_mon_home }}"
+        - "{{ ansible_user_dir }}/"
+
+    - name: archive jdk package
+      unarchive:
+        src: "{{ local_path_packages_home }}/{{ jdk_name }}"
+        dest: "{{ ansible_user_dir }}/"
+        remote_src: False
+        creates: "{{ ansible_user_dir }}/jdk-11.0.1"
+
+    - name: copy mon files to slave
+      synchronize:
+        src: "{{ local_path_mon_home_bin_id }}/"
+        dest: "{{ slave_path_mon_home }}/"
+
+    - name: copy mon config to slave
+      synchronize:
+        src: "{{ local_path_mon_home_config_id }}/"
+        dest: "{{ slave_path_mon_home_config }}/"
+
+    - name: init database
+      shell: |
+        export JAVA_HOME={{ java_home }}
+        export PATH=$JAVA_HOME/bin:$PATH
+        sh tool.sh init
+      args:
+        chdir: "{{ slave_path_mon_home_database }}"
+      when: operate == "init"
+
+    - name: update database
+      shell: |
+        export JAVA_HOME={{ java_home }}
+        export PATH=$JAVA_HOME/bin:$PATH
+        sh tool.sh upgrade
+      args:
+        chdir: "{{ slave_path_mon_home_database }}"
+      when: operate == "upgrade"

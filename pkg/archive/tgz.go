@@ -195,21 +195,21 @@ func UntarGz(src, dst string, opts ...ArchiveOption) error {
 		if !isPathSafe(target, dst) {
 			return fmt.Errorf("%w: %s", ErrInvalidPath, target)
 		}
-		if err := processTarEntry(target, header, tarReader, options); err != nil {
+		if err := processTarEntry(target, dst, header, tarReader, options); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func processTarEntry(target string, header *tar.Header, tarReader *tar.Reader, options ArchiveOptions) error {
+func processTarEntry(target, extractRoot string, header *tar.Header, tarReader *tar.Reader, options ArchiveOptions) error {
 	switch header.Typeflag {
 	case tar.TypeDir:
-		mode := header.Mode & 0777
-		if mode < 0 {
-			mode = 0755
+		mode := os.FileMode(header.Mode & 0755)
+		if options.ExtractDirMode != 0 {
+			mode = options.ExtractDirMode
 		}
-		if err := os.MkdirAll(target, os.FileMode(mode)); err != nil {
+		if err := ensureExtractDir(target, mode, options.ExtractDirMode != 0); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", target, err)
 		}
 	case tar.TypeReg:
@@ -217,7 +217,11 @@ func processTarEntry(target string, header *tar.Header, tarReader *tar.Reader, o
 			return fmt.Errorf("%w: %s size %d > limit %d", ErrFileSizeExceeded, header.Name, header.Size, options.MaxFileSize)
 		}
 		parentDir := filepath.Dir(target)
-		if err := os.MkdirAll(parentDir, 0750); err != nil {
+		parentMode := os.FileMode(0750)
+		if options.ExtractDirMode != 0 {
+			parentMode = options.ExtractDirMode
+		}
+		if err := ensureExtractDir(parentDir, parentMode, options.ExtractDirMode != 0); err != nil {
 			return fmt.Errorf("failed to create parent directory %s: %w", parentDir, err)
 		}
 
@@ -234,14 +238,10 @@ func processTarEntry(target string, header *tar.Header, tarReader *tar.Reader, o
 			return fmt.Errorf("absolute symlink not allowed: %s -> %s", header.Name, header.Linkname)
 		}
 		cleanLinkName := filepath.Clean(header.Linkname)
-		linkParts := strings.Split(cleanLinkName, string(filepath.Separator))
-		for _, part := range linkParts {
-			if part == ".." {
-				return fmt.Errorf("symlink contains path traversal: %s -> %s", header.Name, header.Linkname)
-			}
-		}
 		linkTarget := filepath.Join(filepath.Dir(target), cleanLinkName) // #nosec G305 - isPathSafe check below
-		if !isPathSafe(linkTarget, filepath.Dir(target)) {
+		// A relative link may use .. to reference a sibling inside the archive.
+		// Validate it against the extraction root, not the link's parent directory.
+		if !isPathSafe(linkTarget, extractRoot) {
 			return fmt.Errorf("symlink points outside directory: %s -> %s", header.Name, header.Linkname)
 		}
 		if !options.FollowSymlinks {
@@ -251,6 +251,16 @@ func processTarEntry(target string, header *tar.Header, tarReader *tar.Reader, o
 		} else {
 			return fmt.Errorf("following symlinks not allowed: %s -> %s", header.Name, header.Linkname)
 		}
+	}
+	return nil
+}
+
+func ensureExtractDir(path string, mode os.FileMode, override bool) error {
+	if err := os.MkdirAll(path, mode); err != nil {
+		return err
+	}
+	if override {
+		return os.Chmod(path, mode)
 	}
 	return nil
 }

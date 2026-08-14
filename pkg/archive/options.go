@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -18,6 +19,7 @@ type ArchiveOptions struct {
 	BufferSize          int
 	MaxExtractPathDepth int
 	AllowedExtensions   []string
+	ExtractDirMode      os.FileMode
 }
 
 var DefaultArchiveOptions = ArchiveOptions{
@@ -83,6 +85,14 @@ func WithMax解压PathDepth(depth int) ArchiveOption {
 func WithAllowedExtensions(exts []string) ArchiveOption {
 	return func(opts *ArchiveOptions) {
 		opts.AllowedExtensions = exts
+	}
+}
+
+// WithExtractDirMode overrides directory permissions while extracting.
+// A zero value keeps the archive's original directory permissions.
+func WithExtractDirMode(mode os.FileMode) ArchiveOption {
+	return func(opts *ArchiveOptions) {
+		opts.ExtractDirMode = mode.Perm()
 	}
 }
 

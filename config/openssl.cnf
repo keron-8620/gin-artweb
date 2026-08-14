@@ -8,7 +8,7 @@ req_extensions = v3_req
 countryName = CN
 stateOrProvinceName = Beijing
 localityName = Beijing
-organizationName = 宽睿科技
+organizationName = organization
 organizationalUnitName = IT Department
 commonName = 127.0.0.1
 

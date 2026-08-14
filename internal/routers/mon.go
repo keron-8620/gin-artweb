@@ -14,10 +14,11 @@ func newMonRouter(
 	router *gin.RouterGroup,
 	init *config.SystemInit,
 	loggers *config.Loggers,
+	resoSvc *ResourceServices,
 ) {
 	nodeRepo := monrepo.NewMonNodeRepo(loggers.Repo, init.DB, init.DBTimeout, init.DBSlowThreshold)
 
-	nodeService := monsvc.NewMonNodeService(loggers.Service, nodeRepo)
+	nodeService := monsvc.NewMonNodeService(loggers.Service, nodeRepo, resoSvc.Pkg)
 
 	nodeHandler := handler.NewNodeHandler(loggers.Handler, nodeService)
 	confHandler := handler.NewMonConfHandler(loggers.Handler, int64(init.Conf.Upload.MaxConfSize)*1024*1024)

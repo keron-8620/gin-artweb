@@ -12,17 +12,17 @@ import (
 
 type MonNodeModel struct {
 	database.StandardModel
-	Name        string                `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
-	DeployPath  string                `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
-	OutportPath string                `gorm:"column:outport_path;type:varchar(255);comment:导出路径" json:"outport_path"`
-	JavaHome    string                `gorm:"column:java_home;type:varchar(255);comment:JAVA_HOME" json:"java_home"`
-	URL         string                `gorm:"column:url;type:varchar(150);not null;uniqueIndex;comment:URL地址" json:"url"`
-	HostID      uint32                `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
-	Host        resource.HostModel    `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
-	PackageID   uint32                `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
-	Package     resource.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:RESTRICT" json:"package"`
-	JdkID       uint32                `gorm:"column:jdk_id;comment:JDK包ID" json:"jdk_id"`
-	Jdk         resource.PackageModel `gorm:"foreignKey:JdkID;references:ID;constraint:OnDelete:RESTRICT" json:"jdk"`
+	Name        string                 `gorm:"column:name;type:varchar(50);not null;uniqueIndex;comment:名称" json:"name"`
+	DeployPath  string                 `gorm:"column:deploy_path;type:varchar(255);comment:部署路径" json:"deploy_path"`
+	OutportPath string                 `gorm:"column:outport_path;type:varchar(255);comment:导出路径" json:"outport_path"`
+	JavaHome    string                 `gorm:"column:java_home;type:varchar(255);comment:JAVA_HOME" json:"java_home"`
+	URL         string                 `gorm:"column:url;type:varchar(150);not null;uniqueIndex;comment:URL地址" json:"url"`
+	HostID      uint32                 `gorm:"column:host_id;not null;comment:主机ID" json:"host_id"`
+	Host        resource.HostModel     `gorm:"foreignKey:HostID;references:ID;constraint:OnDelete:CASCADE" json:"host"`
+	PackageID   *uint32                `gorm:"column:package_id;comment:程序包ID" json:"package_id"`
+	Package     *resource.PackageModel `gorm:"foreignKey:PackageID;references:ID;constraint:OnDelete:RESTRICT" json:"package"`
+	JdkID       *uint32                `gorm:"column:jdk_id;comment:JDK包ID" json:"jdk_id"`
+	Jdk         *resource.PackageModel `gorm:"foreignKey:JdkID;references:ID;constraint:OnDelete:RESTRICT" json:"jdk"`
 }
 
 func (m *MonNodeModel) TableName() string {
@@ -39,8 +39,12 @@ func (m *MonNodeModel) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("java_home", m.JavaHome)
 	enc.AddString("url", m.URL)
 	enc.AddUint32("host_id", m.HostID)
-	enc.AddUint32("package_id", m.PackageID)
-	enc.AddUint32("jdk_id", m.JdkID)
+	if m.PackageID != nil {
+		enc.AddUint32("package_id", *m.PackageID)
+	}
+	if m.JdkID != nil {
+		enc.AddUint32("jdk_id", *m.JdkID)
+	}
 	return nil
 }
 
@@ -66,6 +70,7 @@ type MonNodeVars struct {
 	HostID      uint32 `json:"host_id" yaml:"host_id"`
 	PackageID   uint32 `json:"package_id" yaml:"package_id"`
 	JdkID       uint32 `json:"jdk_id" yaml:"jdk_id"`
+	JdkName     string `json:"jdk_name" yaml:"jdk_name"`
 }
 
 func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -82,6 +87,21 @@ func (vs *MonNodeVars) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 func MonNodeModelToNodeVars(m MonNodeModel) MonNodeVars {
+	var (
+		pkgID   uint32 = 0
+		jdkID   uint32 = 0
+		jdkName string = ""
+	)
+
+	if m.PackageID != nil {
+		pkgID = *m.PackageID
+	}
+	if m.JdkID != nil {
+		jdkID = *m.JdkID
+	}
+	if m.Jdk != nil {
+		jdkName = m.Jdk.StorageFilename
+	}
 	return MonNodeVars{
 		ID:          m.ID,
 		Name:        m.Name,
@@ -90,8 +110,9 @@ func MonNodeModelToNodeVars(m MonNodeModel) MonNodeVars {
 		JavaHome:    m.JavaHome,
 		URL:         m.URL,
 		HostID:      m.HostID,
-		PackageID:   m.PackageID,
-		JdkID:       m.JdkID,
+		PackageID:   pkgID,
+		JdkID:       jdkID,
+		JdkName:     jdkName,
 	}
 }
 
@@ -144,8 +165,8 @@ func (dto *MonNodeUpsertDTO) ToModel() MonNodeModel {
 		JavaHome:    dto.JavaHome,
 		URL:         dto.URL,
 		HostID:      dto.HostID,
-		PackageID:   dto.PackageID,
-		JdkID:       dto.JdkID,
+		PackageID:   &dto.PackageID,
+		JdkID:       &dto.JdkID,
 	}
 }
 
@@ -285,12 +306,17 @@ func MonNodeToStandardOut(
 func MonNodeToDetailOut(
 	m MonNodeModel,
 ) *MonNodeDetailOut {
-	return &MonNodeDetailOut{
+	out := &MonNodeDetailOut{
 		MonNodeStandardOut: *MonNodeToStandardOut(m),
 		Host:               resource.HostModelToBaseOut(m.Host),
-		Package:            resource.PackageModelToBaseOut(m.Package),
-		Jdk:                resource.PackageModelToBaseOut(m.Jdk),
 	}
+	if m.Package != nil {
+		out.Package = resource.PackageModelToBaseOut(*m.Package)
+	}
+	if m.Jdk != nil {
+		out.Jdk = resource.PackageModelToBaseOut(*m.Jdk)
+	}
+	return out
 }
 
 func ListMonNodeToDetailOut(

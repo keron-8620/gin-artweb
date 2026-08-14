@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,8 @@ import (
 	monrepo "gin-artweb/internal/repo/mon"
 	resorepo "gin-artweb/internal/repo/resource"
 	monsvc "gin-artweb/internal/service/mon"
+	resosvc "gin-artweb/internal/service/resource"
+	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/test"
 )
 
@@ -62,7 +65,9 @@ func (s *MonNodeHandlerTestSuite) SetupSuite() {
 
 	hostRepo := resorepo.NewHostRepo(logger, db, dbTimeout, slowThreshold)
 	nodeRepo := monrepo.NewMonNodeRepo(logger, db, dbTimeout, slowThreshold)
-	nodeSvc := monsvc.NewMonNodeService(logger, nodeRepo)
+	pkgRepo := resorepo.NewPackageRepo(logger, db, dbTimeout, slowThreshold)
+	pkgSvc := resosvc.NewPackageService(logger, pkgRepo, filepath.Join(config.StorageDir, "packages"))
+	nodeSvc := monsvc.NewMonNodeService(logger, nodeRepo, pkgSvc)
 
 	s.handler = NewNodeHandler(logger, nodeSvc)
 

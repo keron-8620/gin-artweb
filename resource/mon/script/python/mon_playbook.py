@@ -6,7 +6,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 import argparse
-import json
 import tempfile
 import shutil
 import uuid
@@ -16,6 +15,7 @@ import yaml
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 STORAGE_DIR = BASE_DIR.joinpath("storage")
+PACKAGES_DIR = STORAGE_DIR.joinpath("packages")
 HOST_CONF_DIR = STORAGE_DIR.joinpath("host_vars")
 MON_DIR = STORAGE_DIR.joinpath("mon")
 RESOURCE_DIR = BASE_DIR.joinpath("resource")
@@ -54,9 +54,10 @@ def init_vars(mon_id: int, extravars: str = "") -> dict:
                 vars[key.strip()] = value.strip()
     if "curr_date" not in vars:
         vars["curr_date"] = get_curr_date()
-    vars["local_path_script_home"] = str(SCRIPT_DIR)
-    vars["local_path_playbook_home"] = str(PLAYBOOK_DIR)
-    vars["local_path_mon_home"] = str(MON_DIR)
+    vars["local_path_packages_home"] = PACKAGES_DIR.as_posix()
+    vars["local_path_script_home"] = SCRIPT_DIR.as_posix()
+    vars["local_path_playbook_home"] = PLAYBOOK_DIR.as_posix()
+    vars["local_path_mon_home"] = MON_DIR.as_posix()
     vars["local_python_interpreter"] = sys.executable
     return vars
 
@@ -68,11 +69,11 @@ def init_hosts(host_id: str) -> Dict:
     :param colony_num: mon集群编号
     :return: hosts配置
     """
-    host_path = HOST_CONF_DIR.joinpath(f"host_{host_id}.json")
+    host_path = HOST_CONF_DIR.joinpath(f"host_{host_id}.yaml")
     if not host_path.exists():
         raise FileNotFoundError(f"没有这个文件: {host_path}")
     with open(host_path, "r") as f:
-        return json.load(f)
+        return yaml.safe_load(f)
 
 
 def main(options):

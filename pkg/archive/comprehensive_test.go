@@ -100,6 +100,43 @@ func TestUntarGzComprehensive(t *testing.T) {
 	assert.FileExists(t, filepath.Join(extractDir, "test.txt"))
 }
 
+func TestUntarGzMakesReadOnlyDirectoriesWritable(t *testing.T) {
+	tempDir := createTempDir(t)
+	sourceDir := createTestDir(t, tempDir, "mon")
+	staticDir := createTestDir(t, sourceDir, "static")
+	createTestFile(t, staticDir, "index.html", "content")
+	if err := os.Chmod(staticDir, 0555); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.Chmod(staticDir, 0755)
+	}()
+
+	archivePath := filepath.Join(tempDir, "test.tar.gz")
+	if err := TarGz(sourceDir, archivePath); err != nil {
+		t.Fatal(err)
+	}
+	extractDir := filepath.Join(tempDir, "extract")
+	if err := UntarGz(archivePath, extractDir, WithExtractDirMode(0700)); err != nil {
+		t.Fatalf("read-only archive directory should not block extraction: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(extractDir, "mon", "static"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotZero(t, info.Mode().Perm()&0200)
+	assert.Equal(t, "content", mustReadFile(t, filepath.Join(extractDir, "mon", "static", "index.html")))
+}
+
+func mustReadFile(t *testing.T, path string) string {
+	t.Helper()
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(content)
+}
+
 func TestWalkAndProcessTar(t *testing.T) {
 	tempDir := createTempDir(t)
 

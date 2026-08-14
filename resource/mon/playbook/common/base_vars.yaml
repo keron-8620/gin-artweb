@@ -9,6 +9,7 @@ local_path_mon_home_backup: "{{ local_path_mon_home }}/backup"
 local_path_mon_home_backup_id: "{{ local_path_mon_home_backup }}/{{ id }}"
 local_path_mon_home_tmp: "{{ local_path_mon_home }}/.tmp"
 local_path_mon_home_tmp_id: "{{ local_path_mon_home_tmp }}/{{ id }}"
+
 ###################### local工作目录相关文件位置 ####################
 
 ##################### 被控机相关目录 ##############################

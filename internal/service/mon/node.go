@@ -25,15 +25,18 @@ import (
 type MonNodeService struct {
 	log      *zap.Logger
 	nodeRepo *monrepo.MonNodeRepo
+	pkgSvc   *resocvs.PackageService
 }
 
 func NewMonNodeService(
 	log *zap.Logger,
 	nodeRepo *monrepo.MonNodeRepo,
+	pkgSvc *resocvs.PackageService,
 ) *MonNodeService {
 	return &MonNodeService{
 		log:      log,
 		nodeRepo: nodeRepo,
+		pkgSvc:   pkgSvc,
 	}
 }
 
@@ -46,6 +49,12 @@ func (s *MonNodeService) CreateMonNode(
 		return nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
+	if err := validateRequiredPackageIDs(dto); err != nil {
+		return nil, err
+	}
+	if err := s.validatePackageIDs(ctx, dto.PackageID, dto.JdkID); err != nil {
+		return nil, errors.ErrValidationFailed.WithCause(err)
+	}
 
 	log.Info(
 		"创建mon节点:开始执行",
@@ -102,6 +111,12 @@ func (s *MonNodeService) UpdateMonNodeByID(
 		return nil, errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
+	if err := validateRequiredPackageIDs(dto); err != nil {
+		return nil, err
+	}
+	if err := s.validatePackageIDs(ctx, dto.PackageID, dto.JdkID); err != nil {
+		return nil, errors.ErrValidationFailed.WithCause(err)
+	}
 
 	log.Info(
 		"更新mon节点:开始执行",
@@ -253,7 +268,7 @@ func (s *MonNodeService) ListMonNode(
 	page, size := dto.StandardModelQuery.GetPageParam()
 	limit, offset := common.Page2LimitOffset(page, size)
 	qp := database.QueryParams{
-		Preloads: []string{"Host"},
+		Preloads: []string{"Host", "Package", "Jdk"},
 		OrderBy:  []string{"id DESC"},
 		Limit:    limit,
 		Offset:   offset,
@@ -301,6 +316,9 @@ func (s *MonNodeService) OutportMonData(
 		return errors.FromError(ctx.Err())
 	}
 	log := ctxutil.NewLogger(s.log, ctx)
+	if m.Package == nil || m.Jdk == nil {
+		return errors.ErrValidationFailed.WithField("message", "mon节点必须绑定程序包和JDK包")
+	}
 
 	log.Info(
 		"解压mon程序包并初始化配置文件:开始执行",
@@ -353,7 +371,7 @@ func (s *MonNodeService) OutportMonData(
 		return errors.ErrValidationFailed.WithCause(valiErr)
 	}
 
-	if err := archive.UntarGz(monPkgPath, tmpDir, archive.WithContext(ctx)); err != nil {
+	if err := archive.UntarGz(monPkgPath, tmpDir, archive.WithContext(ctx), archive.WithExtractDirMode(0700)); err != nil {
 		log.Error(
 			"解压mon程序包并初始化配置文件:解压mon程序包失败",
 			zap.Error(err),
@@ -380,16 +398,18 @@ func (s *MonNodeService) OutportMonData(
 	// 处理配置文件
 	monNodeConf := GetMonNodeConfDir(m.ID)
 	if _, err := os.Stat(monNodeConf); os.IsNotExist(err) {
-		monNodeBinConf := filepath.Join(monNodeBin, "conf")
-		if err := fileutil.CopyDir(ctx, monNodeBinConf, monNodeConf, true); err != nil {
-			log.Error(
-				"解压mon程序包并初始化配置文件:复制mon配置文件失败",
-				zap.Error(err),
-				zap.String("src_path", monNodeBinConf),
-				zap.String("dst_path", monNodeConf),
-				zap.Duration("total_duration", time.Since(startTime)),
-			)
-			return errors.FromError(err)
+		monNodeBinConf := filepath.Join(monNodeBin, "config")
+		if _, err := os.Stat(monNodeBinConf); err == nil {
+			if err := fileutil.CopyDir(ctx, monNodeBinConf, monNodeConf, true); err != nil {
+				log.Error(
+					"解压mon程序包并初始化配置文件:复制mon配置文件失败",
+					zap.Error(err),
+					zap.String("src_path", monNodeBinConf),
+					zap.String("dst_path", monNodeConf),
+					zap.Duration("total_duration", time.Since(startTime)),
+				)
+				return errors.FromError(err)
+			}
 		}
 	}
 
@@ -404,6 +424,34 @@ func (s *MonNodeService) OutportMonData(
 			zap.Duration("total_duration", time.Since(startTime)),
 		)
 		return errors.ErrExportCacheFileFailed.WithCause(err)
+	}
+	return nil
+}
+
+func validateRequiredPackageIDs(dto monmodel.MonNodeUpsertDTO) *errors.Error {
+	if dto.PackageID == 0 || dto.JdkID == 0 {
+		return errors.ErrValidationFailed.WithField("message", "程序包和JDK包不能为空")
+	}
+	return nil
+}
+
+func (s *MonNodeService) validatePackageIDs(ctx context.Context, packageID, jdkID uint32) *errors.Error {
+	if s.pkgSvc == nil {
+		return errors.ErrValidationFailed.WithField("message", "程序包服务未初始化")
+	}
+	monPkg, err := s.pkgSvc.FindPackageByID(ctx, packageID)
+	if err != nil {
+		return errors.ErrValidationFailed.WithCause(err)
+	}
+	if monPkg.Label != "mon" {
+		return errors.ErrValidationFailed.WithField("message", "程序包标签必须为mon")
+	}
+	jdkPkg, err := s.pkgSvc.FindPackageByID(ctx, jdkID)
+	if err != nil {
+		return errors.ErrValidationFailed.WithCause(err)
+	}
+	if jdkPkg.Label != "jdk" {
+		return errors.ErrValidationFailed.WithField("message", "JDK程序包标签必须为jdk")
 	}
 	return nil
 }

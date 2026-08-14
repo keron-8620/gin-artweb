@@ -158,9 +158,9 @@ func NewRouter(
 
 	// 初始化加载业务模块
 	newSysRouter(apiRouter, init, loggers)
-	newResourceRouter(apiRouter, init, loggers)
+	resoService := newResourceRouter(apiRouter, init, loggers)
 	jobService := NewJobRouter(apiRouter, init, loggers)
-	newMonRouter(apiRouter, init, loggers)
+	newMonRouter(apiRouter, init, loggers, resoService)
 	newMdsRouter(apiRouter, init, loggers, jobService)
 	newOesRouter(apiRouter, init, loggers, jobService)
 	return r

@@ -16,6 +16,7 @@ import (
 	monmodel "gin-artweb/internal/model/mon"
 	resourceModel "gin-artweb/internal/model/resource"
 	monrepo "gin-artweb/internal/repo/mon"
+	resourceRepo "gin-artweb/internal/repo/resource"
 	resourceService "gin-artweb/internal/service/resource"
 	"gin-artweb/internal/shared/config"
 	"gin-artweb/internal/shared/database"
@@ -28,6 +29,7 @@ import (
 type monNodeServiceTestContext struct {
 	nodeService *MonNodeService
 	nodeRepo    *monrepo.MonNodeRepo
+	pkgSvc      *resourceService.PackageService
 	db          *gorm.DB
 	tmpDir      string
 	testLogger  *zap.Logger
@@ -60,11 +62,14 @@ func newMonNodeServiceTestContext(t *testing.T) *monNodeServiceTestContext {
 	dbTimeout := test.NewTestDBTimeouts()
 	dbSlowThreshold := test.NewTestDBSlowThreshold()
 	nodeRepo := monrepo.NewMonNodeRepo(testLogger, db, dbTimeout, dbSlowThreshold)
-	nodeService := NewMonNodeService(testLogger, nodeRepo)
+	pkgRepo := resourceRepo.NewPackageRepo(testLogger, db, dbTimeout, dbSlowThreshold)
+	pkgSvc := resourceService.NewPackageService(testLogger, pkgRepo, filepath.Join(config.StorageDir, "packages"))
+	nodeService := NewMonNodeService(testLogger, nodeRepo, pkgSvc)
 
 	return &monNodeServiceTestContext{
 		nodeService: nodeService,
 		nodeRepo:    nodeRepo,
+		pkgSvc:      pkgSvc,
 		db:          db,
 		tmpDir:      tmpDir,
 		testLogger:  testLogger,
@@ -107,6 +112,10 @@ func createTestMonNodeDTO(t *testing.T, hostID uint32) monmodel.MonNodeUpsertDTO
 }
 
 func createTestPackageModel(t *testing.T, ctx *monNodeServiceTestContext, label, version string) *resourceModel.PackageModel {
+	return createTestPackageModelWithConfig(t, ctx, label, version, true)
+}
+
+func createTestPackageModelWithConfig(t *testing.T, ctx *monNodeServiceTestContext, label, version string, withConfig bool) *resourceModel.PackageModel {
 	filename := fmt.Sprintf("%s-%s-%s.tar.gz", label, version, uuid.NewString())
 	packageModel := &resourceModel.PackageModel{
 		Label:           label,
@@ -118,11 +127,16 @@ func createTestPackageModel(t *testing.T, ctx *monNodeServiceTestContext, label,
 	storagePath := resourceService.GetPackageStoragePath(filename)
 	sourceDir := t.TempDir()
 	rootDir := filepath.Join(sourceDir, "mon-package")
-	if err := os.MkdirAll(filepath.Join(rootDir, "conf"), 0750); err != nil {
-		t.Fatalf("failed to create test package directory: %v", err)
+	if err := os.MkdirAll(rootDir, 0750); err != nil {
+		t.Fatalf("failed to create test package root directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(rootDir, "conf", "default.conf"), []byte("test"), 0600); err != nil {
-		t.Fatalf("failed to create test package config: %v", err)
+	if withConfig {
+		if err := os.MkdirAll(filepath.Join(rootDir, "config"), 0750); err != nil {
+			t.Fatalf("failed to create test package directory: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(rootDir, "config", "default.conf"), []byte("test"), 0600); err != nil {
+			t.Fatalf("failed to create test package config: %v", err)
+		}
 	}
 	if err := os.MkdirAll(filepath.Dir(storagePath), 0750); err != nil {
 		t.Fatalf("failed to create package storage directory: %v", err)
@@ -208,10 +222,10 @@ func TestMonNodeService_CreateMonNode(t *testing.T) {
 	if result.HostID != dto.HostID {
 		t.Errorf("HostID不匹配: expected %d, got %d", dto.HostID, result.HostID)
 	}
-	if result.PackageID != dto.PackageID {
+	if result.PackageID == nil || *result.PackageID != dto.PackageID {
 		t.Errorf("PackageID不匹配: expected %d, got %d", dto.PackageID, result.PackageID)
 	}
-	if result.JdkID != dto.JdkID {
+	if result.JdkID == nil || *result.JdkID != dto.JdkID {
 		t.Errorf("JdkID不匹配: expected %d, got %d", dto.JdkID, result.JdkID)
 	}
 	if result.Package.ID != dto.PackageID {
@@ -263,6 +277,20 @@ func TestMonNodeService_CreateMonNode_DatabaseError(t *testing.T) {
 	}
 }
 
+func TestMonNodeService_CreateMonNode_RequiresPackages(t *testing.T) {
+	ctx := newMonNodeServiceTestContext(t)
+	host := createTestHostModelForMon(t, ctx)
+	dto := createTestMonNodeDTO(t, host.ID)
+
+	result, svcErr := ctx.nodeService.CreateMonNode(context.Background(), dto)
+	if svcErr == nil {
+		t.Fatal("未指定程序包和JDK时创建MonNode应该返回错误")
+	}
+	if result != nil {
+		t.Fatal("校验失败时MonNode应该为nil")
+	}
+}
+
 func TestMonNodeService_UpdateMonNodeByID(t *testing.T) {
 	ctx := newMonNodeServiceTestContext(t)
 	host := createTestHostModelForMon(t, ctx)
@@ -275,8 +303,8 @@ func TestMonNodeService_UpdateMonNodeByID(t *testing.T) {
 		JavaHome:    "/updated/java",
 		URL:         "http://updated:8080",
 		HostID:      host.ID,
-		PackageID:   original.PackageID,
-		JdkID:       original.JdkID,
+		PackageID:   *original.PackageID,
+		JdkID:       *original.JdkID,
 	}
 
 	result, svcErr := ctx.nodeService.UpdateMonNodeByID(context.Background(), original.ID, updateDTO)
@@ -292,11 +320,26 @@ func TestMonNodeService_UpdateMonNodeByID(t *testing.T) {
 	if result.DeployPath != updateDTO.DeployPath {
 		t.Errorf("DeployPath不匹配: expected %s, got %s", updateDTO.DeployPath, result.DeployPath)
 	}
-	if result.PackageID != updateDTO.PackageID {
+	if result.PackageID == nil || *result.PackageID != updateDTO.PackageID {
 		t.Errorf("PackageID不匹配: expected %d, got %d", updateDTO.PackageID, result.PackageID)
 	}
-	if result.JdkID != updateDTO.JdkID {
+	if result.JdkID == nil || *result.JdkID != updateDTO.JdkID {
 		t.Errorf("JdkID不匹配: expected %d, got %d", updateDTO.JdkID, result.JdkID)
+	}
+}
+
+func TestMonNodeService_UpdateMonNodeByID_RequiresPackages(t *testing.T) {
+	ctx := newMonNodeServiceTestContext(t)
+	host := createTestHostModelForMon(t, ctx)
+	original := createTestMonNodeModel(t, ctx, host.ID)
+	updateDTO := createTestMonNodeDTO(t, host.ID)
+
+	result, svcErr := ctx.nodeService.UpdateMonNodeByID(context.Background(), original.ID, updateDTO)
+	if svcErr == nil {
+		t.Fatal("未指定程序包和JDK时更新MonNode应该返回错误")
+	}
+	if result != nil {
+		t.Fatal("校验失败时MonNode应该为nil")
 	}
 }
 
@@ -575,6 +618,27 @@ func TestMonNodeService_OutportMonData(t *testing.T) {
 	}
 	if vars.HostID != m.HostID {
 		t.Errorf("导出HostID不匹配: expected %d, got %d", m.HostID, vars.HostID)
+	}
+}
+
+func TestMonNodeService_OutportMonData_WithoutPackageConfig(t *testing.T) {
+	ctx := newMonNodeServiceTestContext(t)
+	host := createTestHostModelForMon(t, ctx)
+	m := createTestMonNodeModel(t, ctx, host.ID)
+	monPackage := createTestPackageModelWithConfig(t, ctx, "mon", "1.0.1", false)
+	m.Package = monPackage
+	m.PackageID = &monPackage.ID
+
+	confDir := GetMonNodeConfDir(m.ID)
+	t.Cleanup(func() {
+		_ = os.RemoveAll(GetMonNodeBinDir(m.ID))
+		_ = os.RemoveAll(confDir)
+	})
+	if svcErr := ctx.nodeService.OutportMonData(context.Background(), *m); svcErr != nil {
+		t.Fatalf("缺少config目录的MonNode程序包仍应该可以导出配置: %v", svcErr)
+	}
+	if _, err := os.Stat(filepath.Join(confDir, "mon.yaml")); err != nil {
+		t.Fatalf("应该生成mon.yaml: %v", err)
 	}
 }
 
